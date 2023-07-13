@@ -1,0 +1,116 @@
+package net.wanji.business.entity;
+
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import java.io.Serializable;
+import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+
+/**
+ * <p>
+ * 资源详情表
+ * </p>
+ *
+ * @author wj
+ * @since 2023-06-27
+ */
+@Getter
+@Setter
+@Accessors(chain = true)
+@TableName("tj_resources_detail")
+public class TjResourcesDetail implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    @TableId("id")
+    private Integer id;
+
+    /**
+     * 所属资源id
+     */
+    @TableField("resources_id")
+    private Integer resourcesId;
+
+    /**
+     * 名称
+     */
+    @TableField("name")
+    private String name;
+
+    /**
+     * 格式 opendrive；
+     */
+    @TableField("format")
+    private String format;
+
+    /**
+     * 源文件存储路径
+     */
+    @TableField("file_path")
+    private String filePath;
+
+    /**
+     * 示意图存储路径
+     */
+    @TableField("img_path")
+    private String imgPath;
+
+    /**
+     * 自定义字段1
+     */
+    @TableField("attribute1")
+    private String attribute1;
+
+    /**
+     * 自定义字段2
+     */
+    @TableField("attribute2")
+    private String attribute2;
+
+    /**
+     * 自定义字段3
+     */
+    @TableField("attribute3")
+    private String attribute3;
+
+    /**
+     * 自定义字段4
+     */
+    @TableField("attribute4")
+    private String attribute4;
+
+    /**
+     * 自定义字段5
+     */
+    @TableField("attribute5")
+    private String attribute5;
+
+    /**
+     * 创建人
+     */
+    @TableField("created_by")
+    private String createdBy;
+
+    /**
+     * 创建日期
+     */
+    @TableField("created_date")
+    private LocalDateTime createdDate;
+
+    /**
+     * 修改人
+     */
+    @TableField("updated_by")
+    private String updatedBy;
+
+    /**
+     * 修改日期
+     */
+    @TableField("updated_date")
+    private LocalDateTime updatedDate;
+
+
+}

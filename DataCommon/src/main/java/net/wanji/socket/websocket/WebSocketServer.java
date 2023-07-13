@@ -1,0 +1,91 @@
+package net.wanji.socket.websocket;
+
+import net.wanji.common.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+
+import javax.websocket.OnClose;
+import javax.websocket.OnError;
+import javax.websocket.OnMessage;
+import javax.websocket.OnOpen;
+import javax.websocket.Session;
+import javax.websocket.server.ServerEndpoint;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
+
+/**
+ * @Auther: guanyuduo
+ * @Date: 2022/6/16 10:30
+ * @Descriptoin:
+ */
+@ServerEndpoint(value = "/ws/{id}")
+@Component
+public class WebSocketServer {
+
+    private static final Logger log = LoggerFactory.getLogger("business");
+
+    /**
+     * 与某个客户端的连接会话，需要通过它来给客户端发送数据
+     */
+    private Session session;
+
+    /**
+     * 连接建立成功调用的方法
+     *
+     * @param session
+     */
+    @OnOpen
+    public void onOpen(Session session) {
+        String id = getIdFromSession(session);
+        if (StringUtils.isEmpty(id)) {
+            onClose();
+            return;
+        }
+        this.session = session;
+        WebSocketManage.join(id, this);
+    }
+
+    /**
+     * 连接关闭调用的方法
+     */
+    @OnClose
+    public void onClose() {
+        WebSocketManage.remove(getIdFromSession(this.session));
+    }
+
+    /**
+     * 收到客户端消息后调用
+     *
+     * @param message
+     */
+    @OnMessage
+    public void onMessage(String message) throws IOException {
+        log.info("客户端发送的消息：" + message);
+    }
+
+    /**
+     * 发生错误时调用
+     *
+     * @param session
+     * @param error
+     */
+    @OnError
+    public void onError(Session session, Throwable error) {
+        log.info("----websocket-------有异常啦");
+        onClose();
+    }
+
+    public Session getSession() {
+        return session;
+    }
+
+    private String getIdFromSession(Session session) {
+        Map<String, String> pathParameters = session.getPathParameters();
+        return pathParameters.get("id");
+    }
+
+}

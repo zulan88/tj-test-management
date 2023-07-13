@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="net.wanji.business.mapper.TjCaseMapper">
+    <update id="updateCaseStatus">
+        update tj_case set status=#{status}
+        where id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <select id="selectCases" resultType="net.wanji.business.domain.vo.CaseVo">
+        select
+        c.id,
+        c.test_type,
+        c.case_number,
+        c.hazard_index,
+        c.label,
+        c.fragmented_scene_id,
+        c.resources_detail_id,
+        c.test_target,
+        c.eva_object,
+        c.status,
+        c.created_by,
+        c.created_date,
+        c.updated_date,
+        rd.name as resourcesName
+        from tj_case c
+        left join tj_resources_detail rd on c.resources_detail_id = rd.id
+        <where>
+            and c.test_type = #{testType}
+            and c.status = #{status}
+            and c.fragmented_scene_id = #{fragmentedSceneId}
+            <if test="caseNumber != null and caseNumber !='' ">
+                and c.case_number like concat('%',#{name},'%')
+            </if>
+            <if test="label != null and label !='' ">
+                and c.label like concat('%',#{label},'%')
+            </if>
+            <if test="resourcesDetailId != null">
+                and c.resources_detail_id = #{resourcesDetailId}
+            </if>
+            <if test="hazardIndex != null">
+                and c.hazard_index = #{hazardIndex}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectCountBySceneId" resultType="java.lang.Integer">
+        select count(*)
+        from tj_case
+        where fragmented_scene_id = #{sceneId}
+    </select>
+
+    <select id="selectSceneIdInCase" resultType="net.wanji.business.entity.TjFragmentedScenes">
+        select s.*
+        from tj_fragmented_scenes s
+        <where>
+            and s.id in (
+                select distinct fragmented_scene_id
+                from tj_case
+                where test_type=#{testType}
+            )
+            and s.type=#{type}
+            <if test="name != null and name != '' ">
+                and s.name like concat('%',#{name},'%')
+            </if>
+        </where>
+    </select>
+
+</mapper>
