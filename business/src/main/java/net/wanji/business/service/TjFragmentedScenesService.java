@@ -6,8 +6,6 @@ import net.wanji.business.domain.dto.SceneTreeTypeDto;
 import net.wanji.business.domain.dto.TjFragmentedScenesDto;
 import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.exception.BusinessException;
-import net.wanji.common.core.domain.TreeSelect;
-import net.wanji.common.core.domain.entity.SysMenu;
 
 import java.util.List;
 import java.util.Map;
@@ -48,7 +46,7 @@ public interface TjFragmentedScenesService extends IService<TjFragmentedScenes> 
      * @param name
      * @return
      */
-    List<TjFragmentedScenes> selectUsingScenes(String type, String name);
+    List<TjFragmentedScenes> selectUsingScenes(String type);
 
     /**
      * 构建树结构
@@ -63,7 +61,7 @@ public interface TjFragmentedScenesService extends IService<TjFragmentedScenes> 
      * @param scenes 场景列表
      * @return 下拉树结构列表
      */
-    List<BusinessTreeSelect> buildSceneTreeSelect(List<TjFragmentedScenes> scenes);
+    List<BusinessTreeSelect> buildSceneTreeSelect(List<TjFragmentedScenes> scenes, String name);
 
     /**
      * 根据id删除场景（逻辑删除）

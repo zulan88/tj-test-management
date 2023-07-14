@@ -1,18 +1,12 @@
 package net.wanji.web.core.config;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import freemarker.core.Environment;
-import net.wanji.common.config.WanjiConfig;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.models.auth.In;
 import net.wanji.common.config.WanjiConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.models.auth.In;
-import org.springframework.util.StringUtils;
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.builders.PathSelectors;
 import springfox.documentation.builders.RequestHandlerSelectors;
@@ -26,6 +20,9 @@ import springfox.documentation.service.SecurityScheme;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spi.service.contexts.SecurityContext;
 import springfox.documentation.spring.web.plugins.Docket;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Swagger2的接口配置

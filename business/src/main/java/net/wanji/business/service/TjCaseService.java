@@ -1,7 +1,6 @@
 package net.wanji.business.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import net.wanji.business.domain.dto.TjCaseDetailDto;
 import net.wanji.business.domain.dto.TjCaseDto;
 import net.wanji.business.domain.vo.CaseVerificationVo;
 import net.wanji.business.domain.vo.CaseVo;
@@ -16,7 +15,7 @@ import java.util.Map;
 
 /**
  * <p>
- *  服务类
+ * 服务类
  * </p>
  *
  * @author wj
@@ -26,21 +25,24 @@ public interface TjCaseService extends IService<TjCase> {
 
     /**
      * 测试用例列表页初始化
+     *
      * @return
      */
     Map<String, Object> init();
 
     /**
      * 查询测试用例中包含的场景
+     *
      * @param testType 测试类型
-     * @param type 场景树类型
-     * @param name 名称
+     * @param type     场景树类型
+     * @param name     名称
      * @return
      */
-    List<TjFragmentedScenes> selectScenesInCase(String testType, String type, String name);
+    List<TjFragmentedScenes> selectScenesInCase(String testType, String type);
 
     /**
      * 获取场景基本信息
+     *
      * @param fragmentedSceneId
      * @return
      */
@@ -48,6 +50,7 @@ public interface TjCaseService extends IService<TjCase> {
 
     /**
      * 条件查询
+     *
      * @param tjCaseDto
      * @return
      */
@@ -55,6 +58,7 @@ public interface TjCaseService extends IService<TjCase> {
 
     /**
      * 创建测试用例
+     *
      * @param tjCaseDto
      * @return
      */
@@ -63,6 +67,7 @@ public interface TjCaseService extends IService<TjCase> {
 
     /**
      * 保存仿真信息
+     *
      * @param tjCaseDto
      * @return
      */
@@ -71,18 +76,21 @@ public interface TjCaseService extends IService<TjCase> {
 
     /**
      * 校验轨迹点位
+     *
      * @param id
      */
-    boolean verifyTrajectory(Integer id) throws IOException ;
+    boolean verifyTrajectory(Integer id) throws IOException;
 
     /**
      * 轨迹回放
+     *
      * @param id
      */
     void playback(Integer id, String vehicleId, int action) throws BusinessException, IOException;
 
     /**
      * 删除用例
+     *
      * @param tjCaseDto
      * @return
      */
@@ -90,6 +98,7 @@ public interface TjCaseService extends IService<TjCase> {
 
     /**
      * 导出
+     *
      * @param cases
      * @param fileName
      * @throws IOException
@@ -98,12 +107,14 @@ public interface TjCaseService extends IService<TjCase> {
 
     /**
      * 加入测试任务
+     *
      * @param ids
      */
     boolean joinTask(List<Integer> ids);
 
     /**
      * 查询用例仿真详情
+     *
      * @param caseId
      * @return
      */

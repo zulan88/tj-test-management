@@ -26,6 +26,5 @@ public interface TjCaseMapper extends BaseMapper<TjCase> {
     int selectCountBySceneId(Integer sceneId);
 
     List<TjFragmentedScenes> selectSceneIdInCase(@Param("testType") String testType,
-                                                 @Param("type") String type,
-                                                 @Param("name") String name);
+                                                 @Param("type") String type);
 }

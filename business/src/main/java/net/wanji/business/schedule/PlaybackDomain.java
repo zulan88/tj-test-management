@@ -6,7 +6,6 @@ import net.wanji.business.domain.PlaybackMessage;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.socket.websocket.WebSocketManage;
-import net.wanji.socket.websocket.WebSocketServer;
 import org.springframework.util.ObjectUtils;
 
 import java.util.List;
@@ -43,6 +42,7 @@ public class PlaybackDomain {
                 if (index >= data.size()) {
                     future.cancel(true);
                     WebSocketManage.close(this.id);
+                    return;
                 }
                 String countDown = DateUtils.secondsToDuration(
                         (int) Math.floor((double) (data.size() - index) / 10));

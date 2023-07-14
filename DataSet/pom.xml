@@ -22,16 +22,6 @@
     </properties>
 
     <dependencies>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-freemarker</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>net.wanji</groupId>
-            <artifactId>DataCommon</artifactId>
-        </dependency>
         <!-- MP相关 start -->
         <dependency>
             <groupId>com.baomidou</groupId>
@@ -43,20 +33,6 @@
             <artifactId>mybatis-plus-join</artifactId>
             <version>1.2.4</version>
         </dependency>
-
-        <!-- MP相关 end -->
-
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>RELEASE</version>
-            <scope>compile</scope>
-        </dependency>
-<!--        <dependency>-->
-<!--            <groupId>net.wanji</groupId>-->
-<!--            <artifactId>DataFramework</artifactId>-->
-<!--        </dependency>-->
-
 
     </dependencies>
 

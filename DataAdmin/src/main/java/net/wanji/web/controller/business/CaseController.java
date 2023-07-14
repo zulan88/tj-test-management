@@ -1,5 +1,6 @@
 package net.wanji.web.controller.business;
 
+import io.swagger.annotations.ApiOperation;
 import net.wanji.business.common.Constants.BatchGroup;
 import net.wanji.business.common.Constants.CaseStatusEnum;
 import net.wanji.business.common.Constants.ContentTemplate;
@@ -15,12 +16,16 @@ import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.TjCaseService;
 import net.wanji.business.service.TjFragmentedScenesService;
+import net.wanji.common.config.WanjiConfig;
 import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.StringUtils;
+import net.wanji.common.utils.file.FileUploadUtils;
+import net.wanji.common.utils.file.FileUtils;
 import net.wanji.common.utils.poi.ExcelUtil;
+import net.wanji.framework.config.ServerConfig;
 import net.wanji.quartz.domain.SysJobLog;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -31,6 +36,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -52,6 +58,9 @@ public class CaseController extends BaseController {
     @Autowired
     private TjFragmentedScenesService scenesService;
 
+    @Autowired
+    private ServerConfig serverConfig;
+
     @PreAuthorize("@ss.hasPermi('case:init')")
     @GetMapping("/init")
     public AjaxResult init() {
@@ -63,8 +72,8 @@ public class CaseController extends BaseController {
     public AjaxResult selectTree(@RequestParam(value = "testType") String testType,
                                  @RequestParam(value = "type") String type,
                                  @RequestParam(value = "name", required = false) String name) {
-        List<TjFragmentedScenes> scenes = caseService.selectScenesInCase(testType, type, name);
-        List<BusinessTreeSelect> tree = scenesService.buildSceneTreeSelect(scenes);
+        List<TjFragmentedScenes> scenes = caseService.selectScenesInCase(testType, type);
+        List<BusinessTreeSelect> tree = scenesService.buildSceneTreeSelect(scenes, name);
         return AjaxResult.success(tree);
     }
 

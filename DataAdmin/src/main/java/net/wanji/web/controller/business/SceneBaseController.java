@@ -66,8 +66,8 @@ public class SceneBaseController extends BaseController {
     @GetMapping("/selectTree")
     public AjaxResult selectTree(@RequestParam(value = "type") String type,
                                  @RequestParam(value = "name", required = false) String name) {
-        List<TjFragmentedScenes> usingScenes = tjFragmentedScenesService.selectUsingScenes(type, name);
-        List<BusinessTreeSelect> tree = tjFragmentedScenesService.buildSceneTreeSelect(usingScenes);
+        List<TjFragmentedScenes> usingScenes = tjFragmentedScenesService.selectUsingScenes(type);
+        List<BusinessTreeSelect> tree = tjFragmentedScenesService.buildSceneTreeSelect(usingScenes, name);
         return AjaxResult.success(tree);
     }
 

@@ -27,12 +27,12 @@ public class WebSocketManage {
 
     public static void join(String id, WebSocketServer socketServer) {
         clients.put(id, socketServer);
-        addOnlineCount();
+        log.info(String.format("客户端%s加入，当前在线数量：%d", id, getOnlineCount()));
     }
 
     public static void close(String id) {
         if (!clients.containsKey(id)) {
-            log.error("客户端不存在");
+            log.error(String.format("close:客户端%s不存在", id));
             return;
         }
         clients.get(id).onClose();
@@ -40,16 +40,15 @@ public class WebSocketManage {
 
     public static void remove(String id) {
         if (!clients.containsKey(id)) {
-            log.error("客户端不存在");
+            log.error(String.format("remove:客户端%s不存在", id));
             return;
         }
         clients.remove(id);
-        subOnlineCount();
     }
 
     public static void sendInfo(String id, String message) {
         if (!clients.containsKey(id)) {
-            log.error("客户端不存在");
+            log.error(String.format("sendInfo:客户端%s不存在", id));
             return;
         }
         clients.get(id).getSession().getAsyncRemote().sendText(message);
@@ -72,30 +71,13 @@ public class WebSocketManage {
         }
     }
 
-
-    /**
-     * 减少在线人数
-     */
-    private static void subOnlineCount() {
-        onlineCount--;
-        log.info("连接断开。当前在线人数为：" + getOnlineCount());
-    }
-
-    /**
-     * 添加在线人数
-     */
-    private static void addOnlineCount() {
-        onlineCount++;
-        log.info("新连接接入。当前在线人数为：" + getOnlineCount());
-    }
-
     /**
      * 当前在线人数
      *
      * @return
      */
     public static synchronized int getOnlineCount() {
-        return onlineCount;
+        return clients.size();
     }
 
 }

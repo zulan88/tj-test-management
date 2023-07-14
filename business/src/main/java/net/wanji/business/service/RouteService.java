@@ -12,8 +12,6 @@ import net.wanji.business.proto.E1FrameProto.Demo;
 import net.wanji.business.util.TrajectoryConsumer;
 import net.wanji.common.config.KafkaConsumerConfig;
 import net.wanji.common.config.WanjiConfig;
-import net.wanji.common.constant.Constants;
-import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.file.FileUploadUtils;
 import net.wanji.common.utils.file.FileUtils;
@@ -128,7 +126,7 @@ public class RouteService {
                         map.put("latitude", Double.parseDouble(String.valueOf(value.get("latitude"))));
                         return map;
                     }));
-            for (Map.Entry<String,  Map<String, Double>> item : idAndPoint.entrySet()) {
+            for (Map.Entry<String, Map<String, Double>> item : idAndPoint.entrySet()) {
                 if (!result.containsKey(item.getKey())) {
                     List<Map<String, Double>> list = new ArrayList<>();
                     list.add(item.getValue());
@@ -155,11 +153,6 @@ public class RouteService {
     }
 
     public List<List<Map>> readRouteFile(String fileName) throws IOException {
-        // 本地资源路径
-        String localPath = WanjiConfig.getProfile();
-        // 数据库资源地址
-        String downloadPath = localPath + StringUtils.substringAfter(fileName, Constants.RESOURCE_PREFIX);
-
         String routeFile = FileUploadUtils.getAbsolutePathFileName(fileName);
         List<List<Map>> lists = FileUtils.readE1(routeFile);
         return lists;

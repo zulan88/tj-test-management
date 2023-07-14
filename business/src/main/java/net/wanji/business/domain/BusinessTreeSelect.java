@@ -1,6 +1,7 @@
 package net.wanji.business.domain;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.entity.TjResources;
 import org.apache.commons.collections4.CollectionUtils;
@@ -13,6 +14,7 @@ import java.util.stream.Collectors;
  * @Date: 2023/6/28 10:08
  * @Descriptoin:
  */
+@NoArgsConstructor
 @Data
 public class BusinessTreeSelect {
 

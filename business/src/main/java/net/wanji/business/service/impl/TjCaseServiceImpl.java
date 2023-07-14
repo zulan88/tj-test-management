@@ -87,8 +87,8 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     }
 
     @Override
-    public List<TjFragmentedScenes> selectScenesInCase(String testType, String type, String name) {
-        List<TjFragmentedScenes> scenes = caseMapper.selectSceneIdInCase(testType, type, name);
+    public List<TjFragmentedScenes> selectScenesInCase(String testType, String type) {
+        List<TjFragmentedScenes> scenes = caseMapper.selectSceneIdInCase(testType, type);
         List<Integer> pIds = new ArrayList<>();
         List<TjFragmentedScenes> result = new ArrayList<>();
         for (TjFragmentedScenes item : scenes) {

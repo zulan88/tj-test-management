@@ -16,5 +16,5 @@ import java.util.List;
  */
 public interface TjFragmentedScenesMapper extends BaseMapper<TjFragmentedScenes> {
 
-    List<TjFragmentedScenes>  selectByCondition(@Param("type") String type, @Param("name") String name);
+    List<TjFragmentedScenes>  selectByCondition(@Param("type") String type);
 }

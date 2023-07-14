@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.SysType;
-import net.wanji.business.common.Constants.TreeStructure;
 import net.wanji.business.common.Constants.UsingStatus;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.BusinessTreeSelect;
@@ -20,7 +19,6 @@ import net.wanji.business.service.TjFragmentedSceneDetailService;
 import net.wanji.business.service.TjFragmentedScenesService;
 import net.wanji.common.core.domain.entity.SysDictData;
 import net.wanji.common.utils.SecurityUtils;
-import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.bean.BeanUtils;
 import net.wanji.system.service.ISysDictDataService;
 import net.wanji.system.service.ISysDictTypeService;
@@ -32,7 +30,6 @@ import org.springframework.util.ObjectUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -80,7 +77,7 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
     @Override
     public boolean saveSceneTreeType(SceneTreeTypeDto treeTypeDto) throws BusinessException {
         List<SysDictData> sysDictData = dictTypeService.selectDictDataByType(SysType.SCENE_TREE_TYPE);
-        SysDictData dictData  = null;
+        SysDictData dictData = null;
         if (ObjectUtils.isEmpty(treeTypeDto.getDictCode())) {
             // 添加
             List<String> labelList = CollectionUtils.emptyIfNull(sysDictData).stream().map(SysDictData::getDictLabel)
@@ -109,7 +106,7 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
             }
             // 修改
             List<String> otherNames = CollectionUtils.emptyIfNull(sysDictData).stream().filter(item ->
-                    !Objects.equals(item.getDictCode(), treeTypeDto.getDictCode())).map(SysDictData::getDictLabel)
+                            !Objects.equals(item.getDictCode(), treeTypeDto.getDictCode())).map(SysDictData::getDictLabel)
                     .collect(Collectors.toList());
             if (otherNames.contains(treeTypeDto.getDictLabel())) {
                 throw new BusinessException("名称重复");
@@ -166,8 +163,8 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
     }
 
     @Override
-    public List<TjFragmentedScenes> selectUsingScenes(String type, String name) {
-        List<TjFragmentedScenes> result = fragmentedScenesMapper.selectByCondition(type, name);
+    public List<TjFragmentedScenes> selectUsingScenes(String type) {
+        List<TjFragmentedScenes> result = fragmentedScenesMapper.selectByCondition(type);
         return CollectionUtils.emptyIfNull(result).stream().sorted(Comparator.comparing(TjFragmentedScenes::getId))
                 .collect(Collectors.toList());
     }
@@ -197,10 +194,13 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
     }
 
     @Override
-    public List<BusinessTreeSelect> buildSceneTreeSelect(List<TjFragmentedScenes> scenes) {
+    public List<BusinessTreeSelect> buildSceneTreeSelect(List<TjFragmentedScenes> scenes, String name) {
         List<TjFragmentedScenes> sceneTrees = buildSceneTree(scenes);
-        return sceneTrees.stream().map(BusinessTreeSelect::new).collect(Collectors.toList());
+        return sceneTrees.stream().map(BusinessTreeSelect::new).map(tree -> fuzzySearch(tree, name))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
+
 
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -318,4 +318,34 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
     private boolean hasChild(List<TjFragmentedScenes> list, TjFragmentedScenes t) {
         return getChildList(list, t).size() > 0;
     }
+
+    private BusinessTreeSelect fuzzySearch(BusinessTreeSelect node, String query) {
+        if (node.getName().contains(query)) {
+            // 如果这个节点匹配查询，返回这个节点和它的所有子节点...
+            return node;
+        } else {
+            // 如果这个节点不匹配查询，对它的每个子节点执行模糊查询...
+            List<BusinessTreeSelect> matchingChildren = new ArrayList<>();
+            for (BusinessTreeSelect child : node.getChildren()) {
+                BusinessTreeSelect matchingChild = fuzzySearch(child, query);
+                if (matchingChild != null) {
+                    matchingChildren.add(matchingChild);
+                }
+            }
+            if (!matchingChildren.isEmpty()) {
+                // 如果有任何匹配的子节点，创建一个新的节点，包含这些子节点...
+                BusinessTreeSelect newNode = new BusinessTreeSelect();
+                newNode.setId(node.getId());
+                newNode.setParentId(node.getParentId());
+                newNode.setName(node.getName());
+                newNode.setChildren(matchingChildren);
+                return newNode;
+            } else {
+                // 如果没有任何匹配的子节点，返回null...
+                return null;
+            }
+        }
+    }
+
+
 }

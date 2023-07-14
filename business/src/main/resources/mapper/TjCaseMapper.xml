@@ -62,9 +62,6 @@
                 where test_type=#{testType}
             )
             and s.type=#{type}
-            <if test="name != null and name != '' ">
-                and s.name like concat('%',#{name},'%')
-            </if>
         </where>
     </select>
 
