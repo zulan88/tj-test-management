@@ -1,6 +1,8 @@
 package net.wanji.business.domain.dto;
 
 import lombok.Data;
+import net.wanji.business.common.Constants.DeleteGroup;
+import net.wanji.business.common.Constants.InsertGroup;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -13,30 +15,25 @@ import javax.validation.constraints.NotNull;
 @Data
 public class TjResourcesDto {
 
+    @NotNull(message = "请选择一个节点", groups = {DeleteGroup.class})
     private Integer id;
 
     /**
      * 名称
      */
-    @NotBlank(message = "名称不可为空")
+    @NotBlank(message = "名称不可为空", groups = { InsertGroup.class })
     private String name;
 
     /**
      * 资源类型 map：地图；
      */
-    @NotBlank(message = "请确认类型")
+    @NotBlank(message = "请确认类型", groups = { InsertGroup.class })
     private String type;
-
-    /**
-     * 状态 0：禁用；1：启用
-     */
-    @NotNull(message = "请确认启用状态")
-    private Integer status;
 
     /**
      * 父级id
      */
-    @NotNull(message = "请确认父级场景")
+    @NotNull(message = "请确认父级场景", groups = { InsertGroup.class })
     private Integer parentId;
 
     /**

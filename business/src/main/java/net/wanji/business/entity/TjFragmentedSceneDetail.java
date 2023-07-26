@@ -35,16 +35,22 @@ public class TjFragmentedSceneDetail implements Serializable {
     private Integer fragmentedSceneId;
 
     /**
-     * 测试道路说明
+     * 道路走向（单向：oneWay；双向：twoWay）
      */
-    @TableField("test_road_desc")
-    private String testRoadDesc;
+    @TableField("road_way")
+    private String roadWay;
 
     /**
-     * 测试场景说明
+     * 车道数
      */
-    @TableField("test_scene_desc")
-    private String testSceneDesc;
+    @TableField("lane_num")
+    private Integer laneNum;
+
+    /**
+     * 地图
+     */
+    @TableField("resources_detail_id")
+    private Integer resourcesDetailId;
 
     /**
      * 测试方法说明
@@ -69,6 +75,42 @@ public class TjFragmentedSceneDetail implements Serializable {
      */
     @TableField("img_url")
     private String imgUrl;
+
+    /**
+     * 路面状况（字典：road_condition）
+     */
+    @TableField("road_condition")
+    private String roadCondition;
+
+    /**
+     * 天气（字典：weather）
+     */
+    @TableField("weather")
+    private String weather;
+
+    /**
+     * 交通流状态（字典：traffic_flow_status）
+     */
+    @TableField("traffic_flow_status")
+    private String trafficFlowStatus;
+
+    /**
+     * 场景复杂度（字典：scene_complexity）
+     */
+    @TableField("scene_complexity")
+    private String sceneComplexity;
+
+    /**
+     * 场景类型（字典：scene_type）
+     */
+    @TableField("scene_type")
+    private String sceneType;
+
+    /**
+     * 收藏状态（未收藏：0；已收藏：1；）
+     */
+    @TableField("collect_status")
+    private Integer collectStatus;
 
     /**
      * 标签

@@ -55,14 +55,20 @@
     <select id="selectSceneIdInCase" resultType="net.wanji.business.entity.TjFragmentedScenes">
         select s.*
         from tj_fragmented_scenes s
+        left join tj_fragmented_scene_detail sd on sd.fragmented_scene_id=s.id
         <where>
             and s.id in (
-                select distinct fragmented_scene_id
-                from tj_case
-                where test_type=#{testType}
+            select distinct fragmented_scene_id
+            from tj_case
+            where test_type=#{testType}
             )
             and s.type=#{type}
+            and sd.id != null
         </where>
+    </select>
+    <select id="selectUsingResources" resultType="java.lang.Integer">
+        select distinct resources_detail_id
+        from tj_case
     </select>
 
 </mapper>

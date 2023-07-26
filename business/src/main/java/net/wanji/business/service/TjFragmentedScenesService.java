@@ -3,9 +3,11 @@ package net.wanji.business.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import net.wanji.business.domain.BusinessTreeSelect;
 import net.wanji.business.domain.dto.SceneTreeTypeDto;
+import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
 import net.wanji.business.domain.dto.TjFragmentedScenesDto;
 import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.exception.BusinessException;
+import net.wanji.common.core.domain.SimpleSelect;
 
 import java.util.List;
 import java.util.Map;
@@ -24,7 +26,14 @@ public interface TjFragmentedScenesService extends IService<TjFragmentedScenes> 
      * 初始化
      * @return
      */
-    Map<String, Object> init();
+    Map<String, List<SimpleSelect>> init();
+
+    /**
+     * 初始化编辑页
+     * @param type
+     * @return
+     */
+    Map<String, Object> initEditPage();
 
     /**
      * 添加场景树类型
@@ -71,9 +80,24 @@ public interface TjFragmentedScenesService extends IService<TjFragmentedScenes> 
     boolean deleteSceneById(Integer id) throws BusinessException;
 
     /**
+     * 克隆场景
+     * @param id
+     * @return
+     * @throws BusinessException
+     */
+    Integer cloneScene(Integer id) throws BusinessException;
+
+    /**
      * 保存场景树
      * @param fragmentedScenesDto
      * @return
      */
-    boolean saveSceneTree(TjFragmentedScenesDto fragmentedScenesDto) ;
+    boolean saveSceneTree(TjFragmentedScenesDto fragmentedScenesDto);
+
+    /**
+     * 场景构建完成
+     * @param sceneDetailDto
+     * @return
+     */
+    boolean completeScene(TjFragmentedSceneDetailDto sceneDetailDto) throws BusinessException;
 }

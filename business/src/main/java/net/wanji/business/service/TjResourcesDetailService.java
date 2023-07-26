@@ -1,11 +1,10 @@
 package net.wanji.business.service;
 
-import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
+import com.baomidou.mybatisplus.extension.service.IService;
 import net.wanji.business.domain.dto.TjResourcesDetailDto;
-import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
 import net.wanji.business.domain.vo.ResourcesDetailVo;
 import net.wanji.business.entity.TjResourcesDetail;
-import com.baomidou.mybatisplus.extension.service.IService;
+import net.wanji.business.exception.BusinessException;
 
 import java.util.List;
 
@@ -20,11 +19,11 @@ import java.util.List;
 public interface TjResourcesDetailService extends IService<TjResourcesDetail> {
 
     /**
-     * 根据资源Id查询资源详情
-     * @param resourcesId
+     * 根据资源Id查询资源列表
+     * @param resourceId
      * @return
      */
-    ResourcesDetailVo getDetailVo(Integer resourcesId);
+    List<ResourcesDetailVo> getDetailList(Integer resourceId, String name);
 
     /**
      * 保存资源详情
@@ -34,9 +33,26 @@ public interface TjResourcesDetailService extends IService<TjResourcesDetail> {
     boolean saveResourcesDetail(TjResourcesDetailDto resourcesDetailDto);
 
     /**
-     * 查询资源列表
-     * @param type
+     * 删除资源
+     * @param resourceDetailId
      * @return
      */
-    List<TjResourcesDetail> getResourceSelect(String type);
+    boolean deleteByDetailId(Integer resourceDetailId) throws BusinessException;
+
+    /**
+     * 删除资源节点下所有资源
+     * @param resourceId
+     * @return
+     */
+    boolean deleteByResourceId(Integer resourceId) throws BusinessException;
+
+    /**
+     * 根据条件查询地图下拉列表
+     * @param resourceType
+     * @param roadType
+     * @param roadPoint
+     * @param laneNum
+     * @return
+     */
+    List<TjResourcesDetail> getMapSelect(String resourceType, String roadType, String roadPoint, Integer laneNum);
 }

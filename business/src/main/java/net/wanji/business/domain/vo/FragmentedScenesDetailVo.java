@@ -16,9 +16,29 @@ import java.util.stream.Collectors;
  */
 public class FragmentedScenesDetailVo extends TjFragmentedSceneDetail {
 
+    private String roadTypeName;
+
+    private String roadWayName;
+
     private Map trajectoryJson;
 
     private List<String> labelList;
+
+    public String getRoadTypeName() {
+        return roadTypeName;
+    }
+
+    public void setRoadTypeName(String roadTypeName) {
+        this.roadTypeName = roadTypeName;
+    }
+
+    public String getRoadWayName() {
+        return roadWayName;
+    }
+
+    public void setRoadWayName(String roadWayName) {
+        this.roadWayName = roadWayName;
+    }
 
     public Map getTrajectoryJson() {
         if (StringUtils.isNotEmpty(this.getTrajectoryInfo())) {

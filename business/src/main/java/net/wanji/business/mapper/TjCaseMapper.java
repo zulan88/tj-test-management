@@ -27,4 +27,6 @@ public interface TjCaseMapper extends BaseMapper<TjCase> {
 
     List<TjFragmentedScenes> selectSceneIdInCase(@Param("testType") String testType,
                                                  @Param("type") String type);
+
+    List<Integer> selectUsingResources();
 }

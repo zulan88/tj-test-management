@@ -11,6 +11,8 @@ import net.wanji.common.exception.file.FileNameLengthLimitExceededException;
 import net.wanji.common.exception.file.FileSizeLimitExceededException;
 import net.wanji.common.exception.file.InvalidExtensionException;
 import org.apache.commons.io.FilenameUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.multipart.MultipartFile;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.StringUtils;
@@ -23,6 +25,7 @@ import net.wanji.common.utils.uuid.Seq;
  */
 public class FileUploadUtils
 {
+    private static final Logger log = LoggerFactory.getLogger("business");
     /**
      * 默认大小 50M
      */
@@ -125,6 +128,7 @@ public class FileUploadUtils
         String fileName = extractFilename(file);
 
         String absPath = getAbsoluteFile(baseDir, fileName).getAbsolutePath();
+        log.info("upload path:{}", absPath);
         file.transferTo(Paths.get(absPath));
         return getPathFileName(baseDir, fileName);
     }

@@ -1,38 +1,36 @@
 package net.wanji.web.controller.common;
 
-import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import io.swagger.annotations.ApiOperation;
-import net.wanji.business.common.Constants.DefaultSign;
-import net.wanji.common.config.WanjiConfig;
 import net.wanji.common.config.WanjiConfig;
 import net.wanji.common.constant.Constants;
 import net.wanji.common.core.domain.AjaxResult;
-import net.wanji.common.enums.DataSourceType;
 import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.file.FileUploadUtils;
 import net.wanji.common.utils.file.FileUtils;
 import net.wanji.framework.config.ServerConfig;
-import net.wanji.framework.datasource.DynamicDataSourceContextHolder;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * 通用请求处理
@@ -180,11 +178,6 @@ public class CommonController {
             log.error("下载文件失败", e);
 
         }
-    }
-
-    @GetMapping ("/getDefaultSign")
-    public AjaxResult getDefaultSign() {
-       return AjaxResult.success(DefaultSign.getDefaultSign());
     }
 
     /**

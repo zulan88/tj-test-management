@@ -28,40 +28,34 @@ public class TjResourcesDetailDto {
     private String name;
 
     /**
-     * 格式 opendrive；
-     */
-    @NotBlank(message = "请上传模型")
-    private String format;
-
-    /**
      * 源文件存储路径
      */
-    @NotBlank(message = "请上传模型")
+    @NotBlank(message = "请上传资源文件")
     private String filePath;
 
     /**
      * 示意图存储路径
      */
-    @NotBlank(message = "请上传示意图")
+    @NotBlank(message = "请上传缩略图")
     private String imgPath;
 
     /**
-     * 自定义字段1
+     * 自定义字段1（地图：道路类型；）
      */
     private String attribute1;
 
     /**
-     * 自定义字段2
+     * 自定义字段2（地图：道路属性（单双向）；）
      */
     private String attribute2;
 
     /**
-     * 自定义字段3
+     * 自定义字段3（地图：车道数；）
      */
     private String attribute3;
 
     /**
-     * 自定义字段4
+     * 自定义字段4（地图：geojson文件；）
      */
     private String attribute4;
 

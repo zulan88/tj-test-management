@@ -39,7 +39,7 @@ public class TjResources implements Serializable {
     private String name;
 
     /**
-     * 资源类型 map：地图；
+     * 资源类型（集成性地图：integrationMap；原子性地图atomMap；背景交通流：bgTrafficFlow；主车：main；交通附属设施：facilities）
      */
     @TableField("type")
     private String type;
@@ -65,13 +65,13 @@ public class TjResources implements Serializable {
     /**
      * 自定义字段1
      */
-    @TableField("attribute1")
+    @TableField("attribute1（单向：oneWay；双向：twoWay）")
     private String attribute1;
 
     /**
      * 自定义字段2
      */
-    @TableField("attribute2")
+    @TableField("attribute2（车道数）")
     private String attribute2;
 
     /**

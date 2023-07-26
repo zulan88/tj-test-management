@@ -34,7 +34,7 @@ public class TjCaseDto {
 
     private String caseNumber;
 
-    @NotNull(message = "请确认危险指数", groups = {InsertGroup.class})
+//    @NotNull(message = "请确认危险指数", groups = {InsertGroup.class})
     private Integer hazardIndex;
 
     private String label;
@@ -45,16 +45,16 @@ public class TjCaseDto {
     @NotNull(message = "请确认所属资源", groups = {InsertGroup.class})
     private Integer resourcesDetailId;
 
-    @NotBlank(message = "请输入测试目标", groups = {InsertGroup.class})
+//    @NotBlank(message = "请输入测试目标", groups = {InsertGroup.class})
     private String testTarget;
 
-    @NotBlank(message = "请输入评价对象", groups = {InsertGroup.class})
+//    @NotBlank(message = "请输入评价对象", groups = {InsertGroup.class})
     private String evaObject;
 
-    @NotBlank(message = "请输入topic", groups = UpdateGroup.class)
+//    @NotBlank(message = "请输入topic", groups = UpdateGroup.class)
     private String topic;
 
-    @NotBlank(message = "请上传文件", groups = UpdateGroup.class)
+//    @NotBlank(message = "请上传文件", groups = UpdateGroup.class)
     private String localFile;
 
     @NotNull(message = "请选择状态", groups = {QueryGroup.class})

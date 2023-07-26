@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -41,6 +43,12 @@ public class TjResourcesDetail implements Serializable {
     private String name;
 
     /**
+     * 编号
+     */
+    @TableField("code")
+    private String code;
+
+    /**
      * 格式 opendrive；
      */
     @TableField("format")
@@ -59,25 +67,25 @@ public class TjResourcesDetail implements Serializable {
     private String imgPath;
 
     /**
-     * 自定义字段1
+     * 自定义字段1（地图：道路类型；）
      */
     @TableField("attribute1")
     private String attribute1;
 
     /**
-     * 自定义字段2
+     * 自定义字段2（地图：道路属性（单双向）；）
      */
     @TableField("attribute2")
     private String attribute2;
 
     /**
-     * 自定义字段3
+     * 自定义字段3（地图：车道数；）
      */
     @TableField("attribute3")
     private String attribute3;
 
     /**
-     * 自定义字段4
+     * 自定义字段4（地图：geojson文件；）
      */
     @TableField("attribute4")
     private String attribute4;
@@ -98,6 +106,7 @@ public class TjResourcesDetail implements Serializable {
      * 创建日期
      */
     @TableField("created_date")
+    @JsonFormat(shape= JsonFormat.Shape.STRING, pattern="yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdDate;
 
     /**
@@ -110,6 +119,7 @@ public class TjResourcesDetail implements Serializable {
      * 修改日期
      */
     @TableField("updated_date")
+    @JsonFormat(shape= JsonFormat.Shape.STRING, pattern="yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updatedDate;
 
 

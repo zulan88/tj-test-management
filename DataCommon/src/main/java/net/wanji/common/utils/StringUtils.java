@@ -1,5 +1,6 @@
 package net.wanji.common.utils;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -23,6 +24,9 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils
 
     /** 下划线 */
     private static final char SEPARATOR = '_';
+
+    private static final String CHARACTERS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    private static final int LENGTH = 20;
 
     /**
      * 获取参数不为空值
@@ -628,5 +632,34 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * 获取随机字符串
+     * @return
+     */
+    public static String generateRandomString() {
+        SecureRandom random = new SecureRandom();
+        StringBuilder sb = new StringBuilder(LENGTH);
+
+        for (int i = 0; i < LENGTH; i++) {
+            int randomIndex = random.nextInt(CHARACTERS.length());
+            char randomChar = CHARACTERS.charAt(randomIndex);
+            sb.append(randomChar);
+        }
+        return sb.toString();
+    }
+
+    /**
+     * 去除最后一个拼接元素
+     * @param input
+     * @return
+     */
+    public static String removeLastElement(String input, String separator) {
+        int lastIndex = input.lastIndexOf(separator);
+        if (lastIndex != -1) {
+            return input.substring(0, lastIndex);
+        }
+        return input;
     }
 }

@@ -58,13 +58,13 @@ public class TjCase implements Serializable {
     private String label;
 
     /**
-     * 所属场景id
+     * 所属场景详情id
      */
-    @TableField("fragmented_scene_id")
-    private Integer fragmentedSceneId;
+    @TableField("scene_detail_id")
+    private Integer sceneDetailId;
 
     /**
-     * 所属资源id
+     * 所属资源详情id
      */
     @TableField("resources_detail_id")
     private Integer resourcesDetailId;
@@ -108,7 +108,7 @@ public class TjCase implements Serializable {
     private String routeFile;
 
     /**
-     * 状态：待仿真1；仿真验证2；实车验证3；待入库4
+     * 状态：待配置：0；待仿真1；仿真验证2；实车验证3；待入库4
      */
     @TableField("status")
     private String status;

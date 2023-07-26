@@ -119,4 +119,5 @@ public interface TjCaseService extends IService<TjCase> {
      * @return
      */
     CaseVerificationVo getDetail(Integer caseId) throws BusinessException;
+
 }

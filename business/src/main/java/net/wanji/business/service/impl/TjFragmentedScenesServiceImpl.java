@@ -1,24 +1,33 @@
 package net.wanji.business.service.impl;
 
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import net.wanji.business.common.Constants.ColumnName;
+import net.wanji.business.common.Constants.ContentTemplate;
+import net.wanji.business.common.Constants.LanePointEnum;
 import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.UsingStatus;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.BusinessTreeSelect;
 import net.wanji.business.domain.dto.SceneTreeTypeDto;
+import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
 import net.wanji.business.domain.dto.TjFragmentedScenesDto;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.entity.TjFragmentedScenes;
+import net.wanji.business.entity.TjResourcesDetail;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.mapper.TjCaseMapper;
+import net.wanji.business.mapper.TjFragmentedSceneDetailMapper;
 import net.wanji.business.mapper.TjFragmentedScenesMapper;
-import net.wanji.business.service.TjFragmentedSceneDetailService;
 import net.wanji.business.service.TjFragmentedScenesService;
+import net.wanji.business.service.TjResourcesDetailService;
+import net.wanji.business.util.BusinessTreeUtils;
+import net.wanji.common.core.domain.SimpleSelect;
 import net.wanji.common.core.domain.entity.SysDictData;
 import net.wanji.common.utils.SecurityUtils;
+import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.bean.BeanUtils;
 import net.wanji.system.service.ISysDictDataService;
 import net.wanji.system.service.ISysDictTypeService;
@@ -58,7 +67,10 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
     private ISysDictDataService dictDataService;
 
     @Autowired
-    private TjFragmentedSceneDetailService sceneDetailService;
+    private TjResourcesDetailService resourcesDetailService;
+
+    @Autowired
+    private TjFragmentedSceneDetailMapper sceneDetailMapper;
 
     @Autowired
     private TjCaseMapper caseMapper;
@@ -67,10 +79,40 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
     private TjFragmentedScenesMapper fragmentedScenesMapper;
 
     @Override
-    public Map<String, Object> init() {
-        List<SysDictData> sysDictData = dictTypeService.selectDictDataByType(SysType.SCENE_TREE_TYPE);
-        Map<String, Object> result = new HashMap<>(1);
-        result.put("sceneTreeType", sysDictData);
+    public Map<String, List<SimpleSelect>> init() {
+        List<SysDictData> sceneTreeType = dictTypeService.selectDictDataByType(SysType.SCENE_TREE_TYPE);
+        List<SysDictData> sceneType = dictTypeService.selectDictDataByType(SysType.SCENE_TYPE);
+        List<SysDictData> sceneComplexity = dictTypeService.selectDictDataByType(SysType.SCENE_COMPLEXITY);
+        List<SysDictData> trafficFlowStatus = dictTypeService.selectDictDataByType(SysType.TRAFFIC_FLOW_STATUS);
+        List<SysDictData> roadType = dictTypeService.selectDictDataByType(SysType.ROAD_TYPE);
+        List<SysDictData> weather = dictTypeService.selectDictDataByType(SysType.WEATHER);
+        List<SysDictData> roadCondition = dictTypeService.selectDictDataByType(SysType.ROAD_CONDITION);
+        List<SysDictData> collectStatus = dictTypeService.selectDictDataByType(SysType.COLLECT_STATUS);
+        Map<String, List<SimpleSelect>> result = new HashMap<>(8);
+        result.put(SysType.SCENE_TREE_TYPE, CollectionUtils.emptyIfNull(sceneTreeType).stream()
+                .map(SimpleSelect::new).collect(Collectors.toList()));
+        result.put(SysType.SCENE_TYPE, CollectionUtils.emptyIfNull(sceneType).stream()
+                .map(SimpleSelect::new).collect(Collectors.toList()));
+        result.put(SysType.SCENE_COMPLEXITY, CollectionUtils.emptyIfNull(sceneComplexity).stream()
+                .map(SimpleSelect::new).collect(Collectors.toList()));
+        result.put(SysType.TRAFFIC_FLOW_STATUS, CollectionUtils.emptyIfNull(trafficFlowStatus).stream()
+                .map(SimpleSelect::new).collect(Collectors.toList()));
+        result.put(SysType.ROAD_TYPE, CollectionUtils.emptyIfNull(roadType).stream()
+                .map(SimpleSelect::new).collect(Collectors.toList()));
+        result.put(SysType.WEATHER, CollectionUtils.emptyIfNull(weather).stream()
+                .map(SimpleSelect::new).collect(Collectors.toList()));
+        result.put(SysType.ROAD_CONDITION, CollectionUtils.emptyIfNull(roadCondition).stream()
+                .map(SimpleSelect::new).collect(Collectors.toList()));
+        result.put(SysType.COLLECT_STATUS, CollectionUtils.emptyIfNull(collectStatus).stream()
+                .map(SimpleSelect::new).collect(Collectors.toList()));
+        return result;
+    }
+
+    @Override
+    public Map<String, Object> initEditPage() {
+        Map<String, Object> result = new HashMap<>(2);
+        result.put("lanePoint", LanePointEnum.buildSelect());
+        result.put("label", dictTypeService.selectDictDataByType(SysType.LABEL_TYPE));
         return result;
     }
 
@@ -125,7 +167,6 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
 
     @Override
     public boolean deleteTreeType(Long dictCode) throws BusinessException {
-        // todo 删除逻辑
         SysDictData dictData = dictDataService.selectDictDataById(dictCode);
         if (ObjectUtils.isEmpty(dictData)) {
             return false;
@@ -137,8 +178,14 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
         List<Integer> sceneIds = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(scenesList)) {
             sceneIds = scenesList.stream().map(TjFragmentedScenes::getId).collect(Collectors.toList());
+            QueryWrapper<TjFragmentedSceneDetail> detailQueryWrapper = new QueryWrapper<>();
+            detailQueryWrapper.in(ColumnName.SCENE_ID_COLUMN, sceneIds);
+            List<TjFragmentedSceneDetail> details = sceneDetailMapper.selectList(detailQueryWrapper);
+            List<Integer> detailIds = CollectionUtils.emptyIfNull(details).stream().map(TjFragmentedSceneDetail::getId)
+                    .collect(Collectors.toList());
+
             QueryWrapper<TjCase> caseQueryWrapper = new QueryWrapper<>();
-            caseQueryWrapper.in(ColumnName.SCENE_DETAIL_ID_COLUMN, sceneIds);
+            caseQueryWrapper.in(ColumnName.SCENE_DETAIL_ID_COLUMN, detailIds);
             List<TjCase> caseList = caseMapper.selectList(caseQueryWrapper);
             if (CollectionUtils.isNotEmpty(caseList)) {
                 throw new BusinessException("此类型下存在测试用例，无法删除");
@@ -147,9 +194,9 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
         // 2.删除场景详情
         if (CollectionUtils.isNotEmpty(sceneIds)) {
             QueryWrapper<TjFragmentedSceneDetail> detailQueryWrapper = new QueryWrapper<>();
-            detailQueryWrapper.in(ColumnName.SCENE_DETAIL_ID_COLUMN, sceneIds);
-            boolean removeDetail = sceneDetailService.remove(detailQueryWrapper);
-            if (!removeDetail) {
+            detailQueryWrapper.in(ColumnName.SCENE_ID_COLUMN, sceneIds);
+            int removeDetail = sceneDetailMapper.delete(detailQueryWrapper);
+            if (removeDetail != sceneIds.size()) {
                 throw new BusinessException("删除详情失败");
             }
         }
@@ -196,7 +243,7 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
     @Override
     public List<BusinessTreeSelect> buildSceneTreeSelect(List<TjFragmentedScenes> scenes, String name) {
         List<TjFragmentedScenes> sceneTrees = buildSceneTree(scenes);
-        return sceneTrees.stream().map(BusinessTreeSelect::new).map(tree -> fuzzySearch(tree, name))
+        return sceneTrees.stream().map(BusinessTreeSelect::new).map(tree -> BusinessTreeUtils.fuzzySearch(tree, name))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
@@ -216,8 +263,8 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
                 throw new BusinessException("当前场景下存在测试用例，无法删除");
             }
             QueryWrapper<TjFragmentedSceneDetail> detailQueryWrapper = new QueryWrapper<>();
-            detailQueryWrapper.eq(ColumnName.SCENE_DETAIL_ID_COLUMN, scenes.getId());
-            sceneDetailService.remove(detailQueryWrapper);
+            detailQueryWrapper.eq(ColumnName.SCENE_ID_COLUMN, scenes.getId());
+            sceneDetailMapper.delete(detailQueryWrapper);
             this.removeById(id);
             return true;
         }
@@ -229,15 +276,20 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
         List<Integer> sceneIds = deleteCollector.stream().filter(item -> YN.N_INT == item.getIsFolder())
                 .map(TjFragmentedScenes::getId).collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(sceneIds)) {
-            QueryWrapper<TjCase> queryWrapper = new QueryWrapper<>();
-            queryWrapper.in(ColumnName.SCENE_DETAIL_ID_COLUMN, sceneIds);
-            List<TjCase> cases = caseMapper.selectList(queryWrapper);
-            if (CollectionUtils.isNotEmpty(cases)) {
-                throw new BusinessException("当前文件夹下的场景存在测试用例，无法删除");
-            }
             QueryWrapper<TjFragmentedSceneDetail> detailQueryWrapper = new QueryWrapper<>();
-            detailQueryWrapper.in(ColumnName.SCENE_DETAIL_ID_COLUMN, sceneIds);
-            sceneDetailService.remove(detailQueryWrapper);
+            detailQueryWrapper.in(ColumnName.SCENE_ID_COLUMN, sceneIds);
+            List<TjFragmentedSceneDetail> details = sceneDetailMapper.selectList(detailQueryWrapper);
+            List<Integer> detailIds = details.stream().map(TjFragmentedSceneDetail::getId).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(detailIds)) {
+
+                QueryWrapper<TjCase> queryWrapper = new QueryWrapper<>();
+                queryWrapper.in(ColumnName.SCENE_DETAIL_ID_COLUMN, detailIds);
+                List<TjCase> cases = caseMapper.selectList(queryWrapper);
+                if (CollectionUtils.isNotEmpty(cases)) {
+                    throw new BusinessException("当前文件夹下的场景存在测试用例，无法删除");
+                }
+                sceneDetailMapper.delete(detailQueryWrapper);
+            }
         }
         // 2.3.删掉文件夹及其所有子节点
         deleteCollector.add(scenes);
@@ -245,6 +297,42 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
         deleteWrapper.in(ColumnName.ID_COLUMN,
                 deleteCollector.stream().map(TjFragmentedScenes::getId).collect(Collectors.toList()));
         return this.remove(deleteWrapper);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public Integer cloneScene(Integer id) throws BusinessException {
+        return 1;
+//        TjFragmentedScenes scenes = this.getById(id);
+//        if (ObjectUtils.isEmpty(scenes) || YN.Y_INT == scenes.getIsFolder()) {
+//            throw new BusinessException("场景查询失败");
+//        }
+//        TjFragmentedScenes newScene = new TjFragmentedScenes();
+//        BeanUtils.copyBeanProp(newScene, scenes);
+//        this.buildSceneName(newScene, null, 2);
+//
+//        newScene.setId(null);
+//        newScene.setCreatedBy(SecurityUtils.getUsername());
+//        newScene.setCreatedDate(LocalDateTime.now());
+//        newScene.setUpdatedBy(null);
+//        newScene.setUpdatedDate(null);
+//        int newSceneId = fragmentedScenesMapper.insert(newScene);
+//        if (newSceneId < 1) {
+//            throw new BusinessException("克隆失败");
+//        }
+//        QueryWrapper<TjFragmentedSceneDetail> detailQueryWrapper = new QueryWrapper<>();
+//        detailQueryWrapper.eq(ColumnName.SCENE_DETAIL_ID_COLUMN, scenes.getId());
+//        TjFragmentedSceneDetail oldSceneDetail = sceneDetailMapper.selectOne(detailQueryWrapper);
+//        if (!ObjectUtils.isEmpty(oldSceneDetail)) {
+//            oldSceneDetail.setId(null);
+//            oldSceneDetail.setFragmentedSceneId(newScene.getId());
+//            oldSceneDetail.setResourcesDetailId(null);
+//            oldSceneDetail.setTrajectoryInfo(null);
+//            if (sceneDetailMapper.insert(oldSceneDetail) < 1) {
+//                throw new BusinessException("克隆详情失败");
+//            }
+//        }
+//        return newScene.getId();
     }
 
     private void selectChildrenFromFolder(Integer id, List<TjFragmentedScenes> collector) {
@@ -280,6 +368,78 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
         return saveOrUpdate(tjFragmentedScenes);
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public boolean completeScene(TjFragmentedSceneDetailDto sceneDetailDto) throws BusinessException {
+        if (ObjectUtils.isEmpty(sceneDetailDto.getFragmentedSceneId())
+                || ObjectUtils.isEmpty(sceneDetailDto.getResourcesDetailId())) {
+            throw new BusinessException("保存失败");
+        }
+        TjFragmentedScenes scenes = getById(sceneDetailDto.getFragmentedSceneId());
+        if (ObjectUtils.isEmpty(scenes)) {
+            throw new BusinessException("未找到对应场景");
+        }
+        TjResourcesDetail resourcesDetail = resourcesDetailService.getById(sceneDetailDto.getResourcesDetailId());
+        if (ObjectUtils.isEmpty(resourcesDetail)) {
+            throw new BusinessException("未找到对应地图");
+        }
+        scenes.setUpdatedBy(SecurityUtils.getUsername());
+        scenes.setUpdatedDate(LocalDateTime.now());
+        boolean success = this.updateById(scenes);
+        if (!success) {
+            throw new BusinessException("修改失败");
+        }
+        return success;
+    }
+
+    /**
+     *
+     * @param scenes
+     * @param resourcesName
+     * @param type 配置完成：1；克隆：2；
+     */
+    private void buildSceneName(TjFragmentedScenes scenes, String resourcesName, int type) {
+        switch (type) {
+            case 1:
+                String newName = StringUtils.format(ContentTemplate.SCENE_NAME_TEMPLATE,
+                        StringUtils.split(scenes.getName(), "_")[0], resourcesName);
+                QueryWrapper<TjFragmentedScenes> queryWrapper = new QueryWrapper<>();
+                queryWrapper.eq(ColumnName.PARENT_ID_COLUMN, scenes.getParentId()).eq(ColumnName.COMPLETED_COLUMN, YN.Y_INT)
+                        .ne(ColumnName.ID_COLUMN, scenes.getId()).like(ColumnName.NAME_COLUMN, newName);
+                List<TjFragmentedScenes> list = this.list(queryWrapper);
+                int number = 0;
+                for (TjFragmentedScenes item : CollectionUtils.emptyIfNull(list)) {
+                    if (StringUtils.equals(newName, item.getName())) {
+                        number = 1;
+                        continue;
+                    }
+                    String[] nameItem = StringUtils.split(item.getName(), "_");
+                    if (nameItem.length > 1) {
+                        String[] suffixItem = StringUtils.split(nameItem[1], "#");
+                        if (suffixItem.length > 1
+                                && StringUtils.equals(newName, StringUtils.join(new String[]{nameItem[0], suffixItem[0]}, "_"))
+                                && Integer.parseInt(suffixItem[1]) >= number) {
+                            number = Integer.parseInt(suffixItem[1]) + 1;
+                        }
+                    }
+                }
+                if (number > 0) {
+                    newName = newName.concat("#").concat(String.valueOf(number));
+                }
+                scenes.setName(newName);
+                break;
+            case 2:
+//                String namePrefix = YN.Y_INT == scenes.getCompleted()
+//                        ? StringUtils.split(scenes.getName(), "_")[0]
+//                        : scenes.getName();
+//                scenes.setName(StringUtils.format(ContentTemplate.COPY_SCENE_NAME_TEMPLATE, namePrefix,
+//                        System.currentTimeMillis()));
+                break;
+            default:
+                break;
+        }
+    }
+
     /**
      * 递归列表
      *
@@ -304,7 +464,7 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
         List<TjFragmentedScenes> tlist = new ArrayList<>();
         Iterator<TjFragmentedScenes> it = list.iterator();
         while (it.hasNext()) {
-            TjFragmentedScenes n = (TjFragmentedScenes) it.next();
+            TjFragmentedScenes n = it.next();
             if (n.getParentId().longValue() == t.getId().longValue()) {
                 tlist.add(n);
             }
@@ -318,34 +478,5 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
     private boolean hasChild(List<TjFragmentedScenes> list, TjFragmentedScenes t) {
         return getChildList(list, t).size() > 0;
     }
-
-    private BusinessTreeSelect fuzzySearch(BusinessTreeSelect node, String query) {
-        if (node.getName().contains(query)) {
-            // 如果这个节点匹配查询，返回这个节点和它的所有子节点...
-            return node;
-        } else {
-            // 如果这个节点不匹配查询，对它的每个子节点执行模糊查询...
-            List<BusinessTreeSelect> matchingChildren = new ArrayList<>();
-            for (BusinessTreeSelect child : node.getChildren()) {
-                BusinessTreeSelect matchingChild = fuzzySearch(child, query);
-                if (matchingChild != null) {
-                    matchingChildren.add(matchingChild);
-                }
-            }
-            if (!matchingChildren.isEmpty()) {
-                // 如果有任何匹配的子节点，创建一个新的节点，包含这些子节点...
-                BusinessTreeSelect newNode = new BusinessTreeSelect();
-                newNode.setId(node.getId());
-                newNode.setParentId(node.getParentId());
-                newNode.setName(node.getName());
-                newNode.setChildren(matchingChildren);
-                return newNode;
-            } else {
-                // 如果没有任何匹配的子节点，返回null...
-                return null;
-            }
-        }
-    }
-
 
 }

@@ -1,5 +1,6 @@
 package net.wanji.web.controller.business;
 
+import com.alibaba.fastjson2.JSON;
 import net.wanji.business.domain.BusinessTreeSelect;
 import net.wanji.business.domain.dto.SceneTreeTypeDto;
 import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
@@ -43,7 +44,13 @@ public class SceneBaseController extends BaseController {
     @PreAuthorize("@ss.hasPermi('sceneBase:init')")
     @GetMapping("/init")
     public AjaxResult init() {
-        return AjaxResult.success(tjFragmentedScenesService.init());
+        return AjaxResult.success(JSON.toJSON(tjFragmentedScenesService.init()));
+    }
+
+    @PreAuthorize("@ss.hasPermi('sceneBase:initEditPage')")
+    @GetMapping("/initEditPage")
+    public AjaxResult initEditPage() {
+        return AjaxResult.success(tjFragmentedScenesService.initEditPage());
     }
 
     @PreAuthorize("@ss.hasPermi('sceneBase:saveTreeType')")
@@ -87,6 +94,12 @@ public class SceneBaseController extends BaseController {
                 : AjaxResult.error("删除失败");
     }
 
+    @PreAuthorize("@ss.hasPermi('sceneBase:cloneScene')")
+    @GetMapping("/cloneScene/{sceneId}")
+    public AjaxResult cloneScene(@PathVariable("sceneId") Integer sceneId) throws BusinessException {
+        return AjaxResult.success(tjFragmentedScenesService.cloneScene(sceneId));
+    }
+
     @PreAuthorize("@ss.hasPermi('sceneBase:getDetailVo')")
     @GetMapping("/getDetailVo/{sceneId}")
     public AjaxResult getDetailVo(@PathVariable("sceneId") Integer sceneId) throws BusinessException {
@@ -96,7 +109,8 @@ public class SceneBaseController extends BaseController {
 
     @PreAuthorize("@ss.hasPermi('sceneBase:saveSceneDetail')")
     @PostMapping("/saveSceneDetail")
-    public AjaxResult saveSceneDetail(@Validated @RequestBody TjFragmentedSceneDetailDto sceneDetailDto) {
+    public AjaxResult saveSceneDetail(@Validated @RequestBody TjFragmentedSceneDetailDto sceneDetailDto)
+            throws BusinessException {
         return tjFragmentedSceneDetailService.saveSceneDetail(sceneDetailDto)
                 ? AjaxResult.success("成功")
                 : AjaxResult.error("失败");

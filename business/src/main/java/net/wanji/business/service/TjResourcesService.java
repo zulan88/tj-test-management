@@ -6,8 +6,10 @@ import net.wanji.business.domain.dto.TjResourcesDto;
 import net.wanji.business.entity.TjResources;
 import net.wanji.business.entity.TjResources;
 import com.baomidou.mybatisplus.extension.service.IService;
+import net.wanji.business.exception.BusinessException;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -18,6 +20,12 @@ import java.util.List;
  * @since 2023-06-27
  */
 public interface TjResourcesService extends IService<TjResources> {
+    /**
+     * 初始化
+     * @return
+     */
+    Map<String, Object> init();
+
     /**
      * 获取所有使用中的资源
      * @return
@@ -37,10 +45,24 @@ public interface TjResourcesService extends IService<TjResources> {
      * @param resources 资源列表
      * @return 下拉树结构列表
      */
-    List<BusinessTreeSelect> buildResourcesTreeSelect(List<TjResources> resources);
+    List<BusinessTreeSelect> buildResourcesTreeSelect(List<TjResources> resources, String name);
 
     /**
-     * 根据id删除资源（逻辑删除）
+     * 删除资源树节点
+     * @param id
+     * @return
+     */
+    boolean deleteTree(Integer id) throws BusinessException;
+
+    /**
+     * 保存树节点
+     * @param resourcesDto
+     * @return
+     */
+    boolean saveTree(TjResourcesDto resourcesDto);
+
+    /**
+     * 根据id删除资源
      * @param id
      * @return
      */

@@ -39,7 +39,7 @@ public class TjFragmentedScenes implements Serializable {
     private String name;
 
     /**
-     * 类型（虚实融合测试：1；虚实对比测试：2；人在环路测试：3；平行推演测试：4；三项映射测试：5）
+     * 类型类型（基本段：1；T型交叉路口：2；环岛：3；正交交叉口：4；）
      */
     @TableField("type")
     private String type;
@@ -62,6 +62,9 @@ public class TjFragmentedScenes implements Serializable {
     @TableField("level")
     private Integer level;
 
+    /**
+     * 是否是文件夹（场景：0；文件夹：1）
+     */
     @TableField("is_folder")
     private Integer isFolder;
 

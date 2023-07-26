@@ -3,23 +3,36 @@ package net.wanji.business.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import net.wanji.business.common.Constants.ColumnName;
+import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.UsingStatus;
 import net.wanji.business.domain.BusinessTreeSelect;
 import net.wanji.business.domain.dto.TjResourcesDto;
+import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjResources;
+import net.wanji.business.exception.BusinessException;
 import net.wanji.business.mapper.TjResourcesMapper;
+import net.wanji.business.service.TjCaseService;
+import net.wanji.business.service.TjResourcesDetailService;
 import net.wanji.business.service.TjResourcesService;
+import net.wanji.business.util.BusinessTreeUtils;
+import net.wanji.common.core.domain.entity.SysDictData;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.bean.BeanUtils;
+import net.wanji.system.service.ISysDictTypeService;
 import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -33,6 +46,22 @@ import java.util.stream.Collectors;
 @Service
 public class TjResourcesServiceImpl extends ServiceImpl<TjResourcesMapper, TjResources> implements TjResourcesService {
 
+    @Autowired
+    private ISysDictTypeService dictTypeService;
+
+    @Autowired
+    private TjCaseService tjCaseService;
+
+    @Autowired
+    private TjResourcesDetailService resourcesDetailService;
+
+    @Override
+    public Map<String, Object> init() {
+        List<SysDictData> sysDictData = dictTypeService.selectDictDataByType(SysType.RESOURCE_TYPE);
+        Map<String, Object> result = new HashMap<>(1);
+        result.put("resourceType", sysDictData);
+        return result;
+    }
 
     @Override
     public List<TjResources> selectUsingResources(String type) {
@@ -54,7 +83,7 @@ public class TjResourcesServiceImpl extends ServiceImpl<TjResourcesMapper, TjRes
             tempList.add(item.getId());
         }
         for (Iterator<TjResources> iterator = resources.iterator(); iterator.hasNext(); ) {
-            TjResources resource = (TjResources) iterator.next();
+            TjResources resource = iterator.next();
             // 如果是顶级节点, 遍历该父节点的所有子节点
             if (!tempList.contains(resource.getParentId())) {
                 recursionFn(resources, resource);
@@ -68,9 +97,42 @@ public class TjResourcesServiceImpl extends ServiceImpl<TjResourcesMapper, TjRes
     }
 
     @Override
-    public List<BusinessTreeSelect> buildResourcesTreeSelect(List<TjResources> resources) {
+    public List<BusinessTreeSelect> buildResourcesTreeSelect(List<TjResources> resources, String name) {
         List<TjResources> resourcesTrees = buildResourcesTree(resources);
-        return resourcesTrees.stream().map(BusinessTreeSelect::new).collect(Collectors.toList());
+        return resourcesTrees.stream().map(BusinessTreeSelect::new).map(tree ->
+                        BusinessTreeUtils.fuzzySearch(tree, name)).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public boolean deleteTree(Integer id) throws BusinessException {
+        TjResources resources = this.getById(id);
+        if (ObjectUtils.isEmpty(resources)) {
+            throw new BusinessException("未查询到对应节点");
+        }
+        boolean success = resourcesDetailService.deleteByResourceId(id);
+        if (!success) {
+            throw new BusinessException("删除资源失败");
+        }
+        return this.removeById(id);
+    }
+
+    @Override
+    public boolean saveTree(TjResourcesDto resourcesDto) {
+        if (ObjectUtils.isEmpty(resourcesDto.getId())) {
+            TjResources tjResources = new TjResources();
+            BeanUtils.copyBeanProp(tjResources, resourcesDto);
+            tjResources.setStatus(UsingStatus.ENABLE);
+            tjResources.setCreatedBy(SecurityUtils.getUsername());
+            tjResources.setCreatedDate(LocalDateTime.now());
+            return this.save(tjResources);
+        } else {
+            TjResources resources = this.getById(resourcesDto.getId());
+            resources.setName(resourcesDto.getName());
+            resources.setUpdatedBy(SecurityUtils.getUsername());
+            resources.setUpdatedDate(LocalDateTime.now());
+            return this.updateById(resources);
+        }
     }
 
     @Override
@@ -85,17 +147,16 @@ public class TjResourcesServiceImpl extends ServiceImpl<TjResourcesMapper, TjRes
 
     @Override
     public boolean saveResource(TjResourcesDto resourcesDto) {
-        TjResources TjResources = new TjResources();
-        BeanUtils.copyBeanProp(TjResources, resourcesDto);
-        if (ObjectUtils.isEmpty(TjResources.getId())) {
-            TjResources.setCreatedBy(SecurityUtils.getUsername());
-            TjResources.setCreatedDate(LocalDateTime.now());
-
+        TjResources tjResources = new TjResources();
+        BeanUtils.copyBeanProp(tjResources, resourcesDto);
+        if (ObjectUtils.isEmpty(tjResources.getId())) {
+            tjResources.setCreatedBy(SecurityUtils.getUsername());
+            tjResources.setCreatedDate(LocalDateTime.now());
         } else {
-            TjResources.setUpdatedBy(SecurityUtils.getUsername());
-            TjResources.setUpdatedDate(LocalDateTime.now());
+            tjResources.setUpdatedBy(SecurityUtils.getUsername());
+            tjResources.setUpdatedDate(LocalDateTime.now());
         }
-        return saveOrUpdate(TjResources);
+        return this.saveOrUpdate(tjResources);
     }
 
     /**
@@ -122,7 +183,7 @@ public class TjResourcesServiceImpl extends ServiceImpl<TjResourcesMapper, TjRes
         List<TjResources> tlist = new ArrayList<>();
         Iterator<TjResources> it = list.iterator();
         while (it.hasNext()) {
-            TjResources n = (TjResources) it.next();
+            TjResources n = it.next();
             if (n.getParentId().longValue() == t.getId().longValue()) {
                 tlist.add(n);
             }
