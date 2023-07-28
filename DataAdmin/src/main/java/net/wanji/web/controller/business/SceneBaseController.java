@@ -2,6 +2,7 @@ package net.wanji.web.controller.business;
 
 import com.alibaba.fastjson2.JSON;
 import net.wanji.business.domain.BusinessTreeSelect;
+import net.wanji.business.domain.dto.SceneQueryDto;
 import net.wanji.business.domain.dto.SceneTreeTypeDto;
 import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
 import net.wanji.business.domain.dto.TjFragmentedScenesDto;
@@ -114,5 +115,13 @@ public class SceneBaseController extends BaseController {
         return tjFragmentedSceneDetailService.saveSceneDetail(sceneDetailDto)
                 ? AjaxResult.success("成功")
                 : AjaxResult.error("失败");
+    }
+
+    /**
+     * 查询场景叶子节点下的子场景列表
+     */
+    @PostMapping("/selectScene")
+    public AjaxResult selectScene(@RequestBody SceneQueryDto queryDto) {
+        return AjaxResult.success(tjFragmentedSceneDetailService.selectScene(queryDto));
     }
 }

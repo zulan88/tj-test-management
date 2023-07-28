@@ -140,4 +140,9 @@ public class TjResourcesDetailServiceImpl extends ServiceImpl<TjResourcesDetailM
             return a && b && c;
         }).collect(Collectors.toList());
     }
+
+    @Override
+    public List<TjResourcesDetail> selectAllResource() {
+        return this.list(null);
+    }
 }

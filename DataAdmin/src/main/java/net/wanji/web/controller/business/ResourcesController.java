@@ -94,4 +94,12 @@ public class ResourcesController extends BaseController {
                                         @RequestParam("laneNum") Integer laneNum) {
         return AjaxResult.success(tjResourcesDetailService.getMapSelect(resourceType, roadType, roadPoint, laneNum));
     }
+
+    /**
+     * 查询所有场景
+     */
+    @GetMapping("/selectAllResource")
+    public AjaxResult selectAllResource() {
+        return AjaxResult.success(tjResourcesDetailService.selectAllResource());
+    }
 }
