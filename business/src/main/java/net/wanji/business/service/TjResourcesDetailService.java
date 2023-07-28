@@ -55,4 +55,6 @@ public interface TjResourcesDetailService extends IService<TjResourcesDetail> {
      * @return
      */
     List<TjResourcesDetail> getMapSelect(String resourceType, String roadType, String roadPoint, Integer laneNum);
+
+    List<TjResourcesDetail> selectAllResource();
 }

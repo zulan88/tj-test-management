@@ -1,10 +1,13 @@
 package net.wanji.business.service;
 
+import net.wanji.business.domain.dto.SceneQueryDto;
 import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
 import com.baomidou.mybatisplus.extension.service.IService;
 import net.wanji.business.exception.BusinessException;
+
+import java.util.List;
 
 /**
  * <p>
@@ -29,4 +32,5 @@ public interface TjFragmentedSceneDetailService extends IService<TjFragmentedSce
      */
     boolean saveSceneDetail(TjFragmentedSceneDetailDto sceneDetailDto) throws BusinessException;
 
+    List<TjFragmentedSceneDetail> selectScene(SceneQueryDto queryDto);
 }

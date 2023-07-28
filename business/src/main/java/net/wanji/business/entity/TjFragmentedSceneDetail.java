@@ -83,6 +83,12 @@ public class TjFragmentedSceneDetail implements Serializable {
     private String roadCondition;
 
     /**
+     * 道路类型(字典：road_type)
+     */
+    @TableField("road_type")
+    private String roadType;
+
+    /**
      * 天气（字典：weather）
      */
     @TableField("weather")

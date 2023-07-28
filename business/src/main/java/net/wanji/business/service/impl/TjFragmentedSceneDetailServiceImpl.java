@@ -1,5 +1,6 @@
 package net.wanji.business.service.impl;
 
+import cn.hutool.core.util.ObjectUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -7,6 +8,7 @@ import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.MapKey;
 import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.YN;
+import net.wanji.business.domain.dto.SceneQueryDto;
 import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
@@ -23,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -43,6 +46,9 @@ public class TjFragmentedSceneDetailServiceImpl
 
     @Autowired
     private TjFragmentedScenesMapper scenesMapper;
+
+    @Autowired
+    private TjFragmentedSceneDetailMapper sceneDetailMapper;
 
     @Autowired
     private ISysDictDataService dictDataService;
@@ -78,6 +84,40 @@ public class TjFragmentedSceneDetailServiceImpl
             success = scenesService.completeScene(sceneDetailDto);
         }
         return success;
+    }
+
+    @Override
+    public List<TjFragmentedSceneDetail> selectScene(SceneQueryDto queryDto) {
+        QueryWrapper<TjFragmentedSceneDetail> queryWrapper = new QueryWrapper<>();
+        if (ObjectUtil.isNotEmpty(queryDto.getFragmentedSceneId())) {
+            queryWrapper.eq("fragmented_scene_id", queryDto.getFragmentedSceneId());
+        }
+        if (ObjectUtil.isNotEmpty(queryDto.getResourcesDetailId())) {
+            queryWrapper.in("resources_detail_id", queryDto.getResourcesDetailId().split(","));
+        }
+        if (ObjectUtil.isNotEmpty(queryDto.getSceneType())) {
+            queryWrapper.in("scene_type", queryDto.getSceneType().split(","));
+        }
+        if (ObjectUtil.isNotEmpty(queryDto.getSceneComplexity())) {
+            queryWrapper.in("scene_complexity", queryDto.getSceneComplexity().split(","));
+        }
+        if (ObjectUtil.isNotEmpty(queryDto.getTrafficFlowStatus())) {
+            queryWrapper.in("traffic_flow_status", queryDto.getTrafficFlowStatus().split(","));
+        }
+        if (ObjectUtil.isNotEmpty(queryDto.getRoadType())) {
+            queryWrapper.in("road_type", queryDto.getRoadType().split(","));
+        }
+        if (ObjectUtil.isNotEmpty(queryDto.getWeather())) {
+            queryWrapper.in("weather", queryDto.getWeather().split(","));
+        }
+        if (ObjectUtil.isNotEmpty(queryDto.getRoadCondition())) {
+            queryWrapper.in("road_condition",queryDto.getRoadCondition().split(","));
+        }
+        if (ObjectUtil.isNotEmpty(queryDto.getCollectStatus())) {
+            queryWrapper.eq("collect_status", queryDto.getCollectStatus());
+        }
+
+        return sceneDetailMapper.selectList(queryWrapper);
     }
 
     private void verifyTrajectoryJson(Map trajectoryJson) throws BusinessException {

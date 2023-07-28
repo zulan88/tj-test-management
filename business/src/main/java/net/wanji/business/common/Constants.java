@@ -77,7 +77,7 @@ public interface Constants {
         public static final String COMPLETED_COLUMN = "completed";
         public static final String NAME_COLUMN = "name";
         public static final String SCENE_ID_COLUMN = "fragmented_scene_id";
-        public static final String SCENE_DETAIL_ID_COLUMN = "scene_detail_id";
+        public static final String SCENE_DETAIL_ID_COLUMN = "id";
         public static final String RESOURCES_ID_COLUMN = "resources_id";
         public static final String TYPE_COLUMN = "type";
         public static final String CASE_ID_COLUMN = "case_id";
