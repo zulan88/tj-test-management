@@ -35,6 +35,12 @@ public class TjFragmentedSceneDetail implements Serializable {
     private Integer fragmentedSceneId;
 
     /**
+     * 子场景编号
+     */
+    @TableField("number")
+    private String number;
+
+    /**
      * 道路走向（单向：oneWay；双向：twoWay）
      */
     @TableField("road_way")

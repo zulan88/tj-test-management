@@ -38,7 +38,7 @@ public interface Constants {
      */
     class ContentTemplate {
         public static final String EXPORT_NAME_TEMPLATE = "{}_{}_{}";
-        public static final String CASE_NUMBER_TEMPLATE = "TJ{}{}";
+        public static final String CASE_NUMBER_TEMPLATE = "CASE{}{}";
         public static final String SCENE_NAME_TEMPLATE = "{}_{}";
         public static final String COPY_SCENE_NAME_TEMPLATE = "{}_COPY{}";
     }

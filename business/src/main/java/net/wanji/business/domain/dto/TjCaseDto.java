@@ -40,7 +40,7 @@ public class TjCaseDto {
     private String label;
 
     @NotNull(message = "请确认所属场景", groups = {QueryGroup.class, InsertGroup.class})
-    private Integer fragmentedSceneId;
+    private Integer sceneDetailId;
 
     @NotNull(message = "请确认所属资源", groups = {InsertGroup.class})
     private Integer resourcesDetailId;
@@ -51,6 +51,19 @@ public class TjCaseDto {
 //    @NotBlank(message = "请输入评价对象", groups = {InsertGroup.class})
     private String evaObject;
 
+
+    /**
+     * 图片
+     */
+    @NotBlank(message = "请上传图片", groups = {UpdateGroup.class})
+    private String imgUrl;
+
+    /**
+     * 动画
+     */
+    @NotBlank(message = "请上传动画", groups = {UpdateGroup.class})
+    private String animationUrl;
+
 //    @NotBlank(message = "请输入topic", groups = UpdateGroup.class)
     private String topic;
 
@@ -60,7 +73,7 @@ public class TjCaseDto {
     @NotNull(message = "请选择状态", groups = {QueryGroup.class})
     private Integer status;
 
-    @NotEmpty(message = "请输入标签", groups = {InsertGroup.class})
+    @NotEmpty(message = "请输入标签", groups = {UpdateGroup.class})
     private List<String> labelList;
 
     @NotEmpty(message = "请选择至少一条数据", groups = {BatchGroup.class})

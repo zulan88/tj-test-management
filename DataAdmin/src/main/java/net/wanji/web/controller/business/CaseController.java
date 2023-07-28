@@ -57,6 +57,13 @@ public class CaseController extends BaseController {
         return AjaxResult.success(caseService.init());
     }
 
+    @PreAuthorize("@ss.hasPermi('case:createCase')")
+    @PostMapping("/createCase")
+    public AjaxResult createCase(@Validated(value = InsertGroup.class) @RequestBody TjCaseDto tjCaseDto)
+            throws BusinessException{
+        return AjaxResult.success(caseService.createCase(tjCaseDto));
+    }
+
     @PreAuthorize("@ss.hasPermi('case:selectTree')")
     @GetMapping("/selectTree")
     public AjaxResult selectTree(@RequestParam(value = "testType") String testType,
@@ -67,19 +74,12 @@ public class CaseController extends BaseController {
         return AjaxResult.success(tree);
     }
 
-    @PreAuthorize("@ss.hasPermi('case:createCase')")
-    @PostMapping("/createCase")
-    public AjaxResult createCase(@Validated(value = InsertGroup.class) @RequestBody TjCaseDto tjCaseDto) {
-        return caseService.createCase(tjCaseDto)
-                ? AjaxResult.success("创建成功")
-                : AjaxResult.error("创建失败");
-    }
-
-    @PreAuthorize("@ss.hasPermi('case:getSceneBaseInfo')")
-    @GetMapping("/getSceneBaseInfo")
-    public AjaxResult getSceneBaseInfo(@RequestParam("fragmentedSceneId") Integer fragmentedSceneId)
+    @PreAuthorize("@ss.hasPermi('case:getSubscenesList')")
+    @GetMapping("/getSubscenesList")
+    public AjaxResult getSubscenesList(@RequestParam(value = "testType") String testType,
+                                       @RequestParam(value = "fragmentedSceneId") Integer fragmentedSceneId)
             throws BusinessException {
-        return AjaxResult.success(caseService.getSceneBaseInfo(fragmentedSceneId));
+        return AjaxResult.success(caseService.selectSubscenesInCase(testType, fragmentedSceneId));
     }
 
     @PreAuthorize("@ss.hasPermi('case:pageForCase')")
@@ -87,6 +87,12 @@ public class CaseController extends BaseController {
     public TableDataInfo pageForCase(@Validated(value = QueryGroup.class) @RequestBody TjCaseDto tjCaseDto) {
         startPage();
         return getDataTable(caseService.getCases(tjCaseDto));
+    }
+
+    @PreAuthorize("@ss.hasPermi('case:detail')")
+    @GetMapping("/detail")
+    public AjaxResult detail(@RequestParam("id") Integer id) throws BusinessException {
+        return AjaxResult.success(caseService.getDetail(id));
     }
 
     @PreAuthorize("@ss.hasPermi('case:saveDetail')")
@@ -140,11 +146,7 @@ public class CaseController extends BaseController {
         return caseService.verifyTrajectory(id) ? AjaxResult.success("校验完成") : AjaxResult.error("校验失败");
     }
 
-    @PreAuthorize("@ss.hasPermi('case:detail')")
-    @GetMapping("/detail")
-    public AjaxResult detail(@RequestParam("id") Integer id) throws BusinessException {
-        return AjaxResult.success(caseService.getDetail(id));
-    }
+
 
     @PreAuthorize("@ss.hasPermi('case:playback')")
     @GetMapping("/playback")

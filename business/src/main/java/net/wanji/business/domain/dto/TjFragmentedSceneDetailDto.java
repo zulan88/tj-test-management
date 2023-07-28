@@ -28,6 +28,11 @@ public class TjFragmentedSceneDetailDto {
     private Integer fragmentedSceneId;
 
     /**
+     * 子场景编号
+     */
+    private String number;
+
+    /**
      * 道路走向
      */
     @NotBlank(message = "请选择道路属性", groups = {InsertGroup.class, UpdateGroup.class})
