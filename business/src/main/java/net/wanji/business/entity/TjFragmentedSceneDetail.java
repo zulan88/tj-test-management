@@ -71,8 +71,9 @@ public class TjFragmentedSceneDetail implements Serializable {
     /**
      * 场景复杂度（字典：scene_complexity）
      */
-    @TableField("img_url")
-    private String imgUrl;
+    @TableField("scene_complexity")
+    private String sceneComplexity;
+
 
     /**
      * 交通流状态（字典：traffic_flow_status）
@@ -147,39 +148,15 @@ public class TjFragmentedSceneDetail implements Serializable {
     @TableField("trajectory_info")
     private String trajectoryInfo;
 
-
     /**
-     * 道路走向（单向：oneWay；双向：twoWay）
-     *//*
-    @Deprecated
-    @TableField("road_way")
-    private String roadWay;
-
-    *//**
-     * 测试方法说明
-     *//*
-    @Deprecated
-    @TableField("test_method_desc")
-    private String testMethodDesc;
-
-    *//**
-     * 测试要求说明
-     *//*
-    @Deprecated
-    @TableField("test_requirement_desc")
-    private String testRequirementDesc;
-
-    *//**
      * 图片路径
-     *//*
-    @Deprecated
+     */
     @TableField("img_url")
     private String imgUrl;
 
-    *//**
+    /**
      * 场景类型（字典：scene_type）
-     *//*
-    @Deprecated
+     */
     @TableField("scene_type")
-    private String sceneType;*/
+    private String sceneType;
 }
