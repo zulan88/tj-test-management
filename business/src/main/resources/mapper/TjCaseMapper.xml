@@ -16,7 +16,7 @@
         c.case_number,
         c.hazard_index,
         c.label,
-        c.fragmented_scene_id,
+        c.scene_detail_id,
         c.resources_detail_id,
         c.test_target,
         c.eva_object,
@@ -30,7 +30,7 @@
         <where>
             and c.test_type = #{testType}
             and c.status = #{status}
-            and c.fragmented_scene_id = #{fragmentedSceneId}
+            and c.scene_detail_id = #{sceneDetailId}
             <if test="caseNumber != null and caseNumber !='' ">
                 and c.case_number like concat('%',#{name},'%')
             </if>
@@ -53,22 +53,26 @@
     </select>
 
     <select id="selectSceneIdInCase" resultType="net.wanji.business.entity.TjFragmentedScenes">
-        select s.*
-        from tj_fragmented_scenes s
-        left join tj_fragmented_scene_detail sd on sd.fragmented_scene_id=s.id
-        <where>
-            and s.id in (
-            select distinct fragmented_scene_id
-            from tj_case
-            where test_type=#{testType}
-            )
-            and s.type=#{type}
-            and sd.id != null
-        </where>
+        SELECT s.*
+        FROM tj_fragmented_scenes s
+        WHERE s.id IN (
+            SELECT sd.fragmented_scene_id
+            FROM tj_fragmented_scene_detail sd
+            WHERE sd.id IN (SELECT DISTINCT scene_detail_id FROM tj_case WHERE test_type = #{testType})
+        )
+          AND s.type = #{type}
     </select>
     <select id="selectUsingResources" resultType="java.lang.Integer">
         select distinct resources_detail_id
         from tj_case
+    </select>
+    <select id="selectSubscenesInCase" resultType="net.wanji.business.entity.TjFragmentedSceneDetail">
+        SELECT
+            sd.*
+        FROM
+            tj_fragmented_scene_detail sd
+        WHERE sd.id IN (SELECT DISTINCT scene_detail_id FROM tj_case WHERE test_type = #{testType})
+            AND sd.fragmented_scene_id = #{fragmentedSceneId}
     </select>
 
 </mapper>

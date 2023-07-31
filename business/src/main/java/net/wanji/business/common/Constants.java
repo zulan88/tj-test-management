@@ -38,7 +38,7 @@ public interface Constants {
      */
     class ContentTemplate {
         public static final String EXPORT_NAME_TEMPLATE = "{}_{}_{}";
-        public static final String CASE_NUMBER_TEMPLATE = "TJ{}{}";
+        public static final String CASE_NUMBER_TEMPLATE = "CASE{}{}";
         public static final String SCENE_NAME_TEMPLATE = "{}_{}";
         public static final String COPY_SCENE_NAME_TEMPLATE = "{}_COPY{}";
     }
@@ -140,9 +140,13 @@ public interface Constants {
          */
         public static final String ROAD_CONDITION = "road_condition";
         /**
-         * 收藏状态
+         * 参与者角色
          */
-        public static final String COLLECT_STATUS = "collect_status";
+        public static final String PART_ROLE = "part_role";
+        /**
+         * 参与者类型
+         */
+        public static final String PART_TYPE = "part_type";
     }
 
     /**

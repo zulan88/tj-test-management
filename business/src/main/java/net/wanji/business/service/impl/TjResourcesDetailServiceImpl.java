@@ -117,11 +117,11 @@ public class TjResourcesDetailServiceImpl extends ServiceImpl<TjResourcesDetailM
     }
 
     @Override
-    public List<TjResourcesDetail> getMapSelect(String resourceType, String roadType, String roadPoint,
+    public List<TjResourcesDetail> getMapSelect(String type, String sceneTreeType, String roadWayType,
                                                 Integer laneNum) {
         List<TjResourcesDetail> details = new ArrayList<>();
         QueryWrapper<TjResources> resourceQueryWrapper = new QueryWrapper();
-        resourceQueryWrapper.eq(ColumnName.TYPE_COLUMN, resourceType).select(ColumnName.ID_COLUMN);
+        resourceQueryWrapper.eq(ColumnName.TYPE_COLUMN, type).select(ColumnName.ID_COLUMN);
         List<TjResources> tjResources = resourcesMapper.selectList(resourceQueryWrapper);
         if (CollectionUtils.isEmpty(tjResources)) {
             return details;
@@ -131,10 +131,10 @@ public class TjResourcesDetailServiceImpl extends ServiceImpl<TjResourcesDetailM
                 tjResources.stream().map(TjResources::getId).collect(Collectors.toList()));
         details = this.list(detailQueryWrapper);
         return details.stream().filter(item -> {
-            boolean a = StringUtils.isEmpty(roadType) || (!ObjectUtils.isEmpty(item.getAttribute1())
-                    && StringUtils.equals(item.getAttribute1(), roadType));
-            boolean b = StringUtils.isEmpty(roadPoint) || (!ObjectUtils.isEmpty(item.getAttribute2())
-                    && StringUtils.equals(item.getAttribute2(), roadPoint));
+            boolean a = StringUtils.isEmpty(sceneTreeType) || (!ObjectUtils.isEmpty(item.getAttribute1())
+                    && StringUtils.equals(item.getAttribute1(), sceneTreeType));
+            boolean b = StringUtils.isEmpty(roadWayType) || (!ObjectUtils.isEmpty(item.getAttribute2())
+                    && StringUtils.equals(item.getAttribute2(), roadWayType));
             boolean c = ObjectUtils.isEmpty(laneNum) || (!ObjectUtils.isEmpty(item.getAttribute3())
                     && StringUtils.equals(item.getAttribute3(), String.valueOf(laneNum)));
             return a && b && c;

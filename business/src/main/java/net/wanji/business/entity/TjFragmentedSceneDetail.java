@@ -4,11 +4,10 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import java.io.Serializable;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-
-import java.io.Serializable;
 
 /**
  * <p>
@@ -37,9 +36,12 @@ public class TjFragmentedSceneDetail implements Serializable {
 
     /**
      * 道路渠化.车道类型
+     * 子场景编号
      */
     @TableField("road_way_type")
     private String roadWayType;
+    @TableField("number")
+    private String number;
 
     /**
      * 道路渠化.车道类型
@@ -69,8 +71,8 @@ public class TjFragmentedSceneDetail implements Serializable {
     /**
      * 场景复杂度（字典：scene_complexity）
      */
-    @TableField("scene_complexity")
-    private String sceneComplexity;
+    @TableField("img_url")
+    private String imgUrl;
 
     /**
      * 交通流状态（字典：traffic_flow_status）

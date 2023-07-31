@@ -1,7 +1,12 @@
 package net.wanji.business.mapper;
 
+import net.wanji.business.domain.dto.SceneQueryDto;
+import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
+import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+
+import java.util.List;
 
 /**
  * <p>
@@ -13,4 +18,5 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  */
 public interface TjFragmentedSceneDetailMapper extends BaseMapper<TjFragmentedSceneDetail> {
 
+    List<FragmentedScenesDetailVo> selectByCondition(SceneQueryDto sceneQueryDto);
 }

@@ -20,6 +20,7 @@ import net.wanji.business.service.TjFragmentedSceneDetailService;
 import net.wanji.business.service.TjFragmentedScenesService;
 import net.wanji.common.utils.bean.BeanUtils;
 import net.wanji.system.service.ISysDictDataService;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +28,7 @@ import org.springframework.util.ObjectUtils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -84,36 +86,25 @@ public class TjFragmentedSceneDetailServiceImpl
     }
 
     @Override
-    public List<TjFragmentedSceneDetail> selectScene(SceneQueryDto queryDto) {
-        QueryWrapper<TjFragmentedSceneDetail> queryWrapper = new QueryWrapper<>();
-        if (ObjectUtil.isNotEmpty(queryDto.getFragmentedSceneId())) {
-            queryWrapper.eq("fragmented_scene_id", queryDto.getFragmentedSceneId());
+    public List<FragmentedScenesDetailVo> selectScene(SceneQueryDto queryDto) throws BusinessException {
+        TjFragmentedScenes scenes = scenesMapper.selectById(queryDto.getFragmentedSceneId());
+        if (ObjectUtils.isEmpty(scenes)) {
+            throw new BusinessException("场景不存在");
         }
-        if (ObjectUtil.isNotEmpty(queryDto.getResourcesDetailId())) {
-            queryWrapper.in("resources_detail_id", queryDto.getResourcesDetailId().split(","));
-        }
-        if (ObjectUtil.isNotEmpty(queryDto.getSceneType())) {
-            queryWrapper.in("scene_type", queryDto.getSceneType().split(","));
-        }
-        if (ObjectUtil.isNotEmpty(queryDto.getSceneComplexity())) {
-            queryWrapper.in("scene_complexity", queryDto.getSceneComplexity().split(","));
-        }
-        if (ObjectUtil.isNotEmpty(queryDto.getTrafficFlowStatus())) {
-            queryWrapper.in("traffic_flow_status", queryDto.getTrafficFlowStatus().split(","));
-        }
-        if (ObjectUtil.isNotEmpty(queryDto.getRoadType())) {
-            queryWrapper.in("road_type", queryDto.getRoadType().split(","));
-        }
-        if (ObjectUtil.isNotEmpty(queryDto.getWeather())) {
-            queryWrapper.in("weather", queryDto.getWeather().split(","));
-        }
-        if (ObjectUtil.isNotEmpty(queryDto.getRoadCondition())) {
-            queryWrapper.in("road_condition",queryDto.getRoadCondition().split(","));
-        }
-        if (ObjectUtil.isNotEmpty(queryDto.getCollectStatus())) {
-            queryWrapper.eq("collect_status", queryDto.getCollectStatus());
-        }
-
-        return sceneDetailMapper.selectList(queryWrapper);
+        String typeName = dictDataService.selectDictLabel(SysType.SCENE_TREE_TYPE, scenes.getType());
+        List<FragmentedScenesDetailVo> detailVos = sceneDetailMapper.selectByCondition(queryDto);
+        CollectionUtils.emptyIfNull(detailVos).forEach(detail -> {
+            detail.setTypeName(typeName);
+            detail.setRoadTypeName(dictDataService.selectDictLabel(SysType.ROAD_TYPE, detail.getRoadType()));
+            detail.setRoadWayName(dictDataService.selectDictLabel(SysType.ROAD_WAY_TYPE, detail.getRoadWayType()));
+            detail.setRoadConditionName(dictDataService.selectDictLabel(SysType.ROAD_CONDITION, detail.getRoadCondition()));
+            detail.setWeatherName(dictDataService.selectDictLabel(SysType.WEATHER, detail.getWeather()));
+            detail.setTrafficFlowStatusName(dictDataService.selectDictLabel(SysType.TRAFFIC_FLOW_STATUS,
+                    detail.getTrafficFlowStatus()));
+            detail.setSceneComplexityName(dictDataService.selectDictLabel(SysType.SCENE_COMPLEXITY,
+                    detail.getSceneComplexity()));
+            detail.setSceneTypeName(dictDataService.selectDictLabel(SysType.SCENE_TYPE, detail.getSceneType()));
+        });
+        return detailVos;
     }
 }

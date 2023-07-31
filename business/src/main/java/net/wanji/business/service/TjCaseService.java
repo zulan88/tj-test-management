@@ -6,8 +6,10 @@ import net.wanji.business.domain.vo.CaseVerificationVo;
 import net.wanji.business.domain.vo.CaseVo;
 import net.wanji.business.domain.vo.SceneBaseVo;
 import net.wanji.business.entity.TjCase;
+import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.exception.BusinessException;
+import net.wanji.common.core.domain.SimpleSelect;
 
 import java.io.IOException;
 import java.util.List;
@@ -28,7 +30,13 @@ public interface TjCaseService extends IService<TjCase> {
      *
      * @return
      */
-    Map<String, Object> init();
+    Map<String, List<SimpleSelect>> init();
+
+    /**
+     * 配置页初始化
+     * @return
+     */
+    Map<String, List<SimpleSelect>> initEditPage();
 
     /**
      * 查询测试用例中包含的场景
@@ -39,14 +47,6 @@ public interface TjCaseService extends IService<TjCase> {
      * @return
      */
     List<TjFragmentedScenes> selectScenesInCase(String testType, String type);
-
-    /**
-     * 获取场景基本信息
-     *
-     * @param fragmentedSceneId
-     * @return
-     */
-    SceneBaseVo getSceneBaseInfo(Integer fragmentedSceneId) throws BusinessException;
 
     /**
      * 条件查询
@@ -62,8 +62,17 @@ public interface TjCaseService extends IService<TjCase> {
      * @param tjCaseDto
      * @return
      */
-    boolean createCase(TjCaseDto tjCaseDto);
+    Integer createCase(TjCaseDto tjCaseDto) throws BusinessException;
 
+
+    /**
+     * 查询场景下包含测试用例的子场景
+     *
+     * @param testType 测试方法
+     * @param fragmentedSceneId 片段式场景id
+     * @return
+     */
+    List<TjFragmentedSceneDetail> selectSubscenesInCase(String testType, Integer fragmentedSceneId);
 
     /**
      * 保存仿真信息

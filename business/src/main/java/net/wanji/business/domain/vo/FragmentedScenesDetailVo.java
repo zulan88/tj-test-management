@@ -16,13 +16,43 @@ import java.util.stream.Collectors;
  */
 public class FragmentedScenesDetailVo extends TjFragmentedSceneDetail {
 
+    private String typeName;
+
+    private String resourcesName;
+
     private String roadTypeName;
 
     private String roadWayName;
 
+    private String roadConditionName;
+
+    private String weatherName;
+
+    private String trafficFlowStatusName;
+
+    private String sceneComplexityName;
+
+    private String sceneTypeName;
+
     private Map trajectoryJson;
 
     private List<String> labelList;
+
+    public String getTypeName() {
+        return typeName;
+    }
+
+    public void setTypeName(String typeName) {
+        this.typeName = typeName;
+    }
+
+    public String getResourcesName() {
+        return resourcesName;
+    }
+
+    public void setResourcesName(String resourcesName) {
+        this.resourcesName = resourcesName;
+    }
 
     public String getRoadTypeName() {
         return roadTypeName;
@@ -38,6 +68,46 @@ public class FragmentedScenesDetailVo extends TjFragmentedSceneDetail {
 
     public void setRoadWayName(String roadWayName) {
         this.roadWayName = roadWayName;
+    }
+
+    public String getRoadConditionName() {
+        return roadConditionName;
+    }
+
+    public void setRoadConditionName(String roadConditionName) {
+        this.roadConditionName = roadConditionName;
+    }
+
+    public String getWeatherName() {
+        return weatherName;
+    }
+
+    public void setWeatherName(String weatherName) {
+        this.weatherName = weatherName;
+    }
+
+    public String getTrafficFlowStatusName() {
+        return trafficFlowStatusName;
+    }
+
+    public void setTrafficFlowStatusName(String trafficFlowStatusName) {
+        this.trafficFlowStatusName = trafficFlowStatusName;
+    }
+
+    public String getSceneComplexityName() {
+        return sceneComplexityName;
+    }
+
+    public void setSceneComplexityName(String sceneComplexityName) {
+        this.sceneComplexityName = sceneComplexityName;
+    }
+
+    public String getSceneTypeName() {
+        return sceneTypeName;
+    }
+
+    public void setSceneTypeName(String sceneTypeName) {
+        this.sceneTypeName = sceneTypeName;
     }
 
     public Map getTrajectoryJson() {

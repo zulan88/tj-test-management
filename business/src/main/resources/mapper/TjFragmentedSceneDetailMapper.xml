@@ -2,4 +2,62 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="net.wanji.business.mapper.TjFragmentedSceneDetailMapper">
 
+    <select id="selectByCondition" resultType="net.wanji.business.domain.vo.FragmentedScenesDetailVo">
+        SELECT
+            sd.*,
+            rd.name as resourcesName
+        FROM tj_fragmented_scene_detail sd
+        LEFT JOIN tj_resources_detail rd ON rd.id = sd.resources_detail_id
+        <where>
+            <if test="fragmentedSceneId != null and fragmentedSceneId > 0 ">
+                AND sd.fragmented_scene_id=#{fragmentedSceneId}
+            </if>
+            <if test="resourcesDetailId != null and resourcesDetailId != '' ">
+                AND sd.resources_detail_id in
+                <foreach collection="resourcesDetailId.split(',')" item="detailId" open="(" separator="," close=")">
+                    #{detailId}
+                </foreach>
+            </if>
+            <if test="sceneType != null and sceneType != '' ">
+                AND sd.scene_type in
+                <foreach collection="sceneType.split(',')" item="st" open="(" separator="," close=")">
+                    #{st}
+                </foreach>
+            </if>
+            <if test="sceneComplexity != null and sceneComplexity != '' ">
+                AND sd.scene_complexity in
+                <foreach collection="sceneComplexity.split(',')" item="sc" open="(" separator="," close=")">
+                    #{sc}
+                </foreach>
+            </if>
+            <if test="trafficFlowStatus != null and trafficFlowStatus != '' ">
+                AND sd.traffic_flow_status in
+                <foreach collection="trafficFlowStatus.split(',')" item="tfs" open="(" separator="," close=")">
+                    #{tfs}
+                </foreach>
+            </if>
+            <if test="roadType != null and roadType != '' ">
+                AND sd.road_type in
+                <foreach collection="roadType.split(',')" item="rt" open="(" separator="," close=")">
+                    #{rt}
+                </foreach>
+            </if>
+            <if test="weather != null and weather != '' ">
+                AND sd.weather in
+                <foreach collection="weather.split(',')" item="wt" open="(" separator="," close=")">
+                    #{wt}
+                </foreach>
+            </if>
+            <if test="roadCondition != null and roadCondition != '' ">
+                AND sd.road_condition in
+                <foreach collection="roadCondition.split(',')" item="rc" open="(" separator="," close=")">
+                    #{rc}
+                </foreach>
+            </if>
+            <if test="collectStatus != null and collectStatus > 0 ">
+                AND sd.collect_status=#{collectStatus}
+            </if>
+        </where>
+
+    </select>
 </mapper>

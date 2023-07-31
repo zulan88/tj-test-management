@@ -9,11 +9,14 @@ import net.wanji.business.common.Constants.PlaybackAction;
 import net.wanji.business.common.Constants.QueryGroup;
 import net.wanji.business.common.Constants.UpdateGroup;
 import net.wanji.business.domain.BusinessTreeSelect;
+import net.wanji.business.domain.dto.SceneQueryDto;
 import net.wanji.business.domain.dto.TjCaseDto;
 import net.wanji.business.entity.TjCase;
+import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.TjCaseService;
+import net.wanji.business.service.TjFragmentedSceneDetailService;
 import net.wanji.business.service.TjFragmentedScenesService;
 import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
@@ -51,35 +54,42 @@ public class CaseController extends BaseController {
     @Autowired
     private TjFragmentedScenesService scenesService;
 
+    @Autowired
+    private TjFragmentedSceneDetailService sceneDetailService;
+
     @PreAuthorize("@ss.hasPermi('case:init')")
     @GetMapping("/init")
     public AjaxResult init() {
         return AjaxResult.success(caseService.init());
     }
 
-    @PreAuthorize("@ss.hasPermi('case:selectTree')")
-    @GetMapping("/selectTree")
-    public AjaxResult selectTree(@RequestParam(value = "testType") String testType,
-                                 @RequestParam(value = "type") String type,
-                                 @RequestParam(value = "name", required = false) String name) {
-        List<TjFragmentedScenes> scenes = caseService.selectScenesInCase(testType, type);
-        List<BusinessTreeSelect> tree = scenesService.buildSceneTreeSelect(scenes, name);
-        return AjaxResult.success(tree);
+    @PreAuthorize("@ss.hasPermi('case:initEditPage')")
+    @GetMapping("/initEditPage")
+    public AjaxResult initEditPage() {
+        return AjaxResult.success(caseService.initEditPage());
     }
 
     @PreAuthorize("@ss.hasPermi('case:createCase')")
     @PostMapping("/createCase")
-    public AjaxResult createCase(@Validated(value = InsertGroup.class) @RequestBody TjCaseDto tjCaseDto) {
-        return caseService.createCase(tjCaseDto)
-                ? AjaxResult.success("创建成功")
-                : AjaxResult.error("创建失败");
+    public AjaxResult createCase(@Validated(value = InsertGroup.class) @RequestBody TjCaseDto tjCaseDto)
+            throws BusinessException{
+        return AjaxResult.success(caseService.createCase(tjCaseDto));
     }
 
-    @PreAuthorize("@ss.hasPermi('case:getSceneBaseInfo')")
-    @GetMapping("/getSceneBaseInfo")
-    public AjaxResult getSceneBaseInfo(@RequestParam("fragmentedSceneId") Integer fragmentedSceneId)
+    @PreAuthorize("@ss.hasPermi('case:selectTree')")
+    @GetMapping("/selectTree")
+    public AjaxResult selectTree(@RequestParam(value = "type") String type,
+                                 @RequestParam(value = "name", required = false) String name) {
+        List<TjFragmentedScenes> usingScenes = scenesService.selectUsingScenes(type);
+        List<BusinessTreeSelect> tree = scenesService.buildSceneTreeSelect(usingScenes, name);
+        return AjaxResult.success(tree);
+    }
+
+    @PreAuthorize("@ss.hasPermi('case:getSubscenesList')")
+    @GetMapping("/getSubscenesList")
+    public AjaxResult getSubscenesList(@RequestBody SceneQueryDto sceneQueryDto)
             throws BusinessException {
-        return AjaxResult.success(caseService.getSceneBaseInfo(fragmentedSceneId));
+        return AjaxResult.success(sceneDetailService.selectScene(sceneQueryDto));
     }
 
     @PreAuthorize("@ss.hasPermi('case:pageForCase')")
@@ -87,6 +97,12 @@ public class CaseController extends BaseController {
     public TableDataInfo pageForCase(@Validated(value = QueryGroup.class) @RequestBody TjCaseDto tjCaseDto) {
         startPage();
         return getDataTable(caseService.getCases(tjCaseDto));
+    }
+
+    @PreAuthorize("@ss.hasPermi('case:detail')")
+    @GetMapping("/detail")
+    public AjaxResult detail(@RequestParam("id") Integer id) throws BusinessException {
+        return AjaxResult.success(caseService.getDetail(id));
     }
 
     @PreAuthorize("@ss.hasPermi('case:saveDetail')")
@@ -140,11 +156,7 @@ public class CaseController extends BaseController {
         return caseService.verifyTrajectory(id) ? AjaxResult.success("校验完成") : AjaxResult.error("校验失败");
     }
 
-    @PreAuthorize("@ss.hasPermi('case:detail')")
-    @GetMapping("/detail")
-    public AjaxResult detail(@RequestParam("id") Integer id) throws BusinessException {
-        return AjaxResult.success(caseService.getDetail(id));
-    }
+
 
     @PreAuthorize("@ss.hasPermi('case:playback')")
     @GetMapping("/playback")

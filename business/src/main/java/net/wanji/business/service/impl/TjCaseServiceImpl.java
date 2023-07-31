@@ -2,14 +2,17 @@ package net.wanji.business.service.impl;
 
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.wanji.business.common.Constants.CaseStatusEnum;
+import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.business.common.Constants.PlaybackAction;
 import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.domain.bo.CaseDetailBo;
+import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.bo.VehicleTrajectoryBo;
 import net.wanji.business.domain.dto.TjCaseDto;
 import net.wanji.business.domain.vo.CaseVerificationVo;
@@ -17,14 +20,18 @@ import net.wanji.business.domain.vo.CaseVo;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
 import net.wanji.business.domain.vo.SceneBaseVo;
 import net.wanji.business.entity.TjCase;
+import net.wanji.business.entity.TjCasePartConfig;
+import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.schedule.PlaybackSchedule;
 import net.wanji.business.service.RouteService;
+import net.wanji.business.service.TjCasePartConfigService;
 import net.wanji.business.service.TjCaseService;
 import net.wanji.business.service.TjFragmentedSceneDetailService;
 import net.wanji.business.service.TjFragmentedScenesService;
+import net.wanji.common.core.domain.SimpleSelect;
 import net.wanji.common.core.domain.entity.SysDictData;
 import net.wanji.common.utils.CounterUtil;
 import net.wanji.common.utils.DateUtils;
@@ -49,6 +56,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -73,16 +81,29 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     private TjFragmentedSceneDetailService sceneDetailService;
 
     @Autowired
+    private TjCasePartConfigService casePartConfigService;
+
+    @Autowired
     private RouteService routeService;
 
     @Autowired
     private TjCaseMapper caseMapper;
 
     @Override
-    public Map<String, Object> init() {
-        List<SysDictData> sysDictData = dictTypeService.selectDictDataByType(SysType.SCENE_TREE_TYPE);
-        Map<String, Object> result = new HashMap<>(1);
-        result.put("sceneTreeType", sysDictData);
+    public Map<String, List<SimpleSelect>> init() {
+        List<SysDictData> sceneTreeType = dictTypeService.selectDictDataByType(SysType.SCENE_TREE_TYPE);
+        Map<String, List<SimpleSelect>> result = new HashMap<>(1);
+        result.put(SysType.SCENE_TREE_TYPE, CollectionUtils.emptyIfNull(sceneTreeType).stream()
+                .map(SimpleSelect::new).collect(Collectors.toList()));
+        return result;
+    }
+
+    @Override
+    public Map<String, List<SimpleSelect>> initEditPage() {
+        List<SysDictData> partRole = dictTypeService.selectDictDataByType(SysType.PART_ROLE);
+        Map<String, List<SimpleSelect>> result = new HashMap<>(1);
+        result.put(SysType.PART_ROLE, CollectionUtils.emptyIfNull(partRole).stream()
+                .map(SimpleSelect::new).collect(Collectors.toList()));
         return result;
     }
 
@@ -113,14 +134,6 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     }
 
     @Override
-    public SceneBaseVo getSceneBaseInfo(Integer fragmentedSceneId) throws BusinessException {
-        FragmentedScenesDetailVo detailVo = sceneDetailService.getDetailVo(fragmentedSceneId);
-        SceneBaseVo sceneBaseVo = new SceneBaseVo();
-        BeanUtils.copyBeanProp(sceneBaseVo, detailVo);
-        return sceneBaseVo;
-    }
-
-    @Override
     public List<CaseVo> getCases(TjCaseDto tjCaseDto) {
         List<CaseVo> result = caseMapper.selectCases(tjCaseDto);
         return result;
@@ -128,18 +141,32 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
 
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public boolean createCase(TjCaseDto tjCaseDto) {
-        if (ObjectUtils.isEmpty(tjCaseDto.getId())) {
-            TjCase tjCase = new TjCase();
-            BeanUtils.copyBeanProp(tjCase, tjCaseDto);
-            tjCase.setCaseNumber(this.buildCaseNumber());
-            tjCase.setLabel(String.join(",", tjCaseDto.getLabelList()));
-            tjCase.setStatus(CaseStatusEnum.TO_BE_SIMULATED.getCode());
-            tjCase.setCreatedBy(SecurityUtils.getUsername());
-            tjCase.setCreatedDate(LocalDateTime.now());
-            return this.save(tjCase);
+    public Integer createCase(TjCaseDto tjCaseDto) throws BusinessException {
+        TjFragmentedSceneDetail sceneDetail = sceneDetailService.getById(tjCaseDto.getSceneDetailId());
+        if (ObjectUtils.isEmpty(sceneDetail) || StringUtils.isEmpty(sceneDetail.getTrajectoryInfo())) {
+            throw new BusinessException("请先配置轨迹信息");
         }
-        return false;
+        SceneTrajectoryBo trajectoryBo = JSONObject.parseObject(sceneDetail.getTrajectoryInfo(), SceneTrajectoryBo.class);
+
+        CaseDetailBo caseDetailBo = new CaseDetailBo();
+        caseDetailBo.setVehicleTrajectory(trajectoryBo.getVehicle());
+
+        TjCase tjCase = new TjCase();
+        tjCase.setTestType(tjCaseDto.getTestType());
+        tjCase.setCaseNumber(this.buildCaseNumber());
+        tjCase.setSceneDetailId(tjCaseDto.getSceneDetailId());
+        tjCase.setResourcesDetailId(tjCaseDto.getResourcesDetailId());
+        tjCase.setDetailInfo(JSONObject.toJSONString(caseDetailBo));
+        tjCase.setStatus(CaseStatusEnum.TO_BE_CONFIG.getCode());
+        tjCase.setCreatedBy(SecurityUtils.getUsername());
+        tjCase.setCreatedDate(LocalDateTime.now());
+        this.save(tjCase);
+        return tjCase.getId();
+    }
+
+    @Override
+    public List<TjFragmentedSceneDetail> selectSubscenesInCase(String testType, Integer fragmentedSceneId) {
+        return caseMapper.selectSubscenesInCase(testType, fragmentedSceneId);
     }
 
     @Override
@@ -251,28 +278,36 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
         if (ObjectUtils.isEmpty(tjCase)) {
             throw new BusinessException("测试用例不存在");
         }
-        if (ObjectUtils.isEmpty(tjCase.getTopic()) || ObjectUtils.isEmpty(tjCase.getLocalFile())) {
-            throw new BusinessException("请先上传仿真信息");
-        }
+        CaseDetailBo caseDetailBo = JSONObject.parseObject(tjCase.getDetailInfo(), CaseDetailBo.class);
+
+        QueryWrapper<TjCasePartConfig> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq(ColumnName.CASE_ID_COLUMN, caseId);
+        List<TjCasePartConfig> caseConfig = casePartConfigService.list(queryWrapper);
+        Map<String, String> configMap = CollectionUtils.emptyIfNull(caseConfig).stream()
+                .collect(Collectors.toMap(TjCasePartConfig::getBusinessId, TjCasePartConfig::getParticipantRole));
+
+//        if (ObjectUtils.isEmpty(tjCase.getTopic()) || ObjectUtils.isEmpty(tjCase.getLocalFile())) {
+//            throw new BusinessException("请先上传仿真信息");
+//        }
         CaseVerificationVo result = new CaseVerificationVo(tjCase);
-        Map<String, List<Map<String, Double>>> pointMap = null;
-        try {
-            List<List<Map>> e1List = routeService.readRouteFile(tjCase.getRouteFile());
-            pointMap = routeService.extractRoute(e1List);
-        } catch (IOException e) {
-            log.error("文件读取异常");
-            return result;
-        }
-        if (!ObjectUtils.isEmpty(pointMap)) {
-            for (VehicleTrajectoryBo trajectoryBo : result.getDetailInfo().getVehicleTrajectory()) {
-                if (pointMap.containsKey(trajectoryBo.getId())) {
-                    List<Map<String, Double>> list = pointMap.get(trajectoryBo.getId());
-                    trajectoryBo.setRoute(list);
-                    int sec = (int) Math.ceil((double) list.size() / 10);
-                    trajectoryBo.setDuration(DateUtils.secondsToDuration(sec));
-                }
-            }
-        }
+//        Map<String, List<Map<String, Double>>> pointMap = null;
+//        try {
+//            List<List<Map>> e1List = routeService.readRouteFile(tjCase.getRouteFile());
+//            pointMap = routeService.extractRoute(e1List);
+//        } catch (IOException e) {
+//            log.error("文件读取异常");
+//            return result;
+//        }
+//        if (!ObjectUtils.isEmpty(pointMap)) {
+//            for (VehicleTrajectoryBo trajectoryBo : result.getDetailInfo().getVehicleTrajectory()) {
+//                if (pointMap.containsKey(trajectoryBo.getId())) {
+//                    List<Map<String, Double>> list = pointMap.get(trajectoryBo.getId());
+//                    trajectoryBo.setRoute(list);
+//                    int sec = (int) Math.ceil((double) list.size() / 10);
+//                    trajectoryBo.setDuration(DateUtils.secondsToDuration(sec));
+//                }
+//            }
+//        }
         return result;
     }
 

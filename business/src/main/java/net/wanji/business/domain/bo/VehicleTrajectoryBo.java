@@ -21,6 +21,10 @@ public class VehicleTrajectoryBo {
      */
     private String type;
     /**
+     * 角色（AV：AV；MV-实车：MV_REAL；MV-仿真车：MV_SIMULATION；SP：SP）
+     */
+    private String role;
+    /**
      * 点位详情
      */
     private List<TrajectoryDetailBo> trajectory;

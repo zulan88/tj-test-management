@@ -15,4 +15,6 @@ public class CaseDetailBo {
     private String sceneForm;
     private String evaluationVerify;
     private List<VehicleTrajectoryBo> vehicleTrajectory;
+    private List<VehicleTrajectoryBo> pedestrianTrajectory;
+    private List<Object> obstacle;
 }

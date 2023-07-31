@@ -84,6 +84,20 @@ public class TjCase implements Serializable {
     private String evaObject;
 
     /**
+     * 图片
+     */
+    @TableField("img_url")
+    @Excel(name = "图片")
+    private String imgUrl;
+
+    /**
+     * 动画
+     */
+    @TableField("animation_url")
+    @Excel(name = "动画")
+    private String animationUrl;
+
+    /**
      * 仿真点位详情
      */
     @TableField("detail_info")

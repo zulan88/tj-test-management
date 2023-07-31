@@ -48,13 +48,13 @@ public interface TjResourcesDetailService extends IService<TjResourcesDetail> {
 
     /**
      * 根据条件查询地图下拉列表
-     * @param resourceType
-     * @param roadType
-     * @param roadPoint
-     * @param laneNum
+     * @param type 资源类型
+     * @param sceneTreeType 道路类型
+     * @param roadWayType 道路单双向
+     * @param laneNum 车道数
      * @return
      */
-    List<TjResourcesDetail> getMapSelect(String resourceType, String roadType, String roadPoint, Integer laneNum);
+    List<TjResourcesDetail> getMapSelect(String type, String sceneTreeType, String roadWayType, Integer laneNum);
 
     List<TjResourcesDetail> selectAllResource();
 }

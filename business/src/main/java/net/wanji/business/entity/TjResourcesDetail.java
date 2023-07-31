@@ -67,13 +67,13 @@ public class TjResourcesDetail implements Serializable {
     private String imgPath;
 
     /**
-     * 自定义字段1（地图：道路类型；）
+     * 自定义字段1（地图：道路类型scene_tree_type；）
      */
     @TableField("attribute1")
     private String attribute1;
 
     /**
-     * 自定义字段2（地图：道路属性（单双向）；）
+     * 自定义字段2（地图：道路属性road_way_type；）
      */
     @TableField("attribute2")
     private String attribute2;
