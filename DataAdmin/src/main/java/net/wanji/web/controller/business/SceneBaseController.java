@@ -121,7 +121,7 @@ public class SceneBaseController extends BaseController {
      * 查询场景叶子节点下的子场景列表
      */
     @PostMapping("/selectScene")
-    public AjaxResult selectScene(@RequestBody SceneQueryDto queryDto) {
+    public AjaxResult selectScene(@Validated @RequestBody SceneQueryDto queryDto) throws BusinessException {
         return AjaxResult.success(tjFragmentedSceneDetailService.selectScene(queryDto));
     }
 }

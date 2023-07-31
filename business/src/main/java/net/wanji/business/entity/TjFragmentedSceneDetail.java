@@ -41,12 +41,6 @@ public class TjFragmentedSceneDetail implements Serializable {
     private String number;
 
     /**
-     * 道路走向（单向：oneWay；双向：twoWay）
-     */
-    @TableField("road_way")
-    private String roadWay;
-
-    /**
      * 车道数
      */
     @TableField("lane_num")
@@ -136,5 +130,11 @@ public class TjFragmentedSceneDetail implements Serializable {
     @TableField("trajectory_info")
     private String trajectoryInfo;
 
+
+    /**
+     * 车道类型，道路走向（字典：road_way_type）
+     */
+    @TableField("road_way_type")
+    private String roadWayType;
 
 }

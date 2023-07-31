@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+import javax.validation.constraints.NotNull;
+
 /**
  * @author liuzhiheng
  * @date
@@ -17,6 +19,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class SceneQueryDto {
 
+    @NotNull(message = "请确认所属场景")
     private Integer fragmentedSceneId; // 片段式场景id
     private String resourcesDetailId; // 地图(多选以,分隔)
     private String sceneType; // 场景类型(多选以,分隔)

@@ -9,11 +9,14 @@ import net.wanji.business.common.Constants.PlaybackAction;
 import net.wanji.business.common.Constants.QueryGroup;
 import net.wanji.business.common.Constants.UpdateGroup;
 import net.wanji.business.domain.BusinessTreeSelect;
+import net.wanji.business.domain.dto.SceneQueryDto;
 import net.wanji.business.domain.dto.TjCaseDto;
 import net.wanji.business.entity.TjCase;
+import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.TjCaseService;
+import net.wanji.business.service.TjFragmentedSceneDetailService;
 import net.wanji.business.service.TjFragmentedScenesService;
 import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
@@ -51,6 +54,9 @@ public class CaseController extends BaseController {
     @Autowired
     private TjFragmentedScenesService scenesService;
 
+    @Autowired
+    private TjFragmentedSceneDetailService sceneDetailService;
+
     @PreAuthorize("@ss.hasPermi('case:init')")
     @GetMapping("/init")
     public AjaxResult init() {
@@ -72,20 +78,18 @@ public class CaseController extends BaseController {
 
     @PreAuthorize("@ss.hasPermi('case:selectTree')")
     @GetMapping("/selectTree")
-    public AjaxResult selectTree(@RequestParam(value = "testType") String testType,
-                                 @RequestParam(value = "type") String type,
+    public AjaxResult selectTree(@RequestParam(value = "type") String type,
                                  @RequestParam(value = "name", required = false) String name) {
-        List<TjFragmentedScenes> scenes = caseService.selectScenesInCase(testType, type);
-        List<BusinessTreeSelect> tree = scenesService.buildSceneTreeSelect(scenes, name);
+        List<TjFragmentedScenes> usingScenes = scenesService.selectUsingScenes(type);
+        List<BusinessTreeSelect> tree = scenesService.buildSceneTreeSelect(usingScenes, name);
         return AjaxResult.success(tree);
     }
 
     @PreAuthorize("@ss.hasPermi('case:getSubscenesList')")
     @GetMapping("/getSubscenesList")
-    public AjaxResult getSubscenesList(@RequestParam(value = "testType") String testType,
-                                       @RequestParam(value = "fragmentedSceneId") Integer fragmentedSceneId)
+    public AjaxResult getSubscenesList(@RequestBody SceneQueryDto sceneQueryDto)
             throws BusinessException {
-        return AjaxResult.success(caseService.selectSubscenesInCase(testType, fragmentedSceneId));
+        return AjaxResult.success(sceneDetailService.selectScene(sceneQueryDto));
     }
 
     @PreAuthorize("@ss.hasPermi('case:pageForCase')")

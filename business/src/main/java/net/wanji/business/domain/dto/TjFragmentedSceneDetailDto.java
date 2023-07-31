@@ -1,8 +1,8 @@
 package net.wanji.business.domain.dto;
 
-import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
 import net.wanji.business.common.Constants.InsertGroup;
+import net.wanji.business.common.Constants.QueryGroup;
 import net.wanji.business.common.Constants.UpdateGroup;
 
 import javax.validation.constraints.NotBlank;
@@ -24,7 +24,7 @@ public class TjFragmentedSceneDetailDto {
     /**
      * 片段式场景id
      */
-    @NotNull(message = "请确认场景", groups = {InsertGroup.class, UpdateGroup.class})
+    @NotNull(message = "请确认场景", groups = {QueryGroup.class, InsertGroup.class, UpdateGroup.class})
     private Integer fragmentedSceneId;
 
     /**
