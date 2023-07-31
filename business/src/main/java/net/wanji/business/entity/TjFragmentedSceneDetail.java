@@ -4,10 +4,11 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import java.io.Serializable;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+
+import java.io.Serializable;
 
 /**
  * <p>
@@ -35,12 +36,13 @@ public class TjFragmentedSceneDetail implements Serializable {
     private Integer fragmentedSceneId;
 
     /**
-     * 道路走向（单向：oneWay；双向：twoWay）
+     * 道路渠化.车道类型
      */
-    @TableField("road_way")
-    private String roadWay;
+    @TableField("road_way_type")
+    private String roadWayType;
 
     /**
+     * 道路渠化.车道类型
      * 车道数
      */
     @TableField("lane_num")
@@ -53,16 +55,10 @@ public class TjFragmentedSceneDetail implements Serializable {
     private Integer resourcesDetailId;
 
     /**
-     * 测试方法说明
+     * 场景描述
      */
-    @TableField("test_method_desc")
-    private String testMethodDesc;
-
-    /**
-     * 测试要求说明
-     */
-    @TableField("test_requirement_desc")
-    private String testRequirementDesc;
+    @TableField("scene_desc")
+    private String testSceneDesc;
 
     /**
      * 场景来源
@@ -71,28 +67,10 @@ public class TjFragmentedSceneDetail implements Serializable {
     private String sceneSource;
 
     /**
-     * 图片路径
+     * 场景复杂度（字典：scene_complexity）
      */
-    @TableField("img_url")
-    private String imgUrl;
-
-    /**
-     * 路面状况（字典：road_condition）
-     */
-    @TableField("road_condition")
-    private String roadCondition;
-
-    /**
-     * 道路类型(字典：road_type)
-     */
-    @TableField("road_type")
-    private String roadType;
-
-    /**
-     * 天气（字典：weather）
-     */
-    @TableField("weather")
-    private String weather;
+    @TableField("scene_complexity")
+    private String sceneComplexity;
 
     /**
      * 交通流状态（字典：traffic_flow_status）
@@ -101,16 +79,53 @@ public class TjFragmentedSceneDetail implements Serializable {
     private String trafficFlowStatus;
 
     /**
-     * 场景复杂度（字典：scene_complexity）
+     * 危险指数
      */
-    @TableField("scene_complexity")
-    private String sceneComplexity;
+    @TableField("hazardIndex")
+    private Integer hazardIndex;
 
     /**
-     * 场景类型（字典：scene_type）
+     * 道路类型(字典：road_type)
      */
-    @TableField("scene_type")
-    private String sceneType;
+    @TableField("road_type")
+    private String roadType;
+
+    /**
+     * 路面状况（字典：road_condition）
+     */
+    @TableField("road_condition")
+    private String roadCondition;
+
+    /**
+     * 天气（字典：weather）
+     */
+    @TableField("weather")
+    private String weather;
+
+    /**
+     * 视频数据
+     */
+    @TableField("video_data_file_path")
+    private String videoDataFilePath;
+
+    /**
+     * 雷达数据
+     */
+    @TableField("rada_data_file_path")
+    private String radaDataFilePath;
+
+    /**
+     * GPS数据
+     */
+    @TableField("gps_data_file_path")
+    private String gpsDataFilePath;
+
+    /**
+     * 行驶数据
+     */
+    @TableField("driver_data_file_path")
+    private String driverDataFilePath;
+
 
     /**
      * 收藏状态（未收藏：0；已收藏：1；）
@@ -131,4 +146,38 @@ public class TjFragmentedSceneDetail implements Serializable {
     private String trajectoryInfo;
 
 
+    /**
+     * 道路走向（单向：oneWay；双向：twoWay）
+     *//*
+    @Deprecated
+    @TableField("road_way")
+    private String roadWay;
+
+    *//**
+     * 测试方法说明
+     *//*
+    @Deprecated
+    @TableField("test_method_desc")
+    private String testMethodDesc;
+
+    *//**
+     * 测试要求说明
+     *//*
+    @Deprecated
+    @TableField("test_requirement_desc")
+    private String testRequirementDesc;
+
+    *//**
+     * 图片路径
+     *//*
+    @Deprecated
+    @TableField("img_url")
+    private String imgUrl;
+
+    *//**
+     * 场景类型（字典：scene_type）
+     *//*
+    @Deprecated
+    @TableField("scene_type")
+    private String sceneType;*/
 }

@@ -54,19 +54,21 @@ public class TjFragmentedSceneDetailServiceImpl
     private ISysDictDataService dictDataService;
 
     @Override
-    public FragmentedScenesDetailVo getDetailVo(Integer sceneId) throws BusinessException {
-        TjFragmentedScenes scenes = scenesMapper.selectById(sceneId);
-        if (ObjectUtils.isEmpty(scenes)) {
-            throw new BusinessException("场景不存在");
-        }
+    public FragmentedScenesDetailVo getDetailVo(Integer id) throws BusinessException {
         QueryWrapper<TjFragmentedSceneDetail> queryWrapper = new QueryWrapper();
-        queryWrapper.eq(ColumnName.SCENE_DETAIL_ID_COLUMN, sceneId);
+        queryWrapper.eq(ColumnName.SCENE_DETAIL_ID_COLUMN, id);
         TjFragmentedSceneDetail detail = this.getOne(queryWrapper);
         FragmentedScenesDetailVo detailVo = new FragmentedScenesDetailVo();
-        if (YN.N_INT == scenes.getIsFolder() && !ObjectUtils.isEmpty(detail)) {
-            BeanUtils.copyBeanProp(detailVo, detail);
-            detailVo.setRoadTypeName(dictDataService.selectDictLabel(SysType.SCENE_TREE_TYPE, scenes.getType()));
-            detailVo.setRoadWayName(dictDataService.selectDictLabel(SysType.ROAD_WAY_TYPE, detail.getRoadWay()));
+        if(null != detail && detail.getFragmentedSceneId() != null){
+            TjFragmentedScenes scenes = scenesMapper.selectById(detail.getFragmentedSceneId());
+            if (ObjectUtils.isEmpty(scenes)) {
+                throw new BusinessException("场景不存在");
+            }
+            if (YN.N_INT == scenes.getIsFolder() && !ObjectUtils.isEmpty(detail)) {
+                BeanUtils.copyBeanProp(detailVo, detail);
+                detailVo.setRoadTypeName(dictDataService.selectDictLabel(SysType.SCENE_TREE_TYPE, scenes.getType()));
+                detailVo.setRoadWayName(dictDataService.selectDictLabel(SysType.ROAD_WAY_TYPE, detail.getRoadWayType()));
+            }
         }
         return detailVo;
     }
@@ -74,16 +76,11 @@ public class TjFragmentedSceneDetailServiceImpl
     @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean saveSceneDetail(TjFragmentedSceneDetailDto sceneDetailDto) throws BusinessException {
-        verifyTrajectoryJson(sceneDetailDto.getTrajectoryJson());
         TjFragmentedSceneDetail detail = new TjFragmentedSceneDetail();
         BeanUtils.copyBeanProp(detail, sceneDetailDto);
         detail.setLabel(String.join(",", sceneDetailDto.getLabelList()));
         detail.setTrajectoryInfo(JSONObject.toJSONString(sceneDetailDto.getTrajectoryJson()));
-        boolean success = this.saveOrUpdate(detail);
-        if (!ObjectUtils.isEmpty(detail.getTrajectoryInfo()) && !ObjectUtils.isEmpty(detail.getResourcesDetailId())) {
-            success = scenesService.completeScene(sceneDetailDto);
-        }
-        return success;
+        return this.saveOrUpdate(detail);
     }
 
     @Override
@@ -118,16 +115,5 @@ public class TjFragmentedSceneDetailServiceImpl
         }
 
         return sceneDetailMapper.selectList(queryWrapper);
-    }
-
-    private void verifyTrajectoryJson(Map trajectoryJson) throws BusinessException {
-        if (ObjectUtils.isEmpty(trajectoryJson)) {
-            throw new BusinessException("请填写轨迹信息");
-        }
-        if (!trajectoryJson.containsKey(MapKey.VEHICLE_KEY)
-                && !trajectoryJson.containsKey(MapKey.PEDESTRIAN_KEY)
-                && !trajectoryJson.containsKey(MapKey.OBSTACLE_KEY)) {
-            throw new BusinessException("请至少包含一类轨迹");
-        }
     }
 }

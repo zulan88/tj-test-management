@@ -102,9 +102,9 @@ public class SceneBaseController extends BaseController {
     }
 
     @PreAuthorize("@ss.hasPermi('sceneBase:getDetailVo')")
-    @GetMapping("/getDetailVo/{sceneId}")
-    public AjaxResult getDetailVo(@PathVariable("sceneId") Integer sceneId) throws BusinessException {
-        FragmentedScenesDetailVo detailVo = tjFragmentedSceneDetailService.getDetailVo(sceneId);
+    @GetMapping("/getDetailVo/{id}")
+    public AjaxResult getDetailVo(@PathVariable("id") Integer id) throws BusinessException {
+        FragmentedScenesDetailVo detailVo = tjFragmentedSceneDetailService.getDetailVo(id);
         return AjaxResult.success(detailVo);
     }
 
