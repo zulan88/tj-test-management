@@ -57,6 +57,12 @@ public class CaseController extends BaseController {
         return AjaxResult.success(caseService.init());
     }
 
+    @PreAuthorize("@ss.hasPermi('case:initEditPage')")
+    @GetMapping("/initEditPage")
+    public AjaxResult initEditPage() {
+        return AjaxResult.success(caseService.initEditPage());
+    }
+
     @PreAuthorize("@ss.hasPermi('case:createCase')")
     @PostMapping("/createCase")
     public AjaxResult createCase(@Validated(value = InsertGroup.class) @RequestBody TjCaseDto tjCaseDto)

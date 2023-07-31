@@ -37,7 +37,10 @@ public class MimeTypeUtils
             // 视频格式
             "mp4", "avi", "rmvb",
             // pdf
-            "pdf", "csv" };
+            "pdf", "csv",
+            // 路网
+            "xodr", "xosc"
+    };
 
     public static String getExtension(String prefix)
     {

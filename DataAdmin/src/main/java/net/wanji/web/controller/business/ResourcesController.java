@@ -88,11 +88,11 @@ public class ResourcesController extends BaseController {
 
     @PreAuthorize("@ss.hasPermi('resource:getResourceSelect')")
     @GetMapping("/getResourceSelect")
-    public AjaxResult getResourceSelect(@RequestParam("resourceType") String resourceType,
-                                        @RequestParam("roadType") String roadType,
-                                        @RequestParam("roadPoint") String roadPoint,
-                                        @RequestParam("laneNum") Integer laneNum) {
-        return AjaxResult.success(tjResourcesDetailService.getMapSelect(resourceType, roadType, roadPoint, laneNum));
+    public AjaxResult getResourceSelect(@RequestParam("type") String type,
+                                        @RequestParam(value = "sceneTreeType", required = false) String sceneTreeType,
+                                        @RequestParam(value = "roadWayType", required = false) String roadWayType,
+                                        @RequestParam(value = "laneNum", required = false) Integer laneNum) {
+        return AjaxResult.success(tjResourcesDetailService.getMapSelect(type, sceneTreeType, roadWayType, laneNum));
     }
 
     /**

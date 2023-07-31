@@ -13,4 +13,6 @@ import java.util.List;
 public class SceneTrajectoryBo {
     private Integer fragmentedSceneId;
     private List<VehicleTrajectoryBo> vehicle;
+    private List<VehicleTrajectoryBo> pedestrian;
+    private List<Object> obstacle;
 }

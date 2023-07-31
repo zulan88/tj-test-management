@@ -33,6 +33,12 @@ public interface TjCaseService extends IService<TjCase> {
     Map<String, List<SimpleSelect>> init();
 
     /**
+     * 配置页初始化
+     * @return
+     */
+    Map<String, List<SimpleSelect>> initEditPage();
+
+    /**
      * 查询测试用例中包含的场景
      *
      * @param testType 测试类型

@@ -2,10 +2,12 @@ package net.wanji.business.service.impl;
 
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.wanji.business.common.Constants.CaseStatusEnum;
+import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.business.common.Constants.PlaybackAction;
 import net.wanji.business.common.Constants.SysType;
@@ -18,12 +20,14 @@ import net.wanji.business.domain.vo.CaseVo;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
 import net.wanji.business.domain.vo.SceneBaseVo;
 import net.wanji.business.entity.TjCase;
+import net.wanji.business.entity.TjCasePartConfig;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.schedule.PlaybackSchedule;
 import net.wanji.business.service.RouteService;
+import net.wanji.business.service.TjCasePartConfigService;
 import net.wanji.business.service.TjCaseService;
 import net.wanji.business.service.TjFragmentedSceneDetailService;
 import net.wanji.business.service.TjFragmentedScenesService;
@@ -77,6 +81,9 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     private TjFragmentedSceneDetailService sceneDetailService;
 
     @Autowired
+    private TjCasePartConfigService casePartConfigService;
+
+    @Autowired
     private RouteService routeService;
 
     @Autowired
@@ -87,6 +94,15 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
         List<SysDictData> sceneTreeType = dictTypeService.selectDictDataByType(SysType.SCENE_TREE_TYPE);
         Map<String, List<SimpleSelect>> result = new HashMap<>(1);
         result.put(SysType.SCENE_TREE_TYPE, CollectionUtils.emptyIfNull(sceneTreeType).stream()
+                .map(SimpleSelect::new).collect(Collectors.toList()));
+        return result;
+    }
+
+    @Override
+    public Map<String, List<SimpleSelect>> initEditPage() {
+        List<SysDictData> partRole = dictTypeService.selectDictDataByType(SysType.PART_ROLE);
+        Map<String, List<SimpleSelect>> result = new HashMap<>(1);
+        result.put(SysType.PART_ROLE, CollectionUtils.emptyIfNull(partRole).stream()
                 .map(SimpleSelect::new).collect(Collectors.toList()));
         return result;
     }
@@ -262,28 +278,36 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
         if (ObjectUtils.isEmpty(tjCase)) {
             throw new BusinessException("测试用例不存在");
         }
-        if (ObjectUtils.isEmpty(tjCase.getTopic()) || ObjectUtils.isEmpty(tjCase.getLocalFile())) {
-            throw new BusinessException("请先上传仿真信息");
-        }
+        CaseDetailBo caseDetailBo = JSONObject.parseObject(tjCase.getDetailInfo(), CaseDetailBo.class);
+
+        QueryWrapper<TjCasePartConfig> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq(ColumnName.CASE_ID_COLUMN, caseId);
+        List<TjCasePartConfig> caseConfig = casePartConfigService.list(queryWrapper);
+        Map<String, String> configMap = CollectionUtils.emptyIfNull(caseConfig).stream()
+                .collect(Collectors.toMap(TjCasePartConfig::getBusinessId, TjCasePartConfig::getParticipantRole));
+
+//        if (ObjectUtils.isEmpty(tjCase.getTopic()) || ObjectUtils.isEmpty(tjCase.getLocalFile())) {
+//            throw new BusinessException("请先上传仿真信息");
+//        }
         CaseVerificationVo result = new CaseVerificationVo(tjCase);
-        Map<String, List<Map<String, Double>>> pointMap = null;
-        try {
-            List<List<Map>> e1List = routeService.readRouteFile(tjCase.getRouteFile());
-            pointMap = routeService.extractRoute(e1List);
-        } catch (IOException e) {
-            log.error("文件读取异常");
-            return result;
-        }
-        if (!ObjectUtils.isEmpty(pointMap)) {
-            for (VehicleTrajectoryBo trajectoryBo : result.getDetailInfo().getVehicleTrajectory()) {
-                if (pointMap.containsKey(trajectoryBo.getId())) {
-                    List<Map<String, Double>> list = pointMap.get(trajectoryBo.getId());
-                    trajectoryBo.setRoute(list);
-                    int sec = (int) Math.ceil((double) list.size() / 10);
-                    trajectoryBo.setDuration(DateUtils.secondsToDuration(sec));
-                }
-            }
-        }
+//        Map<String, List<Map<String, Double>>> pointMap = null;
+//        try {
+//            List<List<Map>> e1List = routeService.readRouteFile(tjCase.getRouteFile());
+//            pointMap = routeService.extractRoute(e1List);
+//        } catch (IOException e) {
+//            log.error("文件读取异常");
+//            return result;
+//        }
+//        if (!ObjectUtils.isEmpty(pointMap)) {
+//            for (VehicleTrajectoryBo trajectoryBo : result.getDetailInfo().getVehicleTrajectory()) {
+//                if (pointMap.containsKey(trajectoryBo.getId())) {
+//                    List<Map<String, Double>> list = pointMap.get(trajectoryBo.getId());
+//                    trajectoryBo.setRoute(list);
+//                    int sec = (int) Math.ceil((double) list.size() / 10);
+//                    trajectoryBo.setDuration(DateUtils.secondsToDuration(sec));
+//                }
+//            }
+//        }
         return result;
     }
 

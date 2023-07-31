@@ -140,9 +140,13 @@ public interface Constants {
          */
         public static final String ROAD_CONDITION = "road_condition";
         /**
-         * 收藏状态
+         * 参与者角色
          */
-        public static final String COLLECT_STATUS = "collect_status";
+        public static final String PART_ROLE = "part_role";
+        /**
+         * 参与者类型
+         */
+        public static final String PART_TYPE = "part_type";
     }
 
     /**

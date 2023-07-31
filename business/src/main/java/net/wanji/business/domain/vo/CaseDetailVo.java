@@ -1,7 +1,10 @@
 package net.wanji.business.domain.vo;
 
 import lombok.Data;
+import net.wanji.business.domain.bo.CaseDetailBo;
 import net.wanji.business.entity.TjCase;
+
+import java.util.List;
 
 /**
  * @Auther: guanyuduo
@@ -15,6 +18,8 @@ public class CaseDetailVo extends TjCase {
 
     private String resourceName;
 
+    private List<String> labelList;
 
+    private CaseDetailBo caseDetail;
 
 }
