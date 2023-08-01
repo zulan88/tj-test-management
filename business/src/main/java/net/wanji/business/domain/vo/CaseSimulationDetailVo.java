@@ -1,7 +1,7 @@
 package net.wanji.business.domain.vo;
 
 import lombok.Data;
-import net.wanji.business.domain.bo.CaseDetailBo;
+import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.entity.TjCase;
 
 import java.util.List;
@@ -12,7 +12,7 @@ import java.util.List;
  * @Descriptoin:
  */
 @Data
-public class CaseDetailVo extends TjCase {
+public class CaseSimulationDetailVo extends TjCase {
 
     private String sceneNumber;
 
@@ -20,6 +20,6 @@ public class CaseDetailVo extends TjCase {
 
     private List<String> labelList;
 
-    private CaseDetailBo caseDetail;
+    private CaseTrajectoryDetailBo caseDetail;
 
 }

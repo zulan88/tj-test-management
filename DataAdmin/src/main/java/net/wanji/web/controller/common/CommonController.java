@@ -1,6 +1,7 @@
 package net.wanji.web.controller.common;
 
 import io.swagger.annotations.ApiOperation;
+import net.wanji.business.common.Constants.DefaultLabel;
 import net.wanji.common.config.WanjiConfig;
 import net.wanji.common.constant.Constants;
 import net.wanji.common.core.domain.AjaxResult;
@@ -178,6 +179,11 @@ public class CommonController {
             log.error("下载文件失败", e);
 
         }
+    }
+
+    @GetMapping ("/getDefaultSign")
+    public AjaxResult getDefaultSign() {
+       return AjaxResult.success(DefaultLabel.getDefaultLabel());
     }
 
     /**

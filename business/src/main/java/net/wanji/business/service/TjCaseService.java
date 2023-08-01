@@ -2,9 +2,9 @@ package net.wanji.business.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import net.wanji.business.domain.dto.TjCaseDto;
+import net.wanji.business.domain.vo.CaseConfigDetailVo;
 import net.wanji.business.domain.vo.CaseVerificationVo;
 import net.wanji.business.domain.vo.CaseVo;
-import net.wanji.business.domain.vo.SceneBaseVo;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.entity.TjFragmentedScenes;
@@ -34,9 +34,9 @@ public interface TjCaseService extends IService<TjCase> {
 
     /**
      * 配置页初始化
-     * @return
+     * @return id
      */
-    Map<String, List<SimpleSelect>> initEditPage();
+    Map<String, List<SimpleSelect>> initEditPage(Integer id);
 
     /**
      * 查询测试用例中包含的场景
@@ -121,12 +121,15 @@ public interface TjCaseService extends IService<TjCase> {
      */
     boolean joinTask(List<Integer> ids);
 
+
     /**
      * 查询用例仿真详情
      *
      * @param caseId
      * @return
      */
-    CaseVerificationVo getDetail(Integer caseId) throws BusinessException;
+    CaseVerificationVo getSimulationDetail(Integer caseId) throws BusinessException;
+
+    CaseConfigDetailVo getConfigDetail(Integer caseId) throws BusinessException;
 
 }

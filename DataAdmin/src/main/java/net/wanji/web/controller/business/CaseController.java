@@ -65,15 +65,8 @@ public class CaseController extends BaseController {
 
     @PreAuthorize("@ss.hasPermi('case:initEditPage')")
     @GetMapping("/initEditPage")
-    public AjaxResult initEditPage() {
-        return AjaxResult.success(caseService.initEditPage());
-    }
-
-    @PreAuthorize("@ss.hasPermi('case:createCase')")
-    @PostMapping("/createCase")
-    public AjaxResult createCase(@Validated(value = InsertGroup.class) @RequestBody TjCaseDto tjCaseDto)
-            throws BusinessException{
-        return AjaxResult.success(caseService.createCase(tjCaseDto));
+    public AjaxResult initEditPage(@RequestParam("id") Integer id) {
+        return AjaxResult.success(caseService.initEditPage(id));
     }
 
     @PreAuthorize("@ss.hasPermi('case:selectTree')")
@@ -99,10 +92,31 @@ public class CaseController extends BaseController {
         return getDataTable(caseService.getCases(tjCaseDto));
     }
 
+    @PreAuthorize("@ss.hasPermi('case:createCase')")
+    @PostMapping("/createCase")
+    public AjaxResult createCase(@Validated(value = InsertGroup.class) @RequestBody TjCaseDto tjCaseDto)
+            throws BusinessException{
+        return AjaxResult.success(caseService.createCase(tjCaseDto));
+    }
+
+    @PreAuthorize("@ss.hasPermi('case:configDetail')")
+    @GetMapping("/configInfo")
+    public AjaxResult configInfo(@RequestParam("id") Integer id) throws BusinessException {
+        return AjaxResult.success(caseService.getConfigDetail(id));
+    }
+
+    @PreAuthorize("@ss.hasPermi('case:saveConfigDetail')")
+    @PostMapping("/saveConfigDetail")
+    public AjaxResult saveConfigDetail(@Validated(value = UpdateGroup.class) @RequestBody TjCaseDto tjCaseDto)
+            throws BusinessException, IOException {
+        caseService.saveDetail(tjCaseDto);
+        return AjaxResult.success("上传成功");
+    }
+
     @PreAuthorize("@ss.hasPermi('case:detail')")
     @GetMapping("/detail")
     public AjaxResult detail(@RequestParam("id") Integer id) throws BusinessException {
-        return AjaxResult.success(caseService.getDetail(id));
+        return AjaxResult.success(caseService.getSimulationDetail(id));
     }
 
     @PreAuthorize("@ss.hasPermi('case:saveDetail')")

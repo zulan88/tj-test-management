@@ -2,11 +2,8 @@ package net.wanji.business.domain.vo;
 
 import com.alibaba.fastjson.JSONObject;
 import lombok.Data;
-import net.wanji.business.domain.bo.CaseDetailBo;
+import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.entity.TjCase;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * @Auther: guanyuduo
@@ -18,11 +15,11 @@ public class CaseVerificationVo {
 
     private Integer id;
 
-    private CaseDetailBo detailInfo;
+    private CaseTrajectoryDetailBo detailInfo;
 
     public CaseVerificationVo(TjCase tjCase) {
         this.id = tjCase.getId();
-        this.detailInfo = JSONObject.parseObject(tjCase.getDetailInfo(), CaseDetailBo.class);
+        this.detailInfo = JSONObject.parseObject(tjCase.getDetailInfo(), CaseTrajectoryDetailBo.class);
     }
 
 }

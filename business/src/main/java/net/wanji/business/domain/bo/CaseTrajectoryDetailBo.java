@@ -10,7 +10,7 @@ import java.util.List;
  * @Descriptoin:
  */
 @Data
-public class CaseDetailBo {
+public class CaseTrajectoryDetailBo {
     private String sceneDesc;
     private String sceneForm;
     private String evaluationVerify;

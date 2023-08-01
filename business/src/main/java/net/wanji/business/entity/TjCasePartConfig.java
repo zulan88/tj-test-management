@@ -39,7 +39,7 @@ public class TjCasePartConfig implements Serializable {
     private Integer caseId;
 
     /**
-     * 参与者角色（AV：AV；MV-实车：MV_REAL；MV-仿真车：MV_SIMULATION；SP：SP）
+     * 参与者角色（AV：av；MV-实车：mvReal；MV-仿真车：mvSimulation；SP：sp）
      */
     @TableField("participant_role")
     @Excel(name = "参与者角色")

@@ -44,13 +44,6 @@ public class TjCase implements Serializable {
     private String caseNumber;
 
     /**
-     * 危险指数
-     */
-    @TableField("hazard_index")
-    @Excel(name = "危险指数")
-    private Integer hazardIndex;
-
-    /**
      * 标签
      */
     @TableField("label")
@@ -86,16 +79,9 @@ public class TjCase implements Serializable {
     /**
      * 图片
      */
-    @TableField("img_url")
-    @Excel(name = "图片")
-    private String imgUrl;
-
-    /**
-     * 动画
-     */
-    @TableField("animation_url")
-    @Excel(name = "动画")
-    private String animationUrl;
+    @TableField("test_scene")
+    @Excel(name = "测试场景")
+    private String testScene;
 
     /**
      * 仿真点位详情

@@ -6,11 +6,13 @@ import net.wanji.business.common.Constants.DeleteGroup;
 import net.wanji.business.common.Constants.InsertGroup;
 import net.wanji.business.common.Constants.QueryGroup;
 import net.wanji.business.common.Constants.UpdateGroup;
+import net.wanji.business.entity.TjCasePartConfig;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @Auther: guanyuduo
@@ -34,9 +36,6 @@ public class TjCaseDto {
 
     private String caseNumber;
 
-//    @NotNull(message = "请确认危险指数", groups = {InsertGroup.class})
-    private Integer hazardIndex;
-
     private String label;
 
     @NotNull(message = "请确认所属场景", groups = {QueryGroup.class, InsertGroup.class})
@@ -45,24 +44,14 @@ public class TjCaseDto {
     @NotNull(message = "请确认所属资源", groups = {InsertGroup.class})
     private Integer resourcesDetailId;
 
-//    @NotBlank(message = "请输入测试目标", groups = {InsertGroup.class})
+    @NotBlank(message = "请输入测试目标", groups = {InsertGroup.class, UpdateGroup.class})
     private String testTarget;
 
-//    @NotBlank(message = "请输入评价对象", groups = {InsertGroup.class})
+    @NotBlank(message = "请输入测试对象", groups = {InsertGroup.class, UpdateGroup.class})
     private String evaObject;
 
-
-    /**
-     * 图片
-     */
-    @NotBlank(message = "请上传图片", groups = {UpdateGroup.class})
-    private String imgUrl;
-
-    /**
-     * 动画
-     */
-    @NotBlank(message = "请上传动画", groups = {UpdateGroup.class})
-    private String animationUrl;
+    @NotBlank(message = "请输入测试场景", groups = {InsertGroup.class, UpdateGroup.class})
+    private String testScene;
 
 //    @NotBlank(message = "请输入topic", groups = UpdateGroup.class)
     private String topic;
@@ -73,9 +62,12 @@ public class TjCaseDto {
     @NotNull(message = "请选择状态", groups = {QueryGroup.class})
     private Integer status;
 
-    @NotEmpty(message = "请输入标签", groups = {UpdateGroup.class})
+    @NotEmpty(message = "请输入标签", groups = {InsertGroup.class, UpdateGroup.class})
     private List<String> labelList;
 
     @NotEmpty(message = "请选择至少一条数据", groups = {BatchGroup.class})
     private List<Integer> ids;
+
+    @NotNull(message = "请配置角色", groups = {InsertGroup.class, UpdateGroup.class})
+    private Map<String, List<TjCasePartConfig>> partConfig;
 }

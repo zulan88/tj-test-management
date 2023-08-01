@@ -244,7 +244,6 @@ public interface Constants {
      * 用例状态枚举
      */
     enum CaseStatusEnum {
-        TO_BE_CONFIG("0", "待配置"),
         TO_BE_SIMULATED("1", "待仿真"),
         SIMULATION_VERIFICATION("2", "仿真验证"),
         REAL_VERIFICATION("3", "实车验证"),

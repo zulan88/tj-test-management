@@ -11,20 +11,20 @@
 
     <select id="selectCases" resultType="net.wanji.business.domain.vo.CaseVo">
         select
-        c.id,
-        c.test_type,
-        c.case_number,
-        c.hazard_index,
-        c.label,
-        c.scene_detail_id,
-        c.resources_detail_id,
-        c.test_target,
-        c.eva_object,
-        c.status,
-        c.created_by,
-        c.created_date,
-        c.updated_date,
-        rd.name as resourcesName
+            c.id,
+            c.test_type,
+            c.case_number,
+            c.hazard_index,
+            c.label,
+            c.scene_detail_id,
+            c.resources_detail_id,
+            c.test_target,
+            c.eva_object,
+            c.status,
+            c.created_by,
+            c.created_date,
+            c.updated_date,
+            rd.name as resourcesName
         from tj_case c
         left join tj_resources_detail rd on c.resources_detail_id = rd.id
         <where>

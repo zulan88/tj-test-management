@@ -11,14 +11,13 @@ import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.business.common.Constants.PlaybackAction;
 import net.wanji.business.common.Constants.SysType;
-import net.wanji.business.domain.bo.CaseDetailBo;
+import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
-import net.wanji.business.domain.bo.VehicleTrajectoryBo;
 import net.wanji.business.domain.dto.TjCaseDto;
+import net.wanji.business.domain.vo.CaseConfigDetailVo;
+import net.wanji.business.domain.vo.CasePartConfigVo;
 import net.wanji.business.domain.vo.CaseVerificationVo;
 import net.wanji.business.domain.vo.CaseVo;
-import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
-import net.wanji.business.domain.vo.SceneBaseVo;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjCasePartConfig;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
@@ -52,6 +51,7 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -99,13 +99,19 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     }
 
     @Override
-    public Map<String, List<SimpleSelect>> initEditPage() {
+    public Map<String, List<SimpleSelect>> initEditPage(Integer id) {
+        TjCase tjCase = this.getById(id);
+        if (ObjectUtils.isEmpty(tjCase)) {
+            return null;
+        }
+        CaseTrajectoryDetailBo caseTrajectoryDetailBo = JSONObject.parseObject(tjCase.getDetailInfo(), CaseTrajectoryDetailBo.class);
         List<SysDictData> partRole = dictTypeService.selectDictDataByType(SysType.PART_ROLE);
         Map<String, List<SimpleSelect>> result = new HashMap<>(1);
         result.put(SysType.PART_ROLE, CollectionUtils.emptyIfNull(partRole).stream()
                 .map(SimpleSelect::new).collect(Collectors.toList()));
         return result;
     }
+
 
     @Override
     public List<TjFragmentedScenes> selectScenesInCase(String testType, String type) {
@@ -148,19 +154,34 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
         }
         SceneTrajectoryBo trajectoryBo = JSONObject.parseObject(sceneDetail.getTrajectoryInfo(), SceneTrajectoryBo.class);
 
-        CaseDetailBo caseDetailBo = new CaseDetailBo();
-        caseDetailBo.setVehicleTrajectory(trajectoryBo.getVehicle());
+        CaseTrajectoryDetailBo caseTrajectoryDetailBo = new CaseTrajectoryDetailBo();
+        caseTrajectoryDetailBo.setVehicleTrajectory(trajectoryBo.getVehicle());
 
         TjCase tjCase = new TjCase();
-        tjCase.setTestType(tjCaseDto.getTestType());
+        BeanUtils.copyBeanProp(tjCase, tjCaseDto);
         tjCase.setCaseNumber(this.buildCaseNumber());
-        tjCase.setSceneDetailId(tjCaseDto.getSceneDetailId());
-        tjCase.setResourcesDetailId(tjCaseDto.getResourcesDetailId());
-        tjCase.setDetailInfo(JSONObject.toJSONString(caseDetailBo));
-        tjCase.setStatus(CaseStatusEnum.TO_BE_CONFIG.getCode());
+        tjCase.setLabel(String.join(",", tjCaseDto.getLabelList()));
+        tjCase.setDetailInfo(JSONObject.toJSONString(caseTrajectoryDetailBo));
+        tjCase.setStatus(CaseStatusEnum.TO_BE_SIMULATED.getCode());
         tjCase.setCreatedBy(SecurityUtils.getUsername());
         tjCase.setCreatedDate(LocalDateTime.now());
         this.save(tjCase);
+
+        List<TjCasePartConfig> configList = new ArrayList<>();
+        for (Map.Entry<String, List<TjCasePartConfig>> partConfigs : tjCaseDto.getPartConfig().entrySet()) {
+            if (CollectionUtils.isEmpty(partConfigs.getValue())) {
+                continue;
+            }
+            partConfigs.getValue().forEach(config -> {
+                config.setCaseId(tjCase.getId());
+                config.setParticipantRole(partConfigs.getKey());
+            });
+            configList.addAll(partConfigs.getValue());
+        }
+        if (CollectionUtils.isEmpty(configList)) {
+            throw new BusinessException("请进行角色配置后保存");
+        }
+        casePartConfigService.saveBatch(configList);
         return tjCase.getId();
     }
 
@@ -179,9 +200,9 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode jsonNode = objectMapper.readTree(new File(FileUploadUtils.getAbsolutePathFileName(tjCaseDto.getLocalFile())));
         String detailInfo = objectMapper.writeValueAsString(jsonNode);
-        CaseDetailBo caseDetailBo = JSONObject.parseObject(detailInfo, CaseDetailBo.class);
+        CaseTrajectoryDetailBo caseTrajectoryDetailBo = JSONObject.parseObject(detailInfo, CaseTrajectoryDetailBo.class);
         tjCase.setStatus(CaseStatusEnum.SIMULATION_VERIFICATION.getCode());
-        tjCase.setDetailInfo(JSONObject.toJSONString(caseDetailBo));
+        tjCase.setDetailInfo(JSONObject.toJSONString(caseTrajectoryDetailBo));
         tjCase.setTopic(tjCaseDto.getTopic());
         tjCase.setLocalFile(tjCaseDto.getLocalFile());
         tjCase.setUpdatedBy(SecurityUtils.getUsername());
@@ -205,11 +226,11 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     @Override
     public boolean verifyTrajectory(Integer id) throws IOException {
         TjCase tjCase = this.getById(id);
-        CaseDetailBo caseDetailBo = JSONObject.parseObject(tjCase.getDetailInfo(), CaseDetailBo.class);
+        CaseTrajectoryDetailBo caseTrajectoryDetailBo = JSONObject.parseObject(tjCase.getDetailInfo(), CaseTrajectoryDetailBo.class);
         List<List<Map>> e1Data = routeService.readRouteFile(tjCase.getRouteFile());
-        routeService.verifyRoute(e1Data, caseDetailBo);
+        routeService.verifyRoute(e1Data, caseTrajectoryDetailBo);
 
-        tjCase.setDetailInfo(JSONObject.toJSONString(caseDetailBo));
+        tjCase.setDetailInfo(JSONObject.toJSONString(caseTrajectoryDetailBo));
         tjCase.setUpdatedBy(SecurityUtils.getUsername());
         tjCase.setUpdatedDate(LocalDateTime.now());
         return this.updateById(tjCase);
@@ -273,12 +294,12 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     }
 
     @Override
-    public CaseVerificationVo getDetail(Integer caseId) throws BusinessException {
+    public CaseVerificationVo getSimulationDetail(Integer caseId) throws BusinessException {
         TjCase tjCase = this.getById(caseId);
         if (ObjectUtils.isEmpty(tjCase)) {
             throw new BusinessException("测试用例不存在");
         }
-        CaseDetailBo caseDetailBo = JSONObject.parseObject(tjCase.getDetailInfo(), CaseDetailBo.class);
+        CaseTrajectoryDetailBo caseTrajectoryDetailBo = JSONObject.parseObject(tjCase.getDetailInfo(), CaseTrajectoryDetailBo.class);
 
         QueryWrapper<TjCasePartConfig> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq(ColumnName.CASE_ID_COLUMN, caseId);
@@ -309,6 +330,20 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
 //            }
 //        }
         return result;
+    }
+
+    @Override
+    public CaseConfigDetailVo getConfigDetail(Integer caseId) throws BusinessException {
+        TjCase tjCase = this.getById(caseId);
+        if (ObjectUtils.isEmpty(tjCase)) {
+            throw new BusinessException("未查询到对应的测试用例");
+        }
+        CaseConfigDetailVo caseConfigDetailVo = new CaseConfigDetailVo();
+        BeanUtils.copyBeanProp(caseConfigDetailVo, tjCase);
+        caseConfigDetailVo.setLabelList(Arrays.stream(tjCase.getLabel().split(",")).collect(Collectors.toList()));
+        Map<String, List<CasePartConfigVo>> configInfo = casePartConfigService.getConfigInfo(caseId);
+        caseConfigDetailVo.setConfigInfo(configInfo);
+        return caseConfigDetailVo;
     }
 
     public synchronized String buildCaseNumber() {

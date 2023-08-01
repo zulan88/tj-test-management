@@ -3,7 +3,7 @@ package net.wanji.business.service;
 import com.alibaba.fastjson.JSONObject;
 import com.google.protobuf.InvalidProtocolBufferException;
 import net.wanji.business.common.Constants.Extension;
-import net.wanji.business.domain.bo.CaseDetailBo;
+import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.business.domain.bo.VehicleTrajectoryBo;
 import net.wanji.business.entity.TjCase;
@@ -52,9 +52,9 @@ public class RouteService {
     @Async
     public void saveRouteFile(Integer caseId, String topic, String user) throws ExecutionException, InterruptedException {
         TjCase tjCase = tjCaseMapper.selectById(caseId);
-        CaseDetailBo caseDetailBo = JSONObject.parseObject(tjCase.getDetailInfo(), CaseDetailBo.class);
+        CaseTrajectoryDetailBo caseTrajectoryDetailBo = JSONObject.parseObject(tjCase.getDetailInfo(), CaseTrajectoryDetailBo.class);
         List<byte[]> routeData = new TrajectoryConsumer(kafkaConsumerConfig).consumeMessages(topic);
-        if (CollectionUtils.isEmpty(routeData) || ObjectUtils.isEmpty(caseDetailBo)) {
+        if (CollectionUtils.isEmpty(routeData) || ObjectUtils.isEmpty(caseTrajectoryDetailBo)) {
             log.error("详情为空或路线为空");
             return;
         }
@@ -65,9 +65,9 @@ public class RouteService {
             return path;
         });
         // 点位校验
-        FutureTask<CaseDetailBo> verifyTask = new FutureTask<>(() -> {
-            CaseDetailBo temp = caseDetailBo;
-            verifyRoute(e1List, caseDetailBo);
+        FutureTask<CaseTrajectoryDetailBo> verifyTask = new FutureTask<>(() -> {
+            CaseTrajectoryDetailBo temp = caseTrajectoryDetailBo;
+            verifyRoute(e1List, caseTrajectoryDetailBo);
             return temp;
         });
 
@@ -75,7 +75,7 @@ public class RouteService {
         verifyTask.run();
 
         String path = saveTask.get();
-        CaseDetailBo newDetail = verifyTask.get();
+        CaseTrajectoryDetailBo newDetail = verifyTask.get();
 
         log.info("saveRouteFile newDetail:{}", JSONObject.toJSONString(newDetail));
         log.info("saveRouteFile routePath:{}", path);
@@ -87,14 +87,14 @@ public class RouteService {
         log.info("更新完成");
     }
 
-    public void verifyRoute(List<List<Map>> data, CaseDetailBo caseDetailBo) {
-        if (CollectionUtils.isEmpty(data) || ObjectUtils.isEmpty(caseDetailBo)
-                || CollectionUtils.isEmpty(caseDetailBo.getVehicleTrajectory())) {
+    public void verifyRoute(List<List<Map>> data, CaseTrajectoryDetailBo caseTrajectoryDetailBo) {
+        if (CollectionUtils.isEmpty(data) || ObjectUtils.isEmpty(caseTrajectoryDetailBo)
+                || CollectionUtils.isEmpty(caseTrajectoryDetailBo.getVehicleTrajectory())) {
             return;
         }
         for (List<Map> mapList : data) {
             for (Map item : mapList) {
-                for (VehicleTrajectoryBo trajectoryBo : caseDetailBo.getVehicleTrajectory()) {
+                for (VehicleTrajectoryBo trajectoryBo : caseTrajectoryDetailBo.getVehicleTrajectory()) {
                     if (!trajectoryBo.getId().equals(item.get("id"))) {
                         continue;
                     }
