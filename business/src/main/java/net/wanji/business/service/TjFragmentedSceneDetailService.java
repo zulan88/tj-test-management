@@ -20,10 +20,10 @@ import java.util.List;
 public interface TjFragmentedSceneDetailService extends IService<TjFragmentedSceneDetail> {
     /**
      * 根据场景查询场景详情
-     * @param sceneId
+     * @param id
      * @return
      */
-    FragmentedScenesDetailVo getDetailVo(Integer sceneId) throws BusinessException;
+    FragmentedScenesDetailVo getDetailVo(Integer id) throws BusinessException;
 
     /**
      * 保存场景详情

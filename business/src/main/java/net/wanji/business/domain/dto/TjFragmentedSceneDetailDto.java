@@ -1,5 +1,6 @@
 package net.wanji.business.domain.dto;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
 import net.wanji.business.common.Constants.InsertGroup;
 import net.wanji.business.common.Constants.QueryGroup;
@@ -33,15 +34,15 @@ public class TjFragmentedSceneDetailDto {
     private String number;
 
     /**
-     * 道路走向
+     * 道路渠化.车道类型（道路走向）
      */
     @NotBlank(message = "请选择道路属性", groups = {InsertGroup.class, UpdateGroup.class})
-    private String roadWay;
+    private String roadWayType;
 
     /**
-     * 车道数
+     * 道路渠化.车道类型
      */
-    @NotNull(message = "请选择车道数", groups = {InsertGroup.class, UpdateGroup.class})
+    @NotNull(message = "请填写车道数", groups = {InsertGroup.class, UpdateGroup.class})
     private Integer laneNum;
 
     /**
@@ -51,22 +52,10 @@ public class TjFragmentedSceneDetailDto {
     private Integer resourcesDetailId;
 
     /**
-     * 测试场景说明
+     * 场景描述
      */
-    @NotBlank(message = "请填写测试场景说明", groups = {InsertGroup.class, UpdateGroup.class})
+    @NotBlank(message = "请填写场景描述", groups = {InsertGroup.class, UpdateGroup.class})
     private String testSceneDesc;
-
-    /**
-     * 测试方法说明
-     */
-    @NotBlank(message = "请填写测试方法说明", groups = {InsertGroup.class, UpdateGroup.class})
-    private String testMethodDesc;
-
-    /**
-     * 测试要求说明
-     */
-    @NotBlank(message = "请填写测试要求说明", groups = {InsertGroup.class, UpdateGroup.class})
-    private String testRequirementDesc;
 
     /**
      * 场景来源
@@ -75,11 +64,28 @@ public class TjFragmentedSceneDetailDto {
     private String sceneSource;
 
     /**
-     * 图片路径
+     * 场景复杂度
      */
-    @NotBlank(message = "请上传图片", groups = {InsertGroup.class, UpdateGroup.class})
-    private String imgUrl;
+    @NotBlank(message = "请选择场景复杂度", groups = {InsertGroup.class, UpdateGroup.class})
+    private String sceneComplexity;
 
+    /**
+     * 交通流状态
+     */
+    @NotBlank(message = "请选择交通流状态", groups = {InsertGroup.class, UpdateGroup.class})
+    private String trafficFlowStatus;
+
+    /**
+     * 危险指数
+     */
+    @NotBlank(message = "请选择危险指数", groups = {InsertGroup.class, UpdateGroup.class})
+    private Integer hazardIndex;
+
+    /**
+     * 道路类型
+     */
+    @NotBlank(message = "请选择道路类型", groups = {InsertGroup.class, UpdateGroup.class})
+    private String roadType;
     /**
      * 路面状况
      */
@@ -93,16 +99,10 @@ public class TjFragmentedSceneDetailDto {
     private String weather;
 
     /**
-     * 交通流状态
+     * 图片路径
      */
-    @NotBlank(message = "请选择交通流状态", groups = {InsertGroup.class, UpdateGroup.class})
-    private String trafficFlowStatus;
-
-    /**
-     * 场景复杂度
-     */
-    @NotBlank(message = "请选择场景复杂度", groups = {InsertGroup.class, UpdateGroup.class})
-    private String sceneComplexity;
+    @NotBlank(message = "请上传图片", groups = {InsertGroup.class, UpdateGroup.class})
+    private String imgUrl;
 
     /**
      * 场景类型（字典：scene_type）
@@ -111,9 +111,24 @@ public class TjFragmentedSceneDetailDto {
     private String sceneType;
 
     /**
-     * 收藏状态（未收藏：0；已收藏：1；）
+     * 视频数据
      */
-    private Integer collectStatus;
+    private String videoDataFilePath;
+
+    /**
+     * 雷达数据
+     */
+    private String radaDataFilePath;
+
+    /**
+     * GPS数据
+     */
+    private String gpsDataFilePath;
+
+    /**
+     * 行驶数据
+     */
+    private String driverDataFilePath;
 
     /**
      * 标签
@@ -124,6 +139,11 @@ public class TjFragmentedSceneDetailDto {
     /**
      * 轨迹信息
      */
-    @NotNull(message = "请填写轨迹信息", groups = {InsertGroup.class, UpdateGroup.class})
     private Map trajectoryJson;
+
+    /**
+     * 收藏状态（未收藏：0；已收藏：1；）
+     */
+    private Integer collectStatus;
+
 }
