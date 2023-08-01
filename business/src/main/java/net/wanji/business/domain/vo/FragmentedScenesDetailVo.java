@@ -1,6 +1,7 @@
 package net.wanji.business.domain.vo;
 
 import com.alibaba.fastjson2.JSONObject;
+import lombok.extern.log4j.Log4j2;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.common.utils.StringUtils;
 
@@ -14,6 +15,7 @@ import java.util.stream.Collectors;
  * @Date: 2023/6/28 13:20
  * @Descriptoin:
  */
+@Log4j2
 public class FragmentedScenesDetailVo extends TjFragmentedSceneDetail {
 
     private String typeName;
@@ -120,8 +122,14 @@ public class FragmentedScenesDetailVo extends TjFragmentedSceneDetail {
     }
 
     public Map getTrajectoryJson() {
-        if (StringUtils.isNotEmpty(this.getTrajectoryInfo())) {
-            return JSONObject.parseObject(this.getTrajectoryInfo(), Map.class);
+        try{
+            if (StringUtils.isNotEmpty(this.getTrajectoryInfo())) {
+                return JSONObject.parseObject(this.getTrajectoryInfo(), Map.class);
+            }
+        }catch (Exception e){
+            if(log.isErrorEnabled()){
+                log.error("parse error!", e);
+            }
         }
         return trajectoryJson;
     }

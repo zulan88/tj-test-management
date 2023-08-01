@@ -131,4 +131,9 @@ public class TjFragmentedSceneDetailServiceImpl
         });
         return detailVos;
     }
+
+    @Override
+    public boolean deleteSceneDetail(Integer id) {
+        return removeById(id);
+    }
 }
