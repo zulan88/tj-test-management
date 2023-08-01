@@ -107,7 +107,6 @@ public class TjFragmentedSceneDetailDto {
     /**
      * 场景类型（字典：scene_type）
      */
-    @TableField("scene_type")
     @NotBlank(message = "请选择场景类型", groups = {InsertGroup.class, UpdateGroup.class})
     private String sceneType;
 

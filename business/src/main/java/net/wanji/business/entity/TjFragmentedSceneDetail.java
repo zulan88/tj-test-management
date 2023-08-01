@@ -40,6 +40,10 @@ public class TjFragmentedSceneDetail implements Serializable {
      */
     @TableField("road_way_type")
     private String roadWayType;
+
+    /**
+     * 子场景编号
+     */
     @TableField("number")
     private String number;
 

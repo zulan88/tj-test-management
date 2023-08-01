@@ -1,11 +1,9 @@
 package net.wanji.business.service.impl;
 
-import cn.hutool.core.util.ObjectUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import net.wanji.business.common.Constants.ColumnName;
-import net.wanji.business.common.Constants.MapKey;
 import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.dto.SceneQueryDto;
@@ -13,11 +11,13 @@ import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.entity.TjFragmentedScenes;
+import net.wanji.business.entity.TjResourcesDetail;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.mapper.TjFragmentedSceneDetailMapper;
 import net.wanji.business.mapper.TjFragmentedScenesMapper;
 import net.wanji.business.service.TjFragmentedSceneDetailService;
 import net.wanji.business.service.TjFragmentedScenesService;
+import net.wanji.business.service.TjResourcesDetailService;
 import net.wanji.common.utils.bean.BeanUtils;
 import net.wanji.system.service.ISysDictDataService;
 import org.apache.commons.collections4.CollectionUtils;
@@ -27,8 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -55,6 +53,9 @@ public class TjFragmentedSceneDetailServiceImpl
     @Autowired
     private ISysDictDataService dictDataService;
 
+    @Autowired
+    private TjResourcesDetailService tjResourcesDetailService;
+
     @Override
     public FragmentedScenesDetailVo getDetailVo(Integer id) throws BusinessException {
         QueryWrapper<TjFragmentedSceneDetail> queryWrapper = new QueryWrapper();
@@ -68,11 +69,34 @@ public class TjFragmentedSceneDetailServiceImpl
             }
             if (YN.N_INT == scenes.getIsFolder() && !ObjectUtils.isEmpty(detail)) {
                 BeanUtils.copyBeanProp(detailVo, detail);
-                detailVo.setRoadTypeName(dictDataService.selectDictLabel(SysType.SCENE_TREE_TYPE, scenes.getType()));
+                detailVo.setTypeName(dictDataService.selectDictLabel(SysType.SCENE_TREE_TYPE, scenes.getType()));
                 detailVo.setRoadWayName(dictDataService.selectDictLabel(SysType.ROAD_WAY_TYPE, detail.getRoadWayType()));
+                detailVoTranslate(detailVo);
             }
         }
         return detailVo;
+    }
+
+    private void detailVoTranslate(FragmentedScenesDetailVo detailVo) {
+        // 地图
+        TjResourcesDetail tjResourcesDetail = tjResourcesDetailService.getById(
+            detailVo.getResourcesDetailId());
+        detailVo.setResourcesName(tjResourcesDetail.getName());
+        // 道路类型
+        detailVo.setRoadTypeName(dictDataService.selectDictLabel(SysType.ROAD_TYPE
+            , detailVo.getRoadType()));
+        // 场景复杂度
+        detailVo.setSceneComplexityName(dictDataService.selectDictLabel(SysType.SCENE_COMPLEXITY
+            , detailVo.getSceneComplexity()));
+        // 交通流状态
+        detailVo.setTrafficFlowStatusName(dictDataService.selectDictLabel(SysType.TRAFFIC_FLOW_STATUS
+            , detailVo.getTrafficFlowStatus()));
+        // 路面状况
+        detailVo.setRoadConditionName(dictDataService.selectDictLabel(SysType.ROAD_CONDITION
+            , detailVo.getRoadCondition()));
+        // 天气
+        detailVo.setWeatherName(dictDataService.selectDictLabel(SysType.WEATHER
+            , detailVo.getWeather()));
     }
 
     @Transactional(rollbackFor = Exception.class)

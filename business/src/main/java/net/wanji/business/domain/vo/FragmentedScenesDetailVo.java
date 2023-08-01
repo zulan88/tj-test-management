@@ -18,8 +18,14 @@ public class FragmentedScenesDetailVo extends TjFragmentedSceneDetail {
 
     private String typeName;
 
+    /**
+     * 地图名称
+     */
     private String resourcesName;
 
+    /**
+     * 道路类型名称
+     */
     private String roadTypeName;
 
     private String roadWayName;
@@ -30,6 +36,9 @@ public class FragmentedScenesDetailVo extends TjFragmentedSceneDetail {
 
     private String trafficFlowStatusName;
 
+    /**
+     * 场景复杂度名称
+     */
     private String sceneComplexityName;
 
     private String sceneTypeName;
