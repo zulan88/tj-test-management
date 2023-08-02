@@ -33,4 +33,6 @@ public interface TjFragmentedSceneDetailService extends IService<TjFragmentedSce
     boolean saveSceneDetail(TjFragmentedSceneDetailDto sceneDetailDto) throws BusinessException;
 
     List<FragmentedScenesDetailVo> selectScene(SceneQueryDto queryDto) throws BusinessException;
+
+    boolean deleteSceneDetail(Integer id);
 }

@@ -117,6 +117,14 @@ public class SceneBaseController extends BaseController {
                 : AjaxResult.error("失败");
     }
 
+    @PreAuthorize("@ss.hasPermi('sceneBase:deleteSceneDetail')")
+    @PostMapping("/deleteSceneDetail/{id}")
+    public AjaxResult deleteSceneDetail(@PathVariable("id") Integer id){
+        return tjFragmentedSceneDetailService.deleteSceneDetail(id)
+            ? AjaxResult.success("成功")
+            : AjaxResult.error("失败");
+    }
+
     /**
      * 查询场景叶子节点下的子场景列表
      */
