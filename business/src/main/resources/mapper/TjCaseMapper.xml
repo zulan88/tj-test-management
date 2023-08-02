@@ -14,7 +14,7 @@
             c.id,
             c.test_type,
             c.case_number,
-            c.hazard_index,
+            sd.hazardIndex,
             c.label,
             c.scene_detail_id,
             c.resources_detail_id,
@@ -26,22 +26,20 @@
             c.updated_date,
             rd.name as resourcesName
         from tj_case c
-        left join tj_resources_detail rd on c.resources_detail_id = rd.id
+        inner join tj_fragmented_scene_detail sd on sd.id = c.scene_detail_id
+        left join tj_resources_detail rd on rd.id = c.resources_detail_id
         <where>
             and c.test_type = #{testType}
             and c.status = #{status}
             and c.scene_detail_id = #{sceneDetailId}
             <if test="caseNumber != null and caseNumber !='' ">
-                and c.case_number like concat('%',#{name},'%')
+                and c.case_number like concat('%',#{caseNumber},'%')
             </if>
             <if test="label != null and label !='' ">
                 and c.label like concat('%',#{label},'%')
             </if>
             <if test="resourcesDetailId != null">
                 and c.resources_detail_id = #{resourcesDetailId}
-            </if>
-            <if test="hazardIndex != null">
-                and c.hazard_index = #{hazardIndex}
             </if>
         </where>
     </select>

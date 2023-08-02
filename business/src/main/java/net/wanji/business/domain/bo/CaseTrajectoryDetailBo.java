@@ -10,11 +10,8 @@ import java.util.List;
  * @Descriptoin:
  */
 @Data
-public class CaseTrajectoryDetailBo {
+public class CaseTrajectoryDetailBo extends SceneTrajectoryBo {
     private String sceneDesc;
     private String sceneForm;
     private String evaluationVerify;
-    private List<VehicleTrajectoryBo> vehicleTrajectory;
-    private List<VehicleTrajectoryBo> pedestrianTrajectory;
-    private List<Object> obstacle;
 }

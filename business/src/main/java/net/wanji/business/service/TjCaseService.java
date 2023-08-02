@@ -34,9 +34,9 @@ public interface TjCaseService extends IService<TjCase> {
 
     /**
      * 配置页初始化
-     * @return id
+     * @return sceneDetailId
      */
-    Map<String, List<SimpleSelect>> initEditPage(Integer id);
+    Map<String, Object> initEditPage(Integer sceneDetailId);
 
     /**
      * 查询测试用例中包含的场景

@@ -2,6 +2,7 @@ package net.wanji.business.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
+import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.vo.CasePartConfigVo;
 import net.wanji.business.entity.TjCasePartConfig;
 import net.wanji.business.exception.BusinessException;
@@ -26,6 +27,6 @@ public interface TjCasePartConfigService extends IService<TjCasePartConfig> {
      */
     Map<String, List<CasePartConfigVo>> getConfigInfo(Integer caseId) throws BusinessException;
 
-    List<CasePartConfigVo> trajectory2Config(CaseTrajectoryDetailBo detailBo);
+    Map<String, List<CasePartConfigVo>> trajectory2Config(SceneTrajectoryBo sceneTrajectoryBo);
 
 }

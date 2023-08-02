@@ -99,16 +99,19 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     }
 
     @Override
-    public Map<String, List<SimpleSelect>> initEditPage(Integer id) {
-        TjCase tjCase = this.getById(id);
-        if (ObjectUtils.isEmpty(tjCase)) {
+    public Map<String, Object> initEditPage(Integer sceneDetailId) {
+        TjFragmentedSceneDetail sceneDetail = sceneDetailService.getById(sceneDetailId);
+        if (ObjectUtils.isEmpty(sceneDetail)) {
             return null;
         }
-        CaseTrajectoryDetailBo caseTrajectoryDetailBo = JSONObject.parseObject(tjCase.getDetailInfo(), CaseTrajectoryDetailBo.class);
         List<SysDictData> partRole = dictTypeService.selectDictDataByType(SysType.PART_ROLE);
-        Map<String, List<SimpleSelect>> result = new HashMap<>(1);
+        Map<String, Object> result = new HashMap<>(2);
         result.put(SysType.PART_ROLE, CollectionUtils.emptyIfNull(partRole).stream()
                 .map(SimpleSelect::new).collect(Collectors.toList()));
+        SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(sceneDetail.getTrajectoryInfo(),
+                SceneTrajectoryBo.class);
+        Map<String, List<CasePartConfigVo>> configMap = casePartConfigService.trajectory2Config(sceneTrajectoryBo);
+        result.put("parts", configMap);
         return result;
     }
 
@@ -152,11 +155,8 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
         if (ObjectUtils.isEmpty(sceneDetail) || StringUtils.isEmpty(sceneDetail.getTrajectoryInfo())) {
             throw new BusinessException("请先配置轨迹信息");
         }
-        SceneTrajectoryBo trajectoryBo = JSONObject.parseObject(sceneDetail.getTrajectoryInfo(), SceneTrajectoryBo.class);
-
-        CaseTrajectoryDetailBo caseTrajectoryDetailBo = new CaseTrajectoryDetailBo();
-        caseTrajectoryDetailBo.setVehicleTrajectory(trajectoryBo.getVehicle());
-
+        CaseTrajectoryDetailBo caseTrajectoryDetailBo =
+                JSONObject.parseObject(sceneDetail.getTrajectoryInfo(), CaseTrajectoryDetailBo.class);
         TjCase tjCase = new TjCase();
         BeanUtils.copyBeanProp(tjCase, tjCaseDto);
         tjCase.setCaseNumber(this.buildCaseNumber());

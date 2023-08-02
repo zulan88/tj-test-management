@@ -11,6 +11,10 @@ import net.wanji.business.entity.TjCasePartConfig;
 @Data
 public class CasePartConfigVo extends TjCasePartConfig {
     /**
+     * 参与者名称
+     */
+    private String name;
+    /**
      * 参与者角色名称
      */
     private String participantRoleName;
@@ -22,4 +26,5 @@ public class CasePartConfigVo extends TjCasePartConfig {
      * 设备名称
      */
     private String deviceName;
+
 }

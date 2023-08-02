@@ -23,7 +23,6 @@ public class SimpleSelect implements Serializable {
 
     private String cssClass;
 
-
     private String dictLabel;
 
     private String dictValue;

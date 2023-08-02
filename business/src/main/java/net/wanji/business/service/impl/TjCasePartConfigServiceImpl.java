@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
+import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.bo.VehicleTrajectoryBo;
 import net.wanji.business.domain.vo.CasePartConfigVo;
 import net.wanji.business.entity.TjCasePartConfig;
@@ -75,17 +76,29 @@ public class TjCasePartConfigServiceImpl extends ServiceImpl<TjCasePartConfigMap
     }
 
     @Override
-    public List<CasePartConfigVo> trajectory2Config(CaseTrajectoryDetailBo detailBo) {
+    public Map<String, List<CasePartConfigVo>> trajectory2Config(SceneTrajectoryBo sceneTrajectoryBo) {
         List<CasePartConfigVo> result = new ArrayList<>();
-        List<VehicleTrajectoryBo> vehicleTrajectory = detailBo.getVehicleTrajectory();
-//        CollectionUtils.emptyIfNull(vehicleTrajectory).stream().map(vehicle -> {
-//            CasePartConfigVo configVo = new CasePartConfigVo();
-//
-//        });
-        List<VehicleTrajectoryBo> pedestrianTrajectory = detailBo.getPedestrianTrajectory();
-        if (CollectionUtils.isNotEmpty(pedestrianTrajectory)) {
-
-        }
-        return result;
+        List<VehicleTrajectoryBo> vehicleTrajectory = sceneTrajectoryBo.getVehicleTrajectory();
+        List<CasePartConfigVo> vehicleParts = CollectionUtils.emptyIfNull(vehicleTrajectory).stream().map(vehicle -> {
+            CasePartConfigVo config = new CasePartConfigVo();
+            config.setBusinessId(vehicle.getId());
+            config.setBusinessType(vehicle.getType());
+            config.setName(dictDataService.selectDictLabel(SysType.PART_TYPE, vehicle.getType()));
+            return config;
+        }).collect(Collectors.toList());
+        result.addAll(vehicleParts);
+        // todo 行人轨迹
+        List<VehicleTrajectoryBo> pedestrianTrajectory = sceneTrajectoryBo.getPedestrianTrajectory();
+        List<CasePartConfigVo> pedestrianParts = CollectionUtils.emptyIfNull(pedestrianTrajectory).stream()
+                .map(pedestrian -> {
+                    CasePartConfigVo config = new CasePartConfigVo();
+                    config.setBusinessId(pedestrian.getId());
+                    config.setBusinessType(pedestrian.getType());
+                    config.setName(dictDataService.selectDictLabel(SysType.PART_TYPE, pedestrian.getType()));
+                    return config;
+        }).collect(Collectors.toList());
+        result.addAll(pedestrianParts);
+        // todo 障碍物
+        return result.stream().collect(Collectors.groupingBy(CasePartConfigVo::getBusinessType));
     }
 }

@@ -65,8 +65,8 @@ public class CaseController extends BaseController {
 
     @PreAuthorize("@ss.hasPermi('case:initEditPage')")
     @GetMapping("/initEditPage")
-    public AjaxResult initEditPage(@RequestParam("id") Integer id) {
-        return AjaxResult.success(caseService.initEditPage(id));
+    public AjaxResult initEditPage(@RequestParam("sceneDetailId") Integer sceneDetailId) {
+        return AjaxResult.success(caseService.initEditPage(sceneDetailId));
     }
 
     @PreAuthorize("@ss.hasPermi('case:selectTree')")
@@ -79,7 +79,7 @@ public class CaseController extends BaseController {
     }
 
     @PreAuthorize("@ss.hasPermi('case:getSubscenesList')")
-    @GetMapping("/getSubscenesList")
+    @PostMapping("/getSubscenesList")
     public AjaxResult getSubscenesList(@RequestBody SceneQueryDto sceneQueryDto)
             throws BusinessException {
         return AjaxResult.success(sceneDetailService.selectScene(sceneQueryDto));
