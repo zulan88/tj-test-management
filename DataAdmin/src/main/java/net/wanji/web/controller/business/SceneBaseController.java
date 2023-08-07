@@ -1,6 +1,8 @@
 package net.wanji.web.controller.business;
 
 import com.alibaba.fastjson2.JSON;
+import net.wanji.business.common.Constants.InsertGroup;
+import net.wanji.business.common.Constants.UpdateGroup;
 import net.wanji.business.domain.BusinessTreeSelect;
 import net.wanji.business.domain.dto.SceneQueryDto;
 import net.wanji.business.domain.dto.SceneTreeTypeDto;
@@ -95,12 +97,6 @@ public class SceneBaseController extends BaseController {
                 : AjaxResult.error("删除失败");
     }
 
-    @PreAuthorize("@ss.hasPermi('sceneBase:cloneScene')")
-    @GetMapping("/cloneScene/{sceneId}")
-    public AjaxResult cloneScene(@PathVariable("sceneId") Integer sceneId) throws BusinessException {
-        return AjaxResult.success(tjFragmentedScenesService.cloneScene(sceneId));
-    }
-
     @PreAuthorize("@ss.hasPermi('sceneBase:getDetailVo')")
     @GetMapping("/getDetailVo/{id}")
     public AjaxResult getDetailVo(@PathVariable("id") Integer id) throws BusinessException {
@@ -110,7 +106,17 @@ public class SceneBaseController extends BaseController {
 
     @PreAuthorize("@ss.hasPermi('sceneBase:saveSceneDetail')")
     @PostMapping("/saveSceneDetail")
-    public AjaxResult saveSceneDetail(@Validated @RequestBody TjFragmentedSceneDetailDto sceneDetailDto)
+    public AjaxResult saveSceneDetail(@Validated(value = {InsertGroup.class, UpdateGroup.class})
+                                          @RequestBody TjFragmentedSceneDetailDto sceneDetailDto)
+            throws BusinessException {
+        return tjFragmentedSceneDetailService.saveSceneDetail(sceneDetailDto)
+                ? AjaxResult.success("成功")
+                : AjaxResult.error("失败");
+    }
+
+    @PreAuthorize("@ss.hasPermi('sceneBase:saveSceneTrajectory')")
+    @PostMapping("/saveSceneTrajectory")
+    public AjaxResult saveSceneTrajectory(@RequestBody TjFragmentedSceneDetailDto sceneDetailDto)
             throws BusinessException {
         return tjFragmentedSceneDetailService.saveSceneDetail(sceneDetailDto)
                 ? AjaxResult.success("成功")
@@ -119,7 +125,7 @@ public class SceneBaseController extends BaseController {
 
     @PreAuthorize("@ss.hasPermi('sceneBase:deleteSceneDetail')")
     @PostMapping("/deleteSceneDetail/{id}")
-    public AjaxResult deleteSceneDetail(@PathVariable("id") Integer id){
+    public AjaxResult deleteSceneDetail(@PathVariable("id") Integer id) throws BusinessException {
         return tjFragmentedSceneDetailService.deleteSceneDetail(id)
             ? AjaxResult.success("成功")
             : AjaxResult.error("失败");

@@ -26,5 +26,8 @@ public class CasePartConfigVo extends TjCasePartConfig {
      * 设备名称
      */
     private String deviceName;
-
+    /**
+     * 选中状态
+     */
+    private int selected;
 }

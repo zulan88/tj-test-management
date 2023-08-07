@@ -21,9 +21,19 @@ public class FragmentedScenesDetailVo extends TjFragmentedSceneDetail {
     private String typeName;
 
     /**
-     * 地图名称
+     * 资源名称
      */
     private String resourcesName;
+
+    /**
+     * 资源缩略图
+     */
+    private String resourcesImgPath;
+
+    /**
+     * 地图的geoJson文件路径
+     */
+    private String geoJsonPath;
 
     /**
      * 道路类型名称
@@ -63,6 +73,22 @@ public class FragmentedScenesDetailVo extends TjFragmentedSceneDetail {
 
     public void setResourcesName(String resourcesName) {
         this.resourcesName = resourcesName;
+    }
+
+    public String getResourcesImgPath() {
+        return resourcesImgPath;
+    }
+
+    public void setResourcesImgPath(String resourcesImgPath) {
+        this.resourcesImgPath = resourcesImgPath;
+    }
+
+    public String getGeoJsonPath() {
+        return geoJsonPath;
+    }
+
+    public void setGeoJsonPath(String geoJsonPath) {
+        this.geoJsonPath = geoJsonPath;
     }
 
     public String getRoadTypeName() {

@@ -5,6 +5,9 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
+import java.time.LocalDateTime;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -63,7 +66,7 @@ public class TjFragmentedSceneDetail implements Serializable {
     /**
      * 场景描述
      */
-    @TableField("scene_desc")
+    @TableField("test_scene_desc")
     private String testSceneDesc;
 
     /**
@@ -88,7 +91,7 @@ public class TjFragmentedSceneDetail implements Serializable {
     /**
      * 危险指数
      */
-    @TableField("hazardIndex")
+    @TableField("hazard_index")
     private Integer hazardIndex;
 
     /**
@@ -163,4 +166,31 @@ public class TjFragmentedSceneDetail implements Serializable {
      */
     @TableField("scene_type")
     private String sceneType;
+
+    /**
+     * 创建人
+     */
+    @TableField("created_by")
+    private String createdBy;
+
+    /**
+     * 创建日期
+     */
+    @TableField("created_date")
+    @JsonFormat(shape= JsonFormat.Shape.STRING, pattern="yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime createdDate;
+
+    /**
+     * 修改人
+     */
+    @TableField("updated_by")
+    private String updatedBy;
+
+    /**
+     * 修改日期
+     */
+    @TableField("updated_date")
+    @JsonFormat(shape= JsonFormat.Shape.STRING, pattern="yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime updatedDate;
+
 }

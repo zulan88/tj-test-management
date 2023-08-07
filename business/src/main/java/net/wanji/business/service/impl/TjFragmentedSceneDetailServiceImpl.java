@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import net.wanji.business.common.Constants.ColumnName;
+import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.dto.SceneQueryDto;
@@ -13,11 +14,16 @@ import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.entity.TjResourcesDetail;
 import net.wanji.business.exception.BusinessException;
+import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjFragmentedSceneDetailMapper;
 import net.wanji.business.mapper.TjFragmentedScenesMapper;
 import net.wanji.business.service.TjFragmentedSceneDetailService;
 import net.wanji.business.service.TjFragmentedScenesService;
 import net.wanji.business.service.TjResourcesDetailService;
+import net.wanji.common.utils.CounterUtil;
+import net.wanji.common.utils.DateUtils;
+import net.wanji.common.utils.SecurityUtils;
+import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.bean.BeanUtils;
 import net.wanji.system.service.ISysDictDataService;
 import org.apache.commons.collections4.CollectionUtils;
@@ -26,7 +32,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -49,6 +60,9 @@ public class TjFragmentedSceneDetailServiceImpl
 
     @Autowired
     private TjFragmentedSceneDetailMapper sceneDetailMapper;
+
+    @Autowired
+    private TjCaseMapper caseMapper;
 
     @Autowired
     private ISysDictDataService dictDataService;
@@ -82,6 +96,7 @@ public class TjFragmentedSceneDetailServiceImpl
         TjResourcesDetail tjResourcesDetail = tjResourcesDetailService.getById(
             detailVo.getResourcesDetailId());
         detailVo.setResourcesName(tjResourcesDetail.getName());
+        detailVo.setGeoJsonPath(tjResourcesDetail.getAttribute4());
         // 道路类型
         detailVo.setRoadTypeName(dictDataService.selectDictLabel(SysType.ROAD_TYPE
             , detailVo.getRoadType()));
@@ -102,11 +117,34 @@ public class TjFragmentedSceneDetailServiceImpl
     @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean saveSceneDetail(TjFragmentedSceneDetailDto sceneDetailDto) throws BusinessException {
+        TjFragmentedScenes scenes = scenesMapper.selectById(sceneDetailDto.getFragmentedSceneId());
+        if (ObjectUtils.isEmpty(scenes)) {
+            throw new BusinessException("场景未找到");
+        }
+        if (YN.Y_INT == scenes.getIsFolder()) {
+            throw new BusinessException("文件夹下无法保存子场景");
+        }
+        if (ObjectUtils.isEmpty(sceneDetailDto.getId())) {
+            TjFragmentedSceneDetail detail = new TjFragmentedSceneDetail();
+            BeanUtils.copyBeanProp(detail, sceneDetailDto);
+            detail.setLabel(String.join(",", sceneDetailDto.getLabelList()));
+            detail.setNumber(this.buildSceneNumber());
+            detail.setCollectStatus(YN.N_INT);
+            detail.setCreatedBy(SecurityUtils.getUsername());
+            detail.setCreatedDate(LocalDateTime.now());
+            return this.save(detail);
+        }
         TjFragmentedSceneDetail detail = new TjFragmentedSceneDetail();
         BeanUtils.copyBeanProp(detail, sceneDetailDto);
-        detail.setLabel(String.join(",", sceneDetailDto.getLabelList()));
-        detail.setTrajectoryInfo(JSONObject.toJSONString(sceneDetailDto.getTrajectoryJson()));
-        return this.saveOrUpdate(detail);
+        if (CollectionUtils.isNotEmpty(sceneDetailDto.getLabelList())) {
+            detail.setLabel(String.join(",", sceneDetailDto.getLabelList()));
+        }
+        if (!ObjectUtils.isEmpty(sceneDetailDto.getTrajectoryJson())) {
+            detail.setTrajectoryInfo(JSONObject.toJSONString(sceneDetailDto.getTrajectoryJson()));
+        }
+        detail.setUpdatedBy(SecurityUtils.getUsername());
+        detail.setUpdatedDate(LocalDateTime.now());
+        return this.updateById(detail);
     }
 
     @Override
@@ -116,7 +154,18 @@ public class TjFragmentedSceneDetailServiceImpl
             throw new BusinessException("场景不存在");
         }
         String typeName = dictDataService.selectDictLabel(SysType.SCENE_TREE_TYPE, scenes.getType());
-        List<FragmentedScenesDetailVo> detailVos = sceneDetailMapper.selectByCondition(queryDto);
+
+        List<FragmentedScenesDetailVo> detailVos = null;
+        if (YN.Y_INT == scenes.getIsFolder()) {
+            List<TjFragmentedScenes> collector = new ArrayList<>();
+            if (CollectionUtils.isNotEmpty(collector)) {
+                scenesService.selectChildrenFromFolder(scenes.getId(), collector);
+                List<Integer> sceneIds = collector.stream().map(TjFragmentedScenes::getId).collect(Collectors.toList());
+                queryDto.setFragmentedSceneId(null);
+                queryDto.setFragmentedSceneIds(sceneIds);
+            }
+        }
+        detailVos = sceneDetailMapper.selectByCondition(queryDto);
         CollectionUtils.emptyIfNull(detailVos).forEach(detail -> {
             detail.setTypeName(typeName);
             detail.setRoadTypeName(dictDataService.selectDictLabel(SysType.ROAD_TYPE, detail.getRoadType()));
@@ -133,7 +182,16 @@ public class TjFragmentedSceneDetailServiceImpl
     }
 
     @Override
-    public boolean deleteSceneDetail(Integer id) {
+    public boolean deleteSceneDetail(Integer id) throws BusinessException {
+        int count = caseMapper.selectCountBySceneDetailIds(Collections.singletonList(id));
+        if (count > 0) {
+            throw new BusinessException("当前子场景下存在测试用例");
+        }
         return removeById(id);
+    }
+
+    public synchronized String buildSceneNumber() {
+        return StringUtils.format(ContentTemplate.SCENE_NUMBER_TEMPLATE, DateUtils.getNowDayString(),
+                CounterUtil.getNextNumber(ContentTemplate.SCENE_NUMBER_TEMPLATE));
     }
 }

@@ -41,9 +41,6 @@ public class TjCaseDto {
     @NotNull(message = "请确认所属场景", groups = {QueryGroup.class, InsertGroup.class})
     private Integer sceneDetailId;
 
-    @NotNull(message = "请确认所属资源", groups = {InsertGroup.class})
-    private Integer resourcesDetailId;
-
     @NotBlank(message = "请输入测试目标", groups = {InsertGroup.class, UpdateGroup.class})
     private String testTarget;
 

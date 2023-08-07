@@ -67,6 +67,12 @@ public class TjResourcesDetail implements Serializable {
     private String imgPath;
 
     /**
+     * 收藏状态（未收藏：0；已收藏：1；）
+     */
+    @TableField("collect_status")
+    private Integer collectStatus;
+
+    /**
      * 自定义字段1（地图：道路类型scene_tree_type；）
      */
     @TableField("attribute1")

@@ -2,10 +2,10 @@ package net.wanji.web.controller.business;
 
 import net.wanji.business.common.Constants.DeleteGroup;
 import net.wanji.business.common.Constants.InsertGroup;
+import net.wanji.business.common.Constants.StatusGroup;
 import net.wanji.business.domain.BusinessTreeSelect;
 import net.wanji.business.domain.dto.TjResourcesDetailDto;
 import net.wanji.business.domain.dto.TjResourcesDto;
-import net.wanji.business.domain.vo.ResourcesDetailVo;
 import net.wanji.business.entity.TjResources;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.TjResourcesDetailService;
@@ -16,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -56,9 +55,9 @@ public class ResourcesController extends BaseController {
     }
 
     @PreAuthorize("@ss.hasPermi('resource:deleteTree')")
-    @PostMapping("/deleteTree")
-    public AjaxResult deleteTree(@Validated(DeleteGroup.class) @RequestBody TjResourcesDto resourcesDto) throws BusinessException {
-        return tjResourcesService.deleteTree(resourcesDto.getId())
+    @GetMapping("/deleteTree")
+    public AjaxResult deleteTree(@RequestParam("resourceId") Integer resourceId) throws BusinessException {
+        return tjResourcesService.deleteTree(resourceId)
                 ? AjaxResult.success("删除成功")
                 : AjaxResult.error("删除失败");
     }
@@ -80,26 +79,37 @@ public class ResourcesController extends BaseController {
 
     @PreAuthorize("@ss.hasPermi('resource:saveResourceDetail')")
     @PostMapping("/saveResourceDetail")
-    public AjaxResult saveResourceDetail(@Validated @RequestBody TjResourcesDetailDto resourcesDetailDto) {
+    public AjaxResult saveResourceDetail(@Validated @RequestBody TjResourcesDetailDto resourcesDetailDto)
+            throws BusinessException{
         return tjResourcesDetailService.saveResourcesDetail(resourcesDetailDto)
                 ? AjaxResult.success("成功")
                 : AjaxResult.error("失败");
     }
 
+    @PreAuthorize("@ss.hasPermi('resource:deleteResourceDetail')")
+    @GetMapping("/deleteResourceDetail")
+    public AjaxResult deleteResourceDetail(@RequestParam("id") Integer id)
+            throws BusinessException{
+        return tjResourcesDetailService.deleteByDetailId(id)
+                ? AjaxResult.success("删除成功")
+                : AjaxResult.error("删除失败");
+    }
+
+    @PreAuthorize("@ss.hasPermi('resource:collectResourceDetail')")
+    @GetMapping("/collectResourceDetail")
+    public AjaxResult collectResourceDetail(@RequestParam("id") Integer id) {
+        return tjResourcesDetailService.collectByDetailId(id)
+                ? AjaxResult.success("收藏成功")
+                : AjaxResult.error("收藏失败");
+    }
+
     @PreAuthorize("@ss.hasPermi('resource:getResourceSelect')")
     @GetMapping("/getResourceSelect")
-    public AjaxResult getResourceSelect(@RequestParam("type") String type,
+    public AjaxResult getResourceSelect(@RequestParam(value = "type", required = false) String type,
                                         @RequestParam(value = "sceneTreeType", required = false) String sceneTreeType,
                                         @RequestParam(value = "roadWayType", required = false) String roadWayType,
                                         @RequestParam(value = "laneNum", required = false) Integer laneNum) {
         return AjaxResult.success(tjResourcesDetailService.getMapSelect(type, sceneTreeType, roadWayType, laneNum));
     }
 
-    /**
-     * 查询所有场景
-     */
-    @GetMapping("/selectAllResource")
-    public AjaxResult selectAllResource() {
-        return AjaxResult.success(tjResourcesDetailService.selectAllResource());
-    }
 }

@@ -89,12 +89,12 @@ public class RouteService {
 
     public void verifyRoute(List<List<Map>> data, CaseTrajectoryDetailBo caseTrajectoryDetailBo) {
         if (CollectionUtils.isEmpty(data) || ObjectUtils.isEmpty(caseTrajectoryDetailBo)
-                || CollectionUtils.isEmpty(caseTrajectoryDetailBo.getVehicleTrajectory())) {
+                || CollectionUtils.isEmpty(caseTrajectoryDetailBo.getVehicle())) {
             return;
         }
         for (List<Map> mapList : data) {
             for (Map item : mapList) {
-                for (VehicleTrajectoryBo trajectoryBo : caseTrajectoryDetailBo.getVehicleTrajectory()) {
+                for (VehicleTrajectoryBo trajectoryBo : caseTrajectoryDetailBo.getVehicle()) {
                     if (!trajectoryBo.getId().equals(item.get("id"))) {
                         continue;
                     }

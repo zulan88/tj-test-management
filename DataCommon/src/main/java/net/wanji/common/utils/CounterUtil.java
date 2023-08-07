@@ -4,6 +4,8 @@ import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -18,13 +20,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class CounterUtil {
 
     private static int MAX_VALUE = 9999;
-    private static AtomicInteger counter = new AtomicInteger(1);
+    private static Map<String, AtomicInteger> counterMap = new HashMap<>();
     private static DecimalFormat df = new DecimalFormat("0000");
 
     static {
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
         long initialDelay = ChronoUnit.SECONDS.between(LocalDateTime.now(), LocalDateTime.of(LocalDateTime.now().plusDays(1).toLocalDate(), LocalTime.MIDNIGHT));
-        scheduler.scheduleAtFixedRate(CounterUtil::resetCounter, initialDelay, TimeUnit.DAYS.toSeconds(1),
+        scheduler.scheduleAtFixedRate(() -> counterMap.clear(), initialDelay, TimeUnit.DAYS.toSeconds(1),
                 TimeUnit.SECONDS);
     }
 
@@ -33,16 +35,22 @@ public class CounterUtil {
      *
      * @return
      */
-    public static synchronized String getNextNumber() {
-        int currentCounter = counter.getAndIncrement();
+    public static synchronized String getNextNumber(String type) {
+        if (!counterMap.containsKey(type)) {
+            counterMap.put(type, new AtomicInteger(1));
+        }
+        int currentCounter = counterMap.get(type).getAndIncrement();
         if (currentCounter > MAX_VALUE) {
-            resetCounter();
-            currentCounter = counter.getAndIncrement();
+            resetCounter(type);
+            currentCounter = counterMap.get(type).getAndIncrement();
         }
         return df.format(currentCounter);
     }
 
-    private static void resetCounter() {
-        counter.set(1);
+    private static void resetCounter(String type) {
+        if (counterMap.containsKey(type)) {
+            AtomicInteger counter = counterMap.get(type);
+            counter.set(1);
+        }
     }
 }

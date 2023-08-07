@@ -15,6 +15,7 @@ import net.wanji.business.service.TjCaseService;
 import net.wanji.business.service.TjResourcesDetailService;
 import net.wanji.business.service.TjResourcesService;
 import net.wanji.business.util.BusinessTreeUtils;
+import net.wanji.common.core.domain.SimpleSelect;
 import net.wanji.common.core.domain.entity.SysDictData;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.bean.BeanUtils;
@@ -57,9 +58,16 @@ public class TjResourcesServiceImpl extends ServiceImpl<TjResourcesMapper, TjRes
 
     @Override
     public Map<String, Object> init() {
-        List<SysDictData> sysDictData = dictTypeService.selectDictDataByType(SysType.RESOURCE_TYPE);
-        Map<String, Object> result = new HashMap<>(1);
-        result.put("resourceType", sysDictData);
+        List<SysDictData> reosurceType = dictTypeService.selectDictDataByType(SysType.RESOURCE_TYPE);
+        List<SysDictData> sceneTreeType = dictTypeService.selectDictDataByType(SysType.SCENE_TREE_TYPE);
+        List<SysDictData> roadWayType = dictTypeService.selectDictDataByType(SysType.ROAD_WAY_TYPE);
+        Map<String, Object> result = new HashMap<>(3);
+        result.put(SysType.RESOURCE_TYPE, CollectionUtils.emptyIfNull(reosurceType).stream()
+                .map(SimpleSelect::new).collect(Collectors.toList()));
+        result.put(SysType.SCENE_TREE_TYPE, CollectionUtils.emptyIfNull(sceneTreeType).stream()
+                .map(SimpleSelect::new).collect(Collectors.toList()));
+        result.put(SysType.ROAD_WAY_TYPE, CollectionUtils.emptyIfNull(roadWayType).stream()
+                .map(SimpleSelect::new).collect(Collectors.toList()));
         return result;
     }
 

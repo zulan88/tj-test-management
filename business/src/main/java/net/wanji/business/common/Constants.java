@@ -37,7 +37,11 @@ public interface Constants {
      * 内容模板
      */
     class ContentTemplate {
-        public static final String EXPORT_NAME_TEMPLATE = "{}_{}_{}";
+        public static final String SCENE_SIGN = "SCENE";
+        public static final String CASE_SIGN = "CASE";
+
+        public static final String EXPORT_NAME_TEMPLATE = "{}_{}";
+        public static final String SCENE_NUMBER_TEMPLATE = "SC{}{}";
         public static final String CASE_NUMBER_TEMPLATE = "CASE{}{}";
         public static final String SCENE_NAME_TEMPLATE = "{}_{}";
         public static final String COPY_SCENE_NAME_TEMPLATE = "{}_COPY{}";
@@ -247,7 +251,8 @@ public interface Constants {
         TO_BE_SIMULATED("1", "待仿真"),
         SIMULATION_VERIFICATION("2", "仿真验证"),
         REAL_VERIFICATION("3", "实车验证"),
-        TO_BE_IN_BASE("4", "待入库");
+        TO_BE_IN_BASE("4", "待入库"),
+        IN_BASE("5", "已入库");
 
         private String code;
 
@@ -315,6 +320,10 @@ public interface Constants {
      * 修改校验分组
      */
     interface UpdateGroup {}
+    /**
+     * 状态操作分组
+     */
+    interface StatusGroup {}
     /**
      * 查询校验分组
      */

@@ -5,12 +5,23 @@
     <select id="selectByCondition" resultType="net.wanji.business.domain.vo.FragmentedScenesDetailVo">
         SELECT
             sd.*,
-            rd.name as resourcesName
+            rd.name as resourcesName,
+            rd.img_path as resourcesImgPath,
+            rd.attribute4 as geoJsonPath
         FROM tj_fragmented_scene_detail sd
         LEFT JOIN tj_resources_detail rd ON rd.id = sd.resources_detail_id
         <where>
             <if test="fragmentedSceneId != null and fragmentedSceneId > 0 ">
                 AND sd.fragmented_scene_id=#{fragmentedSceneId}
+            </if>
+            <if test="fragmentedSceneIds != null and fragmentedSceneIds.size() > 0 ">
+                AND sd.fragmented_scene_id in
+                <foreach collection="fragmentedSceneIds" item="fragmentedSceneId" open="(" separator="," close=")">
+                    #{fragmentedSceneId}
+                </foreach>
+            </if>
+            <if test="hazardIndex != null and hazardIndex > 0 ">
+                AND sd.hazard_index=#{hazardIndex}
             </if>
             <if test="resourcesDetailId != null and resourcesDetailId != '' ">
                 AND sd.resources_detail_id in
@@ -54,10 +65,22 @@
                     #{rc}
                 </foreach>
             </if>
-            <if test="collectStatus != null and collectStatus > 0 ">
+            <if test="collectStatus != null ">
                 AND sd.collect_status=#{collectStatus}
             </if>
         </where>
-
     </select>
+
+    <select id="selectUsingResources" resultType="java.lang.Integer">
+        select distinct resources_detail_id
+        from tj_fragmented_scene_detail
+    </select>
+
+    <delete id="deleteBySceneIds">
+        delete from tj_fragmented_scene_detail
+        where fragmented_scene_id in
+        <foreach collection="sceneIds" item="sceneId" open="(" separator="," close=")">
+            #{sceneId}
+        </foreach>
+    </delete>
 </mapper>

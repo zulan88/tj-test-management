@@ -36,7 +36,7 @@ public interface TjCaseService extends IService<TjCase> {
      * 配置页初始化
      * @return sceneDetailId
      */
-    Map<String, Object> initEditPage(Integer sceneDetailId);
+    Map<String, Object> initEditPage(Integer sceneDetailId) throws BusinessException ;
 
     /**
      * 查询测试用例中包含的场景
@@ -62,7 +62,7 @@ public interface TjCaseService extends IService<TjCase> {
      * @param tjCaseDto
      * @return
      */
-    Integer createCase(TjCaseDto tjCaseDto) throws BusinessException;
+    Integer saveCase(TjCaseDto tjCaseDto) throws BusinessException;
 
 
     /**
@@ -98,6 +98,14 @@ public interface TjCaseService extends IService<TjCase> {
     void playback(Integer id, String vehicleId, int action) throws BusinessException, IOException;
 
     /**
+     * 克隆用例
+     *
+     * @param tjCaseDto
+     * @return
+     */
+    boolean cloneCase(TjCaseDto tjCaseDto);
+
+    /**
      * 删除用例
      *
      * @param tjCaseDto
@@ -114,12 +122,20 @@ public interface TjCaseService extends IService<TjCase> {
      */
     void exportCases(List<TjCase> cases, String fileName) throws IOException;
 
+
+    /**
+     * 加入仿真验证
+     *
+     * @param id
+     */
+    boolean joinSimulationVerify(Integer id) throws BusinessException;
+
     /**
      * 加入测试任务
      *
      * @param ids
      */
-    boolean joinTask(List<Integer> ids);
+    boolean joinTask(List<Integer> ids) throws BusinessException;
 
 
     /**

@@ -38,6 +38,7 @@ import org.springframework.util.ObjectUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -254,38 +255,27 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
         }
         // 1.删除场景
         if (YN.N_INT == scenes.getIsFolder()) {
-            int count = caseMapper.selectCountBySceneId(scenes.getId());
+            int count = caseMapper.selectCountBySceneIds(Collections.singletonList((scenes.getId())));
             if (count > 0) {
-                throw new BusinessException("当前场景下存在测试用例，无法删除");
+                throw new BusinessException("当前节点下存在测试用例，无法删除");
             }
-            QueryWrapper<TjFragmentedSceneDetail> detailQueryWrapper = new QueryWrapper<>();
-            detailQueryWrapper.eq(ColumnName.SCENE_ID_COLUMN, scenes.getId());
-            sceneDetailMapper.delete(detailQueryWrapper);
+            sceneDetailMapper.deleteBySceneIds(new ArrayList<>(scenes.getId()));
             this.removeById(id);
             return true;
         }
         // 2.删除文件夹
         // 2.1.查询文件夹下所有场景和文件夹
         List<TjFragmentedScenes> deleteCollector = new ArrayList<>();
-        selectChildrenFromFolder(scenes.getId(), deleteCollector);
+        this.selectChildrenFromFolder(scenes.getId(), deleteCollector);
         // 2.2.筛选掉文件夹，校验所有场景节点是否存在测试用例，没有测试用例则删除所有场景详情
         List<Integer> sceneIds = deleteCollector.stream().filter(item -> YN.N_INT == item.getIsFolder())
                 .map(TjFragmentedScenes::getId).collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(sceneIds)) {
-            QueryWrapper<TjFragmentedSceneDetail> detailQueryWrapper = new QueryWrapper<>();
-            detailQueryWrapper.in(ColumnName.SCENE_ID_COLUMN, sceneIds);
-            List<TjFragmentedSceneDetail> details = sceneDetailMapper.selectList(detailQueryWrapper);
-            List<Integer> detailIds = details.stream().map(TjFragmentedSceneDetail::getId).collect(Collectors.toList());
-            if (CollectionUtils.isNotEmpty(detailIds)) {
-
-                QueryWrapper<TjCase> queryWrapper = new QueryWrapper<>();
-                queryWrapper.in(ColumnName.SCENE_DETAIL_ID_COLUMN, detailIds);
-                List<TjCase> cases = caseMapper.selectList(queryWrapper);
-                if (CollectionUtils.isNotEmpty(cases)) {
-                    throw new BusinessException("当前文件夹下的场景存在测试用例，无法删除");
-                }
-                sceneDetailMapper.delete(detailQueryWrapper);
+            int count = caseMapper.selectCountBySceneIds(sceneIds);
+            if (count > 0) {
+                throw new BusinessException("当前文件夹下的场景存在测试用例，无法删除");
             }
+            sceneDetailMapper.deleteBySceneIds(sceneIds);
         }
         // 2.3.删掉文件夹及其所有子节点
         deleteCollector.add(scenes);
@@ -295,43 +285,8 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
         return this.remove(deleteWrapper);
     }
 
-    @Transactional(rollbackFor = Exception.class)
     @Override
-    public Integer cloneScene(Integer id) throws BusinessException {
-        return 1;
-//        TjFragmentedScenes scenes = this.getById(id);
-//        if (ObjectUtils.isEmpty(scenes) || YN.Y_INT == scenes.getIsFolder()) {
-//            throw new BusinessException("场景查询失败");
-//        }
-//        TjFragmentedScenes newScene = new TjFragmentedScenes();
-//        BeanUtils.copyBeanProp(newScene, scenes);
-//        this.buildSceneName(newScene, null, 2);
-//
-//        newScene.setId(null);
-//        newScene.setCreatedBy(SecurityUtils.getUsername());
-//        newScene.setCreatedDate(LocalDateTime.now());
-//        newScene.setUpdatedBy(null);
-//        newScene.setUpdatedDate(null);
-//        int newSceneId = fragmentedScenesMapper.insert(newScene);
-//        if (newSceneId < 1) {
-//            throw new BusinessException("克隆失败");
-//        }
-//        QueryWrapper<TjFragmentedSceneDetail> detailQueryWrapper = new QueryWrapper<>();
-//        detailQueryWrapper.eq(ColumnName.SCENE_DETAIL_ID_COLUMN, scenes.getId());
-//        TjFragmentedSceneDetail oldSceneDetail = sceneDetailMapper.selectOne(detailQueryWrapper);
-//        if (!ObjectUtils.isEmpty(oldSceneDetail)) {
-//            oldSceneDetail.setId(null);
-//            oldSceneDetail.setFragmentedSceneId(newScene.getId());
-//            oldSceneDetail.setResourcesDetailId(null);
-//            oldSceneDetail.setTrajectoryInfo(null);
-//            if (sceneDetailMapper.insert(oldSceneDetail) < 1) {
-//                throw new BusinessException("克隆详情失败");
-//            }
-//        }
-//        return newScene.getId();
-    }
-
-    private void selectChildrenFromFolder(Integer id, List<TjFragmentedScenes> collector) {
+    public void selectChildrenFromFolder(Integer id, List<TjFragmentedScenes> collector) {
         QueryWrapper<TjFragmentedScenes> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq(ColumnName.PARENT_ID_COLUMN, id);
         List<TjFragmentedScenes> childrenList = this.list(queryWrapper);

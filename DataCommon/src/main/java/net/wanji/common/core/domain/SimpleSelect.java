@@ -11,8 +11,6 @@ import java.io.Serializable;
  * @Date: 2023/7/26 11:14
  * @Descriptoin:
  */
-@AllArgsConstructor
-@NoArgsConstructor
 public class SimpleSelect implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -26,6 +24,10 @@ public class SimpleSelect implements Serializable {
     private String dictLabel;
 
     private String dictValue;
+
+    private Object parts;
+
+    public SimpleSelect() {}
 
     public SimpleSelect(SysDictData dictData) {
         this.dictCode = dictData.getDictCode();
@@ -73,5 +75,13 @@ public class SimpleSelect implements Serializable {
 
     public void setDictValue(String dictValue) {
         this.dictValue = dictValue;
+    }
+
+    public Object getParts() {
+        return parts;
+    }
+
+    public void setParts(Object parts) {
+        this.parts = parts;
     }
 }

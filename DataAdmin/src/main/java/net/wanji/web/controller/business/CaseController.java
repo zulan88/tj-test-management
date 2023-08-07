@@ -1,5 +1,7 @@
 package net.wanji.web.controller.business;
 
+import com.alibaba.fastjson.JSONObject;
+import com.github.pagehelper.PageHelper;
 import net.wanji.business.common.Constants.BatchGroup;
 import net.wanji.business.common.Constants.CaseStatusEnum;
 import net.wanji.business.common.Constants.ContentTemplate;
@@ -11,6 +13,7 @@ import net.wanji.business.common.Constants.UpdateGroup;
 import net.wanji.business.domain.BusinessTreeSelect;
 import net.wanji.business.domain.dto.SceneQueryDto;
 import net.wanji.business.domain.dto.TjCaseDto;
+import net.wanji.business.domain.vo.CaseVo;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.entity.TjFragmentedScenes;
@@ -22,6 +25,7 @@ import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
 import net.wanji.common.utils.DateUtils;
+import net.wanji.common.utils.ServletUtils;
 import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.poi.ExcelUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,10 +37,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.List;
 
 /**
@@ -65,7 +73,7 @@ public class CaseController extends BaseController {
 
     @PreAuthorize("@ss.hasPermi('case:initEditPage')")
     @GetMapping("/initEditPage")
-    public AjaxResult initEditPage(@RequestParam("sceneDetailId") Integer sceneDetailId) {
+    public AjaxResult initEditPage(@RequestParam("sceneDetailId") Integer sceneDetailId) throws BusinessException  {
         return AjaxResult.success(caseService.initEditPage(sceneDetailId));
     }
 
@@ -88,29 +96,21 @@ public class CaseController extends BaseController {
     @PreAuthorize("@ss.hasPermi('case:pageForCase')")
     @PostMapping("/pageForCase")
     public TableDataInfo pageForCase(@Validated(value = QueryGroup.class) @RequestBody TjCaseDto tjCaseDto) {
-        startPage();
+        PageHelper.startPage(tjCaseDto.getPageNum(), tjCaseDto.getPageSize());
         return getDataTable(caseService.getCases(tjCaseDto));
     }
 
-    @PreAuthorize("@ss.hasPermi('case:createCase')")
-    @PostMapping("/createCase")
+    @PreAuthorize("@ss.hasPermi('case:saveCase')")
+    @PostMapping("/saveCase")
     public AjaxResult createCase(@Validated(value = InsertGroup.class) @RequestBody TjCaseDto tjCaseDto)
             throws BusinessException{
-        return AjaxResult.success(caseService.createCase(tjCaseDto));
+        return AjaxResult.success(caseService.saveCase(tjCaseDto));
     }
 
     @PreAuthorize("@ss.hasPermi('case:configDetail')")
-    @GetMapping("/configInfo")
-    public AjaxResult configInfo(@RequestParam("id") Integer id) throws BusinessException {
+    @GetMapping("/configDetail")
+    public AjaxResult configDetail(@RequestParam("id") Integer id) throws BusinessException {
         return AjaxResult.success(caseService.getConfigDetail(id));
-    }
-
-    @PreAuthorize("@ss.hasPermi('case:saveConfigDetail')")
-    @PostMapping("/saveConfigDetail")
-    public AjaxResult saveConfigDetail(@Validated(value = UpdateGroup.class) @RequestBody TjCaseDto tjCaseDto)
-            throws BusinessException, IOException {
-        caseService.saveDetail(tjCaseDto);
-        return AjaxResult.success("上传成功");
     }
 
     @PreAuthorize("@ss.hasPermi('case:detail')")
@@ -127,6 +127,14 @@ public class CaseController extends BaseController {
         return AjaxResult.success("上传成功");
     }
 
+    @PreAuthorize("@ss.hasPermi('case:cloneCase')")
+    @PostMapping("/cloneCase")
+    public AjaxResult cloneCase(@Validated(value = DeleteGroup.class) @RequestBody TjCaseDto tjCaseDto) {
+        return caseService.cloneCase(tjCaseDto)
+                ? AjaxResult.success("克隆成功")
+                : AjaxResult.error("克隆失败");
+    }
+
     @PreAuthorize("@ss.hasPermi('case:delete')")
     @PostMapping("/delete")
     public AjaxResult delete(@Validated(value = DeleteGroup.class) @RequestBody TjCaseDto tjCaseDto) {
@@ -134,6 +142,8 @@ public class CaseController extends BaseController {
                 ? AjaxResult.success("删除成功")
                 : AjaxResult.error("删除失败");
     }
+
+
 
     @PreAuthorize("@ss.hasPermi('case:batchDelete')")
     @PostMapping("/batchDelete")
@@ -143,9 +153,18 @@ public class CaseController extends BaseController {
                 : AjaxResult.error("删除失败");
     }
 
+    @PreAuthorize("@ss.hasPermi('case:joinSimulation')")
+    @GetMapping("/joinSimulation")
+    public AjaxResult joinSimulation(@RequestParam("id") Integer id) throws BusinessException {
+        return caseService.joinSimulationVerify(id)
+                ? AjaxResult.success("加入成功")
+                : AjaxResult.error("加入失败");
+    }
+
     @PreAuthorize("@ss.hasPermi('case:joinTask')")
     @PostMapping("/joinTask")
-    public AjaxResult joinTask(@Validated(value = BatchGroup.class) @RequestBody TjCaseDto tjCaseDto) {
+    public AjaxResult joinTask(@Validated(value = BatchGroup.class) @RequestBody TjCaseDto tjCaseDto)
+            throws BusinessException {
         return caseService.joinTask(tjCaseDto.getIds())
                 ? AjaxResult.success("加入成功")
                 : AjaxResult.error("加入失败");
@@ -155,13 +174,13 @@ public class CaseController extends BaseController {
     @PostMapping("/export")
     public void export(HttpServletResponse response,
                              @Validated(value = BatchGroup.class) @RequestBody TjCaseDto tjCaseDto) {
-//        TjCase tjCase = caseService.getById(tjCaseDto.getIds().get(0));
-//        TjFragmentedScenes scenes = scenesService.getById(tjCase.getFragmentedSceneId());
-//        String fileName = StringUtils.format(ContentTemplate.EXPORT_NAME_TEMPLATE, scenes.getName(),
-//                CaseStatusEnum.getDescByCode(tjCase.getStatus()), DateUtils.getNowSecondString());
-//        List<TjCase> cases = caseService.listByIds(tjCaseDto.getIds());
-//        ExcelUtil<TjCase> util = new ExcelUtil<TjCase>(TjCase.class);
-//        util.exportExcel(response, cases, fileName);
+        List<CaseVo> caseVos = caseService.getCases(tjCaseDto);
+        TjCase tjCase = caseService.getById(tjCaseDto.getIds().get(0));
+        TjFragmentedScenes scenes = scenesService.getById(tjCase.getSceneDetailId());
+        String fileName = StringUtils.format(ContentTemplate.EXPORT_NAME_TEMPLATE, scenes.getName(),
+                DateUtils.getNowSecondString());
+        ExcelUtil<CaseVo> util = new ExcelUtil<CaseVo>(CaseVo.class);
+        util.exportExcel(response, caseVos, fileName);
     }
 
     @PreAuthorize("@ss.hasPermi('case:verifyTrajectory')")

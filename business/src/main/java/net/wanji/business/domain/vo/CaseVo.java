@@ -1,6 +1,7 @@
 package net.wanji.business.domain.vo;
 
 import net.wanji.business.entity.TjCase;
+import net.wanji.common.annotation.Excel;
 import net.wanji.common.utils.StringUtils;
 
 import java.util.Arrays;
@@ -15,7 +16,10 @@ import java.util.stream.Collectors;
 
 public class CaseVo extends TjCase {
 
+    @Excel(name = "资源名称")
     private String resourcesName;
+
+    private Integer hazardIndex;
 
     private List<String> labelList;
 
@@ -25,6 +29,14 @@ public class CaseVo extends TjCase {
 
     public void setResourcesName(String resourcesName) {
         this.resourcesName = resourcesName;
+    }
+
+    public Integer getHazardIndex() {
+        return hazardIndex;
+    }
+
+    public void setHazardIndex(Integer hazardIndex) {
+        this.hazardIndex = hazardIndex;
     }
 
     public List<String> getLabelList() {

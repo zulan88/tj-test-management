@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 import javax.validation.constraints.NotNull;
+import java.util.List;
 
 /**
  * @author liuzhiheng
@@ -21,6 +22,7 @@ public class SceneQueryDto {
 
     @NotNull(message = "请确认所属场景")
     private Integer fragmentedSceneId; // 片段式场景id
+    private Integer hazardIndex; // 危险等级
     private String resourcesDetailId; // 地图(多选以,分隔)
     private String sceneType; // 场景类型(多选以,分隔)
     private String sceneComplexity; // 场景复杂度(多选以,分隔)
@@ -29,4 +31,5 @@ public class SceneQueryDto {
     private String weather; // 天气(多选以,分隔)
     private String roadCondition; // 路面状况(多选以,分隔)
     private Integer collectStatus; // 收藏状态（未收藏：0；已收藏：1）
+    private List<Integer> fragmentedSceneIds;
 }

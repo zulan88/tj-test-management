@@ -65,13 +65,13 @@ public class TjResources implements Serializable {
     /**
      * 自定义字段1
      */
-    @TableField("attribute1（单向：oneWay；双向：twoWay）")
+    @TableField("attribute1")
     private String attribute1;
 
     /**
      * 自定义字段2
      */
-    @TableField("attribute2（车道数）")
+    @TableField("attribute2")
     private String attribute2;
 
     /**

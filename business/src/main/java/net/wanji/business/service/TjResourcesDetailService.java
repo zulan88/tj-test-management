@@ -30,7 +30,14 @@ public interface TjResourcesDetailService extends IService<TjResourcesDetail> {
      * @param resourcesDetailDto
      * @return
      */
-    boolean saveResourcesDetail(TjResourcesDetailDto resourcesDetailDto);
+    boolean saveResourcesDetail(TjResourcesDetailDto resourcesDetailDto) throws BusinessException;
+
+    /**
+     * 收藏资源
+     * @param resourceDetailId
+     * @return
+     */
+    boolean collectByDetailId(Integer resourceDetailId);
 
     /**
      * 删除资源

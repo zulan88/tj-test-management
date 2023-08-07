@@ -65,6 +65,13 @@ public interface TjFragmentedScenesService extends IService<TjFragmentedScenes> 
     List<TjFragmentedScenes> buildSceneTree(List<TjFragmentedScenes> scenes);
 
     /**
+     * 查找文件夹下所有场景
+     * @param sceneId
+     * @param scenes
+     */
+    void selectChildrenFromFolder(Integer sceneId, List<TjFragmentedScenes> scenes);
+
+    /**
      * 构建前端所需要下拉树结构
      *
      * @param scenes 场景列表
@@ -73,19 +80,11 @@ public interface TjFragmentedScenesService extends IService<TjFragmentedScenes> 
     List<BusinessTreeSelect> buildSceneTreeSelect(List<TjFragmentedScenes> scenes, String name);
 
     /**
-     * 根据id删除场景（逻辑删除）
+     * 根据id删除场景
      * @param id
      * @return
      */
     boolean deleteSceneById(Integer id) throws BusinessException;
-
-    /**
-     * 克隆场景
-     * @param id
-     * @return
-     * @throws BusinessException
-     */
-    Integer cloneScene(Integer id) throws BusinessException;
 
     /**
      * 保存场景树

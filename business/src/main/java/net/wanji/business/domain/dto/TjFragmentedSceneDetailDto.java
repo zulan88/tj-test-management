@@ -1,6 +1,5 @@
 package net.wanji.business.domain.dto;
 
-import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
 import net.wanji.business.common.Constants.InsertGroup;
 import net.wanji.business.common.Constants.QueryGroup;
@@ -27,11 +26,6 @@ public class TjFragmentedSceneDetailDto {
      */
     @NotNull(message = "请确认场景", groups = {QueryGroup.class, InsertGroup.class, UpdateGroup.class})
     private Integer fragmentedSceneId;
-
-    /**
-     * 子场景编号
-     */
-    private String number;
 
     /**
      * 道路渠化.车道类型（道路走向）
@@ -78,7 +72,7 @@ public class TjFragmentedSceneDetailDto {
     /**
      * 危险指数
      */
-    @NotBlank(message = "请选择危险指数", groups = {InsertGroup.class, UpdateGroup.class})
+    @NotNull(message = "请选择危险指数", groups = {InsertGroup.class, UpdateGroup.class})
     private Integer hazardIndex;
 
     /**
@@ -97,12 +91,6 @@ public class TjFragmentedSceneDetailDto {
      */
     @NotBlank(message = "请选择天气", groups = {InsertGroup.class, UpdateGroup.class})
     private String weather;
-
-    /**
-     * 图片路径
-     */
-    @NotBlank(message = "请上传图片", groups = {InsertGroup.class, UpdateGroup.class})
-    private String imgUrl;
 
     /**
      * 场景类型（字典：scene_type）

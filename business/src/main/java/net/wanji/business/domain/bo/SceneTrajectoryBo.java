@@ -11,7 +11,7 @@ import java.util.List;
  */
 @Data
 public class SceneTrajectoryBo {
-    private List<VehicleTrajectoryBo> vehicleTrajectory;
-    private List<VehicleTrajectoryBo> pedestrianTrajectory;
+    private List<VehicleTrajectoryBo> vehicle;
+    private List<VehicleTrajectoryBo> pedestrian;
     private List<Object> obstacle;
 }

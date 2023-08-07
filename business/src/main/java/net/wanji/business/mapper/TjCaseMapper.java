@@ -24,13 +24,13 @@ public interface TjCaseMapper extends BaseMapper<TjCase> {
 
     int updateCaseStatus(@Param("ids") List<Integer> ids, @Param("status") String status);
 
-    int selectCountBySceneId(Integer sceneId);
+    int selectCountBySceneDetailIds(@Param("sceneDetailIds") List<Integer> sceneDetailIds);
+
+    int selectCountBySceneIds(@Param("sceneIds") List<Integer> sceneIds);
 
     List<TjFragmentedScenes> selectSceneIdInCase(@Param("testType") String testType,
                                                  @Param("type") String type);
 
     List<TjFragmentedSceneDetail> selectSubscenesInCase(@Param("testType") String testType,
                                                         @Param("fragmentedSceneId") Integer fragmentedSceneId);
-
-    List<Integer> selectUsingResources();
 }

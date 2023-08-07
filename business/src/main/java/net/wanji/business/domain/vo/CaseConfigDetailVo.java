@@ -12,7 +12,7 @@ import java.util.Map;
  */
 @Data
 public class CaseConfigDetailVo {
-
+    private Integer id;
     /**
      * 测试目标
      */
@@ -32,5 +32,5 @@ public class CaseConfigDetailVo {
     /**
      * 配置信息
      */
-    private Map<String, List<CasePartConfigVo>> configInfo;
+    private Map<String, List<CasePartConfigVo>> partConfig;
 }
