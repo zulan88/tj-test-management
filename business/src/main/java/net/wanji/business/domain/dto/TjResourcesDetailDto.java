@@ -2,7 +2,6 @@ package net.wanji.business.domain.dto;
 
 import lombok.Data;
 import net.wanji.business.common.Constants.DeleteGroup;
-import net.wanji.business.common.Constants.StatusGroup;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -15,7 +14,7 @@ import javax.validation.constraints.NotNull;
 @Data
 public class TjResourcesDetailDto {
 
-    @NotNull(message = "请选择资源", groups = {DeleteGroup.class, StatusGroup.class})
+    @NotNull(message = "请选择资源", groups = {DeleteGroup.class})
     private Integer id;
 
     /**

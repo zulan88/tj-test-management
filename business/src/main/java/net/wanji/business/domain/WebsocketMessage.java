@@ -13,9 +13,9 @@ import java.util.Map;
  */
 @AllArgsConstructor
 @Data
-public class PlaybackMessage {
+public class WebsocketMessage {
 
     private String countDown;
 
-    private List<Map> data;
+    private Object data;
 }

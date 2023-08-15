@@ -38,6 +38,7 @@ import org.springframework.util.ObjectUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -259,7 +260,7 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
             if (count > 0) {
                 throw new BusinessException("当前节点下存在测试用例，无法删除");
             }
-            sceneDetailMapper.deleteBySceneIds(new ArrayList<>(scenes.getId()));
+            sceneDetailMapper.deleteBySceneIds(Collections.singletonList(scenes.getId()));
             this.removeById(id);
             return true;
         }
@@ -311,8 +312,6 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
         } else {
             tjFragmentedScenes = this.getById(fragmentedScenesDto.getId());
             tjFragmentedScenes.setName(fragmentedScenesDto.getName());
-            tjFragmentedScenes.setParentId(fragmentedScenesDto.getParentId());
-            tjFragmentedScenes.setLevel(fragmentedScenesDto.getLevel());
             tjFragmentedScenes.setUpdatedBy(SecurityUtils.getUsername());
             tjFragmentedScenes.setUpdatedDate(LocalDateTime.now());
         }

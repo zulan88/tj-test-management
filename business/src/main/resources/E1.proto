@@ -5,7 +5,7 @@ syntax = "proto3";
 package com.wxw.notes.protobuf.proto;
 
 //生成 proto 文件所在包路径
-option java_package = "net.wanji.business.proto";
+option java_package = "net.wanji.common.proto";
 
 //生成 proto 文件名
 option java_outer_classname="E1FrameProto";

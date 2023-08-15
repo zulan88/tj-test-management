@@ -58,11 +58,11 @@ public class TjResourcesServiceImpl extends ServiceImpl<TjResourcesMapper, TjRes
 
     @Override
     public Map<String, Object> init() {
-        List<SysDictData> reosurceType = dictTypeService.selectDictDataByType(SysType.RESOURCE_TYPE);
+        List<SysDictData> resourceType = dictTypeService.selectDictDataByType(SysType.RESOURCE_TYPE);
         List<SysDictData> sceneTreeType = dictTypeService.selectDictDataByType(SysType.SCENE_TREE_TYPE);
         List<SysDictData> roadWayType = dictTypeService.selectDictDataByType(SysType.ROAD_WAY_TYPE);
         Map<String, Object> result = new HashMap<>(3);
-        result.put(SysType.RESOURCE_TYPE, CollectionUtils.emptyIfNull(reosurceType).stream()
+        result.put(SysType.RESOURCE_TYPE, CollectionUtils.emptyIfNull(resourceType).stream()
                 .map(SimpleSelect::new).collect(Collectors.toList()));
         result.put(SysType.SCENE_TREE_TYPE, CollectionUtils.emptyIfNull(sceneTreeType).stream()
                 .map(SimpleSelect::new).collect(Collectors.toList()));

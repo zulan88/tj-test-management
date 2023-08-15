@@ -1,16 +1,15 @@
 package net.wanji.business.service;
 
-import com.alibaba.fastjson.JSONObject;
-import com.google.protobuf.InvalidProtocolBufferException;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.Extension;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
+import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
-import net.wanji.business.domain.bo.VehicleTrajectoryBo;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.mapper.TjCaseMapper;
-import net.wanji.business.proto.E1FrameProto.Demo;
-import net.wanji.business.util.TrajectoryConsumer;
-import net.wanji.common.config.KafkaConsumerConfig;
+import net.wanji.common.common.SimulationTrajectoryDto;
+import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.config.WanjiConfig;
 import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.file.FileUploadUtils;
@@ -30,7 +29,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
 import java.util.stream.Collectors;
 
 /**
@@ -44,63 +42,41 @@ public class RouteService {
     private static final Logger log = LoggerFactory.getLogger("business");
 
     @Autowired
-    private KafkaConsumerConfig kafkaConsumerConfig;
-
-    @Autowired
     private TjCaseMapper tjCaseMapper;
 
     @Async
-    public void saveRouteFile(Integer caseId, String topic, String user) throws ExecutionException, InterruptedException {
-        TjCase tjCase = tjCaseMapper.selectById(caseId);
-        CaseTrajectoryDetailBo caseTrajectoryDetailBo = JSONObject.parseObject(tjCase.getDetailInfo(), CaseTrajectoryDetailBo.class);
-        List<byte[]> routeData = new TrajectoryConsumer(kafkaConsumerConfig).consumeMessages(topic);
-        if (CollectionUtils.isEmpty(routeData) || ObjectUtils.isEmpty(caseTrajectoryDetailBo)) {
-            log.error("详情为空或路线为空");
-            return;
-        }
-        List<List<Map>> e1List = byte2List(routeData);
+    public void saveRouteFile(String caseNumber, List<SimulationTrajectoryDto> data) throws ExecutionException, InterruptedException {
+        log.info(StringUtils.format("保存{}路径文件", caseNumber));
+        QueryWrapper<TjCase> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq(ColumnName.CASE_NUMBER_COLUMN, caseNumber);
+        TjCase tjCase = tjCaseMapper.selectOne(queryWrapper);
         // 保存本地文件
-        FutureTask<String> saveTask = new FutureTask<>(() -> {
-            String path = FileUtils.writeE1Bytes(e1List, WanjiConfig.getRoutePath(), Extension.TXT);
-            return path;
-        });
-        // 点位校验
-        FutureTask<CaseTrajectoryDetailBo> verifyTask = new FutureTask<>(() -> {
-            CaseTrajectoryDetailBo temp = caseTrajectoryDetailBo;
-            verifyRoute(e1List, caseTrajectoryDetailBo);
-            return temp;
-        });
-
-        saveTask.run();
-        verifyTask.run();
-
-        String path = saveTask.get();
-        CaseTrajectoryDetailBo newDetail = verifyTask.get();
-
-        log.info("saveRouteFile newDetail:{}", JSONObject.toJSONString(newDetail));
-        log.info("saveRouteFile routePath:{}", path);
-        tjCase.setRouteFile(path);
-        tjCase.setDetailInfo(JSONObject.toJSONString(newDetail));
-        tjCase.setUpdatedBy(user);
-        tjCase.setUpdatedDate(LocalDateTime.now());
-        tjCaseMapper.updateById(tjCase);
-        log.info("更新完成");
+        try {
+            String path = FileUtils.writeE1List(data, WanjiConfig.getRoutePath(), Extension.TXT);
+            log.info("saveRouteFile routePath:{}", path);
+            tjCase.setRouteFile(path);
+            tjCase.setUpdatedDate(LocalDateTime.now());
+            tjCaseMapper.updateById(tjCase);
+            log.info("更新完成");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    public void verifyRoute(List<List<Map>> data, CaseTrajectoryDetailBo caseTrajectoryDetailBo) {
+    public void verifyRoute(List<List<TrajectoryValueDto>> data, CaseTrajectoryDetailBo caseTrajectoryDetailBo) {
         if (CollectionUtils.isEmpty(data) || ObjectUtils.isEmpty(caseTrajectoryDetailBo)
-                || CollectionUtils.isEmpty(caseTrajectoryDetailBo.getVehicle())) {
+                || CollectionUtils.isEmpty(caseTrajectoryDetailBo.getParticipantTrajectories())) {
             return;
         }
-        for (List<Map> mapList : data) {
-            for (Map item : mapList) {
-                for (VehicleTrajectoryBo trajectoryBo : caseTrajectoryDetailBo.getVehicle()) {
-                    if (!trajectoryBo.getId().equals(item.get("id"))) {
+        for (List<TrajectoryValueDto> trajectoryItem : data) {
+            for (TrajectoryValueDto trajectory : trajectoryItem) {
+                for (ParticipantTrajectoryBo trajectoryBo : caseTrajectoryDetailBo.getParticipantTrajectories()) {
+                    if (!trajectoryBo.getId().equals(trajectory.getId())) {
                         continue;
                     }
-                    List<TrajectoryDetailBo> trajectory = trajectoryBo.getTrajectory();
-                    for (TrajectoryDetailBo trajectoryDetailBo : trajectory) {
-                        if (trajectoryDetailBo.getFrameId().intValue() == (int) item.get("frameId")) {
+                    List<TrajectoryDetailBo> points = trajectoryBo.getTrajectory();
+                    for (TrajectoryDetailBo trajectoryDetailBo : points) {
+                        if (trajectoryDetailBo.getFrameId().intValue() == trajectory.getFrameId()) {
                             // todo 校验逻辑
                             trajectoryDetailBo.setPass(true);
                             trajectoryDetailBo.setReason("已校验完成");
@@ -112,18 +88,18 @@ public class RouteService {
         }
     }
 
-    public Map<String, List<Map<String, Double>>> extractRoute(List<List<Map>> data) {
+    public Map<String, List<Map<String, Double>>> extractRoute(List<List<TrajectoryValueDto>> data) {
         if (CollectionUtils.isEmpty(data)) {
             return null;
         }
         Map<String, List<Map<String, Double>>> result = new HashMap<>();
-        for (List<Map> vehicleList : data) {
+        for (List<TrajectoryValueDto> vehicleList : data) {
             Map<String, Map<String, Double>> idAndPoint = vehicleList.stream().collect(Collectors.toMap(
-                    item -> String.valueOf(item.get("id")),
+                    item -> String.valueOf(item.getId()),
                     value -> {
                         Map<String, Double> map = new HashMap<>();
-                        map.put("longitude", Double.parseDouble(String.valueOf(value.get("longitude"))));
-                        map.put("latitude", Double.parseDouble(String.valueOf(value.get("latitude"))));
+                        map.put("longitude", Double.parseDouble(String.valueOf(value.getLongitude())));
+                        map.put("latitude", Double.parseDouble(String.valueOf(value.getLatitude())));
                         return map;
                     }));
             for (Map.Entry<String, Map<String, Double>> item : idAndPoint.entrySet()) {
@@ -141,33 +117,28 @@ public class RouteService {
         return result;
     }
 
-    public List<List<Map>> readVehicleRouteFile(String fileName, String vehicleId) throws IOException {
-        List<List<Map>> e1List = readRouteFile(fileName);
-        if (StringUtils.isNotEmpty(vehicleId)) {
-            e1List = e1List.stream().map(item -> item.stream().filter(route ->
-                            route.containsKey("id") && vehicleId.equals(String.valueOf(route.get("id"))))
-                    .collect(Collectors.toList())
-            ).collect(Collectors.toList());
+    public List<List<TrajectoryValueDto>> readTrajectoryFromRouteFile(String fileName, String participantId) throws IOException {
+        List<List<TrajectoryValueDto>> data = readRouteFile(fileName);
+        return readTrajectoryFromData(data, participantId);
+    }
+
+    public List<List<TrajectoryValueDto>> readTrajectoryFromData(List<List<TrajectoryValueDto>> data, String participantId) {
+        if (StringUtils.isNotEmpty(participantId)) {
+            data = data.stream().map(item -> filterParticipant(item, participantId)).collect(Collectors.toList());
         }
-        return e1List;
+        return data;
     }
 
-    public List<List<Map>> readRouteFile(String fileName) throws IOException {
+    public List<TrajectoryValueDto> filterParticipant(List<TrajectoryValueDto> data, String participantId) {
+        return StringUtils.isEmpty(participantId) ? data : CollectionUtils.emptyIfNull(data).stream().filter(route ->
+                        participantId.equals(route.getId()))
+                .collect(Collectors.toList());
+    }
+
+    public List<List<TrajectoryValueDto>> readRouteFile(String fileName) throws IOException {
         String routeFile = FileUploadUtils.getAbsolutePathFileName(fileName);
-        List<List<Map>> lists = FileUtils.readE1(routeFile);
-        return lists;
+        return FileUtils.readE1(routeFile);
     }
 
-    private List<List<Map>> byte2List(List<byte[]> bytes) {
-        return bytes.stream().map(e1 -> {
-            List<Map> mapList = new ArrayList<>();
-            try {
-                Demo e1Demo = Demo.parseFrom(e1);
-                mapList = JSONObject.parseArray(e1Demo.getValue(), Map.class);
-            } catch (InvalidProtocolBufferException e) {
-                System.out.println(e.getMessage());
-            }
-            return mapList;
-        }).collect(Collectors.toList());
-    }
+
 }

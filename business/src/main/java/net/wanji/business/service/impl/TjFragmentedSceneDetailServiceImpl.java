@@ -7,6 +7,7 @@ import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.YN;
+import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.dto.SceneQueryDto;
 import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
@@ -117,16 +118,9 @@ public class TjFragmentedSceneDetailServiceImpl
     @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean saveSceneDetail(TjFragmentedSceneDetailDto sceneDetailDto) throws BusinessException {
-        TjFragmentedScenes scenes = scenesMapper.selectById(sceneDetailDto.getFragmentedSceneId());
-        if (ObjectUtils.isEmpty(scenes)) {
-            throw new BusinessException("场景未找到");
-        }
-        if (YN.Y_INT == scenes.getIsFolder()) {
-            throw new BusinessException("文件夹下无法保存子场景");
-        }
+        TjFragmentedSceneDetail detail = new TjFragmentedSceneDetail();
+        BeanUtils.copyBeanProp(detail, sceneDetailDto);
         if (ObjectUtils.isEmpty(sceneDetailDto.getId())) {
-            TjFragmentedSceneDetail detail = new TjFragmentedSceneDetail();
-            BeanUtils.copyBeanProp(detail, sceneDetailDto);
             detail.setLabel(String.join(",", sceneDetailDto.getLabelList()));
             detail.setNumber(this.buildSceneNumber());
             detail.setCollectStatus(YN.N_INT);
@@ -134,14 +128,12 @@ public class TjFragmentedSceneDetailServiceImpl
             detail.setCreatedDate(LocalDateTime.now());
             return this.save(detail);
         }
-        TjFragmentedSceneDetail detail = new TjFragmentedSceneDetail();
-        BeanUtils.copyBeanProp(detail, sceneDetailDto);
-        if (CollectionUtils.isNotEmpty(sceneDetailDto.getLabelList())) {
-            detail.setLabel(String.join(",", sceneDetailDto.getLabelList()));
-        }
-        if (!ObjectUtils.isEmpty(sceneDetailDto.getTrajectoryJson())) {
-            detail.setTrajectoryInfo(JSONObject.toJSONString(sceneDetailDto.getTrajectoryJson()));
-        }
+        detail.setLabel(CollectionUtils.isNotEmpty(sceneDetailDto.getLabelList())
+                ? String.join(",", sceneDetailDto.getLabelList())
+                : null);
+        detail.setTrajectoryInfo(!ObjectUtils.isEmpty(sceneDetailDto.getTrajectoryJson())
+                ? sceneDetailDto.getTrajectoryJson().buildId().toJsonString()
+                : null);
         detail.setUpdatedBy(SecurityUtils.getUsername());
         detail.setUpdatedDate(LocalDateTime.now());
         return this.updateById(detail);
@@ -158,9 +150,9 @@ public class TjFragmentedSceneDetailServiceImpl
         List<FragmentedScenesDetailVo> detailVos = null;
         if (YN.Y_INT == scenes.getIsFolder()) {
             List<TjFragmentedScenes> collector = new ArrayList<>();
-            if (CollectionUtils.isNotEmpty(collector)) {
-                scenesService.selectChildrenFromFolder(scenes.getId(), collector);
-                List<Integer> sceneIds = collector.stream().map(TjFragmentedScenes::getId).collect(Collectors.toList());
+            scenesService.selectChildrenFromFolder(scenes.getId(), collector);
+            List<Integer> sceneIds = collector.stream().map(TjFragmentedScenes::getId).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(sceneIds)) {
                 queryDto.setFragmentedSceneId(null);
                 queryDto.setFragmentedSceneIds(sceneIds);
             }

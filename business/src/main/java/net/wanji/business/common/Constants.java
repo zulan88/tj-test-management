@@ -14,9 +14,9 @@ import java.util.stream.Collectors;
 
 public interface Constants {
 
-    class MapKey {
-        public static final String VEHICLE_KEY = "vehicle";
-        public static final String PEDESTRIAN_KEY = "pedestrian";
+    class RedisMessageType {
+        public static final String INFO = "info";
+        public static final String TRAJECTORY = "trajectory";
         public static final String OBSTACLE_KEY = "obstacle";
     }
 
@@ -43,6 +43,7 @@ public interface Constants {
         public static final String EXPORT_NAME_TEMPLATE = "{}_{}";
         public static final String SCENE_NUMBER_TEMPLATE = "SC{}{}";
         public static final String CASE_NUMBER_TEMPLATE = "CASE{}{}";
+        public static final String CASE_TRAJECTORY_TEMPLATE = "{}_trajectory_{}";
         public static final String SCENE_NAME_TEMPLATE = "{}_{}";
         public static final String COPY_SCENE_NAME_TEMPLATE = "{}_COPY{}";
     }
@@ -85,6 +86,7 @@ public interface Constants {
         public static final String RESOURCES_ID_COLUMN = "resources_id";
         public static final String TYPE_COLUMN = "type";
         public static final String CASE_ID_COLUMN = "case_id";
+        public static final String CASE_NUMBER_COLUMN = "case_number";
         public static final String TEST_TYPE_COLUMN = "test_type";
     }
 
@@ -203,6 +205,7 @@ public interface Constants {
     }
 
     class PlaybackAction {
+        public static final int CALL = 0;
         public static final int START = 1;
         public static final int SUSPEND = 2;
         public static final int CONTINUE = 3;
@@ -279,6 +282,12 @@ public interface Constants {
             }
             return "";
         }
+
+        public static String getNextStatus(String code) {
+            return Integer.parseInt(code) > 0 && Integer.parseInt(code) < Integer.parseInt(IN_BASE.code)
+                    ? String.valueOf(Integer.parseInt(code) + 1)
+                    : code;
+        }
     }
 
     enum FileTypeEnum {
@@ -321,10 +330,6 @@ public interface Constants {
      */
     interface UpdateGroup {}
     /**
-     * 状态操作分组
-     */
-    interface StatusGroup {}
-    /**
      * 查询校验分组
      */
     interface QueryGroup {}
@@ -336,4 +341,8 @@ public interface Constants {
      * 批量校验分组
      */
     interface BatchGroup {}
+    /**
+     * 其他分组
+     */
+    interface OtherGroup {}
 }

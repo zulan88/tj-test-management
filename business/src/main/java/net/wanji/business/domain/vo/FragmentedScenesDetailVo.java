@@ -2,6 +2,7 @@ package net.wanji.business.domain.vo;
 
 import com.alibaba.fastjson2.JSONObject;
 import lombok.extern.log4j.Log4j2;
+import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.common.utils.StringUtils;
 
@@ -55,7 +56,7 @@ public class FragmentedScenesDetailVo extends TjFragmentedSceneDetail {
 
     private String sceneTypeName;
 
-    private Map trajectoryJson;
+    private SceneTrajectoryBo trajectoryJson;
 
     private List<String> labelList;
 
@@ -147,10 +148,10 @@ public class FragmentedScenesDetailVo extends TjFragmentedSceneDetail {
         this.sceneTypeName = sceneTypeName;
     }
 
-    public Map getTrajectoryJson() {
+    public SceneTrajectoryBo getTrajectoryJson() {
         try{
             if (StringUtils.isNotEmpty(this.getTrajectoryInfo())) {
-                return JSONObject.parseObject(this.getTrajectoryInfo(), Map.class);
+                return JSONObject.parseObject(this.getTrajectoryInfo(), SceneTrajectoryBo.class);
             }
         }catch (Exception e){
             if(log.isErrorEnabled()){
@@ -160,7 +161,7 @@ public class FragmentedScenesDetailVo extends TjFragmentedSceneDetail {
         return trajectoryJson;
     }
 
-    public void setTrajectoryJson(Map<String, Object> trajectoryJson) {
+    public void setTrajectoryJson(SceneTrajectoryBo trajectoryJson) {
         this.trajectoryJson = trajectoryJson;
     }
 

@@ -1,10 +1,10 @@
 package net.wanji.business.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
 import net.wanji.business.domain.dto.SceneQueryDto;
 import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
-import com.baomidou.mybatisplus.extension.service.IService;
 import net.wanji.business.exception.BusinessException;
 
 import java.util.List;
@@ -32,7 +32,19 @@ public interface TjFragmentedSceneDetailService extends IService<TjFragmentedSce
      */
     boolean saveSceneDetail(TjFragmentedSceneDetailDto sceneDetailDto) throws BusinessException;
 
+    /**
+     * 列表查询场景卡片
+     * @param queryDto
+     * @return
+     * @throws BusinessException
+     */
     List<FragmentedScenesDetailVo> selectScene(SceneQueryDto queryDto) throws BusinessException;
 
+    /**
+     * 删除场景详情
+     * @param id
+     * @return
+     * @throws BusinessException
+     */
     boolean deleteSceneDetail(Integer id) throws BusinessException ;
 }

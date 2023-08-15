@@ -44,7 +44,7 @@ public class TjCaseDto {
     @NotBlank(message = "请输入测试目标", groups = {InsertGroup.class, UpdateGroup.class})
     private String testTarget;
 
-    @NotBlank(message = "请输入测试对象", groups = {InsertGroup.class, UpdateGroup.class})
+    @NotBlank(message = "请输入测试要求", groups = {InsertGroup.class, UpdateGroup.class})
     private String evaObject;
 
     @NotBlank(message = "请输入测试场景", groups = {InsertGroup.class, UpdateGroup.class})

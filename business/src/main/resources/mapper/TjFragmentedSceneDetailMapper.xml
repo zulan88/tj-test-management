@@ -69,6 +69,7 @@
                 AND sd.collect_status=#{collectStatus}
             </if>
         </where>
+        ORDER BY sd.collect_status DESC, sd.created_date DESC
     </select>
 
     <select id="selectUsingResources" resultType="java.lang.Integer">

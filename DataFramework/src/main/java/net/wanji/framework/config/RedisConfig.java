@@ -7,6 +7,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.data.redis.listener.RedisMessageListenerContainer;
+import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
+import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 /**
@@ -37,6 +40,26 @@ public class RedisConfig extends CachingConfigurerSupport
 
         template.afterPropertiesSet();
         return template;
+    }
+
+    @Bean
+    @SuppressWarnings(value = { "unchecked", "rawtypes" })
+    public RedisTemplate<String, byte[]> bytesRedisTemplate(RedisConnectionFactory connectionFactory)
+    {
+        RedisTemplate<String, byte[]> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setValueSerializer(RedisSerializer.byteArray());
+        template.afterPropertiesSet();
+        return template;
+    }
+
+    @Bean
+    public RedisMessageListenerContainer redisMessageListenerContainer(RedisConnectionFactory connectionFactory) {
+
+        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+        container.setConnectionFactory(connectionFactory);
+        return container;
     }
 
     @Bean

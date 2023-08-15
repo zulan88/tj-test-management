@@ -22,7 +22,10 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import net.wanji.common.common.SimulationTrajectoryDto;
+import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.config.WanjiConfig;
+import net.wanji.common.utils.DataUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import net.wanji.common.utils.DateUtils;
@@ -117,7 +120,7 @@ public class FileUtils
         return FileUploadUtils.getPathFileName(uploadDir, pathName);
     }
 
-    public static String writeE1Bytes(List<List<Map>> data, String uploadDir, String extension) throws IOException
+    public static String writeE1List(List<?> data, String uploadDir, String extension) throws IOException
     {
         String pathName = "";
         PrintWriter writer = null;
@@ -126,7 +129,7 @@ public class FileUtils
             pathName = DateUtils.datePath() + "/" + IdUtils.fastUUID() + "." + extension;
             File file = FileUploadUtils.getAbsoluteFile(uploadDir, pathName);
             writer = new PrintWriter(file, "utf-8");
-            for (List<Map> content : data) {
+            for (Object content : data) {
                 writer.println(JSONObject.toJSONString(content));
             }
         } catch (FileNotFoundException | UnsupportedEncodingException e) {
@@ -166,12 +169,13 @@ public class FileUtils
         return FileUploadUtils.getPathFileName(uploadDir, pathName);
     }
 
-    public static List<List<Map>> readE1(String filePath) {
-        List<List<Map>> list = new ArrayList<>();
+    public static List<List<TrajectoryValueDto>> readE1(String filePath) {
+        List<List<TrajectoryValueDto>> list = new ArrayList<>();
         try (BufferedReader  br = new BufferedReader(new FileReader(filePath))) {
             String line;
             while ((line = br.readLine()) != null) {
-                List<Map> mapList = JSONObject.parseArray(line, Map.class);
+                SimulationTrajectoryDto data = JSONObject.parseObject(line, SimulationTrajectoryDto.class);
+                List<TrajectoryValueDto> mapList = JSONObject.parseArray(data.getValue(), TrajectoryValueDto.class);
                 list.add(mapList);
             }
         } catch (IOException e) {

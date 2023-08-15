@@ -15,7 +15,6 @@ public class TrajectoryDetailBo {
     private String time;
     private Long frameId;
     private String position;
-    private List<Double> coordinate;
     private String lane;
     private Double speed;
     private String speedUnit;

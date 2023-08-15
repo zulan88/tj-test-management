@@ -2,6 +2,7 @@ package net.wanji.web.controller.business;
 
 import com.alibaba.fastjson2.JSON;
 import net.wanji.business.common.Constants.InsertGroup;
+import net.wanji.business.common.Constants.OtherGroup;
 import net.wanji.business.common.Constants.UpdateGroup;
 import net.wanji.business.domain.BusinessTreeSelect;
 import net.wanji.business.domain.dto.SceneQueryDto;
@@ -116,7 +117,8 @@ public class SceneBaseController extends BaseController {
 
     @PreAuthorize("@ss.hasPermi('sceneBase:saveSceneTrajectory')")
     @PostMapping("/saveSceneTrajectory")
-    public AjaxResult saveSceneTrajectory(@RequestBody TjFragmentedSceneDetailDto sceneDetailDto)
+    public AjaxResult saveSceneTrajectory(@Validated(value = OtherGroup.class)
+                                              @RequestBody TjFragmentedSceneDetailDto sceneDetailDto)
             throws BusinessException {
         return tjFragmentedSceneDetailService.saveSceneDetail(sceneDetailDto)
                 ? AjaxResult.success("成功")

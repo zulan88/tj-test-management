@@ -2,8 +2,10 @@ package net.wanji.business.domain.dto;
 
 import lombok.Data;
 import net.wanji.business.common.Constants.InsertGroup;
+import net.wanji.business.common.Constants.OtherGroup;
 import net.wanji.business.common.Constants.QueryGroup;
 import net.wanji.business.common.Constants.UpdateGroup;
+import net.wanji.business.domain.bo.SceneTrajectoryBo;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
@@ -19,12 +21,13 @@ import java.util.Map;
 @Data
 public class TjFragmentedSceneDetailDto {
 
+    @NotNull(message = "请选择一个子场景", groups = {UpdateGroup.class, OtherGroup.class})
     private Integer id;
 
     /**
      * 片段式场景id
      */
-    @NotNull(message = "请确认场景", groups = {QueryGroup.class, InsertGroup.class, UpdateGroup.class})
+    @NotNull(message = "请确认所属场景", groups = {QueryGroup.class, InsertGroup.class, UpdateGroup.class})
     private Integer fragmentedSceneId;
 
     /**
@@ -125,9 +128,16 @@ public class TjFragmentedSceneDetailDto {
     private List<String> labelList;
 
     /**
+     * 图片(路网选点截图)
+     */
+    @NotNull(message = "请截图", groups = {OtherGroup.class})
+    private String imgUrl;
+
+    /**
      * 轨迹信息
      */
-    private Map trajectoryJson;
+    @NotNull(message = "请进行点位标记", groups = {OtherGroup.class})
+    private SceneTrajectoryBo trajectoryJson;
 
     /**
      * 收藏状态（未收藏：0；已收藏：1；）

@@ -48,7 +48,7 @@ public class WebSocketManage {
 
     public static void sendInfo(String id, String message) {
         if (!clients.containsKey(id)) {
-            log.error(String.format("sendInfo:客户端%s不存在", id));
+//            log.error(String.format("sendInfo:客户端%s不存在", id));
             return;
         }
         clients.get(id).getSession().getAsyncRemote().sendText(message);

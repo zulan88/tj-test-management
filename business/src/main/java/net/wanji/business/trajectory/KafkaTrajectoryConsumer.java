@@ -1,16 +1,11 @@
-package net.wanji.business.util;
+package net.wanji.business.trajectory;
 
-import com.alibaba.fastjson.JSONObject;
-import com.google.protobuf.InvalidProtocolBufferException;
-import com.google.protobuf.util.JsonFormat;
-import net.wanji.business.proto.E1FrameProto;
 import net.wanji.common.config.KafkaConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -25,14 +20,20 @@ import java.util.Properties;
  * @Descriptoin:
  */
 @Component
-public class TrajectoryConsumer {
+public class KafkaTrajectoryConsumer {
 
     private KafkaConsumerConfig kafkaConsumerConfig;
 
-    public TrajectoryConsumer(KafkaConsumerConfig kafkaConsumerConfig) {
+    public KafkaTrajectoryConsumer(KafkaConsumerConfig kafkaConsumerConfig) {
         this.kafkaConsumerConfig = kafkaConsumerConfig;
     }
 
+    /**
+     * 消费已上传的消息（固定offset范围）
+     *
+     * @param topic
+     * @return
+     */
     public List<byte[]> consumeMessages(String topic) {
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConsumerConfig.getServers());
@@ -66,8 +67,8 @@ public class TrajectoryConsumer {
             }
         }
         return list;
-
     }
+
 
     public void verifyTrajectory() {
 

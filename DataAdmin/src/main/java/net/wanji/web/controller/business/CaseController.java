@@ -1,13 +1,10 @@
 package net.wanji.web.controller.business;
 
-import com.alibaba.fastjson.JSONObject;
 import com.github.pagehelper.PageHelper;
 import net.wanji.business.common.Constants.BatchGroup;
-import net.wanji.business.common.Constants.CaseStatusEnum;
 import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.business.common.Constants.DeleteGroup;
 import net.wanji.business.common.Constants.InsertGroup;
-import net.wanji.business.common.Constants.PlaybackAction;
 import net.wanji.business.common.Constants.QueryGroup;
 import net.wanji.business.common.Constants.UpdateGroup;
 import net.wanji.business.domain.BusinessTreeSelect;
@@ -15,7 +12,6 @@ import net.wanji.business.domain.dto.SceneQueryDto;
 import net.wanji.business.domain.dto.TjCaseDto;
 import net.wanji.business.domain.vo.CaseVo;
 import net.wanji.business.entity.TjCase;
-import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.TjCaseService;
@@ -25,7 +21,6 @@ import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
 import net.wanji.common.utils.DateUtils;
-import net.wanji.common.utils.ServletUtils;
 import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.poi.ExcelUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,14 +32,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.context.request.RequestAttributes;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Enumeration;
 import java.util.List;
 
 /**
@@ -73,8 +63,10 @@ public class CaseController extends BaseController {
 
     @PreAuthorize("@ss.hasPermi('case:initEditPage')")
     @GetMapping("/initEditPage")
-    public AjaxResult initEditPage(@RequestParam("sceneDetailId") Integer sceneDetailId) throws BusinessException  {
-        return AjaxResult.success(caseService.initEditPage(sceneDetailId));
+    public AjaxResult initEditPage(@RequestParam("sceneDetailId") Integer sceneDetailId,
+                                   @RequestParam(value = "caseId", required = false) Integer caseId
+    ) throws BusinessException {
+        return AjaxResult.success(caseService.initEditPage(sceneDetailId, caseId));
     }
 
     @PreAuthorize("@ss.hasPermi('case:selectTree')")
@@ -103,7 +95,7 @@ public class CaseController extends BaseController {
     @PreAuthorize("@ss.hasPermi('case:saveCase')")
     @PostMapping("/saveCase")
     public AjaxResult createCase(@Validated(value = InsertGroup.class) @RequestBody TjCaseDto tjCaseDto)
-            throws BusinessException{
+            throws BusinessException {
         return AjaxResult.success(caseService.saveCase(tjCaseDto));
     }
 
@@ -117,14 +109,6 @@ public class CaseController extends BaseController {
     @GetMapping("/detail")
     public AjaxResult detail(@RequestParam("id") Integer id) throws BusinessException {
         return AjaxResult.success(caseService.getSimulationDetail(id));
-    }
-
-    @PreAuthorize("@ss.hasPermi('case:saveDetail')")
-    @PostMapping("/saveDetail")
-    public AjaxResult saveDetail(@Validated(value = UpdateGroup.class) @RequestBody TjCaseDto tjCaseDto)
-            throws BusinessException, IOException {
-        caseService.saveDetail(tjCaseDto);
-        return AjaxResult.success("上传成功");
     }
 
     @PreAuthorize("@ss.hasPermi('case:cloneCase')")
@@ -144,7 +128,6 @@ public class CaseController extends BaseController {
     }
 
 
-
     @PreAuthorize("@ss.hasPermi('case:batchDelete')")
     @PostMapping("/batchDelete")
     public AjaxResult batchDelete(@Validated(value = BatchGroup.class) @RequestBody TjCaseDto tjCaseDto) {
@@ -153,27 +136,19 @@ public class CaseController extends BaseController {
                 : AjaxResult.error("删除失败");
     }
 
-    @PreAuthorize("@ss.hasPermi('case:joinSimulation')")
-    @GetMapping("/joinSimulation")
-    public AjaxResult joinSimulation(@RequestParam("id") Integer id) throws BusinessException {
-        return caseService.joinSimulationVerify(id)
-                ? AjaxResult.success("加入成功")
-                : AjaxResult.error("加入失败");
-    }
-
-    @PreAuthorize("@ss.hasPermi('case:joinTask')")
-    @PostMapping("/joinTask")
-    public AjaxResult joinTask(@Validated(value = BatchGroup.class) @RequestBody TjCaseDto tjCaseDto)
+    @PreAuthorize("@ss.hasPermi('case:updateStatus')")
+    @PostMapping("/updateStatus")
+    public AjaxResult updateStatus(@Validated(value = BatchGroup.class) @RequestBody TjCaseDto tjCaseDto)
             throws BusinessException {
-        return caseService.joinTask(tjCaseDto.getIds())
-                ? AjaxResult.success("加入成功")
-                : AjaxResult.error("加入失败");
+        return caseService.updateStatus(tjCaseDto)
+                ? AjaxResult.success("成功")
+                : AjaxResult.error("失败");
     }
 
     @PreAuthorize("@ss.hasPermi('case:export')")
     @PostMapping("/export")
     public void export(HttpServletResponse response,
-                             @Validated(value = BatchGroup.class) @RequestBody TjCaseDto tjCaseDto) {
+                       @Validated(value = BatchGroup.class) @RequestBody TjCaseDto tjCaseDto) {
         List<CaseVo> caseVos = caseService.getCases(tjCaseDto);
         TjCase tjCase = caseService.getById(tjCaseDto.getIds().get(0));
         TjFragmentedScenes scenes = scenesService.getById(tjCase.getSceneDetailId());
@@ -189,18 +164,12 @@ public class CaseController extends BaseController {
         return caseService.verifyTrajectory(id) ? AjaxResult.success("校验完成") : AjaxResult.error("校验失败");
     }
 
-
-
     @PreAuthorize("@ss.hasPermi('case:playback')")
     @GetMapping("/playback")
     public AjaxResult detail(@RequestParam(value = "id") Integer id,
                              @RequestParam(value = "action") int action,
                              @RequestParam(value = "vehicleId", required = false) String vehicleId)
             throws BusinessException, IOException {
-        if (!Arrays.asList(PlaybackAction.START, PlaybackAction.SUSPEND, PlaybackAction.CONTINUE, PlaybackAction.STOP)
-                .contains(action)) {
-            throw new BusinessException("请选择正确操作");
-        }
         caseService.playback(id, vehicleId, action);
         return AjaxResult.success();
     }

@@ -1,8 +1,6 @@
 package net.wanji.web.controller.business;
 
-import net.wanji.business.common.Constants.DeleteGroup;
 import net.wanji.business.common.Constants.InsertGroup;
-import net.wanji.business.common.Constants.StatusGroup;
 import net.wanji.business.domain.BusinessTreeSelect;
 import net.wanji.business.domain.dto.TjResourcesDetailDto;
 import net.wanji.business.domain.dto.TjResourcesDto;

@@ -110,6 +110,18 @@
             <artifactId>jjwt</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>3.23.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java-util</artifactId>
+            <version>3.17.3</version>
+        </dependency>
+
         <!-- Jaxb -->
         <dependency>
             <groupId>javax.xml.bind</groupId>

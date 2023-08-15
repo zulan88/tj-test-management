@@ -14,11 +14,15 @@ import java.util.Map;
 public class CaseConfigDetailVo {
     private Integer id;
     /**
+     * 场景详情
+     */
+    private FragmentedScenesDetailVo sceneDetail;
+    /**
      * 测试目标
      */
     private String testTarget;
     /**
-     * 测试对象
+     * 测试要求
      */
     private String evaObject;
     /**

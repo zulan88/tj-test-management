@@ -2,8 +2,9 @@ package net.wanji.business.schedule;
 
 import com.alibaba.fastjson.JSONObject;
 import lombok.Data;
-import net.wanji.business.domain.PlaybackMessage;
+import net.wanji.business.domain.WebsocketMessage;
 import net.wanji.business.exception.BusinessException;
+import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.socket.websocket.WebSocketManage;
 import org.springframework.util.ObjectUtils;
@@ -24,11 +25,11 @@ public class PlaybackDomain {
 
     private ScheduledFuture<?> future;
     private String id;
-    private List<List<Map>> data = null;
+    private List<List<TrajectoryValueDto>> data = null;
     private int index;
     private boolean running;
 
-    public PlaybackDomain(ScheduledExecutorService executorService, String id, List<List<Map>> data) {
+    public PlaybackDomain(ScheduledExecutorService executorService, String id, List<List<TrajectoryValueDto>> data) {
         this.id = id;
         this.data = data;
         this.index = 0;
@@ -40,13 +41,12 @@ public class PlaybackDomain {
                     return;
                 }
                 if (index >= data.size()) {
-                    future.cancel(true);
-                    WebSocketManage.close(this.id);
+                    PlaybackSchedule.stopSendingData(id);
                     return;
                 }
                 String countDown = DateUtils.secondsToDuration(
                         (int) Math.floor((double) (data.size() - index) / 10));
-                PlaybackMessage message = new PlaybackMessage(countDown, data.get(index));
+                WebsocketMessage message = new WebsocketMessage(countDown, data.get(index));
                 WebSocketManage.sendInfo(id, JSONObject.toJSONString(message));
                 index++;
             } catch (Exception e) {
@@ -77,7 +77,7 @@ public class PlaybackDomain {
             throw new BusinessException("任务不存在");
         }
         this.running = false;
-        future.cancel(true);
+        this.future.cancel(true);
         WebSocketManage.close(this.id);
     }
 

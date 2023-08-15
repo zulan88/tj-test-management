@@ -1,6 +1,7 @@
 package net.wanji.business.schedule;
 
 import net.wanji.business.exception.BusinessException;
+import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.utils.StringUtils;
 
 import java.util.HashMap;
@@ -21,7 +22,7 @@ public class PlaybackSchedule {
     static Map<String, PlaybackDomain> futureMap = new HashMap<>(16);
     final static String DEFAULT_KEY = "ALL_VEHICLE";
 
-    public static void startSendingData(String vehicleId, List<List<Map>> data) {
+    public static void startSendingData(String vehicleId, List<List<TrajectoryValueDto>> data) {
         String key = getFutureKeyIfNull(vehicleId);
         if (!futureMap.containsKey(key)) {
             PlaybackDomain playbackDomain = new PlaybackDomain(executorService, key, data);

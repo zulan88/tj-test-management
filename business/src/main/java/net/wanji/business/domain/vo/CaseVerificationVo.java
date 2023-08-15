@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import lombok.Data;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.entity.TjCase;
+import net.wanji.common.utils.StringUtils;
 
 /**
  * @Auther: guanyuduo
@@ -15,11 +16,18 @@ public class CaseVerificationVo {
 
     private Integer id;
 
+    private String geoJsonPath;
+
     private CaseTrajectoryDetailBo detailInfo;
 
-    public CaseVerificationVo(TjCase tjCase) {
+    private boolean finished;
+
+    public CaseVerificationVo(TjCase tjCase, String geoJsonPath) {
         this.id = tjCase.getId();
-        this.detailInfo = JSONObject.parseObject(tjCase.getDetailInfo(), CaseTrajectoryDetailBo.class);
+        this.geoJsonPath = geoJsonPath;
+        this.detailInfo = StringUtils.isNotEmpty(tjCase.getDetailInfo())
+                ? JSONObject.parseObject(tjCase.getDetailInfo(), CaseTrajectoryDetailBo.class)
+                : null;
     }
 
 }

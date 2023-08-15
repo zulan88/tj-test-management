@@ -34,16 +34,17 @@ public interface TjCaseService extends IService<TjCase> {
 
     /**
      * 配置页初始化
+     *
      * @return sceneDetailId
+     * @return caseId
      */
-    Map<String, Object> initEditPage(Integer sceneDetailId) throws BusinessException ;
+    Map<String, Object> initEditPage(Integer sceneDetailId, Integer caseId) throws BusinessException;
 
     /**
      * 查询测试用例中包含的场景
      *
      * @param testType 测试类型
      * @param type     场景树类型
-     * @param name     名称
      * @return
      */
     List<TjFragmentedScenes> selectScenesInCase(String testType, String type);
@@ -68,20 +69,11 @@ public interface TjCaseService extends IService<TjCase> {
     /**
      * 查询场景下包含测试用例的子场景
      *
-     * @param testType 测试方法
+     * @param testType          测试方法
      * @param fragmentedSceneId 片段式场景id
      * @return
      */
     List<TjFragmentedSceneDetail> selectSubscenesInCase(String testType, Integer fragmentedSceneId);
-
-    /**
-     * 保存仿真信息
-     *
-     * @param tjCaseDto
-     * @return
-     */
-    Integer saveDetail(TjCaseDto tjCaseDto) throws BusinessException, IOException;
-
 
     /**
      * 校验轨迹点位
@@ -93,9 +85,13 @@ public interface TjCaseService extends IService<TjCase> {
     /**
      * 轨迹回放
      *
-     * @param id
+     * @param id            用例ID
+     * @param participantId 参与者ID
+     * @param action        操作 PlaybackAction
+     * @throws BusinessException
+     * @throws IOException
      */
-    void playback(Integer id, String vehicleId, int action) throws BusinessException, IOException;
+    void playback(Integer id, String participantId, int action) throws BusinessException, IOException;
 
     /**
      * 克隆用例
@@ -122,20 +118,12 @@ public interface TjCaseService extends IService<TjCase> {
      */
     void exportCases(List<TjCase> cases, String fileName) throws IOException;
 
-
     /**
-     * 加入仿真验证
+     * 修改状态
      *
-     * @param id
+     * @param tjCaseDto
      */
-    boolean joinSimulationVerify(Integer id) throws BusinessException;
-
-    /**
-     * 加入测试任务
-     *
-     * @param ids
-     */
-    boolean joinTask(List<Integer> ids) throws BusinessException;
+    boolean updateStatus(TjCaseDto tjCaseDto) throws BusinessException;
 
 
     /**
