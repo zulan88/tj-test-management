@@ -60,11 +60,18 @@ public class TjCasePartConfig implements Serializable {
     private String businessType;
 
     /**
+     * 参与者名称
+     */
+    @TableField("name")
+    @Excel(name = "参与者名称")
+    private String name;
+
+    /**
      * 模型（1-小客车；2-大货车；3-大巴车；4-行人；5-自行车；）
      */
     @TableField("model")
     @Excel(name = "模型")
-    private String model;
+    private Integer model;
 
     /**
      * 关联实际客户端ID

@@ -2,6 +2,9 @@ package net.wanji.business.domain.dto;
 
 import lombok.Data;
 import net.wanji.business.common.Constants.DeleteGroup;
+import net.wanji.business.common.Constants.InsertGroup;
+import net.wanji.business.common.Constants.OtherGroup;
+import net.wanji.business.common.Constants.UpdateGroup;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -20,25 +23,29 @@ public class TjResourcesDetailDto {
     /**
      * 所属资源id
      */
-    @NotNull(message = "请确认所属资源")
+    @NotNull(message = "请确认所属资源", groups = {InsertGroup.class, UpdateGroup.class, OtherGroup.class})
     private Integer resourcesId;
 
     /**
      * 名称
      */
-    @NotBlank(message = "请填写名称")
+    @NotBlank(message = "请填写名称", groups = {InsertGroup.class, UpdateGroup.class, OtherGroup.class})
     private String name;
+
+    private String code;
+
+    private String format;
 
     /**
      * 源文件存储路径
      */
-    @NotBlank(message = "请上传资源文件")
+    @NotBlank(message = "请上传资源文件", groups = {InsertGroup.class, UpdateGroup.class, OtherGroup.class})
     private String filePath;
 
     /**
      * 示意图存储路径
      */
-    @NotBlank(message = "请上传缩略图")
+    @NotBlank(message = "请上传缩略图", groups = {InsertGroup.class, UpdateGroup.class})
     private String imgPath;
 
     /**

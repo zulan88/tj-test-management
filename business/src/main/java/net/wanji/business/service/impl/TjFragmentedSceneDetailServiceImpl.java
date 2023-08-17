@@ -97,6 +97,7 @@ public class TjFragmentedSceneDetailServiceImpl
         TjResourcesDetail tjResourcesDetail = tjResourcesDetailService.getById(
             detailVo.getResourcesDetailId());
         detailVo.setResourcesName(tjResourcesDetail.getName());
+        detailVo.setFilePath(tjResourcesDetail.getFilePath());
         detailVo.setGeoJsonPath(tjResourcesDetail.getAttribute4());
         // 道路类型
         detailVo.setRoadTypeName(dictDataService.selectDictLabel(SysType.ROAD_TYPE

@@ -6,6 +6,7 @@ import net.wanji.business.domain.vo.ResourcesDetailVo;
 import net.wanji.business.entity.TjResourcesDetail;
 import net.wanji.business.exception.BusinessException;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -24,6 +25,13 @@ public interface TjResourcesDetailService extends IService<TjResourcesDetail> {
      * @return
      */
     List<ResourcesDetailVo> getDetailList(Integer resourceId, String name);
+
+    /**
+     * 预览
+     * @param resourcesDetailDto
+     * @return
+     */
+    ResourcesDetailVo preview(TjResourcesDetailDto resourcesDetailDto) throws BusinessException, IOException;
 
     /**
      * 保存资源详情

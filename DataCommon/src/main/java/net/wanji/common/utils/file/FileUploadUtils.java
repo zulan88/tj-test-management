@@ -1,9 +1,15 @@
 package net.wanji.common.utils.file;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Paths;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.Objects;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import net.wanji.common.config.WanjiConfig;
 import net.wanji.common.constant.Constants;
@@ -100,6 +106,60 @@ public class FileUploadUtils
             throw new IOException(e.getMessage(), e);
         }
     }
+
+//    public static final List<String> uploadZip(MultipartFile srcFile,String savePath) {
+//        //解压文件
+//        ZipFile zipFile = null;
+//        try {
+//            zipFile = new ZipFile(srcFile., Charset.forName("GBK"));
+//            Enumeration<? extends ZipEntry> entries = zipFile.entries();
+//            while(entries.hasMoreElements()){
+//                ZipEntry zipEntry = entries.nextElement();
+//                //判断是文件夹 或者 文件
+//                if(!zipEntry.isDirectory()){
+//                    //保存到本地
+//                    String fileName = zipEntry.getName();
+//                    //获取的文件，如果存在父级，文件名会显示父级路径，所有我们需要手动去掉
+//                    if(fileName.lastIndexOf("/") != -1){
+//                        fileName = fileName.substring(fileName.lastIndexOf("/")+1);
+//                    }
+//                    File shpFile = new File(savePath + File.separator+fileName);
+//                    shpFile.createNewFile();
+//                    copyFile(zipFile.getInputStream(zipEntry),new FileOutputStream(shpFile));
+//                }
+//
+//            }
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }finally {
+//            if(zipFile!=null){
+//                try {
+//                    zipFile.close();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }
+//        for (String fileName : itemNames) {
+//            switch (FilenameUtils.getExtension(fileName)) {
+//                case FileExtension.XODR:
+//                    format = FileTypeEnum.OpenDrive.getType();
+//                    break;
+//                case FileExtension.GEO_JSON:
+//                    if (fileName.contains(GeoJsonType.COMPRESSED)) {
+//                        compressed = fileName;
+//                        break;
+//                    }
+//                    if (fileName.contains(GeoJsonType.LINES)) {
+//                        lines = fileName;
+//                        break;
+//                    }
+//                    break;
+//                default:
+//                    break;
+//            }
+//        }
+//    }
 
     /**
      * 文件上传

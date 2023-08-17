@@ -26,7 +26,7 @@ public class ParticipantTrajectoryBo {
      */
     private Integer model;
     /**
-     * 模型名称
+     * 参与者名称
      */
     private String name;
     /**
@@ -41,4 +41,8 @@ public class ParticipantTrajectoryBo {
      * 路线
      */
     List<Map<String, Double>> route;
+
+    public String getDuration() {
+        return StringUtils.isEmpty(duration) ? "00:00" : duration;
+    }
 }

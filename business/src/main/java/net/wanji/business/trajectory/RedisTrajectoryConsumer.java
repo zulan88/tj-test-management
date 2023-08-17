@@ -34,6 +34,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -49,7 +51,7 @@ public class RedisTrajectoryConsumer {
 
     private static final Logger log = LoggerFactory.getLogger("business");
 
-    private Map<String, ChannelListener<SimulationTrajectoryDto>> runningChannel = new HashMap<>();
+    private ConcurrentHashMap<String, ChannelListener<SimulationTrajectoryDto>> runningChannel = new ConcurrentHashMap<>();
 
     private RedisMessageListenerContainer redisMessageListenerContainer;
 
@@ -67,7 +69,7 @@ public class RedisTrajectoryConsumer {
     public void validChannel() {
         ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
         scheduledExecutorService.scheduleAtFixedRate(
-                this::removeListener, 0, 2, TimeUnit.SECONDS);
+                this::removeListeners, 0, 2, TimeUnit.SECONDS);
     }
 
     /**
@@ -78,35 +80,41 @@ public class RedisTrajectoryConsumer {
      */
     public void subscribeAndSend(Integer caseId, String channel, String participantId) {
         ObjectMapper objectMapper = new ObjectMapper();
+
         MessageListener listener = (message, pattern) -> {
             try {
-
                 SimulationMessage simulationMessage = objectMapper.readValue(message.toString(),
                         SimulationMessage.class);
+                log.info(JSONObject.toJSONString(simulationMessage));
                 switch (simulationMessage.getType()) {
-                    case RedisMessageType.INFO:
-                        SimulationInfoDto simulationInfo = objectMapper.readValue(simulationMessage.getValue(),
-                                SimulationInfoDto.class);
-                        TjCase tjCase = caseMapper.selectById(caseId);
-                        CaseTrajectoryDetailBo caseDetail = JSONObject.parseObject(tjCase.getDetailInfo(),
+                    case RedisMessageType.START:
+                        TjCase startCase = caseMapper.selectById(caseId);
+                        CaseTrajectoryDetailBo startCaseDetail = JSONObject.parseObject(startCase.getDetailInfo(),
                                 CaseTrajectoryDetailBo.class);
-                        Optional.ofNullable(simulationInfo.getSceneDesc()).ifPresent(caseDetail::setSceneDesc);
-                        Optional.ofNullable(simulationInfo.getEvaluationVerify()).ifPresent(caseDetail::setEvaluationVerify);
-                        Optional.ofNullable(simulationInfo.getSceneForm()).ifPresent(caseDetail::setSceneForm);
-                        tjCase.setDetailInfo(JSONObject.toJSONString(caseDetail));
-                        caseMapper.updateById(tjCase);
+                        SimulationInfoDto start = objectMapper.readValue(simulationMessage.getValue(),
+                                SimulationInfoDto.class);
+                        log.info(StringUtils.format("开始接收{}数据：{}", channel, JSONObject.toJSONString(start)));
+                        Optional.ofNullable(start.getSceneDesc()).ifPresent(startCaseDetail::setSceneDesc);
+                        Optional.ofNullable(start.getEvaluationVerify()).ifPresent(startCaseDetail::setEvaluationVerify);
+                        Optional.ofNullable(start.getSceneForm()).ifPresent(startCaseDetail::setSceneForm);
+                        startCase.setDetailInfo(JSONObject.toJSONString(startCaseDetail));
+                        caseMapper.updateById(startCase);
                         break;
                     case RedisMessageType.TRAJECTORY:
                         SimulationTrajectoryDto simulationTrajectory = objectMapper.readValue(simulationMessage.getValue(),
                                 SimulationTrajectoryDto.class);
+                        log.info(StringUtils.format("第{}帧轨迹：{}", getDataSize(channel),
+                                JSONObject.toJSONString(simulationTrajectory)));
                         if (StringUtils.isNotEmpty(simulationTrajectory.getValue())) {
+                            // 实际轨迹消息
+                            List<TrajectoryValueDto> data = JSONObject.parseArray(simulationTrajectory.getValue(),
+                                    TrajectoryValueDto.class);
+                            routeService.checkRoute(caseId, data);
                             receiveData(channel, simulationTrajectory);
                             // 计时
                             String countDown = DateUtils.secondsToDuration(
                                     (int) Math.floor((double) (getDataSize(channel)) / 10));
-                            // ws消息
-                            List<TrajectoryValueDto> data = JSONObject.parseArray(simulationTrajectory.getValue(),
-                                    TrajectoryValueDto.class);
+
                             data = routeService.filterParticipant(data, participantId);
                             // send ws
                             WebsocketMessage msg = new WebsocketMessage(countDown, data);
@@ -114,12 +122,26 @@ public class RedisTrajectoryConsumer {
                                     JSONObject.toJSONString(msg));
                         }
                         break;
+                    case RedisMessageType.END:
+                        removeListenerThenSave(channel);
+                        SimulationInfoDto end = objectMapper.readValue(simulationMessage.getValue(),
+                                SimulationInfoDto.class);
+                        log.info(StringUtils.format("结束接收{}数据：{}",  channel, JSONObject.toJSONString(end)));
+                        TjCase endCase = caseMapper.selectById(caseId);
+                        CaseTrajectoryDetailBo endCaseDetail = JSONObject.parseObject(endCase.getDetailInfo(),
+                                CaseTrajectoryDetailBo.class);
+                        Optional.ofNullable(end.getSceneDesc()).ifPresent(endCaseDetail::setSceneDesc);
+                        Optional.ofNullable(end.getEvaluationVerify()).ifPresent(endCaseDetail::setEvaluationVerify);
+                        Optional.ofNullable(end.getSceneForm()).ifPresent(endCaseDetail::setSceneForm);
+                        endCase.setDetailInfo(JSONObject.toJSONString(endCaseDetail));
+                        caseMapper.updateById(endCase);
+                        break;
                     default:
                         break;
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-                removeListener(channel);
+                removeListenerThenSave(channel);
             }
         };
         this.addRunningChannel(channel, listener);
@@ -154,16 +176,22 @@ public class RedisTrajectoryConsumer {
         return channelListener.getCurrentSize();
     }
 
-    public void removeListener(String channel) {
+    public void removeListenerThenSave(String channel) {
         if (!this.runningChannel.containsKey(channel)) {
             return;
         }
         ChannelListener<SimulationTrajectoryDto> channelListener = this.runningChannel.get(channel);
         removeMessageListener(channelListener.getListener(), channelListener.getChannel());
-        this.runningChannel.remove(channelListener.getChannel());
+        try {
+            routeService.saveRouteFile(channelListener.getChannel(),
+                    channelListener.getData());
+        } catch (ExecutionException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        this.runningChannel.remove(channel);
     }
 
-    public void removeListener() {
+    public void removeListeners() {
         try {
             Iterator<Map.Entry<String, ChannelListener<SimulationTrajectoryDto>>> iterator =
                     this.runningChannel.entrySet().iterator();
@@ -171,13 +199,13 @@ public class RedisTrajectoryConsumer {
                 Map.Entry<String, ChannelListener<SimulationTrajectoryDto>> entry = iterator.next();
                 ChannelListener<SimulationTrajectoryDto> channelListener = entry.getValue();
                 if (channelListener.isExpire()) {
+                    removeMessageListener(channelListener.getListener(), channelListener.getChannel());
                     try {
                         routeService.saveRouteFile(channelListener.getChannel(),
                                 channelListener.getData());
                     } catch (ExecutionException | InterruptedException e) {
                         e.printStackTrace();
                     }
-                    removeMessageListener(channelListener.getListener(), channelListener.getChannel());
                     iterator.remove();  // Removes the current element from the map
                 }
             }

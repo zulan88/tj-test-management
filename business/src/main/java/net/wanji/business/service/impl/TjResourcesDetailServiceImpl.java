@@ -3,9 +3,12 @@ package net.wanji.business.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import net.wanji.business.common.Constants.ColumnName;
+import net.wanji.business.common.Constants.FileExtension;
 import net.wanji.business.common.Constants.FileTypeEnum;
+import net.wanji.business.common.Constants.GeoJsonType;
 import net.wanji.business.common.Constants.ResourceType;
 import net.wanji.business.common.Constants.SysType;
+import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.dto.TjResourcesDetailDto;
 import net.wanji.business.domain.vo.ResourcesDetailVo;
 import net.wanji.business.entity.TjResources;
@@ -18,6 +21,8 @@ import net.wanji.business.service.TjResourcesDetailService;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.bean.BeanUtils;
+import net.wanji.common.utils.file.FileUploadUtils;
+import net.wanji.common.utils.file.FileUtils;
 import net.wanji.system.service.ISysDictDataService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -26,12 +31,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -79,31 +86,78 @@ public class TjResourcesDetailServiceImpl extends ServiceImpl<TjResourcesDetailM
     }
 
     @Override
+    public ResourcesDetailVo preview(TjResourcesDetailDto resourcesDetailDto) throws BusinessException, IOException {
+        ResourcesDetailVo resourcesDetail = new ResourcesDetailVo();
+        BeanUtils.copyBeanProp(resourcesDetail, resourcesDetailDto);
+        if (ObjectUtils.isEmpty(resourcesDetailDto.getId())) {
+            resourcesDetail.setCode(StringUtils.generateRandomString());
+        } else {
+            TjResourcesDetail oldDetail = this.getById(resourcesDetailDto.getId());
+            if (ObjectUtils.isEmpty(oldDetail)) {
+                throw new BusinessException("未查询到对应资源详情");
+            }
+            resourcesDetail.setId(oldDetail.getId());
+            resourcesDetail.setCode(oldDetail.getCode());
+        }
+        validPreviewParam(resourcesDetailDto);
+
+        String file = FileUploadUtils.getAbsolutePathFileName(resourcesDetailDto.getFilePath());
+        List<String> itemNames = FileUtils.readZipFile(file);
+        if (CollectionUtils.isEmpty(itemNames) || itemNames.size() < 3) {
+            throw new BusinessException("zip文件中需要包含opendrive路网文件，背景及边线geojson文件");
+        }
+        String format = null;
+        String compressed = null;
+        String lines = null;
+        for (String fileName : itemNames) {
+            switch (FilenameUtils.getExtension(fileName)) {
+                case FileExtension.XODR:
+                    format = FileTypeEnum.OpenDrive.getType();
+                    break;
+                case FileExtension.GEO_JSON:
+                    if (fileName.contains(GeoJsonType.COMPRESSED)) {
+                        compressed = fileName;
+                        break;
+                    }
+                    if (fileName.contains(GeoJsonType.LINES)) {
+                        lines = fileName;
+                        break;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+        if (StringUtils.isEmpty(compressed) || StringUtils.isEmpty(lines)) {
+            throw new BusinessException("zip文件中需要包含compressed及lines的geoJson文件");
+        }
+        resourcesDetail.setFormat(format);
+        resourcesDetail.setAttribute4(StringUtils.format("{},{}", compressed, lines));
+        return resourcesDetail;
+    }
+
+    private void validPreviewParam(TjResourcesDetailDto resourcesDetailDto) throws BusinessException {
+        String extension = FilenameUtils.getExtension(resourcesDetailDto.getFilePath());
+        if (!StringUtils.equals(extension, FileExtension.ZIP)) {
+            throw new BusinessException("请上传zip文件");
+        }
+    }
+
+    @Override
     public boolean saveResourcesDetail(TjResourcesDetailDto resourcesDetailDto) throws BusinessException {
         TjResources tjResources = resourcesMapper.selectById(resourcesDetailDto.getResourcesId());
         validSaveParam(tjResources.getType(), resourcesDetailDto);
+        TjResourcesDetail detail = new TjResourcesDetail();
+        BeanUtils.copyBeanProp(detail, resourcesDetailDto);
         if (ObjectUtils.isEmpty(resourcesDetailDto.getId())) {
-            TjResourcesDetail detail = new TjResourcesDetail();
-            BeanUtils.copyBeanProp(detail, resourcesDetailDto);
-            detail.setCode(StringUtils.generateRandomString());
-            detail.setFormat(FileTypeEnum.getTypeByExt(FilenameUtils.getExtension(detail.getFilePath())));
+            detail.setCollectStatus(YN.N_INT);
             detail.setCreatedBy(SecurityUtils.getUsername());
             detail.setCreatedDate(LocalDateTime.now());
             return this.save(detail);
         } else {
-            TjResourcesDetail resourcesDetail = this.getById(resourcesDetailDto.getId());
-            resourcesDetail.setName(resourcesDetailDto.getName());
-            resourcesDetail.setFilePath(resourcesDetailDto.getFilePath());
-            resourcesDetail.setFormat(FileTypeEnum.getTypeByExt(FilenameUtils.getExtension(resourcesDetail.getFilePath())));
-            resourcesDetail.setImgPath(resourcesDetailDto.getImgPath());
-            resourcesDetail.setAttribute1(resourcesDetailDto.getAttribute1());
-            resourcesDetail.setAttribute2(resourcesDetailDto.getAttribute2());
-            resourcesDetail.setAttribute3(resourcesDetailDto.getAttribute3());
-            resourcesDetail.setAttribute4(resourcesDetailDto.getAttribute4());
-            resourcesDetail.setAttribute5(resourcesDetailDto.getAttribute5());
-            resourcesDetail.setUpdatedBy(SecurityUtils.getUsername());
-            resourcesDetail.setUpdatedDate(LocalDateTime.now());
-            return this.updateById(resourcesDetail);
+            detail.setUpdatedBy(SecurityUtils.getUsername());
+            detail.setUpdatedDate(LocalDateTime.now());
+            return this.updateById(detail);
         }
     }
 
@@ -129,9 +183,6 @@ public class TjResourcesDetailServiceImpl extends ServiceImpl<TjResourcesDetailM
                 }
                 if (StringUtils.isEmpty(resourcesDetailDto.getAttribute3())) {
                     throw new BusinessException("请选择车道数");
-                }
-                if (StringUtils.isEmpty(resourcesDetailDto.getAttribute4())) {
-                    throw new BusinessException("请上传正确的outline文件");
                 }
                 break;
             case ResourceType.BG_TRAFFIC_FLOW:

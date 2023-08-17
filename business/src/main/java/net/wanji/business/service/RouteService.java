@@ -1,5 +1,6 @@
 package net.wanji.business.service;
 
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.Extension;
@@ -11,10 +12,12 @@ import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.config.WanjiConfig;
+import net.wanji.common.utils.GeoUtil;
 import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.file.FileUploadUtils;
 import net.wanji.common.utils.file.FileUtils;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.lucene.geo.GeoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,29 +66,49 @@ public class RouteService {
         }
     }
 
-    public void verifyRoute(List<List<TrajectoryValueDto>> data, CaseTrajectoryDetailBo caseTrajectoryDetailBo) {
+    public void checkRoute(Integer caseId, List<TrajectoryValueDto> data) {
+        TjCase tjCase = tjCaseMapper.selectById(caseId);
+        CaseTrajectoryDetailBo caseTrajectoryDetailBo = JSONObject.parseObject(tjCase.getDetailInfo(),
+                CaseTrajectoryDetailBo.class);
         if (CollectionUtils.isEmpty(data) || ObjectUtils.isEmpty(caseTrajectoryDetailBo)
                 || CollectionUtils.isEmpty(caseTrajectoryDetailBo.getParticipantTrajectories())) {
             return;
         }
-        for (List<TrajectoryValueDto> trajectoryItem : data) {
-            for (TrajectoryValueDto trajectory : trajectoryItem) {
-                for (ParticipantTrajectoryBo trajectoryBo : caseTrajectoryDetailBo.getParticipantTrajectories()) {
-                    if (!trajectoryBo.getId().equals(trajectory.getId())) {
+        boolean update = false;
+        for (TrajectoryValueDto trajectory : data) {
+            for (ParticipantTrajectoryBo trajectoryBo : caseTrajectoryDetailBo.getParticipantTrajectories()) {
+                if (!StringUtils.equals(trajectoryBo.getId(), trajectory.getId())) {
+                    continue;
+                }
+                List<TrajectoryDetailBo> points = trajectoryBo.getTrajectory();
+                for (TrajectoryDetailBo trajectoryDetailBo : points) {
+                    if (trajectoryDetailBo.isPass()) {
                         continue;
                     }
-                    List<TrajectoryDetailBo> points = trajectoryBo.getTrajectory();
-                    for (TrajectoryDetailBo trajectoryDetailBo : points) {
-                        if (trajectoryDetailBo.getFrameId().intValue() == trajectory.getFrameId()) {
-                            // todo 校验逻辑
-                            trajectoryDetailBo.setPass(true);
-                            trajectoryDetailBo.setReason("已校验完成");
-                        }
+                    String[] positionArray = trajectoryDetailBo.getPosition().split(",");
+                    double longitude = Double.parseDouble(positionArray[0]);
+                    double latitude = Double.parseDouble(positionArray[1]);
+                    double instance = GeoUtil.calculateDistance(latitude, longitude,
+                            trajectory.getLatitude(), trajectory.getLongitude());
+                    if (instance <= 40) {
+                        trajectoryDetailBo.setPass(true);
+                        trajectoryDetailBo.setReason("已校验完成");
+                    } else {
+                        trajectoryDetailBo.setReason("未经过该点位40米范围区域");
                     }
-
+                    update = true;
                 }
             }
         }
+        if (update) {
+            tjCase.setDetailInfo(JSONObject.toJSONString(caseTrajectoryDetailBo));
+            tjCaseMapper.updateById(tjCase);
+        }
+    }
+
+    public boolean verifyRoute(List<TrajectoryDetailBo> points) {
+        // todo anyMatch -> allMatch
+        return CollectionUtils.emptyIfNull(points).stream().anyMatch(TrajectoryDetailBo::isPass);
     }
 
     public Map<String, List<Map<String, Double>>> extractRoute(List<List<TrajectoryValueDto>> data) {

@@ -15,9 +15,9 @@ import java.util.stream.Collectors;
 public interface Constants {
 
     class RedisMessageType {
-        public static final String INFO = "info";
+        public static final String START = "start";
         public static final String TRAJECTORY = "trajectory";
-        public static final String OBSTACLE_KEY = "obstacle";
+        public static final String END = "end";
     }
 
     /**
@@ -48,9 +48,15 @@ public interface Constants {
         public static final String COPY_SCENE_NAME_TEMPLATE = "{}_COPY{}";
     }
 
-    class TreeStructure {
-        public static final int DEFAULT_PARENT = 0;
-        public static final int DEFAULT_LEVEL = 1;
+    class FileExtension {
+        public static final String XODR = "xodr";
+        public static final String GEO_JSON = "json";
+        public static final String ZIP = "zip";
+    }
+
+    class GeoJsonType {
+        public static final String COMPRESSED = "compressed";
+        public static final String LINES = "lines";
     }
 
     /**
@@ -153,6 +159,10 @@ public interface Constants {
          * 参与者类型
          */
         public static final String PART_TYPE = "part_type";
+        /**
+         * 设备类型
+         */
+        public static final String DEVICE_TYPE = "device_type";
     }
 
     /**
@@ -211,7 +221,6 @@ public interface Constants {
         public static final int CONTINUE = 3;
         public static final int STOP = 4;
     }
-
 
     /**
      * 场景车道方向
@@ -287,6 +296,79 @@ public interface Constants {
             return Integer.parseInt(code) > 0 && Integer.parseInt(code) < Integer.parseInt(IN_BASE.code)
                     ? String.valueOf(Integer.parseInt(code) + 1)
                     : code;
+        }
+    }
+
+
+    /**
+     * 用例状态枚举
+     */
+    enum ModelEnum {
+        CAR(1, "小客车"),
+        TRUCK(2, "大货车"),
+        BUS(3, "大巴车"),
+        PEDESTRIAN(4, "行人"),
+        BIKE(5, "自行车");
+
+        private Integer model;
+
+        private String modelName;
+
+        ModelEnum(Integer model, String modelName) {
+            this.model = model;
+            this.modelName = modelName;
+        }
+
+        public Integer getModel() {
+            return model;
+        }
+
+        public String getModelName() {
+            return modelName;
+        }
+
+        public static String getDescByCode(Integer code) {
+            for (ModelEnum modelEnum : values()) {
+                if (code.equals(modelEnum.getModel())) {
+                    return modelEnum.getModelName();
+                }
+            }
+            return "";
+        }
+    }
+
+
+    /**
+     * 设备状态枚举
+     */
+    enum DeviceStatusEnum {
+        OFFLINE(0, "离线"),
+        ONLINE(1, "在线");
+
+        private Integer status;
+
+        private String desc;
+
+        DeviceStatusEnum(Integer status, String desc) {
+            this.status = status;
+            this.desc = desc;
+        }
+
+        public Integer getStatus() {
+            return status;
+        }
+
+        public String getDesc() {
+            return desc;
+        }
+
+        public static String getDescByCode(Integer status) {
+            for (DeviceStatusEnum deviceStatusEnum : values()) {
+                if (status.equals(deviceStatusEnum.getStatus())) {
+                    return deviceStatusEnum.getDesc();
+                }
+            }
+            return "";
         }
     }
 

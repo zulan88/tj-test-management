@@ -3,6 +3,7 @@ package net.wanji.business.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import net.wanji.business.common.Constants.ColumnName;
+import net.wanji.business.common.Constants.ModelEnum;
 import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
@@ -66,7 +67,6 @@ public class TjCasePartConfigServiceImpl extends ServiceImpl<TjCasePartConfigMap
                             item.getParticipantRole()));
                     casePartConfigVo.setBusinessTypeName(dictDataService.selectDictLabel(SysType.PART_TYPE,
                             item.getBusinessType()));
-                    casePartConfigVo.setName(casePartConfigVo.getBusinessTypeName() + casePartConfigVo.getBusinessId());
                     casePartConfigVo.setSelected(YN.Y_INT);
                     return casePartConfigVo;
                 }).collect(Collectors.groupingBy(TjCasePartConfig::getParticipantRole));
@@ -83,14 +83,15 @@ public class TjCasePartConfigServiceImpl extends ServiceImpl<TjCasePartConfigMap
             return new HashMap<>();
         }
         List<ParticipantTrajectoryBo> participantTrajectories = sceneTrajectoryBo.getParticipantTrajectories();
-        List<CasePartConfigVo> parts = CollectionUtils.emptyIfNull(participantTrajectories).stream().map(part -> {
+        List<CasePartConfigVo> result = CollectionUtils.emptyIfNull(participantTrajectories).stream().map(part -> {
             CasePartConfigVo config = new CasePartConfigVo();
             config.setBusinessId(part.getId());
             config.setBusinessType(part.getType());
-            config.setName(dictDataService.selectDictLabel(SysType.PART_TYPE, part.getType()) + part.getId());
+            config.setName(part.getName());
+            config.setModel(part.getModel());
+            config.setModelName(ModelEnum.getDescByCode(part.getModel()));
             return config;
         }).collect(Collectors.toList());
-        List<CasePartConfigVo> result = new ArrayList<>(parts);
         return result.stream().collect(Collectors.groupingBy(CasePartConfigVo::getBusinessType));
     }
 }

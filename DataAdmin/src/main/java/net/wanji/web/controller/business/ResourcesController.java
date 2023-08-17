@@ -1,6 +1,8 @@
 package net.wanji.web.controller.business;
 
 import net.wanji.business.common.Constants.InsertGroup;
+import net.wanji.business.common.Constants.OtherGroup;
+import net.wanji.business.common.Constants.UpdateGroup;
 import net.wanji.business.domain.BusinessTreeSelect;
 import net.wanji.business.domain.dto.TjResourcesDetailDto;
 import net.wanji.business.domain.dto.TjResourcesDto;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -75,9 +78,17 @@ public class ResourcesController extends BaseController {
         return AjaxResult.success(tjResourcesDetailService.getDetailList(resourceId, name));
     }
 
+    @PreAuthorize("@ss.hasPermi('resource:preview')")
+    @PostMapping("/preview")
+    public AjaxResult preview(@Validated(value = OtherGroup.class) @RequestBody TjResourcesDetailDto resourcesDetailDto)
+            throws BusinessException, IOException {
+        return AjaxResult.success(tjResourcesDetailService.preview(resourcesDetailDto));
+    }
+
     @PreAuthorize("@ss.hasPermi('resource:saveResourceDetail')")
     @PostMapping("/saveResourceDetail")
-    public AjaxResult saveResourceDetail(@Validated @RequestBody TjResourcesDetailDto resourcesDetailDto)
+    public AjaxResult saveResourceDetail(@Validated(value = {InsertGroup.class, UpdateGroup.class})
+                                             @RequestBody TjResourcesDetailDto resourcesDetailDto)
             throws BusinessException{
         return tjResourcesDetailService.saveResourcesDetail(resourcesDetailDto)
                 ? AjaxResult.success("成功")

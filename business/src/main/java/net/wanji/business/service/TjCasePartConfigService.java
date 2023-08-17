@@ -27,6 +27,11 @@ public interface TjCasePartConfigService extends IService<TjCasePartConfig> {
      */
     Map<String, List<CasePartConfigVo>> getConfigInfo(Integer caseId) throws BusinessException;
 
+    /**
+     * 场景点位信息转换为配置信息
+     * @param sceneTrajectoryBo
+     * @return
+     */
     Map<String, List<CasePartConfigVo>> trajectory2Config(SceneTrajectoryBo sceneTrajectoryBo);
 
 }

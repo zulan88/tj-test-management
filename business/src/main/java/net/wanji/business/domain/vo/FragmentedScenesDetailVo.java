@@ -32,6 +32,11 @@ public class FragmentedScenesDetailVo extends TjFragmentedSceneDetail {
     private String resourcesImgPath;
 
     /**
+     * 资源文件路径
+     */
+    private String filePath;
+
+    /**
      * 地图的geoJson文件路径
      */
     private String geoJsonPath;
@@ -82,6 +87,14 @@ public class FragmentedScenesDetailVo extends TjFragmentedSceneDetail {
 
     public void setResourcesImgPath(String resourcesImgPath) {
         this.resourcesImgPath = resourcesImgPath;
+    }
+
+    public String getFilePath() {
+        return filePath;
+    }
+
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
     }
 
     public String getGeoJsonPath() {

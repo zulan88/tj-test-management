@@ -21,7 +21,7 @@ import java.util.Map;
 @Data
 public class TjFragmentedSceneDetailDto {
 
-    @NotNull(message = "请选择一个子场景", groups = {UpdateGroup.class, OtherGroup.class})
+    @NotNull(message = "请选择一个子场景", groups = {OtherGroup.class})
     private Integer id;
 
     /**

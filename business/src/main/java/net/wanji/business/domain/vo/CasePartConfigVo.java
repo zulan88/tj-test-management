@@ -13,7 +13,7 @@ public class CasePartConfigVo extends TjCasePartConfig {
     /**
      * 参与者名称
      */
-    private String name;
+    private String modelName;
     /**
      * 参与者角色名称
      */

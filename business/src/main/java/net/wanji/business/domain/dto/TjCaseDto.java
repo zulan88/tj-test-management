@@ -56,8 +56,8 @@ public class TjCaseDto {
 //    @NotBlank(message = "请上传文件", groups = UpdateGroup.class)
     private String localFile;
 
-    @NotNull(message = "请选择状态", groups = {QueryGroup.class})
-    private Integer status;
+    @NotBlank(message = "请选择状态", groups = {QueryGroup.class})
+    private String status;
 
     @NotEmpty(message = "请输入标签", groups = {InsertGroup.class, UpdateGroup.class})
     private List<String> labelList;

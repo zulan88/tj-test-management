@@ -132,7 +132,8 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
             caseConfig = casePartConfigService.list(queryWrapper);
         }
         Map<String, List<String>> roleBusinessIdsMap = CollectionUtils.emptyIfNull(caseConfig).stream()
-                .collect(Collectors.groupingBy(TjCasePartConfig::getParticipantRole, Collectors.mapping(TjCasePartConfig::getBusinessId, Collectors.toList())));
+                .collect(Collectors.groupingBy(TjCasePartConfig::getParticipantRole,
+                        Collectors.mapping(TjCasePartConfig::getBusinessId, Collectors.toList())));
         SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(sceneDetail.getTrajectoryInfo(),
                 SceneTrajectoryBo.class);
         Map<String, List<CasePartConfigVo>> configMap = casePartConfigService.trajectory2Config(sceneTrajectoryBo);
@@ -203,9 +204,7 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
         if (ObjectUtils.isEmpty(caseId)) {
 
             if (ObjectUtils.isEmpty(sceneDetail) || StringUtils.isEmpty(sceneDetail.getTrajectoryInfo())) {
-                // todo 等待地图选点开发完成
-                sceneDetail.setTrajectoryInfo("{\"evaluationVerify\":\"场景是否触发:触发时间延迟2s；是否发生碰撞:无；直行是否优先:是；PET: 5秒；TTC:5秒\",\"sceneDesc\":\"左转遇对向直行\",\"sceneForm\":\"AV车个数:1；障碍车个数:1；其他背景车个数:20；其他背景车车型组成:小客车: 大客车=9:1；仿真频率:10HZ\",\"vehicleTrajectory\":[{\"id\":\"wanji-001\",\"trajectory\":[{\"coordinate\":[121.2020582,31.2915328],\"frameId\":100,\"lane\":\"1\",\"pass\":true,\"position\":\"距交叉路口300m\",\"reason\":\"已校验完成\",\"speed\":0.0,\"speedUnit\":\"km/h\",\"time\":\"0\",\"type\":\"start\"},{\"coordinate\":[121.2026939,31.292028],\"frameId\":300,\"lane\":\"1\",\"pass\":true,\"position\":\"距交叉路口150m\",\"reason\":\"已校验完成\",\"speed\":30.0,\"speedUnit\":\"km/h\",\"time\":\"20\",\"type\":\"pathway\"},{\"coordinate\":[121.20293699999999,31.292235199999997],\"frameId\":380,\"lane\":\"1\",\"pass\":true,\"position\":\"距离交叉路口时距2s\",\"reason\":\"已校验完成\",\"speed\":30.0,\"speedUnit\":\"km/h\",\"time\":\"28\",\"type\":\"conflict\"},{\"coordinate\":[121.2033036,31.292546899999998],\"frameId\":500,\"lane\":\"1\",\"pass\":true,\"position\":\"交叉路口\",\"reason\":\"已校验完成\",\"speed\":0.0,\"speedUnit\":\"km/h\",\"time\":\"40\",\"type\":\"end\"}],\"type\":\"main\"},{\"id\":\"wanji-002\",\"trajectory\":[{\"coordinate\":[121.20210421141509,31.29156104282954],\"frameId\":100,\"lane\":\"1\",\"pass\":true,\"position\":\"距交叉路口300m\",\"reason\":\"已校验完成\",\"speed\":0.0,\"speedUnit\":\"km/h\",\"time\":\"0\",\"type\":\"start\"},{\"coordinate\":[121.2028383,31.2921552],\"frameId\":300,\"lane\":\"1\",\"pass\":true,\"position\":\"距交叉路口150m\",\"reason\":\"已校验完成\",\"speed\":30.0,\"speedUnit\":\"km/h\",\"time\":\"20\",\"type\":\"pathway\"},{\"coordinate\":[121.20257959999999,31.2919429],\"frameId\":380,\"lane\":\"1\",\"pass\":true,\"position\":\"距离交叉路口时距2s\",\"reason\":\"已校验完成\",\"speed\":30.0,\"speedUnit\":\"km/h\",\"time\":\"28\",\"type\":\"conflict\"},{\"coordinate\":[121.2022514,31.291597799999998],\"frameId\":500,\"lane\":\"1\",\"pass\":true,\"position\":\"交叉路口\",\"reason\":\"已校验完成\",\"speed\":0.0,\"speedUnit\":\"km/h\",\"time\":\"40\",\"type\":\"end\"}],\"type\":\"slave\"}]}");
-//            throw new BusinessException("请先配置轨迹信息");
+                throw new BusinessException("请先配置轨迹信息");
             }
             CaseTrajectoryDetailBo caseTrajectoryDetailBo =
                     JSONObject.parseObject(sceneDetail.getTrajectoryInfo(), CaseTrajectoryDetailBo.class);
@@ -266,7 +265,7 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
         CaseTrajectoryDetailBo caseTrajectoryDetailBo = JSONObject.parseObject(tjCase.getDetailInfo(),
                 CaseTrajectoryDetailBo.class);
         List<List<TrajectoryValueDto>> e1Data = routeService.readRouteFile(tjCase.getRouteFile());
-        routeService.verifyRoute(e1Data, caseTrajectoryDetailBo);
+//        routeService.verifyRoute(e1Data, caseTrajectoryDetailBo);
 
         tjCase.setDetailInfo(JSONObject.toJSONString(caseTrajectoryDetailBo));
         tjCase.setUpdatedBy(SecurityUtils.getUsername());
@@ -361,6 +360,17 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
         if (CollectionUtils.isEmpty(tjCases)) {
             throw new BusinessException("操作失败");
         }
+        // todo 仿真点位验证逻辑
+//        if (StringUtils.equals(tjCaseDto.getStatus(), CaseStatusEnum.TO_BE_SIMULATED.getCode())) {
+//            for (TjCase caseItem : tjCases) {
+//                CaseTrajectoryDetailBo caseTrajectoryDetailBo = JSONObject.parseObject(caseItem.getDetailInfo(),
+//                        CaseTrajectoryDetailBo.class);
+//                if (caseTrajectoryDetailBo.getParticipantTrajectories().stream().noneMatch(trajectories ->
+//                        routeService.verifyRoute(trajectories.getTrajectory()))) {
+//                    throw new BusinessException(StringUtils.format("用例{}仿真校验失败", caseItem.getCaseNumber()));
+//                }
+//            }
+//        }
         String nextStatus = CaseStatusEnum.getNextStatus(String.valueOf(tjCaseDto.getStatus()));
         for (TjCase tjCase : tjCases) {
             tjCase.setStatus(nextStatus);
@@ -380,7 +390,8 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
         if (ObjectUtils.isEmpty(resourcesDetail) || StringUtils.isEmpty(resourcesDetail.getAttribute4())) {
             throw new BusinessException("地图资源不存在");
         }
-        CaseVerificationVo result = new CaseVerificationVo(tjCase, resourcesDetail.getAttribute4());
+        CaseVerificationVo result = new CaseVerificationVo(tjCase, resourcesDetail.getFilePath(),
+                resourcesDetail.getAttribute4());
         if (ObjectUtils.isEmpty(tjCase.getRouteFile())) {
             return result;
         }

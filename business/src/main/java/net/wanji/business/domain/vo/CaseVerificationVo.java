@@ -16,14 +16,17 @@ public class CaseVerificationVo {
 
     private Integer id;
 
+    private String filePath;
+
     private String geoJsonPath;
 
     private CaseTrajectoryDetailBo detailInfo;
 
     private boolean finished;
 
-    public CaseVerificationVo(TjCase tjCase, String geoJsonPath) {
+    public CaseVerificationVo(TjCase tjCase, String filePath, String geoJsonPath) {
         this.id = tjCase.getId();
+        this.filePath = filePath;
         this.geoJsonPath = geoJsonPath;
         this.detailInfo = StringUtils.isNotEmpty(tjCase.getDetailInfo())
                 ? JSONObject.parseObject(tjCase.getDetailInfo(), CaseTrajectoryDetailBo.class)
