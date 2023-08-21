@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -528,8 +529,15 @@ public class ExcelUtil<T>
      */
     public void exportExcel(HttpServletResponse response, List<T> list, String sheetName, String title)
     {
+        String percentEncodedFileName = null;
+        try {
+            percentEncodedFileName = FileUtils.percentEncode(sheetName);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         response.setCharacterEncoding("utf-8");
+        response.setHeader("download-filename", percentEncodedFileName);
         this.init(list, sheetName, title, Excel.Type.EXPORT);
         exportExcel(response);
     }

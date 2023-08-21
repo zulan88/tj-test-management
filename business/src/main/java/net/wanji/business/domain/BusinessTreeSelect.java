@@ -2,6 +2,7 @@ package net.wanji.business.domain;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import net.wanji.business.entity.TjDevice;
 import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.entity.TjResources;
 import org.apache.commons.collections4.CollectionUtils;
@@ -70,6 +71,21 @@ public class BusinessTreeSelect {
         this.attribute4 = resources.getAttribute4();
         this.attribute5 = resources.getAttribute5();
         this.children = CollectionUtils.emptyIfNull(resources.getChildren()).stream().map(BusinessTreeSelect::new)
+                .collect(Collectors.toList());
+    }
+
+    public BusinessTreeSelect(TjDevice device) {
+        this.id = device.getId();
+        this.name = device.getName();
+        this.status = device.getStatus();
+        this.parentId = device.getParentId();
+        this.level = device.getLevel();
+        this.attribute1 = device.getAttribute1();
+        this.attribute2 = device.getAttribute2();
+        this.attribute3 = device.getAttribute3();
+        this.attribute4 = device.getAttribute4();
+        this.attribute5 = device.getAttribute5();
+        this.children = CollectionUtils.emptyIfNull(device.getChildren()).stream().map(BusinessTreeSelect::new)
                 .collect(Collectors.toList());
     }
 }

@@ -2,7 +2,7 @@ package net.wanji.business.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import net.wanji.business.domain.BusinessTreeSelect;
-import net.wanji.business.domain.dto.SceneTreeTypeDto;
+import net.wanji.business.domain.dto.TreeTypeDto;
 import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
 import net.wanji.business.domain.dto.TjFragmentedScenesDto;
 import net.wanji.business.entity.TjFragmentedScenes;
@@ -40,7 +40,7 @@ public interface TjFragmentedScenesService extends IService<TjFragmentedScenes> 
      * @param treeTypeDto
      * @return
      */
-    boolean saveSceneTreeType(SceneTreeTypeDto treeTypeDto) throws BusinessException ;
+    boolean saveSceneTreeType(TreeTypeDto treeTypeDto) throws BusinessException ;
 
     /**
      * 删除树类型

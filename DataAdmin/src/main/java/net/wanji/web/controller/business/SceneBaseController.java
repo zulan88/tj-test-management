@@ -6,7 +6,7 @@ import net.wanji.business.common.Constants.OtherGroup;
 import net.wanji.business.common.Constants.UpdateGroup;
 import net.wanji.business.domain.BusinessTreeSelect;
 import net.wanji.business.domain.dto.SceneQueryDto;
-import net.wanji.business.domain.dto.SceneTreeTypeDto;
+import net.wanji.business.domain.dto.TreeTypeDto;
 import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
 import net.wanji.business.domain.dto.TjFragmentedScenesDto;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
@@ -59,7 +59,7 @@ public class SceneBaseController extends BaseController {
 
     @PreAuthorize("@ss.hasPermi('sceneBase:saveTreeType')")
     @PostMapping("/saveTreeType")
-    public AjaxResult saveTreeType(@Validated @RequestBody SceneTreeTypeDto treeTypeDto) throws BusinessException {
+    public AjaxResult saveTreeType(@Validated @RequestBody TreeTypeDto treeTypeDto) throws BusinessException {
         return tjFragmentedScenesService.saveSceneTreeType(treeTypeDto)
                 ? AjaxResult.success("成功")
                 : AjaxResult.error("失败");

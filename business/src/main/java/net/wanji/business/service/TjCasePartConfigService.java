@@ -34,4 +34,13 @@ public interface TjCasePartConfigService extends IService<TjCasePartConfig> {
      */
     Map<String, List<CasePartConfigVo>> trajectory2Config(SceneTrajectoryBo sceneTrajectoryBo);
 
+    /**
+     * 保存用例配置信息
+     * @param caseId 用例ID
+     * @param configMap 配置信息
+     * @return
+     * @throws BusinessException
+     */
+    boolean removeThenSave(Integer caseId, Map<String, List<TjCasePartConfig>> configMap) throws BusinessException;
+
 }

@@ -6,7 +6,6 @@ import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.business.common.Constants.DeleteGroup;
 import net.wanji.business.common.Constants.InsertGroup;
 import net.wanji.business.common.Constants.QueryGroup;
-import net.wanji.business.common.Constants.UpdateGroup;
 import net.wanji.business.domain.BusinessTreeSelect;
 import net.wanji.business.domain.dto.SceneQueryDto;
 import net.wanji.business.domain.dto.TjCaseDto;
@@ -36,6 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 /**
  * @Auther: guanyuduo
@@ -101,7 +101,8 @@ public class CaseController extends BaseController {
 
     @PreAuthorize("@ss.hasPermi('case:configDetail')")
     @GetMapping("/configDetail")
-    public AjaxResult configDetail(@RequestParam("id") Integer id) throws BusinessException {
+    public AjaxResult configDetail(@RequestParam("id") Integer id) throws BusinessException, InterruptedException,
+            ExecutionException {
         return AjaxResult.success(caseService.getConfigDetail(id));
     }
 
@@ -158,15 +159,9 @@ public class CaseController extends BaseController {
         util.exportExcel(response, caseVos, fileName);
     }
 
-    @PreAuthorize("@ss.hasPermi('case:verifyTrajectory')")
-    @GetMapping("/verifyTrajectory")
-    public AjaxResult verifyTrajectory(@RequestParam("id") Integer id) throws IOException {
-        return caseService.verifyTrajectory(id) ? AjaxResult.success("校验完成") : AjaxResult.error("校验失败");
-    }
-
     @PreAuthorize("@ss.hasPermi('case:playback')")
     @GetMapping("/playback")
-    public AjaxResult detail(@RequestParam(value = "id") Integer id,
+    public AjaxResult playback(@RequestParam(value = "id") Integer id,
                              @RequestParam(value = "action") int action,
                              @RequestParam(value = "vehicleId", required = false) String vehicleId)
             throws BusinessException, IOException {

@@ -1,5 +1,7 @@
 package net.wanji.common.core.domain.model;
 
+import net.wanji.common.utils.StringUtils;
+
 /**
  * 用户登录对象
  * 
@@ -33,7 +35,7 @@ public class LoginBody
     private String platformType;
 
     public String getPlatformType() {
-        return platformType;
+        return StringUtils.isEmpty(platformType) ? "web" : platformType;
     }
 
     public void setPlatformType(String platformType) {

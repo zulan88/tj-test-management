@@ -10,7 +10,7 @@ import javax.validation.constraints.NotBlank;
  * @Descriptoin:
  */
 @Data
-public class SceneTreeTypeDto {
+public class TreeTypeDto {
 
     /** 字典编码 */
     private Long dictCode;
@@ -24,7 +24,7 @@ public class SceneTreeTypeDto {
     private String cssClass;
 
     /**
-     * 道路描述
+     * 描述
      */
     private String remark;
 }

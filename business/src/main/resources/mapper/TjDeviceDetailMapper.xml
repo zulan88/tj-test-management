@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="net.wanji.business.mapper.TjDeviceDetailMapper">
+
+    <select id="selectByCondition" resultType="net.wanji.business.domain.vo.DeviceDetailVo">
+        SELECT d.*, vi.name as type_name
+        FROM tj_device_detail d
+        LEFT JOIN tj_device vi ON vi.id = d.device_type
+        <where>
+            <if test="deviceId != null and deviceId > 0">
+                AND d.device_id = #{deviceId}
+            </if>
+            <if test="deviceName != null and deviceName !='' ">
+                AND d.device_name LIKE concat('%', #{deviceName}, '%')
+            </if>
+            <if test="deviceType != null and deviceType != '' ">
+                AND d.device_type = #{deviceType}
+            </if>
+            <if test="status != null">
+                AND d.status = #{status}
+            </if>
+            <if test="deviceIds != null and deviceIds.size()>0">
+                AND d.device_id IN
+                <foreach collection="deviceIds" item="deviceId" open="(" separator="," close=")">
+                    #{deviceId}
+                </foreach>
+            </if>
+        </where>
+        ORDER BY d.created_date DESC
+    </select>
+</mapper>

@@ -4,11 +4,13 @@ import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.Extension;
+import net.wanji.business.common.Constants.WebsocketKey;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.mapper.TjCaseMapper;
+import net.wanji.business.schedule.PlaybackSchedule;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.config.WanjiConfig;
@@ -146,16 +148,15 @@ public class RouteService {
     }
 
     public List<List<TrajectoryValueDto>> readTrajectoryFromData(List<List<TrajectoryValueDto>> data, String participantId) {
-        if (StringUtils.isNotEmpty(participantId)) {
-            data = data.stream().map(item -> filterParticipant(item, participantId)).collect(Collectors.toList());
-        }
-        return data;
+        return CollectionUtils.emptyIfNull(data).stream().map(item -> filterParticipant(item, participantId))
+                .collect(Collectors.toList());
     }
 
     public List<TrajectoryValueDto> filterParticipant(List<TrajectoryValueDto> data, String participantId) {
-        return StringUtils.isEmpty(participantId) ? data : CollectionUtils.emptyIfNull(data).stream().filter(route ->
-                        participantId.equals(route.getId()))
-                .collect(Collectors.toList());
+        return StringUtils.isNotEmpty(participantId) && !StringUtils.equals(WebsocketKey.DEFAULT_KEY, participantId)
+                ? CollectionUtils.emptyIfNull(data).stream().filter(route ->
+                        participantId.equals(route.getId())).collect(Collectors.toList())
+                : data;
     }
 
     public List<List<TrajectoryValueDto>> readRouteFile(String fileName) throws IOException {

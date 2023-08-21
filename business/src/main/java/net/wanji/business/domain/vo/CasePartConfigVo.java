@@ -30,4 +30,5 @@ public class CasePartConfigVo extends TjCasePartConfig {
      * 选中状态
      */
     private int selected;
+
 }

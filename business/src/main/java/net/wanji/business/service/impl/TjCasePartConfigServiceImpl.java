@@ -17,12 +17,13 @@ import net.wanji.common.core.domain.entity.SysDictData;
 import net.wanji.system.service.ISysDictDataService;
 import net.wanji.system.service.ISysDictTypeService;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ObjectUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -93,5 +94,36 @@ public class TjCasePartConfigServiceImpl extends ServiceImpl<TjCasePartConfigMap
             return config;
         }).collect(Collectors.toList());
         return result.stream().collect(Collectors.groupingBy(CasePartConfigVo::getBusinessType));
+    }
+
+    @Transactional(rollbackFor = BusinessException.class)
+    @Override
+    public boolean removeThenSave(Integer caseId, Map<String, List<TjCasePartConfig>> configMap)
+            throws BusinessException {
+        if (ObjectUtils.isEmpty(caseId) || org.springframework.util.CollectionUtils.isEmpty(configMap)) {
+            return false;
+        }
+        List<TjCasePartConfig> configList = new ArrayList<>();
+        for (Map.Entry<String, List<TjCasePartConfig>> partConfigs : configMap.entrySet()) {
+            if (CollectionUtils.isEmpty(partConfigs.getValue())) {
+                continue;
+            }
+            for (TjCasePartConfig config : partConfigs.getValue()) {
+                config.setCaseId(caseId);
+                config.setParticipantRole(partConfigs.getKey());
+            }
+            configList.addAll(partConfigs.getValue());
+        }
+        if (CollectionUtils.isEmpty(configList)) {
+            throw new BusinessException("请进行角色配置后保存");
+        }
+        QueryWrapper<TjCasePartConfig> deleteWrapper = new QueryWrapper<>();
+        deleteWrapper.eq(ColumnName.CASE_ID_COLUMN, caseId);
+        this.remove(deleteWrapper);
+        boolean saveBatch = this.saveBatch(configList);
+        if (!saveBatch) {
+            throw new BusinessException("保存角色配置失败");
+        }
+        return true;
     }
 }

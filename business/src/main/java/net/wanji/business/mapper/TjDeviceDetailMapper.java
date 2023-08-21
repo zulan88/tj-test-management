@@ -1,9 +1,9 @@
 package net.wanji.business.mapper;
 
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import net.wanji.business.domain.dto.TjDeviceDetailDto;
-import net.wanji.business.entity.TjDevice;
+import net.wanji.business.domain.vo.DeviceDetailVo;
 import net.wanji.business.entity.TjDeviceDetail;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 import java.util.List;
 
@@ -13,6 +13,12 @@ import java.util.List;
 * @createDate 2023-08-17 10:56:39
 * @Entity net.wanji.business.entity.TjDevice
 */
-public interface TjDeviceMapper extends BaseMapper<TjDevice> {
+public interface TjDeviceDetailMapper extends BaseMapper<TjDeviceDetail> {
 
+    /**
+     * 条件查询
+     * @param deviceDto
+     * @return
+     */
+    List<DeviceDetailVo> selectByCondition(TjDeviceDetailDto deviceDto);
 }

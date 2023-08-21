@@ -9,7 +9,7 @@ import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.UsingStatus;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.BusinessTreeSelect;
-import net.wanji.business.domain.dto.SceneTreeTypeDto;
+import net.wanji.business.domain.dto.TreeTypeDto;
 import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
 import net.wanji.business.domain.dto.TjFragmentedScenesDto;
 import net.wanji.business.entity.TjCase;
@@ -38,7 +38,6 @@ import org.springframework.util.ObjectUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -115,7 +114,7 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
     }
 
     @Override
-    public boolean saveSceneTreeType(SceneTreeTypeDto treeTypeDto) throws BusinessException {
+    public boolean saveSceneTreeType(TreeTypeDto treeTypeDto) throws BusinessException {
         List<SysDictData> sysDictData = dictTypeService.selectDictDataByType(SysType.SCENE_TREE_TYPE);
         SysDictData dictData = null;
         if (ObjectUtils.isEmpty(treeTypeDto.getDictCode())) {
@@ -163,6 +162,7 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
         return true;
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean deleteTreeType(Long dictCode) throws BusinessException {
         SysDictData dictData = dictDataService.selectDictDataById(dictCode);

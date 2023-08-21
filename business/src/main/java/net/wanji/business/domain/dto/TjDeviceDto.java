@@ -1,57 +1,68 @@
 package net.wanji.business.domain.dto;
 
 import lombok.Data;
-import net.wanji.business.common.Constants.BatchGroup;
-import net.wanji.business.common.Constants.DeleteGroup;
-import net.wanji.business.common.Constants.InsertGroup;
-import net.wanji.business.common.Constants.QueryGroup;
-import net.wanji.business.common.Constants.UpdateGroup;
-import net.wanji.business.entity.TjCasePartConfig;
 
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
-import java.util.List;
-import java.util.Map;
 
 /**
  * @Auther: guanyuduo
- * @Date: 2023/6/29 13:45
+ * @Date: 2023/6/28 14:05
  * @Descriptoin:
  */
 @Data
 public class TjDeviceDto {
 
-    @NotNull(message = "请选择页码", groups = QueryGroup.class)
-    private Integer pageNum;
+    private Integer id;
 
-    @NotNull(message = "请选择页大小", groups = QueryGroup.class)
-    private Integer pageSize;
+    /**
+     * 名称
+     */
+    @NotBlank(message = "名称不可为空")
+    private String name;
 
-    @NotNull(message = "请选择一个设备", groups = {DeleteGroup.class})
-    private Integer deviceId;
+    /**
+     * 类型
+     */
+    @NotBlank(message = "请选择类型")
+    private String type;
 
-    @NotBlank(message = "请填写设备名称", groups = {InsertGroup.class, UpdateGroup.class})
-    private String deviceName;
-
-    @NotBlank(message = "请选择设备类型", groups = {InsertGroup.class, UpdateGroup.class})
-    private String deviceType;
-
-    @NotBlank(message = "请填写设备IP", groups = {InsertGroup.class, UpdateGroup.class})
-    private String ip;
-
-    @NotBlank(message = "请填写数据服务器地址", groups = {InsertGroup.class, UpdateGroup.class})
-    private String serviceAddress;
-
-    @NotBlank(message = "请设置数据通道", groups = {InsertGroup.class, UpdateGroup.class})
-    private String dataChannel;
-
-    @NotBlank(message = "请设置控制通道", groups = {InsertGroup.class, UpdateGroup.class})
-    private String commandChannel;
-
+    /**
+     * 状态 0：禁用；1：启用
+     */
     private Integer status;
 
-    @NotEmpty(message = "请选择至少一个设备", groups = {BatchGroup.class})
-    private List<Integer> deviceIds;
+    /**
+     * 父级id
+     */
+    private Integer parentId;
 
+    /**
+     * 级别
+     */
+    private Integer level;
+
+    /**
+     * 自定义字段1
+     */
+    private String attribute1;
+
+    /**
+     * 自定义字段2
+     */
+    private String attribute2;
+
+    /**
+     * 自定义字段3
+     */
+    private String attribute3;
+
+    /**
+     * 自定义字段4
+     */
+    private String attribute4;
+
+    /**
+     * 自定义字段5
+     */
+    private String attribute5;
 }

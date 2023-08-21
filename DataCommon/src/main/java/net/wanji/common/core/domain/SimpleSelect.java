@@ -25,7 +25,7 @@ public class SimpleSelect implements Serializable {
 
     private String dictValue;
 
-    private Object parts;
+
 
     public SimpleSelect() {}
 
@@ -77,11 +77,4 @@ public class SimpleSelect implements Serializable {
         this.dictValue = dictValue;
     }
 
-    public Object getParts() {
-        return parts;
-    }
-
-    public void setParts(Object parts) {
-        this.parts = parts;
-    }
 }

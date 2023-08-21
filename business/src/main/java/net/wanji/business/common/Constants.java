@@ -14,6 +14,10 @@ import java.util.stream.Collectors;
 
 public interface Constants {
 
+    class WebsocketKey {
+        public static final String DEFAULT_KEY = "ALL_VEHICLE";
+    }
+
     class RedisMessageType {
         public static final String START = "start";
         public static final String TRAJECTORY = "trajectory";
@@ -94,6 +98,8 @@ public interface Constants {
         public static final String CASE_ID_COLUMN = "case_id";
         public static final String CASE_NUMBER_COLUMN = "case_number";
         public static final String TEST_TYPE_COLUMN = "test_type";
+        public static final String DEVICE_TYPE_COLUMN = "device_type";
+        public static final String CREATED_DATE_COLUMN = "created_date";
     }
 
     class ResourceType {

@@ -1,9 +1,13 @@
 package net.wanji.business.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import net.wanji.business.domain.BusinessTreeSelect;
 import net.wanji.business.domain.dto.TjDeviceDto;
-import net.wanji.business.domain.vo.DeviceVo;
+import net.wanji.business.domain.dto.TreeTypeDto;
 import net.wanji.business.entity.TjDevice;
+import net.wanji.business.entity.TjDevice;
+import net.wanji.business.entity.TjFragmentedScenes;
+import net.wanji.business.exception.BusinessException;
 import net.wanji.common.core.domain.SimpleSelect;
 
 import java.util.List;
@@ -22,39 +26,61 @@ public interface TjDeviceService extends IService<TjDevice> {
      */
     Map<String, List<SimpleSelect>> init();
 
-    /**
-     * 设备列表查询
-     * @param deviceDto
-     * @return
-     */
-    List<DeviceVo> getAllDevices(TjDeviceDto deviceDto);
 
     /**
-     * 设备列表查询
-     * @param deviceDto
+     * 添加树类型
+     * @param treeTypeDto
      * @return
      */
-    DeviceVo getDeviceDetail(TjDeviceDto deviceDto);
+    boolean saveTreeType(TreeTypeDto treeTypeDto) throws BusinessException;
 
     /**
-     * 保存设备信息
-     * @param deviceDto
+     * 删除树类型
+     * @param dictCode
      * @return
      */
-    boolean saveDevice(TjDeviceDto deviceDto);
+    boolean deleteTreeType(Long dictCode) throws BusinessException;
 
     /**
-     * 删除设备
+     * 查询使用中的设备类型树
+     * @param type
+     * @return
+     */
+    List<TjDevice> selectUsingDeviceTree(String type);
+
+    /**
+     * 构建树结构
+     * @param devices
+     * @return
+     */
+    List<TjDevice> buildSceneTree(List<TjDevice> devices);
+
+    /**
+     * 查找文件夹下所有设备
      * @param deviceId
-     * @return
+     * @param devices
      */
-    boolean deleteDevice(Integer deviceId);
-
+    void selectChildrenFromFolder(Integer deviceId, List<TjDevice> devices);
 
     /**
-     * 批量删除设备
-     * @param deviceIds
+     * 构建前端所需要下拉树结构
+     *
+     * @param devices 设备列表
+     * @return 下拉树结构列表
+     */
+    List<BusinessTreeSelect> buildDevicesTreeSelect(List<TjDevice> devices, String name);
+
+    /**
+     * 根据id删除设备树节点
+     * @param id
      * @return
      */
-    boolean batchDeleteDevice(List<Integer> deviceIds);
+    boolean deleteDeviceTree(Integer id) throws BusinessException;
+
+    /**
+     * 保存设备树
+     * @param deviceDto
+     * @return
+     */
+    boolean saveDevicesTree(TjDeviceDto deviceDto);
 }

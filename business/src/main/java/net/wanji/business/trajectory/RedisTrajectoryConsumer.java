@@ -85,7 +85,6 @@ public class RedisTrajectoryConsumer {
             try {
                 SimulationMessage simulationMessage = objectMapper.readValue(message.toString(),
                         SimulationMessage.class);
-                log.info(JSONObject.toJSONString(simulationMessage));
                 switch (simulationMessage.getType()) {
                     case RedisMessageType.START:
                         TjCase startCase = caseMapper.selectById(caseId);
@@ -232,7 +231,6 @@ public class RedisTrajectoryConsumer {
         public void refreshData(T data) {
             this.data.add(data);
             this.timestamp = System.currentTimeMillis();
-            System.out.println(StringUtils.format("refresh {} {}", this.channel, this.timestamp));
         }
 
         public boolean isExpire() {

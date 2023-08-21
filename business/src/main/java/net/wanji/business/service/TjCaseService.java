@@ -1,8 +1,11 @@
 package net.wanji.business.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import net.wanji.business.domain.PartConfigSelect;
+import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.dto.TjCaseDto;
 import net.wanji.business.domain.vo.CaseConfigDetailVo;
+import net.wanji.business.domain.vo.CasePartConfigVo;
 import net.wanji.business.domain.vo.CaseVerificationVo;
 import net.wanji.business.domain.vo.CaseVo;
 import net.wanji.business.entity.TjCase;
@@ -14,6 +17,7 @@ import net.wanji.common.core.domain.SimpleSelect;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 /**
  * <p>
@@ -39,6 +43,16 @@ public interface TjCaseService extends IService<TjCase> {
      * @return caseId
      */
     Map<String, Object> initEditPage(Integer sceneDetailId, Integer caseId) throws BusinessException;
+
+    /**
+     * 获取配置信息
+     * @param caseId
+     * @param sceneTrajectoryBo
+     * @return
+     * @throws InterruptedException
+     * @throws ExecutionException
+     */
+    List<PartConfigSelect> getConfigSelect(Integer caseId, SceneTrajectoryBo sceneTrajectoryBo, boolean deviceConfig);
 
     /**
      * 查询测试用例中包含的场景
@@ -74,13 +88,6 @@ public interface TjCaseService extends IService<TjCase> {
      * @return
      */
     List<TjFragmentedSceneDetail> selectSubscenesInCase(String testType, Integer fragmentedSceneId);
-
-    /**
-     * 校验轨迹点位
-     *
-     * @param id
-     */
-    boolean verifyTrajectory(Integer id) throws IOException;
 
     /**
      * 轨迹回放
@@ -134,6 +141,12 @@ public interface TjCaseService extends IService<TjCase> {
      */
     CaseVerificationVo getSimulationDetail(Integer caseId) throws BusinessException;
 
-    CaseConfigDetailVo getConfigDetail(Integer caseId) throws BusinessException;
+    /**
+     * 获取配置详情
+     * @param caseId
+     * @return
+     * @throws BusinessException
+     */
+    List<PartConfigSelect> getConfigDetail(Integer caseId) throws BusinessException, InterruptedException, ExecutionException;
 
 }

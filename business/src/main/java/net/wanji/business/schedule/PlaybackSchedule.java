@@ -1,5 +1,6 @@
 package net.wanji.business.schedule;
 
+import net.wanji.business.common.Constants.WebsocketKey;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.utils.StringUtils;
@@ -20,7 +21,7 @@ public class PlaybackSchedule {
 
     static ScheduledExecutorService executorService = Executors.newScheduledThreadPool(5);
     static Map<String, PlaybackDomain> futureMap = new HashMap<>(16);
-    final static String DEFAULT_KEY = "ALL_VEHICLE";
+
 
     public static void startSendingData(String vehicleId, List<List<TrajectoryValueDto>> data) {
         String key = getFutureKeyIfNull(vehicleId);
@@ -56,6 +57,6 @@ public class PlaybackSchedule {
     }
 
     private static String getFutureKeyIfNull(String futureKey) {
-        return StringUtils.isEmpty(futureKey) ? DEFAULT_KEY : futureKey;
+        return StringUtils.isEmpty(futureKey) ? WebsocketKey.DEFAULT_KEY : futureKey;
     }
 }
