@@ -3,6 +3,7 @@ package net.wanji.business.domain.bo;
 import lombok.Data;
 import net.wanji.common.utils.StringUtils;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
@@ -12,7 +13,10 @@ import java.util.Map;
  * @Descriptoin:
  */
 @Data
-public class ParticipantTrajectoryBo {
+public class ParticipantTrajectoryBo implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     /**
      * 参与者ID
      */

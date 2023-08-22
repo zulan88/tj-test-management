@@ -2,7 +2,7 @@ package net.wanji.business.domain.bo;
 
 import lombok.Data;
 
-import java.util.List;
+import java.io.Serializable;
 
 /**
  * @Auther: guanyuduo
@@ -10,7 +10,10 @@ import java.util.List;
  * @Descriptoin:
  */
 @Data
-public class TrajectoryDetailBo {
+public class TrajectoryDetailBo implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private String type;
     private String time;
     private Long frameId;

@@ -7,19 +7,19 @@ import net.wanji.business.domain.WebsocketMessage;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.mapper.TjCaseMapper;
-import net.wanji.common.common.SimulationInfoDto;
-import net.wanji.common.common.SimulationMessage;
-import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.business.service.RouteService;
+import net.wanji.common.common.SimulationMessage;
 import net.wanji.common.common.SimulationTrajectoryDto;
+import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
 import net.wanji.socket.websocket.WebSocketManage;
+import org.apache.ibatis.session.SqlSession;
+import org.apache.ibatis.session.SqlSessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
@@ -29,13 +29,11 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -60,10 +58,13 @@ public class RedisTrajectoryConsumer {
     }
 
     @Autowired
+    private TjCaseMapper caseMapper;
+
+    @Autowired
     private RouteService routeService;
 
     @Autowired
-    private TjCaseMapper caseMapper;
+    private SqlSessionFactory sqlSessionFactory;
 
     @PostConstruct
     public void validChannel() {
@@ -72,32 +73,30 @@ public class RedisTrajectoryConsumer {
                 this::removeListeners, 0, 2, TimeUnit.SECONDS);
     }
 
+
     /**
      * 订阅测试用例轨迹
-     * @param channel 用例编号
+     *
+     * @param channel       用例编号
      * @param participantId 指定车辆id（只有在发送ws时筛选）
      * @return
      */
     public void subscribeAndSend(Integer caseId, String channel, String participantId) {
         ObjectMapper objectMapper = new ObjectMapper();
-
+        TjCase tjCase = caseMapper.selectById(caseId);
+        CaseTrajectoryDetailBo oldDetail = JSONObject.parseObject(tjCase.getDetailInfo(),
+                CaseTrajectoryDetailBo.class);
         MessageListener listener = (message, pattern) -> {
             try {
                 SimulationMessage simulationMessage = objectMapper.readValue(message.toString(),
                         SimulationMessage.class);
                 switch (simulationMessage.getType()) {
                     case RedisMessageType.START:
-                        TjCase startCase = caseMapper.selectById(caseId);
-                        CaseTrajectoryDetailBo startCaseDetail = JSONObject.parseObject(startCase.getDetailInfo(),
+                        CaseTrajectoryDetailBo start = objectMapper.readValue(simulationMessage.getValue(),
                                 CaseTrajectoryDetailBo.class);
-                        SimulationInfoDto start = objectMapper.readValue(simulationMessage.getValue(),
-                                SimulationInfoDto.class);
                         log.info(StringUtils.format("开始接收{}数据：{}", channel, JSONObject.toJSONString(start)));
-                        Optional.ofNullable(start.getSceneDesc()).ifPresent(startCaseDetail::setSceneDesc);
-                        Optional.ofNullable(start.getEvaluationVerify()).ifPresent(startCaseDetail::setEvaluationVerify);
-                        Optional.ofNullable(start.getSceneForm()).ifPresent(startCaseDetail::setSceneForm);
-                        startCase.setDetailInfo(JSONObject.toJSONString(startCaseDetail));
-                        caseMapper.updateById(startCase);
+                        int startSuccess = this.saveCaseDetailInfo(caseId, oldDetail, start);
+                        log.info(StringUtils.format("修改用例场景说明和组成:{}", startSuccess));
                         break;
                     case RedisMessageType.TRAJECTORY:
                         SimulationTrajectoryDto simulationTrajectory = objectMapper.readValue(simulationMessage.getValue(),
@@ -108,12 +107,11 @@ public class RedisTrajectoryConsumer {
                             // 实际轨迹消息
                             List<TrajectoryValueDto> data = JSONObject.parseArray(simulationTrajectory.getValue(),
                                     TrajectoryValueDto.class);
-                            routeService.checkRoute(caseId, data);
+                            routeService.checkRoute(caseId, oldDetail, data);
                             receiveData(channel, simulationTrajectory);
                             // 计时
                             String countDown = DateUtils.secondsToDuration(
                                     (int) Math.floor((double) (getDataSize(channel)) / 10));
-
                             data = routeService.filterParticipant(data, participantId);
                             // send ws
                             WebsocketMessage msg = new WebsocketMessage(countDown, data);
@@ -122,18 +120,12 @@ public class RedisTrajectoryConsumer {
                         }
                         break;
                     case RedisMessageType.END:
-                        removeListenerThenSave(channel);
-                        SimulationInfoDto end = objectMapper.readValue(simulationMessage.getValue(),
-                                SimulationInfoDto.class);
-                        log.info(StringUtils.format("结束接收{}数据：{}",  channel, JSONObject.toJSONString(end)));
-                        TjCase endCase = caseMapper.selectById(caseId);
-                        CaseTrajectoryDetailBo endCaseDetail = JSONObject.parseObject(endCase.getDetailInfo(),
+                        CaseTrajectoryDetailBo end = objectMapper.readValue(simulationMessage.getValue(),
                                 CaseTrajectoryDetailBo.class);
-                        Optional.ofNullable(end.getSceneDesc()).ifPresent(endCaseDetail::setSceneDesc);
-                        Optional.ofNullable(end.getEvaluationVerify()).ifPresent(endCaseDetail::setEvaluationVerify);
-                        Optional.ofNullable(end.getSceneForm()).ifPresent(endCaseDetail::setSceneForm);
-                        endCase.setDetailInfo(JSONObject.toJSONString(endCaseDetail));
-                        caseMapper.updateById(endCase);
+                        log.info(StringUtils.format("结束接收{}数据：{}", channel, JSONObject.toJSONString(end)));
+                        int endSuccess = this.saveCaseDetailInfo(caseId, oldDetail, end);
+                        log.info(StringUtils.format("修改用例场景评价:{}", endSuccess));
+                        removeListenerThenSave(channel);
                         break;
                     default:
                         break;
@@ -143,19 +135,19 @@ public class RedisTrajectoryConsumer {
                 removeListenerThenSave(channel);
             }
         };
-        this.addRunningChannel(channel, listener);
+        this.addRunningChannel(caseId, channel, listener);
     }
 
     public void removeMessageListener(@Nullable MessageListener listener, String channel) {
         redisMessageListenerContainer.removeMessageListener(listener, new ChannelTopic(channel));
     }
 
-    public void addRunningChannel(String channel, MessageListener listener) {
+    public void addRunningChannel(Integer caseId, String channel, MessageListener listener) {
         if (this.runningChannel.containsKey(channel)) {
             return;
         }
         redisMessageListenerContainer.addMessageListener(listener, new ChannelTopic(channel));
-        this.runningChannel.put(channel, new ChannelListener(channel, SecurityUtils.getUsername(),
+        this.runningChannel.put(channel, new ChannelListener(caseId, channel, SecurityUtils.getUsername(),
                 System.currentTimeMillis(), listener));
     }
 
@@ -182,8 +174,7 @@ public class RedisTrajectoryConsumer {
         ChannelListener<SimulationTrajectoryDto> channelListener = this.runningChannel.get(channel);
         removeMessageListener(channelListener.getListener(), channelListener.getChannel());
         try {
-            routeService.saveRouteFile(channelListener.getChannel(),
-                    channelListener.getData());
+            routeService.saveRouteFile(channelListener.getCaseId(), channelListener.getData());
         } catch (ExecutionException | InterruptedException e) {
             e.printStackTrace();
         }
@@ -199,12 +190,12 @@ public class RedisTrajectoryConsumer {
                 ChannelListener<SimulationTrajectoryDto> channelListener = entry.getValue();
                 if (channelListener.isExpire()) {
                     removeMessageListener(channelListener.getListener(), channelListener.getChannel());
-                    try {
-                        routeService.saveRouteFile(channelListener.getChannel(),
-                                channelListener.getData());
-                    } catch (ExecutionException | InterruptedException e) {
-                        e.printStackTrace();
-                    }
+//                    try {
+//                        routeService.saveRouteFile(channelListener.getChannel(),
+//                                channelListener.getData());
+//                    } catch (ExecutionException | InterruptedException e) {
+//                        e.printStackTrace();
+//                    }
                     iterator.remove();  // Removes the current element from the map
                 }
             }
@@ -214,13 +205,16 @@ public class RedisTrajectoryConsumer {
     }
 
     public static class ChannelListener<T> {
+        private Integer caseId;
         private String channel;
         private String userName;
         private Long timestamp;
         private MessageListener listener;
         private List<T> data;
 
-        public ChannelListener(String channel, String userName, Long timestamp, MessageListener listener) {
+        public ChannelListener(Integer caseId, String channel, String userName, Long timestamp,
+                               MessageListener listener) {
+            this.caseId = caseId;
             this.channel = channel;
             this.userName = userName;
             this.timestamp = timestamp;
@@ -241,40 +235,57 @@ public class RedisTrajectoryConsumer {
             return this.data.size();
         }
 
+        public Integer getCaseId() {
+            return caseId;
+        }
+
         public String getChannel() {
             return channel;
         }
+
 
         public String getUserName() {
             return userName;
         }
 
-        public void setUserName(String userName) {
-            this.userName = userName;
-        }
-
-        public void setChannel(String channel) {
-            this.channel = channel;
-        }
 
         public Long getTimestamp() {
             return timestamp;
         }
 
-        public void setTimestamp(Long timestamp) {
-            this.timestamp = timestamp;
-        }
 
         public MessageListener getListener() {
             return listener;
         }
 
-        public void setListener(MessageListener listener) {
-            this.listener = listener;
-        }
-
         public List<T> getData() {
             return data;
         }
+    }
+
+    public int saveCaseDetailInfo(Integer caseId, CaseTrajectoryDetailBo oldDetail,
+                                  CaseTrajectoryDetailBo caseTrajectoryDetail) {
+        SqlSession sqlSession = sqlSessionFactory.openSession();
+        try {
+            TjCaseMapper mapper = sqlSession.getMapper(TjCaseMapper.class);
+            log.info(StringUtils.format("caseTrajectoryDetail before :{}", oldDetail));
+            Optional.ofNullable(caseTrajectoryDetail.getSceneDesc()).ifPresent(oldDetail::setSceneDesc);
+            Optional.ofNullable(caseTrajectoryDetail.getEvaluationVerify()).ifPresent(oldDetail::setEvaluationVerify);
+            Optional.ofNullable(caseTrajectoryDetail.getSceneForm()).ifPresent(oldDetail::setSceneForm);
+            log.info(StringUtils.format("caseTrajectoryDetail after :{}", oldDetail));
+
+            TjCase param = new TjCase();
+            param.setId(caseId);
+            param.setDetailInfo(JSONObject.toJSONString(oldDetail));
+            mapper.updateById(param);
+            log.info(StringUtils.format("param :{}", JSONObject.toJSONString(param)));
+            sqlSession.commit();
+        } catch (Exception e) {
+            sqlSession.rollback();
+            log.error("saveCaseDetailInfo rollback");
+        } finally {
+            sqlSession.clearCache();
+        }
+        return 1;
     }
 }

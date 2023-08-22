@@ -11,6 +11,9 @@ import java.util.List;
  */
 @Data
 public class CaseTrajectoryDetailBo extends SceneTrajectoryBo {
+
+    private static final long serialVersionUID = 1L;
+
     private String sceneDesc;
     private String sceneForm;
     private String evaluationVerify;

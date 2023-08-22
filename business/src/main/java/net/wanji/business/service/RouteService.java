@@ -50,11 +50,10 @@ public class RouteService {
     private TjCaseMapper tjCaseMapper;
 
     @Async
-    public void saveRouteFile(String caseNumber, List<SimulationTrajectoryDto> data) throws ExecutionException, InterruptedException {
-        log.info(StringUtils.format("保存{}路径文件", caseNumber));
-        QueryWrapper<TjCase> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq(ColumnName.CASE_NUMBER_COLUMN, caseNumber);
-        TjCase tjCase = tjCaseMapper.selectOne(queryWrapper);
+    public void saveRouteFile(Integer caseId, List<SimulationTrajectoryDto> data) throws ExecutionException, InterruptedException {
+        log.info(StringUtils.format("保存{}路径文件", caseId));
+        TjCase tjCase = new TjCase();
+        tjCase.setId(caseId);
         // 保存本地文件
         try {
             String path = FileUtils.writeE1List(data, WanjiConfig.getRoutePath(), Extension.TXT);
@@ -68,17 +67,14 @@ public class RouteService {
         }
     }
 
-    public void checkRoute(Integer caseId, List<TrajectoryValueDto> data) {
-        TjCase tjCase = tjCaseMapper.selectById(caseId);
-        CaseTrajectoryDetailBo caseTrajectoryDetailBo = JSONObject.parseObject(tjCase.getDetailInfo(),
-                CaseTrajectoryDetailBo.class);
-        if (CollectionUtils.isEmpty(data) || ObjectUtils.isEmpty(caseTrajectoryDetailBo)
-                || CollectionUtils.isEmpty(caseTrajectoryDetailBo.getParticipantTrajectories())) {
+    public void checkRoute(Integer caseId, CaseTrajectoryDetailBo oldDetail, List<TrajectoryValueDto> data) {
+        if (CollectionUtils.isEmpty(data) || ObjectUtils.isEmpty(oldDetail)
+                || CollectionUtils.isEmpty(oldDetail.getParticipantTrajectories())) {
             return;
         }
         boolean update = false;
         for (TrajectoryValueDto trajectory : data) {
-            for (ParticipantTrajectoryBo trajectoryBo : caseTrajectoryDetailBo.getParticipantTrajectories()) {
+            for (ParticipantTrajectoryBo trajectoryBo : oldDetail.getParticipantTrajectories()) {
                 if (!StringUtils.equals(trajectoryBo.getId(), trajectory.getId())) {
                     continue;
                 }
@@ -103,7 +99,9 @@ public class RouteService {
             }
         }
         if (update) {
-            tjCase.setDetailInfo(JSONObject.toJSONString(caseTrajectoryDetailBo));
+            TjCase tjCase = new TjCase();
+            tjCase.setId(caseId);
+            tjCase.setDetailInfo(JSONObject.toJSONString(oldDetail));
             tjCaseMapper.updateById(tjCase);
         }
     }

@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import lombok.Data;
 import org.apache.commons.collections4.CollectionUtils;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -13,7 +14,10 @@ import java.util.stream.IntStream;
  * @Descriptoin:
  */
 @Data
-public class SceneTrajectoryBo {
+public class SceneTrajectoryBo implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private List<ParticipantTrajectoryBo> participantTrajectories;
 
     public SceneTrajectoryBo buildId() {
