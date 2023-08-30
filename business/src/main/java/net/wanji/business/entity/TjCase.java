@@ -77,7 +77,7 @@ public class TjCase implements Serializable {
     private String evaObject;
 
     /**
-     * 图片
+     * 测试场景
      */
     @TableField("test_scene")
     @Excel(name = "测试场景")

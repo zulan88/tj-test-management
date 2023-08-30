@@ -6,6 +6,7 @@ import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.dto.TjDeviceDetailDto;
 import net.wanji.business.domain.vo.DeviceDetailVo;
+import net.wanji.business.entity.TjCasePartConfig;
 import net.wanji.business.entity.TjDeviceDetail;
 import net.wanji.business.mapper.TjDeviceDetailMapper;
 import net.wanji.business.service.TjDeviceDetailService;

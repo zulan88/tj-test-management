@@ -17,41 +17,43 @@ public class WebSocketManage {
     private static final Logger log = LoggerFactory.getLogger("business");
 
     /**
-     * 静态变量，用来记录当前在线连接数。应该把它设计成线程安全的。
-     */
-    private static int onlineCount = 0;
-    /**
      * concurrent包的线程安全Set，用来存放每个客户端对应的CumWebSocket对象。
      */
-    private static Map<String, WebSocketServer> clients = new ConcurrentHashMap<String, WebSocketServer>();
+    private static final ConcurrentHashMap<String, WebSocketServer> CLIENTS = new ConcurrentHashMap<>();
+
+    public static final String TEMPLETE_KEY = "{}_{}_{}";
 
     public static void join(String id, WebSocketServer socketServer) {
-        clients.put(id, socketServer);
+        if (CLIENTS.containsKey(id)) {
+            log.info(String.format("客户端%s已加入", id));
+            return;
+        }
+        CLIENTS.put(id, socketServer);
         log.info(String.format("客户端%s加入，当前在线数量：%d", id, getOnlineCount()));
     }
 
     public static void close(String id) {
-        if (!clients.containsKey(id)) {
+        if (!CLIENTS.containsKey(id)) {
             log.error(String.format("close:客户端%s不存在", id));
             return;
         }
-        clients.get(id).onClose();
+        CLIENTS.get(id).onClose();
     }
 
     public static void remove(String id) {
-        if (!clients.containsKey(id)) {
+        if (!CLIENTS.containsKey(id)) {
             log.error(String.format("remove:客户端%s不存在", id));
             return;
         }
-        clients.remove(id);
+        CLIENTS.remove(id);
     }
 
     public static void sendInfo(String id, String message) {
-        if (!clients.containsKey(id)) {
-//            log.error(String.format("sendInfo:客户端%s不存在", id));
+        if (!CLIENTS.containsKey(id)) {
+            log.error(String.format("sendInfo:客户端%s不存在", id));
             return;
         }
-        clients.get(id).getSession().getAsyncRemote().sendText(message);
+        CLIENTS.get(id).getSession().getAsyncRemote().sendText(message);
     }
 
     /**
@@ -60,13 +62,11 @@ public class WebSocketManage {
      * @param message
      */
     private static void sendAll(String message) {
-        for (Map.Entry<String, WebSocketServer> client : clients.entrySet()) {
+        for (Map.Entry<String, WebSocketServer> client : CLIENTS.entrySet()) {
             try {
                 client.getValue().getSession().getAsyncRemote().sendText(message);
-            } catch (IllegalStateException e) {
-                log.error("发送websocket错误",e);
             } catch (Exception e) {
-                log.error("发送websocket错误", e);
+                log.error("发送websocket错误",e);
             }
         }
     }
@@ -77,7 +77,7 @@ public class WebSocketManage {
      * @return
      */
     public static synchronized int getOnlineCount() {
-        return clients.size();
+        return CLIENTS.size();
     }
 
 }

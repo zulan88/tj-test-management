@@ -157,7 +157,7 @@ public class FileUtils {
             String line;
             while ((line = br.readLine()) != null) {
                 SimulationTrajectoryDto data = JSONObject.parseObject(line, SimulationTrajectoryDto.class);
-                List<TrajectoryValueDto> mapList = JSONObject.parseArray(data.getValue(), TrajectoryValueDto.class);
+                List<TrajectoryValueDto> mapList = data.getValue();
                 list.add(mapList);
             }
         } catch (IOException e) {

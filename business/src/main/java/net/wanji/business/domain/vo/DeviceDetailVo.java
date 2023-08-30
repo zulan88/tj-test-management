@@ -18,4 +18,6 @@ public class DeviceDetailVo extends TjDeviceDetail {
     private String statusName;
     @Excel(name = "支持角色")
     private String supportRolesName;
+
+    private int selected;
 }

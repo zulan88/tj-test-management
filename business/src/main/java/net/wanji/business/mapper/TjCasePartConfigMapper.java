@@ -1,6 +1,8 @@
 package net.wanji.business.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import net.wanji.business.domain.dto.CaseConfigDto;
+import net.wanji.business.domain.param.TestStartParam;
 import net.wanji.business.entity.TjCasePartConfig;
 
 /**
@@ -13,4 +15,10 @@ import net.wanji.business.entity.TjCasePartConfig;
  */
 public interface TjCasePartConfigMapper extends BaseMapper<TjCasePartConfig> {
 
+    /**
+     * 获取用例角色配置数量
+     * @param caseId
+     * @return
+     */
+    CaseConfigDto getCasePartNum(Integer caseId);
 }

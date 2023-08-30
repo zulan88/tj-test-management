@@ -19,7 +19,6 @@ public interface Constants {
     }
 
     class RedisMessageType {
-        public static final String START = "start";
         public static final String TRAJECTORY = "trajectory";
         public static final String END = "end";
     }
@@ -41,15 +40,13 @@ public interface Constants {
      * 内容模板
      */
     class ContentTemplate {
-        public static final String SCENE_SIGN = "SCENE";
-        public static final String CASE_SIGN = "CASE";
-
         public static final String EXPORT_NAME_TEMPLATE = "{}_{}";
         public static final String SCENE_NUMBER_TEMPLATE = "SC{}{}";
         public static final String CASE_NUMBER_TEMPLATE = "CASE{}{}";
-        public static final String CASE_TRAJECTORY_TEMPLATE = "{}_trajectory_{}";
         public static final String SCENE_NAME_TEMPLATE = "{}_{}";
-        public static final String COPY_SCENE_NAME_TEMPLATE = "{}_COPY{}";
+        public static final String DEVICE_OFFLINE_TEMPLATE = "设备{}离线；";
+        public static final String DEVICE_POS_ERROR_TEMPLATE = "{}未达到规定位置；";
+        public static final String SCENE_FORM_TEMPLATE = "该场景包含 AV车数量：{}；仿真车数量：{}；行人数量：{}；仿真频率：10HZ；";
     }
 
     class FileExtension {
@@ -98,6 +95,7 @@ public interface Constants {
         public static final String CASE_ID_COLUMN = "case_id";
         public static final String CASE_NUMBER_COLUMN = "case_number";
         public static final String TEST_TYPE_COLUMN = "test_type";
+        public static final String DEVICE_ID_COLUMN = "device_id";
         public static final String DEVICE_TYPE_COLUMN = "device_type";
         public static final String CREATED_DATE_COLUMN = "created_date";
     }
@@ -171,6 +169,43 @@ public interface Constants {
         public static final String DEVICE_TYPE = "device_type";
     }
 
+
+    /**
+     * 参与者类型
+     */
+    class PartRole {
+        /**
+         * AV车
+         */
+        public static final String AV = "av";
+        /**
+         * MV-实车
+         */
+        public static final String MV_REAL = "mvReal";
+        /**
+         * MV-仿真车
+         */
+        public static final String MV_SIMULATION = "mvSimulation";
+        /**
+         * 行人
+         */
+        public static final String SP = "sp";
+    }
+
+    /**
+     * 场景类型
+     */
+    class SceneType {
+        /**
+         * 仿真场景
+         */
+        public static final String SIMULATION = "simulation";
+        /**
+         * 自然驾驶场景
+         */
+        public static final String NATURAL_DRIVING = "naturalDriving";
+    }
+
     /**
      * 测试类型
      */
@@ -197,23 +232,34 @@ public interface Constants {
         public static final String TTMT = "threeTermMapping";
     }
 
-    class CaseVerifyStatus {
+    class PointType {
         /**
-         * 待核验
+         * 起始点
          */
-        public static final String NEW = "NEW";
+        public static final String START = "start";
         /**
-         * 系统核验中
+         * 途径点
          */
-        public static final String SYS_VERIFYING = "SYS_VERIFYING";
+        public static final String PATH_WAY = "pathway";
         /**
-         * 系统核验完成
+         * 冲突
          */
-        public static final String SYS_VERIFY_FINISHED = "SYS_VERIFY_FINISHED";
+        public static final String CONFLICT = "conflict";
         /**
-         * 人工核验完成
+         * 终点
          */
-        public static final String FINISHED = "FINISHED";
+        public static final String END = "end";
+    }
+
+    class MasterControl {
+        /**
+         * 开始
+         */
+        public static final Integer START = 1;
+        /**
+         * 结束
+         */
+        public static final Integer END = 0;
     }
 
     class Extension {

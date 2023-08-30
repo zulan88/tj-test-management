@@ -1,6 +1,7 @@
 package net.wanji.business.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import net.wanji.business.domain.bo.CaseInfoBo;
 import net.wanji.business.domain.dto.TjCaseDto;
 import net.wanji.business.domain.vo.CaseVo;
 import net.wanji.business.entity.TjCase;
@@ -33,4 +34,6 @@ public interface TjCaseMapper extends BaseMapper<TjCase> {
 
     List<TjFragmentedSceneDetail> selectSubscenesInCase(@Param("testType") String testType,
                                                         @Param("fragmentedSceneId") Integer fragmentedSceneId);
+
+    CaseInfoBo selectCaseInfo(Integer caseId);
 }

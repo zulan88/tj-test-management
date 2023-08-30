@@ -13,6 +13,7 @@ public class TrajectoryValueDto {
     private String globalTimeStamp;
     private Integer frameId;
     private String id;
+    private String name;
     private String picLicense;
     private Integer originalColor;
     private Integer vehicleColor;
@@ -67,6 +68,14 @@ public class TrajectoryValueDto {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getPicLicense() {

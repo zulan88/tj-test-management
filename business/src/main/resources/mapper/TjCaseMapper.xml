@@ -45,12 +45,12 @@
         select count(*)
         from tj_case
         where scene_detail_id in (
-            select id
-            from tj_fragmented_scene_detail
-            where fragmented_scene_id in
-            <foreach collection="sceneIds" item="sceneId" open="(" separator="," close=")">
-                #{sceneId}
-            </foreach>
+        select id
+        from tj_fragmented_scene_detail
+        where fragmented_scene_id in
+        <foreach collection="sceneIds" item="sceneId" open="(" separator="," close=")">
+            #{sceneId}
+        </foreach>
         )
     </select>
 
@@ -81,6 +81,79 @@
           AND sd.fragmented_scene_id = #{fragmentedSceneId}
     </select>
 
+    <resultMap id="CaseInfoResult" type="net.wanji.business.domain.bo.CaseInfoBo">
+        <id property="id" column="id"/>
+        <result property="testType" column="test_type"/>
+        <result property="caseNumber" column="case_number"/>
+        <result property="label" column="label"/>
+        <result property="sceneDetailId" column="scene_detail_id"/>
+        <result property="resourcesDetailId" column="resources_detail_id"/>
+        <result property="testTarget" column="test_target"/>
+        <result property="evaObject" column="eva_object"/>
+        <result property="testScene" column="test_scene"/>
+        <result property="detailInfo" column="detail_info"/>
+        <result property="routeFile" column="route_file"/>
+        <result property="status" column="status"/>
+        <collection property="caseConfigs" javaType="java.util.List" resultMap="CaseConfigResult"/>
+    </resultMap>
+
+    <resultMap id="CaseConfigResult" type="net.wanji.business.domain.bo.CaseConfigBo">
+        <result property="id" column="config_id"/>
+        <result property="caseId" column="case_id"/>
+        <result property="participantRole" column="participant_role"/>
+        <result property="businessId" column="business_id"/>
+        <result property="businessType" column="business_type"/>
+        <result property="name" column="business_name"/>
+        <result property="model" column="model"/>
+        <result property="deviceId" column="device_id"/>
+        <result property="deviceName" column="device_name"/>
+        <result property="deviceType" column="device_type"/>
+        <result property="supportRoles" column="support_roles"/>
+        <result property="ip" column="ip"/>
+        <result property="serviceAddress" column="service_address"/>
+        <result property="dataChannel" column="data_channel"/>
+        <result property="commandChannel" column="command_channel"/>
+        <result property="status" column="device_status"/>
+        <result property="lastOnlineDate" column="last_online_date"/>
+    </resultMap>
+
+    <select id="selectCaseInfo" resultMap="CaseInfoResult">
+        SELECT
+            tc.id,
+            tc.test_type,
+            tc.case_number,
+            tc.label,
+            tc.scene_detail_id,
+            tc.resources_detail_id,
+            tc.test_target,
+            tc.eva_object,
+            tc.test_scene,
+            tc.detail_info,
+            tc.route_file,
+            tc.`status`,
+            pc.id AS config_id,
+            pc.case_id,
+            pc.participant_role,
+            pc.business_id,
+            pc.business_type,
+            pc.`name` AS business_name,
+            pc.model,
+            pc.device_id,
+            dd.device_name,
+            dd.device_type,
+            dd.support_roles,
+            dd.ip,
+            dd.service_address,
+            dd.data_channel,
+            dd.command_channel,
+            dd.`status` AS device_status,
+            dd.last_online_date
+        FROM
+            tj_case tc
+                LEFT JOIN tj_case_part_config pc ON pc.case_id = tc.id
+                LEFT JOIN tj_device_detail dd ON dd.device_id = pc.device_id
+        WHERE tc.id=#{caseId}
+    </select>
 
 
 </mapper>

@@ -2,6 +2,9 @@ package net.wanji.business.domain.vo;
 
 import lombok.Data;
 import net.wanji.business.entity.TjCasePartConfig;
+import net.wanji.business.entity.TjDeviceDetail;
+
+import java.util.List;
 
 /**
  * @Auther: guanyuduo
@@ -30,5 +33,9 @@ public class CasePartConfigVo extends TjCasePartConfig {
      * 选中状态
      */
     private int selected;
+    /**
+     * 设备列表
+     */
+    private List<DeviceDetailVo> devices;
 
 }

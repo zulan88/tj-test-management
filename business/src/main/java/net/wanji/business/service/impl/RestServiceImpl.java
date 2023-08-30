@@ -1,6 +1,9 @@
 package net.wanji.business.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
+import net.wanji.business.common.Constants.YN;
+import net.wanji.business.domain.param.CaseRuleControl;
+import net.wanji.business.domain.param.TestStartParam;
 import net.wanji.business.service.RestService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,18 +37,18 @@ public class RestServiceImpl implements RestService {
     @Value("${tess.start}")
     private String tessStartUrl;
 
+    @Value("${masterControl.sendRule}")
+    private String sendRuleUrl;
+
     @Override
-    public boolean start(Integer caseId, String channel) {
+    public boolean start(TestStartParam startParam) {
         try {
             String resultUrl = tessStartUrl;
             log.info("============================== tess start：{}", tessStartUrl);
-            Map<String, Object> param = new HashMap<>();
-            param.put("caseId", caseId);
-            param.put("channel", channel);
             HttpHeaders httpHeaders = new HttpHeaders();
             httpHeaders.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<Map<String, Object>> resultHttpEntity = new HttpEntity<>(param, httpHeaders);
-            log.info("============================== tess start：{}", JSONObject.toJSONString(param));
+            HttpEntity<TestStartParam> resultHttpEntity = new HttpEntity<>(startParam, httpHeaders);
+            log.info("============================== tess start：{}", JSONObject.toJSONString(startParam));
             ResponseEntity<String> response =
                     restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);
             if (response.getStatusCodeValue() == 200) {
@@ -53,6 +56,40 @@ public class RestServiceImpl implements RestService {
                 log.info("============================== tess start  result:{}", JSONObject.toJSONString(result));
                 if (Objects.isNull(result) || !"success".equals(result.get("status"))) {
                     log.error("远程服务调用失败:{}", result.get("msg"));
+                    return false;
+                }
+                return true;
+            }
+        } catch (Exception e) {
+            log.error("远程服务调用失败:{}", e);
+        }
+        return false;
+    }
+
+    @Override
+    public Map<String, Object> searchDeviceInfo(String ip, HttpMethod method) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("status", YN.Y_INT);
+        result.put("longitude", 121.20166333688785);
+        result.put("latitude", 31.291084438789756);
+        result.put("courseAngle", 0.3);
+        return result;
+    }
+
+    @Override
+    public Object sendRuleUrl(CaseRuleControl caseRuleControl) {
+        try {
+            String resultUrl = sendRuleUrl;
+            log.info("============================== connectMasterControl：{}", sendRuleUrl);
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<CaseRuleControl> resultHttpEntity = new HttpEntity<>(caseRuleControl, httpHeaders);
+            log.info("============================== connectMasterControl：{}", JSONObject.toJSONString(caseRuleControl));
+            ResponseEntity<String> response =
+                    restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);
+            if (response.getStatusCodeValue() == 200) {
+                if (!"success".equals(response.getBody())) {
+                    log.error("远程服务调用失败");
                     return false;
                 }
                 return true;

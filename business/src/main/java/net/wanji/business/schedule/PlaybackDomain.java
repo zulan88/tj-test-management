@@ -25,7 +25,7 @@ public class PlaybackDomain {
 
     private ScheduledFuture<?> future;
     private String id;
-    private List<List<TrajectoryValueDto>> data = null;
+    private List<List<TrajectoryValueDto>> data;
     private int index;
     private boolean running;
 
@@ -56,9 +56,7 @@ public class PlaybackDomain {
     }
 
     public void suspend() throws BusinessException {
-        if (ObjectUtils.isEmpty(this.future)) {
-            throw new BusinessException("任务不存在");
-        }
+        this.validFuture();
         if (!this.running) {
             throw new BusinessException("当前任务未处于运行状态");
         }
@@ -66,19 +64,21 @@ public class PlaybackDomain {
     }
 
     public void goOn() throws BusinessException {
-        if (ObjectUtils.isEmpty(this.future)) {
-            throw new BusinessException("任务不存在");
-        }
+        this.validFuture();
         this.running = true;
     }
 
-    public void stopSendingData() throws BusinessException {
-        if (ObjectUtils.isEmpty(this.future)) {
-            throw new BusinessException("任务不存在");
-        }
+    public synchronized void stopSendingData() throws BusinessException {
+        this.validFuture();
         this.running = false;
         this.future.cancel(true);
         WebSocketManage.close(this.id);
+    }
+
+    private void validFuture() throws BusinessException {
+        if (ObjectUtils.isEmpty(this.future)) {
+            throw new BusinessException("任务不存在");
+        }
     }
 
 }

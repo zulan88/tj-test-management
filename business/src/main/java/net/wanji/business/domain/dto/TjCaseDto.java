@@ -50,10 +50,6 @@ public class TjCaseDto {
     @NotBlank(message = "请输入测试场景", groups = {InsertGroup.class, UpdateGroup.class})
     private String testScene;
 
-    private String topic;
-
-    private String localFile;
-
     @NotBlank(message = "请选择状态", groups = {QueryGroup.class})
     private String status;
 

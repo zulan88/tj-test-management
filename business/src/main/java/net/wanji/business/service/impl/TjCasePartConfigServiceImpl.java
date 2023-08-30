@@ -1,19 +1,28 @@
 package net.wanji.business.service.impl;
 
+import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import net.wanji.business.common.Constants.ColumnName;
+import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.business.common.Constants.ModelEnum;
+import net.wanji.business.common.Constants.PartRole;
 import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.YN;
+import net.wanji.business.domain.PartConfigSelect;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
+import net.wanji.business.domain.param.TestStartParam;
 import net.wanji.business.domain.vo.CasePartConfigVo;
+import net.wanji.business.domain.vo.DeviceDetailVo;
 import net.wanji.business.entity.TjCasePartConfig;
+import net.wanji.business.entity.TjDeviceDetail;
+import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.mapper.TjCasePartConfigMapper;
 import net.wanji.business.service.TjCasePartConfigService;
 import net.wanji.common.core.domain.entity.SysDictData;
+import net.wanji.common.utils.StringUtils;
 import net.wanji.system.service.ISysDictDataService;
 import net.wanji.system.service.ISysDictTypeService;
 import org.apache.commons.collections4.CollectionUtils;
@@ -96,34 +105,66 @@ public class TjCasePartConfigServiceImpl extends ServiceImpl<TjCasePartConfigMap
         return result.stream().collect(Collectors.groupingBy(CasePartConfigVo::getBusinessType));
     }
 
+    @Override
+    public boolean saveFromSelected(List<PartConfigSelect> partConfigSelects) {
+        List<TjCasePartConfig> saveList = new ArrayList<>();
+        for (PartConfigSelect configSelect : CollectionUtils.emptyIfNull(partConfigSelects)) {
+            List<TjCasePartConfig> configs = CollectionUtils.emptyIfNull(configSelect.getParts()).stream().map(part -> {
+                TjCasePartConfig config = new TjCasePartConfig();
+                BeanUtils.copyProperties(part, config);
+                CollectionUtils.emptyIfNull(part.getDevices()).stream().filter(item -> YN.Y_INT == item.getSelected())
+                        .findFirst().ifPresent(d -> config.setDeviceId(d.getDeviceId()));
+                return config;
+            }).collect(Collectors.toList());
+            saveList.addAll(configs);
+        }
+        return !CollectionUtils.isEmpty(saveList) && this.saveOrUpdateBatch(saveList);
+    }
+
     @Transactional(rollbackFor = BusinessException.class)
     @Override
-    public boolean removeThenSave(Integer caseId, Map<String, List<TjCasePartConfig>> configMap)
+    public boolean removeThenSave(Integer caseId, List<TjCasePartConfig> configs)
             throws BusinessException {
-        if (ObjectUtils.isEmpty(caseId) || org.springframework.util.CollectionUtils.isEmpty(configMap)) {
+        if (ObjectUtils.isEmpty(caseId) || CollectionUtils.isEmpty(configs)) {
             return false;
-        }
-        List<TjCasePartConfig> configList = new ArrayList<>();
-        for (Map.Entry<String, List<TjCasePartConfig>> partConfigs : configMap.entrySet()) {
-            if (CollectionUtils.isEmpty(partConfigs.getValue())) {
-                continue;
-            }
-            for (TjCasePartConfig config : partConfigs.getValue()) {
-                config.setCaseId(caseId);
-                config.setParticipantRole(partConfigs.getKey());
-            }
-            configList.addAll(partConfigs.getValue());
-        }
-        if (CollectionUtils.isEmpty(configList)) {
-            throw new BusinessException("请进行角色配置后保存");
         }
         QueryWrapper<TjCasePartConfig> deleteWrapper = new QueryWrapper<>();
         deleteWrapper.eq(ColumnName.CASE_ID_COLUMN, caseId);
         this.remove(deleteWrapper);
-        boolean saveBatch = this.saveBatch(configList);
+        boolean saveBatch = this.saveBatch(configs);
         if (!saveBatch) {
             throw new BusinessException("保存角色配置失败");
         }
         return true;
     }
+
+    @Override
+    public TestStartParam buildStartParam(List<TjCasePartConfig> configs) {
+        int avNum = 0;
+        List<String> avNames = new ArrayList<>();
+        int simulationNum = 0;
+        List<String> simulationNames = new ArrayList<>();
+        int pedestrianNum = 0;
+        List<String> pedestrianNames = new ArrayList<>();
+        for (TjCasePartConfig config : CollectionUtils.emptyIfNull(configs)) {
+            switch (config.getParticipantRole()) {
+                case PartRole.AV:
+                    avNum ++;
+                    avNames.add(config.getName());
+                    break;
+                case PartRole.MV_SIMULATION:
+                    simulationNum ++;
+                    simulationNames.add(config.getName());
+                    break;
+                case PartRole.SP:
+                    pedestrianNum ++;
+                    pedestrianNames.add(config.getName());
+                    break;
+                default:
+                    break;
+            }
+        }
+        return new TestStartParam(avNum, avNames, simulationNum, simulationNames, pedestrianNum, pedestrianNames);
+    }
+
 }

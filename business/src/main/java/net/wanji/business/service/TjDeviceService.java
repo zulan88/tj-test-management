@@ -5,8 +5,6 @@ import net.wanji.business.domain.BusinessTreeSelect;
 import net.wanji.business.domain.dto.TjDeviceDto;
 import net.wanji.business.domain.dto.TreeTypeDto;
 import net.wanji.business.entity.TjDevice;
-import net.wanji.business.entity.TjDevice;
-import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.common.core.domain.SimpleSelect;
 

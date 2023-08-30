@@ -3,6 +3,7 @@ package net.wanji.web.controller.business;
 import com.alibaba.fastjson2.JSON;
 import net.wanji.business.common.Constants.InsertGroup;
 import net.wanji.business.common.Constants.OtherGroup;
+import net.wanji.business.common.Constants.SceneType;
 import net.wanji.business.common.Constants.UpdateGroup;
 import net.wanji.business.domain.BusinessTreeSelect;
 import net.wanji.business.domain.dto.SceneQueryDto;
@@ -18,6 +19,7 @@ import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.util.ObjectUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -110,6 +112,10 @@ public class SceneBaseController extends BaseController {
     public AjaxResult saveSceneDetail(@Validated(value = {InsertGroup.class, UpdateGroup.class})
                                           @RequestBody TjFragmentedSceneDetailDto sceneDetailDto)
             throws BusinessException {
+        if (SceneType.SIMULATION.equals(sceneDetailDto.getSceneType())
+                && ObjectUtils.isEmpty(sceneDetailDto.getResourcesDetailId())) {
+            throw new BusinessException("请选择地图");
+        }
         return tjFragmentedSceneDetailService.saveSceneDetail(sceneDetailDto)
                 ? AjaxResult.success("成功")
                 : AjaxResult.error("失败");

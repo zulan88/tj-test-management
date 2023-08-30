@@ -47,4 +47,5 @@ public interface TjFragmentedSceneDetailService extends IService<TjFragmentedSce
      * @throws BusinessException
      */
     boolean deleteSceneDetail(Integer id) throws BusinessException ;
+
 }

@@ -3,4 +3,16 @@
 <mapper namespace="net.wanji.business.mapper.TjCasePartConfigMapper">
 
 
+    <select id="getCasePartNum" resultType="net.wanji.business.domain.dto.CaseConfigDto">
+        SELECT
+            case_id,
+            SUM( CASE WHEN participant_role = 'av' THEN 1 ELSE 0 END ) AS avNum,
+            SUM( CASE WHEN participant_role = 'mvSimulation' THEN 1 ELSE 0 END ) AS simulationNum,
+            SUM( CASE WHEN participant_role = 'sp' THEN 1 ELSE 0 END ) AS pedestrianNum,
+            SUM( CASE WHEN participant_role NOT IN ( 'av', 'mvSimulation', 'sp' ) THEN 1 ELSE 0 END ) AS otherNum
+        FROM
+            tj_case_part_config
+        WHERE
+            case_id = #{caseId};
+    </select>
 </mapper>

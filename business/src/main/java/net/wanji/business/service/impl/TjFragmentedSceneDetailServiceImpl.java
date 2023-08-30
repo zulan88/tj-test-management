@@ -1,13 +1,11 @@
 package net.wanji.business.service.impl;
 
-import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.YN;
-import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.dto.SceneQueryDto;
 import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
@@ -35,7 +33,6 @@ import org.springframework.util.ObjectUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -77,7 +74,7 @@ public class TjFragmentedSceneDetailServiceImpl
         queryWrapper.eq(ColumnName.SCENE_DETAIL_ID_COLUMN, id);
         TjFragmentedSceneDetail detail = this.getOne(queryWrapper);
         FragmentedScenesDetailVo detailVo = new FragmentedScenesDetailVo();
-        if(null != detail && detail.getFragmentedSceneId() != null){
+        if (null != detail && detail.getFragmentedSceneId() != null) {
             TjFragmentedScenes scenes = scenesMapper.selectById(detail.getFragmentedSceneId());
             if (ObjectUtils.isEmpty(scenes)) {
                 throw new BusinessException("场景不存在");
@@ -95,25 +92,25 @@ public class TjFragmentedSceneDetailServiceImpl
     private void detailVoTranslate(FragmentedScenesDetailVo detailVo) {
         // 地图
         TjResourcesDetail tjResourcesDetail = tjResourcesDetailService.getById(
-            detailVo.getResourcesDetailId());
+                detailVo.getResourcesDetailId());
         detailVo.setResourcesName(tjResourcesDetail.getName());
         detailVo.setFilePath(tjResourcesDetail.getFilePath());
         detailVo.setGeoJsonPath(tjResourcesDetail.getAttribute4());
         // 道路类型
         detailVo.setRoadTypeName(dictDataService.selectDictLabel(SysType.ROAD_TYPE
-            , detailVo.getRoadType()));
+                , detailVo.getRoadType()));
         // 场景复杂度
         detailVo.setSceneComplexityName(dictDataService.selectDictLabel(SysType.SCENE_COMPLEXITY
-            , detailVo.getSceneComplexity()));
+                , detailVo.getSceneComplexity()));
         // 交通流状态
         detailVo.setTrafficFlowStatusName(dictDataService.selectDictLabel(SysType.TRAFFIC_FLOW_STATUS
-            , detailVo.getTrafficFlowStatus()));
+                , detailVo.getTrafficFlowStatus()));
         // 路面状况
         detailVo.setRoadConditionName(dictDataService.selectDictLabel(SysType.ROAD_CONDITION
-            , detailVo.getRoadCondition()));
+                , detailVo.getRoadCondition()));
         // 天气
         detailVo.setWeatherName(dictDataService.selectDictLabel(SysType.WEATHER
-            , detailVo.getWeather()));
+                , detailVo.getWeather()));
     }
 
     @Transactional(rollbackFor = Exception.class)

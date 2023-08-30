@@ -45,7 +45,6 @@ public class TjFragmentedSceneDetailDto {
     /**
      * 地图
      */
-    @NotNull(message = "请选择地图", groups = {InsertGroup.class, UpdateGroup.class})
     private Integer resourcesDetailId;
 
     /**

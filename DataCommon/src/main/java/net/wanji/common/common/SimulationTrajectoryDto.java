@@ -1,5 +1,7 @@
 package net.wanji.common.common;
 
+import java.util.List;
+
 /**
  * @Auther: guanyuduo
  * @Date: 2023/8/9 9:40
@@ -15,12 +17,12 @@ public class SimulationTrajectoryDto {
     /**
      * 实际值（TrajectoryValueDto.class）
      */
-    private String value;
+    private List<TrajectoryValueDto> value;
 
     /**
      * 时间戳
      */
-    private Long timestamp;
+    private String timestamp;
 
     public String getTimestampType() {
         return timestampType;
@@ -30,19 +32,19 @@ public class SimulationTrajectoryDto {
         this.timestampType = timestampType;
     }
 
-    public String getValue() {
+    public List<TrajectoryValueDto> getValue() {
         return value;
     }
 
-    public void setValue(String value) {
+    public void setValue(List<TrajectoryValueDto> value) {
         this.value = value;
     }
 
-    public Long getTimestamp() {
+    public String getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(Long timestamp) {
+    public void setTimestamp(String timestamp) {
         this.timestamp = timestamp;
     }
 }

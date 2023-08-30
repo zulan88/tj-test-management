@@ -18,6 +18,7 @@ import tk.mybatis.spring.annotation.MapperScan;
 
 import javax.annotation.PostConstruct;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.TimeZone;
 
 /**
@@ -48,15 +49,15 @@ public class DataApplication
     public RestTemplate restTemplate(ClientHttpRequestFactory factory) {
         RestTemplate restTemplate = new RestTemplate(factory);
         // 支持中文编码
-        restTemplate.getMessageConverters().set(1, new StringHttpMessageConverter(Charset.forName("UTF-8")));
+        restTemplate.getMessageConverters().set(1, new StringHttpMessageConverter(StandardCharsets.UTF_8));
         return restTemplate;
     }
 
     @Bean
     public ClientHttpRequestFactory simpleClientHttpRequestFactory() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setReadTimeout(5000);// 单位为ms
-        factory.setConnectTimeout(5000);// 单位为ms
+        factory.setReadTimeout(60000);// 单位为ms
+        factory.setConnectTimeout(600000);// 单位为ms
         return factory;
     }
 }

@@ -7,12 +7,14 @@ import net.wanji.business.common.Constants.DeleteGroup;
 import net.wanji.business.common.Constants.InsertGroup;
 import net.wanji.business.common.Constants.QueryGroup;
 import net.wanji.business.domain.BusinessTreeSelect;
+import net.wanji.business.domain.PartConfigSelect;
 import net.wanji.business.domain.dto.SceneQueryDto;
 import net.wanji.business.domain.dto.TjCaseDto;
 import net.wanji.business.domain.vo.CaseVo;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.exception.BusinessException;
+import net.wanji.business.service.TjCasePartConfigService;
 import net.wanji.business.service.TjCaseService;
 import net.wanji.business.service.TjFragmentedSceneDetailService;
 import net.wanji.business.service.TjFragmentedScenesService;
@@ -54,6 +56,9 @@ public class CaseController extends BaseController {
 
     @Autowired
     private TjFragmentedSceneDetailService sceneDetailService;
+
+    @Autowired
+    private TjCasePartConfigService casePartConfigService;
 
     @PreAuthorize("@ss.hasPermi('case:init')")
     @GetMapping("/init")
@@ -97,6 +102,13 @@ public class CaseController extends BaseController {
     public AjaxResult createCase(@Validated(value = InsertGroup.class) @RequestBody TjCaseDto tjCaseDto)
             throws BusinessException {
         return AjaxResult.success(caseService.saveCase(tjCaseDto));
+    }
+
+    @PreAuthorize("@ss.hasPermi('case:saveCaseDevice')")
+    @PostMapping("/saveCaseDevice")
+    public AjaxResult saveCaseDevice(@RequestBody List<PartConfigSelect> partConfigSelects)
+            throws BusinessException {
+        return AjaxResult.success(casePartConfigService.saveFromSelected(partConfigSelects));
     }
 
     @PreAuthorize("@ss.hasPermi('case:configDetail')")

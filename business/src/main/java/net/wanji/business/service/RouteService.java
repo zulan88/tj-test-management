@@ -4,12 +4,17 @@ import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.Extension;
+import net.wanji.business.common.Constants.PartRole;
 import net.wanji.business.common.Constants.WebsocketKey;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
+import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
+import net.wanji.business.domain.param.TestStartParam;
 import net.wanji.business.entity.TjCase;
+import net.wanji.business.entity.TjCasePartConfig;
 import net.wanji.business.mapper.TjCaseMapper;
+import net.wanji.business.mapper.TjCasePartConfigMapper;
 import net.wanji.business.schedule.PlaybackSchedule;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
@@ -49,6 +54,9 @@ public class RouteService {
     @Autowired
     private TjCaseMapper tjCaseMapper;
 
+    @Autowired
+    private TjCasePartConfigMapper casePartConfigMapper;
+
     @Async
     public void saveRouteFile(Integer caseId, List<SimulationTrajectoryDto> data) throws ExecutionException, InterruptedException {
         log.info(StringUtils.format("保存{}路径文件", caseId));
@@ -75,7 +83,7 @@ public class RouteService {
         boolean update = false;
         for (TrajectoryValueDto trajectory : data) {
             for (ParticipantTrajectoryBo trajectoryBo : oldDetail.getParticipantTrajectories()) {
-                if (!StringUtils.equals(trajectoryBo.getId(), trajectory.getId())) {
+                if (!StringUtils.equals(trajectoryBo.getName(), trajectory.getName())) {
                     continue;
                 }
                 List<TrajectoryDetailBo> points = trajectoryBo.getTrajectory();
@@ -117,15 +125,15 @@ public class RouteService {
         }
         Map<String, List<Map<String, Double>>> result = new HashMap<>();
         for (List<TrajectoryValueDto> vehicleList : data) {
-            Map<String, Map<String, Double>> idAndPoint = vehicleList.stream().collect(Collectors.toMap(
-                    item -> String.valueOf(item.getId()),
+            Map<String, Map<String, Double>> nameAndPoint = vehicleList.stream().collect(Collectors.toMap(
+                    item -> String.valueOf(item.getName()),
                     value -> {
                         Map<String, Double> map = new HashMap<>();
                         map.put("longitude", Double.parseDouble(String.valueOf(value.getLongitude())));
                         map.put("latitude", Double.parseDouble(String.valueOf(value.getLatitude())));
                         return map;
                     }));
-            for (Map.Entry<String, Map<String, Double>> item : idAndPoint.entrySet()) {
+            for (Map.Entry<String, Map<String, Double>> item : nameAndPoint.entrySet()) {
                 if (!result.containsKey(item.getKey())) {
                     List<Map<String, Double>> list = new ArrayList<>();
                     list.add(item.getValue());
@@ -140,20 +148,20 @@ public class RouteService {
         return result;
     }
 
-    public List<List<TrajectoryValueDto>> readTrajectoryFromRouteFile(String fileName, String participantId) throws IOException {
+    public List<List<TrajectoryValueDto>> readTrajectoryFromRouteFile(String fileName, String participantName) throws IOException {
         List<List<TrajectoryValueDto>> data = readRouteFile(fileName);
-        return readTrajectoryFromData(data, participantId);
+        return readTrajectoryFromData(data, participantName);
     }
 
-    public List<List<TrajectoryValueDto>> readTrajectoryFromData(List<List<TrajectoryValueDto>> data, String participantId) {
-        return CollectionUtils.emptyIfNull(data).stream().map(item -> filterParticipant(item, participantId))
+    public List<List<TrajectoryValueDto>> readTrajectoryFromData(List<List<TrajectoryValueDto>> data, String participantName) {
+        return CollectionUtils.emptyIfNull(data).stream().map(item -> filterParticipant(item, participantName))
                 .collect(Collectors.toList());
     }
 
-    public List<TrajectoryValueDto> filterParticipant(List<TrajectoryValueDto> data, String participantId) {
-        return StringUtils.isNotEmpty(participantId) && !StringUtils.equals(WebsocketKey.DEFAULT_KEY, participantId)
+    public List<TrajectoryValueDto> filterParticipant(List<TrajectoryValueDto> data, String participantName) {
+        return StringUtils.isNotEmpty(participantName) && !StringUtils.equals(WebsocketKey.DEFAULT_KEY, participantName)
                 ? CollectionUtils.emptyIfNull(data).stream().filter(route ->
-                        participantId.equals(route.getId())).collect(Collectors.toList())
+                participantName.equals(route.getName())).collect(Collectors.toList())
                 : data;
     }
 
@@ -161,6 +169,5 @@ public class RouteService {
         String routeFile = FileUploadUtils.getAbsolutePathFileName(fileName);
         return FileUtils.readE1(routeFile);
     }
-
 
 }

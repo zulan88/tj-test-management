@@ -1,9 +1,11 @@
 package net.wanji.socket.websocket;
 
+import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ObjectUtils;
 
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
@@ -54,7 +56,9 @@ public class WebSocketServer {
      */
     @OnClose
     public void onClose() {
-        WebSocketManage.remove(getIdFromSession(this.session));
+        if (!ObjectUtils.isEmpty(this.session)) {
+            WebSocketManage.remove(getIdFromSession(this.session));
+        }
     }
 
     /**
