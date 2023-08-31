@@ -1,6 +1,7 @@
 package net.wanji.web.controller.business;
 
 import net.wanji.business.common.Constants.MasterControl;
+import net.wanji.business.domain.vo.CommunicationDelayVo;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.TestingService;
 import net.wanji.common.core.controller.BaseController;
@@ -47,4 +48,10 @@ public class RealVehicleVerificationController extends BaseController {
 //    public AjaxResult getResult(@RequestParam("caseId") Integer caseId) throws BusinessException {
 //        return testingService.start(caseId, MasterControl.START) ? AjaxResult.success() : AjaxResult.error("失败");
 //    }
+
+    @PreAuthorize("@ss.hasPermi('testing:communicationDelay')")
+    @GetMapping("/communicationDelay")
+    public AjaxResult communicationDelayVo(@RequestParam Integer recordId) {
+        return AjaxResult.success(testingService.communicationDelayVo(recordId));
+    }
 }
