@@ -122,6 +122,7 @@ public class TestingServiceImpl implements TestingService {
         result.setFilePath(caseInfoBo.getFilePath());
         result.setGeoJsonPath(caseInfoBo.getGeoJsonPath());
         result.setStatusMap(statusMap);
+        result.setChannels(configs.stream().map(CaseConfigBo::getDataChannel).collect(Collectors.toSet()));
         validStatus(result);
         return result;
     }
@@ -194,8 +195,8 @@ public class TestingServiceImpl implements TestingService {
                         ParticipantTrajectoryBo::getTrajectory
                 ));
         caseRealTestVo.setMainTrajectories(mainTrajectoryMap);
-
-        Map<String, String> param = configs.stream().collect(Collectors.toMap(CaseConfigBo::getName, CaseConfigBo::getDataChannel));
+        // 开始监听所有数据通道
+        // 开启模拟客户端
         restService.imitateClientUrl(configs);
         return caseRealTestVo;
     }

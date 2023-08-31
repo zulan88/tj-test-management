@@ -6,11 +6,10 @@ import net.wanji.business.domain.WebsocketMessage;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.utils.DateUtils;
-import net.wanji.socket.websocket.WebSocketManage;
+import net.wanji.socket.simulation.WebSocketManage;
 import org.springframework.util.ObjectUtils;
 
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;

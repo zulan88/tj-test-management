@@ -1,6 +1,5 @@
-package net.wanji.socket.websocket;
+package net.wanji.socket.realTest;
 
-import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,19 +13,16 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * @Auther: guanyuduo
  * @Date: 2022/6/16 10:30
  * @Descriptoin:
  */
-@ServerEndpoint(value = "/ws/{id}")
+@ServerEndpoint(value = "/real/{id}")
 @Component
-public class WebSocketServer {
+public class RealWebSocketServer {
 
     private static final Logger log = LoggerFactory.getLogger("business");
 
@@ -48,7 +44,7 @@ public class WebSocketServer {
             return;
         }
         this.session = session;
-        WebSocketManage.join(id, this);
+        RealWebSocketManage.join(id, this);
     }
 
     /**
@@ -57,7 +53,7 @@ public class WebSocketServer {
     @OnClose
     public void onClose() {
         if (!ObjectUtils.isEmpty(this.session)) {
-            WebSocketManage.remove(getIdFromSession(this.session));
+            RealWebSocketManage.remove(getIdFromSession(this.session));
         }
     }
 

@@ -1,4 +1,4 @@
-package net.wanji.socket.websocket;
+package net.wanji.socket.simulation;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

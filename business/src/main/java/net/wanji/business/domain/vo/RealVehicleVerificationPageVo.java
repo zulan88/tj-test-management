@@ -5,6 +5,7 @@ import net.wanji.business.domain.bo.CaseConfigBo;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @Auther: guanyuduo
@@ -21,6 +22,8 @@ public class RealVehicleVerificationPageVo {
     private String geoJsonPath;
 
     private Map<String, List<CaseConfigBo>> statusMap;
+
+    private Set<String> channels;
 
     private boolean canStart;
 

@@ -3,7 +3,6 @@ package net.wanji.business.service;
 import net.wanji.business.domain.bo.CaseConfigBo;
 import net.wanji.business.domain.param.CaseRuleControl;
 import net.wanji.business.domain.param.TestStartParam;
-import net.wanji.business.entity.TjDevice;
 import org.springframework.http.HttpMethod;
 
 import java.util.List;
