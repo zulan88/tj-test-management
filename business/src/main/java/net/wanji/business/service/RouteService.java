@@ -13,8 +13,10 @@ import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.business.domain.param.TestStartParam;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjCasePartConfig;
+import net.wanji.business.entity.TjCaseRealRecord;
 import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjCasePartConfigMapper;
+import net.wanji.business.mapper.TjCaseRealRecordMapper;
 import net.wanji.business.schedule.PlaybackSchedule;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
@@ -55,6 +57,9 @@ public class RouteService {
     private TjCaseMapper tjCaseMapper;
 
     @Autowired
+    private TjCaseRealRecordMapper caseRealRecordMapper;
+
+    @Autowired
     private TjCasePartConfigMapper casePartConfigMapper;
 
     @Async
@@ -75,11 +80,33 @@ public class RouteService {
         }
     }
 
-    public void checkRoute(Integer caseId, CaseTrajectoryDetailBo oldDetail, List<TrajectoryValueDto> data) {
+    public void checkSimulaitonRoute(Integer caseId, CaseTrajectoryDetailBo oldDetail, List<TrajectoryValueDto> data) {
         if (CollectionUtils.isEmpty(data) || ObjectUtils.isEmpty(oldDetail)
                 || CollectionUtils.isEmpty(oldDetail.getParticipantTrajectories())) {
             return;
         }
+        if (check(oldDetail, data)) {
+            TjCase tjCase = new TjCase();
+            tjCase.setId(caseId);
+            tjCase.setDetailInfo(JSONObject.toJSONString(oldDetail));
+            tjCaseMapper.updateById(tjCase);
+        }
+    }
+
+    public void checkRealRoute(Integer recordId, CaseTrajectoryDetailBo oldDetail, List<TrajectoryValueDto> data) {
+        if (CollectionUtils.isEmpty(data) || ObjectUtils.isEmpty(oldDetail)
+                || CollectionUtils.isEmpty(oldDetail.getParticipantTrajectories())) {
+            return;
+        }
+        if (check(oldDetail, data)) {
+            TjCaseRealRecord caseRealRecord = new TjCaseRealRecord();
+            caseRealRecord.setId(recordId);
+            caseRealRecord.setDetailInfo(JSONObject.toJSONString(oldDetail));
+            caseRealRecordMapper.updateById(caseRealRecord);
+        }
+    }
+
+    public boolean check(CaseTrajectoryDetailBo oldDetail, List<TrajectoryValueDto> data) {
         boolean update = false;
         for (TrajectoryValueDto trajectory : data) {
             for (ParticipantTrajectoryBo trajectoryBo : oldDetail.getParticipantTrajectories()) {
@@ -106,12 +133,7 @@ public class RouteService {
                 }
             }
         }
-        if (update) {
-            TjCase tjCase = new TjCase();
-            tjCase.setId(caseId);
-            tjCase.setDetailInfo(JSONObject.toJSONString(oldDetail));
-            tjCaseMapper.updateById(tjCase);
-        }
+        return update;
     }
 
     public boolean verifyRoute(List<TrajectoryDetailBo> points) {

@@ -12,7 +12,6 @@ import lombok.Data;
 @Data
 public class RealWebsocketMessage {
 
-    private String countDown;
 
     private Object data;
 }
