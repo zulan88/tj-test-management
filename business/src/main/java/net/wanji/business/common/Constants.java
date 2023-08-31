@@ -167,6 +167,10 @@ public interface Constants {
          * 设备类型
          */
         public static final String DEVICE_TYPE = "device_type";
+        /**
+         * 测试类型
+         */
+        public static final String TEST_TYPE = "test_type";
     }
 
 
@@ -190,6 +194,21 @@ public interface Constants {
          * 行人
          */
         public static final String SP = "sp";
+    }
+
+
+    /**
+     * 场景类型
+     */
+    class PartType {
+        /**
+         * 主车
+         */
+        public static final String MAIN = "main";
+        /**
+         * 从车
+         */
+        public static final String SLAVE = "slave";
     }
 
     /**
@@ -249,6 +268,21 @@ public interface Constants {
          * 终点
          */
         public static final String END = "end";
+    }
+
+    class TestingStatus {
+        /**
+         * 未开始
+         */
+        public static final Integer NOT_START = 0;
+        /**
+         * 进行中
+         */
+        public static final Integer RUNNING = 1;
+        /**
+         * 已完成
+         */
+        public static final Integer FINISHED = 2;
     }
 
     class MasterControl {

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="net.wanji.business.mapper.TjCaseRealRecordMapper">
+
+    <resultMap id="BaseResultMap" type="net.wanji.business.entity.TjCaseRealRecord">
+            <id property="id" column="id" jdbcType="INTEGER"/>
+            <result property="caseId" column="case_id" jdbcType="INTEGER"/>
+            <result property="detailInfo" column="detail_info" jdbcType="VARCHAR"/>
+            <result property="routeFile" column="route_file" jdbcType="VARCHAR"/>
+            <result property="status" column="status" jdbcType="INTEGER"/>
+            <result property="startTime" column="start_time" jdbcType="TIMESTAMP"/>
+            <result property="endTime" column="end_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,case_id,detail_info,
+        route_file,status,start_time,
+        end_time
+    </sql>
+</mapper>

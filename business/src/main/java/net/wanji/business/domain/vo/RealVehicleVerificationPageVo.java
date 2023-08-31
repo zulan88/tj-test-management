@@ -14,6 +14,12 @@ import java.util.Map;
 @Data
 public class RealVehicleVerificationPageVo {
 
+    private Integer caseId;
+
+    private String filePath;
+
+    private String geoJsonPath;
+
     private Map<String, List<CaseConfigBo>> statusMap;
 
     private boolean canStart;

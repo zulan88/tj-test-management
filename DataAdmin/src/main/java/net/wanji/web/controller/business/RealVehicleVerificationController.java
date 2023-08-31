@@ -30,15 +30,21 @@ public class RealVehicleVerificationController extends BaseController {
         return AjaxResult.success(testingService.getStatus(caseId));
     }
 
-    @PreAuthorize("@ss.hasPermi('testing:start')")
-    @GetMapping("/start")
-    public AjaxResult start(@RequestParam("caseId") Integer caseId) throws BusinessException {
-        return testingService.sendRule(caseId, MasterControl.START) ? AjaxResult.success() : AjaxResult.error("失败");
+    @PreAuthorize("@ss.hasPermi('testing:prepare')")
+    @GetMapping("/prepare")
+    public AjaxResult prepare(@RequestParam("caseId") Integer caseId) throws BusinessException {
+        return AjaxResult.success(testingService.prepare(caseId));
     }
 
-    @PreAuthorize("@ss.hasPermi('testing:getResult')")
-    @GetMapping("/getResult")
-    public AjaxResult getResult(@RequestParam("caseId") Integer caseId) throws BusinessException {
-        return testingService.sendRule(caseId, MasterControl.START) ? AjaxResult.success() : AjaxResult.error("失败");
+    @PreAuthorize("@ss.hasPermi('testing:start')")
+    @GetMapping("/start")
+    public AjaxResult start(@RequestParam("recordId") Integer recordId) throws BusinessException {
+        return  AjaxResult.success(testingService.start(recordId, MasterControl.START));
     }
+
+//    @PreAuthorize("@ss.hasPermi('testing:getResult')")
+//    @GetMapping("/getResult")
+//    public AjaxResult getResult(@RequestParam("caseId") Integer caseId) throws BusinessException {
+//        return testingService.start(caseId, MasterControl.START) ? AjaxResult.success() : AjaxResult.error("失败");
+//    }
 }
