@@ -13,5 +13,11 @@ import java.util.List;
 @Data
 public class CaseInfoBo extends TjCase {
 
+    private String sceneName;
+
+    private String filePath;
+
+    private String geoJsonPath;
+
     private List<CaseConfigBo> caseConfigs;
 }

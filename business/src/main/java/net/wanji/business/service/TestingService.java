@@ -1,7 +1,10 @@
 package net.wanji.business.service;
 
 import net.wanji.business.domain.bo.CaseConfigBo;
+import net.wanji.business.domain.vo.CaseRealTestVo;
+import net.wanji.business.domain.vo.CommunicationDelayVo;
 import net.wanji.business.domain.vo.RealVehicleVerificationPageVo;
+import net.wanji.business.entity.TjCaseRealRecord;
 import net.wanji.business.exception.BusinessException;
 
 import java.util.List;
@@ -23,18 +26,18 @@ public interface TestingService {
     RealVehicleVerificationPageVo getStatus(Integer caseId) throws BusinessException;
 
     /**
-     * 开始测试
+     * 准备（开始倒计时）
      * @param caseId
      * @return
      */
-    boolean start(Integer caseId) throws BusinessException;
+    CaseRealTestVo prepare(Integer caseId) throws BusinessException;
 
     /**
      * 与主控交互
      * @param caseId
      * @return
      */
-    boolean sendRule(Integer caseId, Integer action) throws BusinessException;
+    CaseRealTestVo start(Integer recordId, Integer action) throws BusinessException;
 
 
     /**
@@ -43,4 +46,11 @@ public interface TestingService {
      * @return
      */
     boolean getResult(Integer caseId) throws BusinessException;
+
+    /**
+     * 通信时延
+     * @param recordId
+     * @return
+     */
+    CommunicationDelayVo communicationDelayVo(Integer recordId);
 }

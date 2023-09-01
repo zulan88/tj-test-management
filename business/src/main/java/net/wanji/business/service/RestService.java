@@ -1,9 +1,11 @@
 package net.wanji.business.service;
 
+import net.wanji.business.domain.bo.CaseConfigBo;
 import net.wanji.business.domain.param.CaseRuleControl;
 import net.wanji.business.domain.param.TestStartParam;
 import org.springframework.http.HttpMethod;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -33,4 +35,6 @@ public interface RestService {
      * @return
      */
     Object sendRuleUrl(CaseRuleControl caseRuleControl);
+
+    Object imitateClientUrl(List<CaseConfigBo> param);
 }

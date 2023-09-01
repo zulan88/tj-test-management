@@ -2,8 +2,10 @@ package net.wanji.business.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
 import net.wanji.business.common.Constants.YN;
+import net.wanji.business.domain.bo.CaseConfigBo;
 import net.wanji.business.domain.param.CaseRuleControl;
 import net.wanji.business.domain.param.TestStartParam;
+import net.wanji.business.entity.TjDevice;
 import net.wanji.business.service.RestService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -39,6 +42,9 @@ public class RestServiceImpl implements RestService {
 
     @Value("${masterControl.sendRule}")
     private String sendRuleUrl;
+
+    @Value("${imitate.client}")
+    private String imitateClientUrl;
 
     @Override
     public boolean start(TestStartParam startParam) {
@@ -90,6 +96,32 @@ public class RestServiceImpl implements RestService {
             if (response.getStatusCodeValue() == 200) {
                 if (!"success".equals(response.getBody())) {
                     log.error("远程服务调用失败");
+                    return false;
+                }
+                return true;
+            }
+        } catch (Exception e) {
+            log.error("远程服务调用失败:{}", e);
+        }
+        return false;
+    }
+
+    @Override
+    public Object imitateClientUrl(List<CaseConfigBo> param) {
+        try {
+            String resultUrl = imitateClientUrl;
+            log.info("============================== imitateClient：{}", imitateClientUrl);
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<List<CaseConfigBo>> resultHttpEntity = new HttpEntity<>(param, httpHeaders);
+            log.info("============================== imitateClient：{}", JSONObject.toJSONString(param));
+            ResponseEntity<String> response =
+                    restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);
+            if (response.getStatusCodeValue() == 200) {
+                JSONObject result = JSONObject.parseObject(response.getBody(), JSONObject.class);
+                log.info("============================== imitateClient  result:{}", JSONObject.toJSONString(result));
+                if (Objects.isNull(result) || !"success".equals(result.get("status"))) {
+                    log.error("远程服务调用失败:{}", result.get("msg"));
                     return false;
                 }
                 return true;
