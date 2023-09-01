@@ -45,9 +45,9 @@ public class DiadynamicCriteriaController  extends BaseController {
      */
     @PreAuthorize("@ss.hasPermi('diadynamicCriteria:list')")
     @GetMapping("/list")
-    public TableDataInfo pageList()
+    public TableDataInfo list(DiadynamicCriteriaBo dcBo)
     {
-        List<TjDiadynamicCriteria> list = tjDiadynamicCriteriaService.list();
+        List<TjDiadynamicCriteria> list = tjDiadynamicCriteriaService.selectPageList(dcBo);
         TableDataInfo tableDataInfo = new TableDataInfo();
         tableDataInfo.setData(list);
         tableDataInfo.setTotal(list.size());
@@ -60,7 +60,7 @@ public class DiadynamicCriteriaController  extends BaseController {
      * 计算公式修改
      * @return
      */
-    @PreAuthorize("@ss.hasPermi('diadynamicCriteria:list')")
+    @PreAuthorize("@ss.hasPermi('diadynamicCriteria:edit')")
     @PostMapping("/edit")
     public AjaxResult edit(@RequestBody DiadynamicCriteriaBo dcBo)
     {

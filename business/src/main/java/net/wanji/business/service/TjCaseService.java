@@ -1,12 +1,15 @@
 package net.wanji.business.service;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+
 import com.baomidou.mybatisplus.extension.service.IService;
+
 import net.wanji.business.domain.PartConfigSelect;
-import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.dto.TjCaseDto;
-import net.wanji.business.domain.vo.CaseConfigDetailVo;
-import net.wanji.business.domain.vo.CasePartConfigVo;
 import net.wanji.business.domain.vo.CaseVerificationVo;
 import net.wanji.business.domain.vo.CaseVo;
 import net.wanji.business.entity.TjCase;
@@ -14,11 +17,6 @@ import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.common.core.domain.SimpleSelect;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 /**
  * <p>
@@ -54,6 +52,16 @@ public interface TjCaseService extends IService<TjCase> {
      * @throws ExecutionException
      */
     List<PartConfigSelect> getConfigSelect(Integer caseId, SceneTrajectoryBo sceneTrajectoryBo, boolean deviceConfig);
+
+    /**
+     * 获取配置信息
+     * @param caseId
+     * @param sceneTrajectoryBo
+     * @return
+     * @throws InterruptedException
+     * @throws ExecutionException
+     */
+    List<PartConfigSelect> getConfigSelect(Integer caseId, SceneTrajectoryBo sceneTrajectoryBo);
 
     /**
      * 查询测试用例中包含的场景
@@ -149,5 +157,13 @@ public interface TjCaseService extends IService<TjCase> {
      * @throws BusinessException
      */
     List<PartConfigSelect> getConfigDetail(Integer caseId) throws BusinessException, InterruptedException, ExecutionException;
+
+    /**
+     * 获取测试任务配置详情
+     * @param caseId
+     * @return
+     * @throws BusinessException
+     */
+    List<PartConfigSelect> getTaskConfigDetail(Integer caseId) throws BusinessException, InterruptedException, ExecutionException;
 
 }
