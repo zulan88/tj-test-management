@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="net.wanji.business.mapper.TjTaskMapper">
+
+    <resultMap id="BaseResultMap" type="net.wanji.business.entity.TjTask">
+            <id property="id" column="id" jdbcType="INTEGER"/>
+            <result property="taskName" column="task_name" jdbcType="VARCHAR"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="caseCount" column="case_count" jdbcType="INTEGER"/>
+            <result property="passingRate" column="passing_rate" jdbcType="VARCHAR"/>
+            <result property="startTime" column="start_time" jdbcType="TIMESTAMP"/>
+            <result property="endTime" column="end_time" jdbcType="TIMESTAMP"/>
+            <result property="testTotalTime" column="test_total_time" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,task_name,create_time,
+        case_count,passing_rate,start_time,
+        end_time,test_total_time
+    </sql>
+</mapper>

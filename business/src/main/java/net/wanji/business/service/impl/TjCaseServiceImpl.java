@@ -205,6 +205,61 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     }
 
     @Override
+    public List<PartConfigSelect> getConfigSelect(Integer caseId,
+        SceneTrajectoryBo sceneTrajectoryBo) {
+        // 1.查询用例已存在的参与者角色配置
+        QueryWrapper<TjCasePartConfig> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq(ColumnName.CASE_ID_COLUMN, caseId);
+        Map<String, List<TjCasePartConfig>> caseRoleConfigMap = casePartConfigService.list(queryWrapper).stream()
+            .collect(Collectors.groupingBy(TjCasePartConfig::getParticipantRole));
+        // 2.查询设备信息
+        Map<String, List<TjDeviceDetail>> devicesMap = deviceDetailService.list()
+            .stream().collect(Collectors.groupingBy(TjDeviceDetail::getSupportRoles));
+        // 3.将场景参与者转换为配置模板 sceneTrajectoryBo.participantTrajectories -> CasePartConfigVo
+        Map<String, List<CasePartConfigVo>> configMap = casePartConfigService.trajectory2Config(sceneTrajectoryBo);
+        // 4.根据参与者角色字典进行匹配
+        return CollectionUtils.emptyIfNull(dictTypeService.selectDictDataByType(SysType.PART_ROLE)).stream()
+            .map(role -> {
+                // 对应参与者类型的所有需要配置的参与者信息
+                List<CasePartConfigVo> casePartConfigVos = configMap.get(role.getCssClass());
+                // 对应参与者类型可选择的设备列表
+                List<TjDeviceDetail> devices = devicesMap.get(role.getDictValue());
+                List<CasePartConfigVo> parts = new ArrayList<>();
+                for (CasePartConfigVo config : CollectionUtils.emptyIfNull(casePartConfigVos)) {
+                    // 如果是用例设备配置，那么该参与者类型下若没有对应的配置则跳过
+                    List<TjCasePartConfig> businessConfigs = caseRoleConfigMap.get(role.getDictValue());
+                    List<String> businessIds = CollectionUtils.emptyIfNull(businessConfigs).stream()
+                        .map(TjCasePartConfig::getBusinessId).collect(Collectors.toList());
+                    if (!businessIds.contains(config.getBusinessId())) {
+                        continue;
+                    }
+                    Map<String, TjCasePartConfig> businessConfigMap = CollectionUtils.emptyIfNull(businessConfigs)
+                        .stream().collect(Collectors.toMap(TjCasePartConfig::getBusinessId, value -> value));
+                    CasePartConfigVo part = new CasePartConfigVo();
+                    BeanUtils.copyBeanProp(part, config);
+                    part.setModelName(ModelEnum.getDescByCode(part.getModel()));
+                    List<DeviceDetailVo> deviceVos = CollectionUtils.emptyIfNull(devices).stream().map(device -> {
+                        DeviceDetailVo detailVo = new DeviceDetailVo();
+                        BeanUtils.copyBeanProp(detailVo, device);
+                        return detailVo;
+                    }).collect(Collectors.toList());
+                    part.setDevices(deviceVos);
+                    parts.add(part);
+                }
+                PartConfigSelect partConfigSelect = new PartConfigSelect();
+                partConfigSelect.setDictCode(role.getDictCode());
+                partConfigSelect.setDictLabel(role.getDictLabel());
+                partConfigSelect.setDictValue(role.getDictValue());
+                partConfigSelect.setSort(role.getDictSort());
+                partConfigSelect.setCssClass(role.getCssClass());
+                if (CollectionUtils.isNotEmpty(parts)) {
+                    partConfigSelect.setParts(parts);
+                }
+                return partConfigSelect;
+            }).collect(Collectors.toList());
+    }
+
+    @Override
     public List<TjFragmentedScenes> selectScenesInCase(String testType, String type) {
         List<TjFragmentedScenes> scenes = caseMapper.selectSceneIdInCase(testType, type);
         List<Integer> pIds = new ArrayList<>();
@@ -489,6 +544,16 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
         return this.getConfigSelect(caseId,
                 JSONObject.parseObject(tjCase.getDetailInfo(), SceneTrajectoryBo.class),
                 true);
+    }
+
+    @Override
+    public List<PartConfigSelect> getTaskConfigDetail(Integer caseId) throws BusinessException {
+        TjCase tjCase = this.getById(caseId);
+        if (ObjectUtils.isEmpty(tjCase)) {
+            throw new BusinessException("未查询到对应的测试用例");
+        }
+        return this.getConfigSelect(caseId,
+            JSONObject.parseObject(tjCase.getDetailInfo(), SceneTrajectoryBo.class));
     }
 
     public synchronized String buildCaseNumber() {

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="net.wanji.business.mapper.TjTaskCaseMapper">
+
+    <resultMap id="BaseResultMap" type="net.wanji.business.entity.TjTaskCase">
+        <id property="id" column="id" jdbcType="INTEGER"/>
+        <result property="taskId" column="task_id" jdbcType="INTEGER"/>
+        <result property="caseId" column="case_id" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time"
+                jdbcType="TIMESTAMP"/>
+        <result property="status" column="status" jdbcType="VARCHAR"/>
+        <result property="passingRate" column="passing_rate"
+                jdbcType="VARCHAR"/>
+        <result property="startTime" column="start_time" jdbcType="TIMESTAMP"/>
+        <result property="endTime" column="end_time" jdbcType="TIMESTAMP"/>
+        <result property="testTotalTime" column="test_total_time"
+                jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,task_id,case_id,
+        create_time,status,passing_rate,
+        start_time,end_time,test_total_time
+    </sql>
+    <select id="gstList"
+            resultType="net.wanji.business.domain.vo.TaskCaseVo">
+        select a.id,
+               a.task_id taskId,
+               a.case_id caseId,
+               a.create_time createTime,
+               a.status status,
+               a.passing_rate passingRate,
+               a.start_time startTime,
+               a.end_time endTime,
+               a.test_total_time testTotalTime,
+               b.case_number caseName
+        from tj_task_case a
+                 left join tj_case b on a.case_id = b.id
+        where a.task_id = #{taskId}
+    </select>
+</mapper>
