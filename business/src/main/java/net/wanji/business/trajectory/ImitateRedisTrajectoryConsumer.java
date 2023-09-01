@@ -3,22 +3,23 @@ package net.wanji.business.trajectory;
 import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.util.concurrent.DefaultThreadFactory;
+import net.wanji.business.common.Constants.PartRole;
+import net.wanji.business.common.Constants.PointType;
 import net.wanji.business.common.Constants.RedisMessageType;
 import net.wanji.business.domain.RealWebsocketMessage;
-import net.wanji.business.domain.WebsocketMessage;
+import net.wanji.business.domain.bo.CaseConfigBo;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
-import net.wanji.business.entity.TjCase;
+import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
+import net.wanji.common.common.RealTestTrajectoryDto;
+import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.business.entity.TjCaseRealRecord;
-import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.service.RouteService;
-import net.wanji.common.common.SimulationMessage;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
-import net.wanji.common.utils.DateUtils;
+import net.wanji.common.utils.GeoUtil;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
 import net.wanji.socket.realTest.RealWebSocketManage;
-import net.wanji.socket.simulation.WebSocketManage;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,16 +27,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ObjectUtils;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -62,9 +64,6 @@ public class ImitateRedisTrajectoryConsumer {
     }
 
     @Autowired
-    private TjCaseMapper caseMapper;
-
-    @Autowired
     private RouteService routeService;
 
     @PostConstruct
@@ -84,63 +83,89 @@ public class ImitateRedisTrajectoryConsumer {
      * @param participantName 指定车辆名称（筛选时使用）
      * @return
      */
-    public void subscribeAndSend(TjCaseRealRecord caseRealRecord, List<String> channels) {
+    public void subscribeAndSend(TjCaseRealRecord caseRealRecord, List<CaseConfigBo> configBos) {
         ObjectMapper objectMapper = new ObjectMapper();
         CaseTrajectoryDetailBo originalTrajectory = JSONObject.parseObject(caseRealRecord.getDetailInfo(),
                 CaseTrajectoryDetailBo.class);
+        Map<String, String> avChannelAndBusinessIdMap = configBos.stream().filter(item -> PartRole.AV.equals(item.getSupportRoles()))
+                .collect(Collectors.toMap(CaseConfigBo::getDataChannel, CaseConfigBo::getBusinessId));
+        Map<String, String> avBusinessIdPosMap = originalTrajectory.getParticipantTrajectories().stream().filter(item ->
+                avChannelAndBusinessIdMap.containsValue(item.getId())).collect(Collectors.toMap(
+                ParticipantTrajectoryBo::getId,
+                value -> {
+                    TrajectoryDetailBo trajectoryDetailBo = value.getTrajectory().stream().filter(point ->
+                            PointType.END.equals(point.getType())).findFirst().orElse(null);
+                    return ObjectUtils.isEmpty(trajectoryDetailBo) ? "" : trajectoryDetailBo.getPosition();
+                }));
         MessageListener listener = (message, pattern) -> {
             try {
+                String channel = new String(message.getChannel());
                 SimulationTrajectoryDto simulationTrajectory = objectMapper.readValue(message.toString(),
                         SimulationTrajectoryDto.class);
-                log.info(StringUtils.format("{}第{}帧轨迹：{}", pattern.toString(),
-                        getDataSize(caseRealRecord.getId(), pattern.toString()),
-                        JSONObject.toJSONString(simulationTrajectory)));
+                receiveData(caseRealRecord.getId(), channel, simulationTrajectory);
                 if (CollectionUtils.isNotEmpty(simulationTrajectory.getValue())) {
                     // 实际轨迹消息
                     List<TrajectoryValueDto> data = simulationTrajectory.getValue();
-                    routeService.checkRealRoute(caseRealRecord.getId(), originalTrajectory, data);
-                    receiveData(caseRealRecord.getId(), pattern.toString(), simulationTrajectory);
                     // send ws
-                    RealWebsocketMessage msg = new RealWebsocketMessage(data);
-                    RealWebSocketManage.sendInfo(pattern.toString(), JSONObject.toJSONString(msg));
-                }
-                if (getDataSize(caseRealRecord.getId(), pattern.toString()) == 500) {
-                    removeListenerThenSave(caseRealRecord.getId(), pattern.toString());
+                    if (!ObjectUtils.isEmpty(avChannelAndBusinessIdMap)
+                            && avChannelAndBusinessIdMap.containsKey(channel)) {
+                        Double longitude = simulationTrajectory.getValue().get(0).getLongitude();
+                        Double latitude = simulationTrajectory.getValue().get(0).getLatitude();
+                        String pos = avBusinessIdPosMap.get(avChannelAndBusinessIdMap.get(channel));
+                        double endLongitude = StringUtils.isEmpty(pos) ? 0 : Double.parseDouble(pos.split(",")[0]);
+                        double endLatitude = StringUtils.isEmpty(pos) ? 0 : Double.parseDouble(pos.split(",")[1]);
+                        double instance = GeoUtil.calculateDistance(latitude, longitude, endLatitude, endLongitude);
+                        if (instance <= 4) {
+                            removeListenerThenSave(caseRealRecord.getId(), originalTrajectory);
+                            RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null, null);
+                            RealWebSocketManage.sendInfo(channel, JSONObject.toJSONString(endMsg));
+                        } else {
+                            Map<String, Object> map = new HashMap<>();
+//                            map.put("")
+
+                            RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.TRAJECTORY, null, data);
+                            RealWebSocketManage.sendInfo(channel, JSONObject.toJSONString(endMsg));
+                        }
+                    } else {
+                        RealWebsocketMessage msg = new RealWebsocketMessage(RedisMessageType.TRAJECTORY, null, data);
+                        RealWebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));
+                    }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-                removeListenerThenSave(caseRealRecord.getId(), pattern.toString());
+                removeListenerThenSave(caseRealRecord.getId(), originalTrajectory);
             }
         };
-        this.addRunningChannel(caseRealRecord.getId(), channels, listener);
+        this.addRunningChannel(caseRealRecord.getId(), configBos, listener);
     }
 
-    public void removeMessageListener(@Nullable MessageListener listener, String channel) {
-        redisMessageListenerContainer.removeMessageListener(listener, new ChannelTopic(channel));
+    public void removeMessageListeners(Integer recordId) {
+        if (!this.runningChannel.containsKey(recordId)) {
+            return;
+        }
+        List<ChannelListener<SimulationTrajectoryDto>> channelListeners = runningChannel.get(recordId);
+        List<ChannelTopic> topics = channelListeners.stream().map(ChannelListener::getChannel).map(ChannelTopic::new)
+                .collect(Collectors.toList());
+        log.info("removeMessageListeners:{}", JSONObject.toJSONString(topics));
+        redisMessageListenerContainer.removeMessageListener(channelListeners.get(0).getListener(), topics);
     }
 
-    public void removeMessageListeners(@Nullable MessageListener listener, List<String> channels) {
-
-        List<ChannelListener<SimulationTrajectoryDto>> listeners = new ArrayList<>();
-        List<ChannelTopic> topics = channels.stream().map(ChannelTopic::new).collect(Collectors.toList());
-        redisMessageListenerContainer.removeMessageListener(listener, topics);
-    }
-
-    public void addRunningChannel(Integer recordId, List<String> channels, MessageListener listener) {
+    public void addRunningChannel(Integer recordId, List<CaseConfigBo> configBos, MessageListener listener) {
         if (this.runningChannel.containsKey(recordId)) {
             return;
         }
-        List<ChannelTopic> topics = channels.stream().map(ChannelTopic::new).collect(Collectors.toList());
-        redisMessageListenerContainer.addMessageListener(listener, topics);
+        List<ChannelTopic> topics = configBos.stream().map(CaseConfigBo::getDataChannel).map(ChannelTopic::new).collect(Collectors.toList());
         List<ChannelListener<SimulationTrajectoryDto>> listeners = new ArrayList<>();
-
-        for (ChannelTopic topic : topics) {
-            ChannelListener<SimulationTrajectoryDto> channelListener = new ChannelListener<SimulationTrajectoryDto>(recordId, topic.getTopic(), SecurityUtils.getUsername(),
-                    System.currentTimeMillis(), listener);
+        for (CaseConfigBo configBo : configBos) {
+            ChannelListener<SimulationTrajectoryDto> channelListener =
+                    new ChannelListener<>(recordId, configBo.getDataChannel(), SecurityUtils.getUsername(),
+                            configBo.getSupportRoles(),
+                            System.currentTimeMillis(), listener);
             listeners.add(channelListener);
         }
+        log.info("addRunningChannel:{}", JSONObject.toJSONString(topics));
+        redisMessageListenerContainer.addMessageListener(listener, topics);
         this.runningChannel.put(recordId, listeners);
-
     }
 
     public void receiveData(Integer recordId, String channel, SimulationTrajectoryDto data) {
@@ -152,7 +177,6 @@ public class ImitateRedisTrajectoryConsumer {
                 channelListener.refreshData(data);
             }
         }
-
     }
 
     public synchronized int getDataSize(Integer recordId, String channel) {
@@ -167,44 +191,48 @@ public class ImitateRedisTrajectoryConsumer {
         return 0;
     }
 
-    public void removeListenerThenSave(Integer recordId, String channel) {
-//        if (!this.runningChannel.containsKey(recordId)) {
-//            return;
-//        }
-//        for (ChannelListener<SimulationTrajectoryDto> channelListener : this.runningChannel.get(recordId)) {
-//            if (channelListener.getChannel().equals(channel)) {
-//                removeMessageListener(channelListener.getListener(), channelListener.getChannel());
-//                return channelListener.getCurrentSize();
-//            }
-//        }
-//        ChannelListener<SimulationTrajectoryDto> channelListener = this.runningChannel.get(channel);
-//
-//        try {
-//            routeService.saveRouteFile(channelListener.getRecordId(), channelListener.getData());
-//        } catch (ExecutionException | InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//        this.runningChannel.remove(channel);
+    public void removeListenerThenSave(Integer recordId, CaseTrajectoryDetailBo originalTrajectory) {
+        if (!this.runningChannel.containsKey(recordId)) {
+            return;
+        }
+        removeMessageListeners(recordId);
+        List<RealTestTrajectoryDto> data = new ArrayList<>();
+        for (ChannelListener<SimulationTrajectoryDto> channelListener : this.runningChannel.get(recordId)) {
+            RealTestTrajectoryDto realTestTrajectoryDto = new RealTestTrajectoryDto();
+            realTestTrajectoryDto.setChannel(channelListener.getChannel());
+            realTestTrajectoryDto.setData(channelListener.getData());
+            for (SimulationTrajectoryDto trajectoryDto : channelListener.getData()) {
+                routeService.checkRealRoute(recordId, originalTrajectory, trajectoryDto.getValue());
+            }
+            data.add(realTestTrajectoryDto);
+        }
+        try {
+            routeService.saveRealRouteFile(recordId, data);
+        } catch (ExecutionException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        this.runningChannel.remove(recordId);
     }
 
     public void removeListeners() {
         try {
-//            Iterator<Map.Entry<String, ChannelListener<SimulationTrajectoryDto>>> iterator =
-//                    this.runningChannel.entrySet().iterator();
-//            while (iterator.hasNext()) {
-//                Map.Entry<String, ChannelListener<SimulationTrajectoryDto>> entry = iterator.next();
-//                ChannelListener<SimulationTrajectoryDto> channelListener = entry.getValue();
-//                if (channelListener.isExpire()) {
-//                    removeMessageListener(channelListener.getListener(), channelListener.getChannel());
-//                    try {
-//                        routeService.saveRouteFile(channelListener.getChannel(),
-//                                channelListener.getData());
-//                    } catch (ExecutionException | InterruptedException e) {
-//                        e.printStackTrace();
-//                    }
-//                    iterator.remove();  // Removes the current element from the map
-//                }
-//            }
+            Iterator<Entry<Integer, List<ChannelListener<SimulationTrajectoryDto>>>> iterator =
+                    this.runningChannel.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Entry<Integer, List<ChannelListener<SimulationTrajectoryDto>>> next = iterator.next();
+                List<ChannelListener<SimulationTrajectoryDto>> value = next.getValue();
+                int expireCount = 0;
+                for (ChannelListener<SimulationTrajectoryDto> channelListener : value) {
+                    if (channelListener.isExpire()) {
+                        expireCount++;
+
+                    }
+                }
+                if (expireCount == value.size()) {
+                    removeMessageListeners(next.getKey());
+                    iterator.remove();  // Removes the current element from the map
+                }
+            }
         } catch (Exception e) {
             log.error(e.getMessage());
         }
@@ -214,16 +242,18 @@ public class ImitateRedisTrajectoryConsumer {
         private Integer recordId;
         private String channel;
         private String userName;
+        private String role;
         private Long timestamp;
         private MessageListener listener;
         private List<T> data;
         private boolean finished;
 
-        public ChannelListener(Integer recordId, String channel, String userName, Long timestamp,
+        public ChannelListener(Integer recordId, String channel, String userName, String role, Long timestamp,
                                MessageListener listener) {
             this.recordId = recordId;
             this.channel = channel;
             this.userName = userName;
+            this.role = role;
             this.timestamp = timestamp;
             this.listener = listener;
             this.data = new ArrayList<>();
@@ -256,6 +286,9 @@ public class ImitateRedisTrajectoryConsumer {
             return userName;
         }
 
+        public String getRole() {
+            return role;
+        }
 
         public Long getTimestamp() {
             return timestamp;

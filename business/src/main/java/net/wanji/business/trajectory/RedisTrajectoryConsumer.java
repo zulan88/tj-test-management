@@ -97,7 +97,7 @@ public class RedisTrajectoryConsumer {
                         if (CollectionUtils.isNotEmpty(simulationTrajectory.getValue())) {
                             // 实际轨迹消息
                             List<TrajectoryValueDto> data = simulationTrajectory.getValue();
-                            routeService.checkRoute(tjCase.getId(), originalTrajectory, data);
+                            routeService.checkSimulaitonRoute(tjCase.getId(), originalTrajectory, data);
                             receiveData(tjCase.getCaseNumber(), simulationTrajectory);
                             // 计时
                             String countDown = DateUtils.secondsToDuration(

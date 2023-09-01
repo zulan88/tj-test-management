@@ -39,15 +39,23 @@ public class RealVehicleVerificationController extends BaseController {
 
     @PreAuthorize("@ss.hasPermi('testing:start')")
     @GetMapping("/start")
-    public AjaxResult start(@RequestParam("recordId") Integer recordId) throws BusinessException {
-        return  AjaxResult.success(testingService.start(recordId, MasterControl.START));
+    public AjaxResult start(@RequestParam("recordId") Integer recordId,
+                            @RequestParam("action") Integer action) throws BusinessException {
+        return  AjaxResult.success(testingService.start(recordId, action));
     }
 
-//    @PreAuthorize("@ss.hasPermi('testing:getResult')")
-//    @GetMapping("/getResult")
-//    public AjaxResult getResult(@RequestParam("caseId") Integer caseId) throws BusinessException {
-//        return testingService.start(caseId, MasterControl.START) ? AjaxResult.success() : AjaxResult.error("失败");
-//    }
+    @PreAuthorize("@ss.hasPermi('testing:playback')")
+    @GetMapping("/playback")
+    public AjaxResult playback(@RequestParam("recordId") Integer recordId, @RequestParam("action") Integer action) throws BusinessException {
+        testingService.playback(recordId, action);
+        return  AjaxResult.success();
+    }
+
+    @PreAuthorize("@ss.hasPermi('testing:getResult')")
+    @GetMapping("/getResult")
+    public AjaxResult getResult(@RequestParam("recordId") Integer recordId) throws BusinessException {
+        return AjaxResult.success(testingService.getResult(recordId));
+    }
 
     @PreAuthorize("@ss.hasPermi('testing:communicationDelay')")
     @GetMapping("/communicationDelay")

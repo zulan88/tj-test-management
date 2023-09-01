@@ -40,6 +40,7 @@ public interface Constants {
      * 内容模板
      */
     class ContentTemplate {
+        public static final String REAL_KEY_TEMPLATE = "REAL_{}_{}";
         public static final String EXPORT_NAME_TEMPLATE = "{}_{}";
         public static final String SCENE_NUMBER_TEMPLATE = "SC{}{}";
         public static final String CASE_NUMBER_TEMPLATE = "CASE{}{}";

@@ -25,6 +25,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import net.wanji.common.common.RealTestTrajectoryDto;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.config.WanjiConfig;
@@ -109,7 +110,7 @@ public class FileUtils {
         return FileUploadUtils.getPathFileName(uploadDir, pathName);
     }
 
-    public static String writeE1List(List<?> data, String uploadDir, String extension) throws IOException {
+    public static String writeRoute(List<?> data, String uploadDir, String extension) throws IOException {
         String pathName = "";
         PrintWriter writer = null;
         try {
@@ -159,6 +160,20 @@ public class FileUtils {
                 SimulationTrajectoryDto data = JSONObject.parseObject(line, SimulationTrajectoryDto.class);
                 List<TrajectoryValueDto> mapList = data.getValue();
                 list.add(mapList);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public static List<RealTestTrajectoryDto> readRealRouteFile(String filePath) {
+        List<RealTestTrajectoryDto> list = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                RealTestTrajectoryDto data = JSONObject.parseObject(line, RealTestTrajectoryDto.class);
+                list.add(data);
             }
         } catch (IOException e) {
             e.printStackTrace();

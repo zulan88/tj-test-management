@@ -6,8 +6,8 @@ spring:
             # 主库数据源
             master:
                 driverClassName: com.mysql.cj.jdbc.Driver
+#                url: jdbc:mysql://10.102.1.157:3306/wanji_tj_test_management?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
                 url: jdbc:mysql://10.102.1.157:3306/wanji_tj_test_management_local?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
-#                url: jdbc:mysql://10.102.1.113:3306/wanji_tj_test_management_local?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
                 username: root
                 password: Wanji123456
             # 初始连接数

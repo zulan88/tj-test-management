@@ -7,9 +7,13 @@ import net.wanji.business.domain.bo.*;
 import net.wanji.business.domain.param.CaseRuleControl;
 import net.wanji.business.domain.param.DeviceConnInfo;
 import net.wanji.business.domain.param.DeviceConnRule;
+import net.wanji.business.domain.param.TestStartParam;
 import net.wanji.business.domain.vo.CaseRealTestVo;
 import net.wanji.business.domain.vo.CommunicationDelayVo;
+import net.wanji.business.domain.vo.RealTestResultVo;
 import net.wanji.business.domain.vo.RealVehicleVerificationPageVo;
+import net.wanji.business.entity.TjCase;
+import net.wanji.business.entity.TjCasePartConfig;
 import net.wanji.business.entity.TjCaseRealRecord;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.entity.TjFragmentedScenes;
@@ -18,10 +22,18 @@ import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjCaseRealRecordMapper;
 import net.wanji.business.mapper.TjFragmentedSceneDetailMapper;
 import net.wanji.business.mapper.TjFragmentedScenesMapper;
+import net.wanji.business.schedule.PlaybackSchedule;
+import net.wanji.business.schedule.RealPlaybackSchedule;
 import net.wanji.business.service.RestService;
+import net.wanji.business.service.RouteService;
 import net.wanji.business.service.TestingService;
+import net.wanji.business.trajectory.ImitateRedisTrajectoryConsumer;
+import net.wanji.common.common.RealTestTrajectoryDto;
+import net.wanji.common.common.SimulationTrajectoryDto;
+import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.GeoUtil;
+import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
 import net.wanji.system.service.ISysDictDataService;
 import org.apache.commons.collections4.CollectionUtils;
@@ -39,6 +51,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -54,6 +67,9 @@ public class TestingServiceImpl implements TestingService {
     private RestService restService;
 
     @Autowired
+    private RouteService routeService;
+
+    @Autowired
     private ISysDictDataService dictDataService;
 
     @Autowired
@@ -67,6 +83,9 @@ public class TestingServiceImpl implements TestingService {
 
     @Autowired
     private TjCaseRealRecordMapper caseRealRecordMapper;
+
+    @Autowired
+    private ImitateRedisTrajectoryConsumer imitateRedisTrajectoryConsumer;
 
     @Override
     public RealVehicleVerificationPageVo getStatus(Integer caseId) throws BusinessException {
@@ -155,6 +174,8 @@ public class TestingServiceImpl implements TestingService {
 
         CaseRealTestVo caseRealTestVo = new CaseRealTestVo();
         BeanUtils.copyProperties(tjCaseRealRecord, caseRealTestVo);
+        caseRealTestVo.setChannels(caseInfoBo.getCaseConfigs().stream().map(CaseConfigBo::getDataChannel)
+                .collect(Collectors.toList()));
         caseRealTestVo.setSceneName(scenes.getName());
         caseRealTestVo.setTestTypeName(dictDataService.selectDictLabel(SysType.TEST_TYPE, caseInfoBo.getTestType()));
         return caseRealTestVo;
@@ -171,9 +192,9 @@ public class TestingServiceImpl implements TestingService {
         this.validConfig(caseInfoBo);
         List<CaseConfigBo> configs = caseInfoBo.getCaseConfigs().stream().filter(deviceId ->
                 !ObjectUtils.isEmpty(deviceId)).collect(Collectors.toList());
-        List<DeviceConnRule> deviceConnRules = generateDeviceConnRules(configs);
-        restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(), String.valueOf(caseId), action,
-                deviceConnRules));
+//        List<DeviceConnRule> deviceConnRules = generateDeviceConnRules(configs);
+//        restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(), String.valueOf(caseId), action,
+//                deviceConnRules));
         caseRealRecord.setStatus(TestingStatus.RUNNING);
         caseRealRecord.setStartTime(LocalDateTime.now());
         caseRealRecordMapper.updateById(caseRealRecord);
@@ -188,15 +209,86 @@ public class TestingServiceImpl implements TestingService {
                         ParticipantTrajectoryBo::getTrajectory
                 ));
         caseRealTestVo.setMainTrajectories(mainTrajectoryMap);
+
         // 开始监听所有数据通道
+        imitateRedisTrajectoryConsumer.subscribeAndSend(caseRealRecord, caseInfoBo.getCaseConfigs());
         // 开启模拟客户端
         restService.imitateClientUrl(configs);
         return caseRealTestVo;
     }
 
     @Override
-    public boolean getResult(Integer caseId) throws BusinessException {
-        return false;
+    public void playback(Integer recordId, Integer action) throws BusinessException {
+        TjCaseRealRecord caseRealRecord = caseRealRecordMapper.selectById(recordId);
+        if (ObjectUtils.isEmpty(caseRealRecord)) {
+            throw new BusinessException("未查询到实车验证记录");
+        }
+        if (TestingStatus.FINISHED > caseRealRecord.getStatus() || StringUtils.isEmpty(caseRealRecord.getRouteFile())) {
+            throw new BusinessException("实车验证未完成");
+        }
+        CaseInfoBo caseInfoBo = caseMapper.selectCaseInfo(caseRealRecord.getCaseId());
+        List<CaseConfigBo> configs = caseInfoBo.getCaseConfigs();
+        if (CollectionUtils.isEmpty(configs)) {
+            throw new BusinessException("请先进行角色配置");
+        }
+        Map<String, String> participantNameMap = configs.stream().collect(Collectors.toMap(
+                TjCasePartConfig::getBusinessId, TjCasePartConfig::getName));
+        Map<String, String> participantIdMap = configs.stream().collect(Collectors.toMap(
+                TjCasePartConfig::getName, TjCasePartConfig::getBusinessId));
+        String key = StringUtils.format(ContentTemplate.REAL_KEY_TEMPLATE, caseInfoBo.getId(), SecurityUtils.getUsername());
+        switch (action) {
+            case PlaybackAction.START:
+                List<RealTestTrajectoryDto> realTestTrajectoryDtos = routeService.readRealTrajectoryFromRouteFile(caseRealRecord.getRouteFile());
+//                Map<String, List<List<TrajectoryValueDto>>> trajectoryMap = routeService.readRealTrajectoryFromRouteFile(
+//                        caseRealRecord.getRouteFile());
+//                for (Entry<String, List<List<TrajectoryValueDto>>> entry : trajectoryMap.entrySet()) {
+//                    for (List<TrajectoryValueDto> trajectoryValueDtos : entry.getValue()) {
+//                        for (TrajectoryValueDto trajectoryValueDto : trajectoryValueDtos) {
+//                            trajectoryValueDto.setId(participantIdMap.get(trajectoryValueDto.getName()));
+//                        }
+//                    }
+//                    RealPlaybackSchedule.startSendingData(key, trajectoryMap);
+//                }
+                break;
+            case PlaybackAction.SUSPEND:
+                RealPlaybackSchedule.suspend(key);
+                break;
+            case PlaybackAction.CONTINUE:
+                RealPlaybackSchedule.goOn(key);
+                break;
+            case PlaybackAction.STOP:
+                RealPlaybackSchedule.stopSendingData(key);
+                break;
+            default:
+                break;
+
+        }
+    }
+
+    @Override
+    public RealTestResultVo getResult(Integer recordId) throws BusinessException {
+        TjCaseRealRecord caseRealRecord = caseRealRecordMapper.selectById(recordId);
+        if (ObjectUtils.isEmpty(caseRealRecord) || ObjectUtils.isEmpty(caseRealRecord.getDetailInfo())) {
+            throw new BusinessException("未进行实车验证");
+        }
+        if (TestingStatus.FINISHED > caseRealRecord.getStatus()) {
+            return null;
+        }
+        CaseTrajectoryDetailBo caseTrajectoryDetailBo = JSONObject.parseObject(caseRealRecord.getDetailInfo(),
+                CaseTrajectoryDetailBo.class);
+        List<ParticipantTrajectoryBo> trajectoryBos = caseTrajectoryDetailBo.getParticipantTrajectories().stream()
+                .filter(item -> PartType.MAIN.equals(item.getType())).collect(Collectors.toList());
+        caseTrajectoryDetailBo.setParticipantTrajectories(trajectoryBos);
+        RealTestResultVo realTestResultVo = new RealTestResultVo();
+        BeanUtils.copyProperties(caseTrajectoryDetailBo, realTestResultVo);
+        realTestResultVo.setSceneName(caseTrajectoryDetailBo.getSceneDesc());
+        realTestResultVo.setId(caseRealRecord.getId());
+        realTestResultVo.setStartTime(caseRealRecord.getStartTime());
+        realTestResultVo.setEndTime(caseRealRecord.getEndTime());
+
+        TjCase tjCase = caseMapper.selectById(caseRealRecord.getCaseId());
+        realTestResultVo.setTestTypeName(dictDataService.selectDictLabel(SysType.TEST_TYPE, tjCase.getTestType()));
+        return realTestResultVo;
     }
 
     @Override

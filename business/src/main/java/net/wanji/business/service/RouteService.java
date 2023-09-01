@@ -1,23 +1,18 @@
 package net.wanji.business.service;
 
 import com.alibaba.fastjson.JSONObject;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.Extension;
-import net.wanji.business.common.Constants.PartRole;
+import net.wanji.business.common.Constants.TestingStatus;
 import net.wanji.business.common.Constants.WebsocketKey;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
-import net.wanji.business.domain.bo.SceneTrajectoryBo;
+import net.wanji.common.common.RealTestTrajectoryDto;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
-import net.wanji.business.domain.param.TestStartParam;
 import net.wanji.business.entity.TjCase;
-import net.wanji.business.entity.TjCasePartConfig;
 import net.wanji.business.entity.TjCaseRealRecord;
 import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjCasePartConfigMapper;
 import net.wanji.business.mapper.TjCaseRealRecordMapper;
-import net.wanji.business.schedule.PlaybackSchedule;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.config.WanjiConfig;
@@ -26,7 +21,6 @@ import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.file.FileUploadUtils;
 import net.wanji.common.utils.file.FileUtils;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.lucene.geo.GeoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,11 +63,29 @@ public class RouteService {
         tjCase.setId(caseId);
         // 保存本地文件
         try {
-            String path = FileUtils.writeE1List(data, WanjiConfig.getRoutePath(), Extension.TXT);
+            String path = FileUtils.writeRoute(data, WanjiConfig.getRoutePath(), Extension.TXT);
             log.info("saveRouteFile routePath:{}", path);
             tjCase.setRouteFile(path);
             tjCase.setUpdatedDate(LocalDateTime.now());
             tjCaseMapper.updateById(tjCase);
+            log.info("更新完成");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void saveRealRouteFile(Integer recordId, List<RealTestTrajectoryDto> data) throws ExecutionException, InterruptedException {
+        log.info(StringUtils.format("保存实车测试{}路径文件", recordId));
+        TjCaseRealRecord caseRealRecord = new TjCaseRealRecord();
+        caseRealRecord.setId(recordId);
+        // 保存本地文件
+        try {
+            String path = FileUtils.writeRoute(data, WanjiConfig.getRoutePath(), Extension.TXT);
+            log.info("saveRealRouteFile routePath:{}", path);
+            caseRealRecord.setRouteFile(path);
+            caseRealRecord.setStatus(TestingStatus.FINISHED);
+            caseRealRecord.setEndTime(LocalDateTime.now());
+            caseRealRecordMapper.updateById(caseRealRecord);
             log.info("更新完成");
         } catch (IOException e) {
             e.printStackTrace();
@@ -170,9 +182,21 @@ public class RouteService {
         return result;
     }
 
+    /**
+     * 读取仿真验证轨迹文件
+     * @param fileName
+     * @param participantName
+     * @return
+     * @throws IOException
+     */
     public List<List<TrajectoryValueDto>> readTrajectoryFromRouteFile(String fileName, String participantName) throws IOException {
         List<List<TrajectoryValueDto>> data = readRouteFile(fileName);
         return readTrajectoryFromData(data, participantName);
+    }
+
+    public List<List<TrajectoryValueDto>> readRouteFile(String fileName) throws IOException {
+        String routeFile = FileUploadUtils.getAbsolutePathFileName(fileName);
+        return FileUtils.readE1(routeFile);
     }
 
     public List<List<TrajectoryValueDto>> readTrajectoryFromData(List<List<TrajectoryValueDto>> data, String participantName) {
@@ -187,9 +211,19 @@ public class RouteService {
                 : data;
     }
 
-    public List<List<TrajectoryValueDto>> readRouteFile(String fileName) throws IOException {
+    /**
+     * 读取实车验证轨迹文件
+     * @param fileName
+     * @return
+     * @throws IOException
+     */
+    public  List<RealTestTrajectoryDto> readRealTrajectoryFromRouteFile(String fileName) {
+        return readRealRouteFile(fileName);
+    }
+
+    public List<RealTestTrajectoryDto> readRealRouteFile(String fileName) {
         String routeFile = FileUploadUtils.getAbsolutePathFileName(fileName);
-        return FileUtils.readE1(routeFile);
+        return FileUtils.readRealRouteFile(routeFile);
     }
 
 }

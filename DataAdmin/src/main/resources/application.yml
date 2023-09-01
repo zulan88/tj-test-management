@@ -163,5 +163,5 @@ tess:
 masterControl:
   sendRule: http://10.100.73.50:8082/masterControl/DeviceIA/deviceIARulesSend
 imitate:
-  client: http://localhost:19303/test/start11
+  client: http://localhost:19303/realTest/start
 

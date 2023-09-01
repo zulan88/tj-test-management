@@ -12,6 +12,9 @@ import lombok.Data;
 @Data
 public class RealWebsocketMessage {
 
+    private String type;
+
+    private Object info;
 
     private Object data;
 }

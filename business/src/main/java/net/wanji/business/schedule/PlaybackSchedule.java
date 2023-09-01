@@ -23,7 +23,7 @@ public class PlaybackSchedule {
 
     private static final Logger log = LoggerFactory.getLogger("business");
 
-    static ScheduledExecutorService executorService = Executors.newScheduledThreadPool(5);
+    static ScheduledExecutorService executorService = Executors.newScheduledThreadPool(8);
     static Map<String, PlaybackDomain> futureMap = new HashMap<>(16);
 
 
