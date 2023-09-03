@@ -166,4 +166,6 @@ public interface TjCaseService extends IService<TjCase> {
      */
     List<PartConfigSelect> getTaskConfigDetail(Integer caseId) throws BusinessException, InterruptedException, ExecutionException;
 
+
+
 }

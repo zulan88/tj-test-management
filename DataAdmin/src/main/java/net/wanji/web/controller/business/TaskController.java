@@ -1,7 +1,9 @@
 package net.wanji.web.controller.business;
 
+import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
+import net.wanji.business.service.TjTaskCaseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +29,9 @@ public class TaskController extends BaseController {
 
     @Autowired
     private TjTaskService tjTaskService;
+
+    @Autowired
+    private TjTaskCaseService taskCaseService;
 
     /**
      * 页面列表
@@ -78,4 +83,43 @@ public class TaskController extends BaseController {
         return AjaxResult.error();
     }
 
+
+    @PreAuthorize("@ss.hasPermi('task:getStatus')")
+    @GetMapping("/getStatus")
+    public AjaxResult getStatus(@RequestParam("caseId") Integer caseId) throws BusinessException {
+        return AjaxResult.success(taskCaseService.getStatus(caseId));
+    }
+
+    @PreAuthorize("@ss.hasPermi('task:prepare')")
+    @GetMapping("/prepare")
+    public AjaxResult prepare(@RequestParam("caseId") Integer caseId) throws BusinessException {
+        return AjaxResult.success(taskCaseService.prepare(caseId));
+    }
+
+    @PreAuthorize("@ss.hasPermi('task:start')")
+    @GetMapping("/start")
+    public AjaxResult start(@RequestParam("recordId") Integer recordId,
+                            @RequestParam("action") Integer action) throws BusinessException, IOException {
+        return  AjaxResult.success(taskCaseService.start(recordId, action));
+    }
+
+    @PreAuthorize("@ss.hasPermi('task:playback')")
+    @GetMapping("/playback")
+    public AjaxResult playback(@RequestParam("recordId") Integer recordId, @RequestParam("action") Integer action)
+            throws BusinessException, IOException {
+        taskCaseService.playback(recordId, action);
+        return  AjaxResult.success();
+    }
+
+    @PreAuthorize("@ss.hasPermi('task:getResult')")
+    @GetMapping("/getResult")
+    public AjaxResult getResult(@RequestParam("recordId") Integer recordId) throws BusinessException {
+        return AjaxResult.success(taskCaseService.getResult(recordId));
+    }
+
+    @PreAuthorize("@ss.hasPermi('task:communicationDelay')")
+    @GetMapping("/communicationDelay")
+    public AjaxResult communicationDelayVo(@RequestParam Integer recordId) {
+        return AjaxResult.success(taskCaseService.communicationDelayVo(recordId));
+    }
 }

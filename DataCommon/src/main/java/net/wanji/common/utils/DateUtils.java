@@ -25,6 +25,8 @@ public class DateUtils extends org.apache.commons.lang3.time.DateUtils
 
     public static String YYYY_MM_DD = "yyyy-MM-dd";
 
+    public static String HH_MM_SS = "HH:mm:ss";
+
     public static String YYYYMMDD = "yyyyMMdd";
 
     public static String YYYYMMDDHHMMSS = "yyyyMMddHHmmss";
@@ -210,4 +212,17 @@ public class DateUtils extends org.apache.commons.lang3.time.DateUtils
         int seconds = sce % 60;
         return String.format("%02d:%02d:%02d", hours, minutes, seconds);
     }
+
+    /**
+     * 日期转换字符串
+     * @param date
+     * @param format
+     * @return
+     */
+    public static String dateToString(Date date, String format) {
+        LocalTime time = date.toInstant().atZone(ZoneId.systemDefault()).toLocalTime();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
+        return time.format(formatter);
+    }
+
 }

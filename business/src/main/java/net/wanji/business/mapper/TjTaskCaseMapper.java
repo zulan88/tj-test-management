@@ -1,8 +1,9 @@
 package net.wanji.business.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import net.wanji.business.domain.bo.TaskCaseInfoBo;
 import net.wanji.business.domain.vo.TaskCaseVo;
 import net.wanji.business.entity.TjTaskCase;
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 import java.util.List;
 
@@ -16,6 +17,7 @@ public interface TjTaskCaseMapper extends BaseMapper<TjTaskCase> {
 
     public List<TaskCaseVo> gstList(Integer taskid);
 
+    TaskCaseInfoBo selectTaskCaseInfo(Integer taskCaseId);
 }
 
 

@@ -3,6 +3,7 @@ package net.wanji.business.domain.bo;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * @Auther: guanyuduo
@@ -23,4 +24,21 @@ public class TrajectoryDetailBo implements Serializable {
     private String speedUnit;
     private boolean pass;
     private String reason = "等待校验";
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        TrajectoryDetailBo that = (TrajectoryDetailBo) o;
+        return Objects.equals(type, that.type) && Objects.equals(position, that.position);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, position);
+    }
 }

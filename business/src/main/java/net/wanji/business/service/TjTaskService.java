@@ -1,7 +1,6 @@
 package net.wanji.business.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-
 import net.wanji.business.domain.bo.TaskBo;
 import net.wanji.business.domain.dto.CreateTaskDto;
 import net.wanji.business.domain.dto.TaskDto;
@@ -43,4 +42,5 @@ public interface TjTaskService extends IService<TjTask> {
      * @return
      */
     public int saveTask(TaskDto in);
+
 }

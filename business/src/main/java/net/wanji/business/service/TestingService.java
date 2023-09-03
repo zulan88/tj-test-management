@@ -8,6 +8,7 @@ import net.wanji.business.domain.vo.RealVehicleVerificationPageVo;
 import net.wanji.business.entity.TjCaseRealRecord;
 import net.wanji.business.exception.BusinessException;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -39,9 +40,9 @@ public interface TestingService {
      * @param action
      * @return
      */
-    CaseRealTestVo start(Integer recordId, Integer action) throws BusinessException;
+    CaseRealTestVo start(Integer recordId, Integer action) throws BusinessException, IOException;
 
-    void playback(Integer recordId, Integer action) throws BusinessException ;
+    void playback(Integer recordId, Integer action) throws BusinessException, IOException;
     /**
      * 获取实车验证结果
      * @param recordId

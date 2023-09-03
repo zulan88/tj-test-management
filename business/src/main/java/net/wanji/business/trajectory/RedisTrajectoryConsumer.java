@@ -104,7 +104,7 @@ public class RedisTrajectoryConsumer {
                                     (int) Math.floor((double) (getDataSize(tjCase.getCaseNumber())) / 10));
                             data = routeService.filterParticipant(data, participantName);
                             // send ws
-                            WebsocketMessage msg = new WebsocketMessage(countDown, data);
+                            WebsocketMessage msg = new WebsocketMessage(RedisMessageType.TRAJECTORY, countDown, data);
                             WebSocketManage.sendInfo(StringUtils.isEmpty(participantId) ? "ALL_VEHICLE" : participantId,
                                     JSONObject.toJSONString(msg));
                         }
@@ -124,6 +124,10 @@ public class RedisTrajectoryConsumer {
                         int endSuccess = caseMapper.updateById(param);
                         log.info(StringUtils.format("修改用例场景评价:{}", endSuccess));
                         removeListenerThenSave(tjCase.getCaseNumber());
+                        // send ws
+                        WebsocketMessage msg = new WebsocketMessage(RedisMessageType.END, null, null);
+                        WebSocketManage.sendInfo(StringUtils.isEmpty(participantId) ? "ALL_VEHICLE" : participantId,
+                                JSONObject.toJSONString(msg));
                         break;
                     default:
                         break;

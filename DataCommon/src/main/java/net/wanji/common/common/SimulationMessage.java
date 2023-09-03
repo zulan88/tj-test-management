@@ -8,7 +8,7 @@ package net.wanji.common.common;
 
 public class SimulationMessage {
     /**
-     * 类型（1：详情SimulationInfoDto.class；2：轨迹SimulationTrajectoryDto.class）
+     * 类型（1：详情SimulationInfoDto.class；2：轨迹SimulationTrajectoryDto.class; 3.评分）
      */
     private String type;
     private String value;

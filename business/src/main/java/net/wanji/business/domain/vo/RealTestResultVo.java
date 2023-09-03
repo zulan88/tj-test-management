@@ -5,6 +5,7 @@ import lombok.Data;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * @Auther: guanyuduo
@@ -21,6 +22,8 @@ public class RealTestResultVo extends CaseTrajectoryDetailBo {
     private String testTypeName;
 
     private String sceneName;
+
+    private List<String> channels;
 
     @JsonFormat(shape= JsonFormat.Shape.STRING, pattern="yyyy-MM-dd HH:mm:ss")
     private LocalDateTime startTime;

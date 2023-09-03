@@ -3,6 +3,7 @@ package net.wanji.business.service.impl;
 import com.alibaba.fastjson.JSONObject;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.bo.CaseConfigBo;
+import net.wanji.business.domain.bo.TaskCaseConfigBo;
 import net.wanji.business.domain.param.CaseRuleControl;
 import net.wanji.business.domain.param.TestStartParam;
 import net.wanji.business.entity.TjDevice;
@@ -114,6 +115,32 @@ public class RestServiceImpl implements RestService {
             HttpHeaders httpHeaders = new HttpHeaders();
             httpHeaders.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<List<CaseConfigBo>> resultHttpEntity = new HttpEntity<>(param, httpHeaders);
+            log.info("============================== imitateClient：{}", JSONObject.toJSONString(param));
+            ResponseEntity<String> response =
+                    restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);
+            if (response.getStatusCodeValue() == 200) {
+                JSONObject result = JSONObject.parseObject(response.getBody(), JSONObject.class);
+                log.info("============================== imitateClient  result:{}", JSONObject.toJSONString(result));
+                if (Objects.isNull(result) || !"success".equals(result.get("status"))) {
+                    log.error("远程服务调用失败:{}", result.get("msg"));
+                    return false;
+                }
+                return true;
+            }
+        } catch (Exception e) {
+            log.error("远程服务调用失败:{}", e);
+        }
+        return false;
+    }
+
+    @Override
+    public Object taskClientUrl(List<TaskCaseConfigBo> param) {
+        try {
+            String resultUrl = imitateClientUrl;
+            log.info("============================== imitateClient：{}", imitateClientUrl);
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<List<TaskCaseConfigBo>> resultHttpEntity = new HttpEntity<>(param, httpHeaders);
             log.info("============================== imitateClient：{}", JSONObject.toJSONString(param));
             ResponseEntity<String> response =
                     restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);

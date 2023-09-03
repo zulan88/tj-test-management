@@ -6,6 +6,7 @@ import org.gavaghan.geodesy.GeodeticCurve;
 import org.gavaghan.geodesy.GlobalCoordinates;
 
 import java.awt.geom.Point2D;
+import java.awt.geom.Point2D.Double;
 
 /**
  * @Auther: guanyuduo
@@ -38,5 +39,9 @@ public class GeoUtil {
         double distance = R * c * 1000; // convert to meters
 
         return distance;
+    }
+
+    public static void main(String[] args) {
+        System.out.println(GeoUtil.calculateDistance(31.292096767720004,121.20294625561048, 31.29228016035883, 121.20275143148014));
     }
 }

@@ -15,7 +15,10 @@ import java.util.Map;
 @Data
 public class WebsocketMessage {
 
+    private String type;
+
     private String countDown;
+
 
     private Object data;
 }

@@ -40,4 +40,83 @@
                  left join tj_case b on a.case_id = b.id
         where a.task_id = #{taskId}
     </select>
+
+
+    <resultMap id="TaskCaseInfoResult" type="net.wanji.business.domain.bo.TaskCaseInfoBo">
+        <id property="id" column="case_id"/>
+        <id property="taskCaseId" column="task_case_id"/>
+        <id property="taskId" column="task_id"/>
+        <result property="testType" column="test_type"/>
+        <result property="sceneName" column="scene_name"/>
+        <result property="trajectoryInfo" column="trajectory_info"/>
+        <result property="caseNumber" column="case_number"/>
+        <result property="sceneDetailId" column="scene_detail_id"/>
+        <result property="resourcesDetailId" column="resources_detail_id"/>
+        <result property="testTarget" column="test_target"/>
+        <result property="evaObject" column="eva_object"/>
+        <result property="testScene" column="test_scene"/>
+        <result property="detailInfo" column="detail_info"/>
+        <result property="routeFile" column="route_file"/>
+        <result property="status" column="status"/>
+        <result property="filePath" column="file_path"/>
+        <result property="geoJsonPath" column="attribute4"/>
+        <collection property="caseConfigs" javaType="java.util.List" resultMap="TaskCaseConfigResult"/>
+    </resultMap>
+
+    <resultMap id="TaskCaseConfigResult" type="net.wanji.business.domain.bo.TaskCaseConfigBo">
+        <result property="id" column="config_id"/>
+        <result property="taskId" column="task_id"/>
+        <result property="caseId" column="case_id"/>
+        <result property="type" column="type"/>
+        <result property="participatorId" column="participator_id"/>
+        <result property="participatorName" column="participator_name"/>
+        <result property="deviceId" column="device_id"/>
+        <result property="deviceName" column="device_name"/>
+        <result property="deviceType" column="device_type"/>
+        <result property="supportRoles" column="support_roles"/>
+        <result property="ip" column="ip"/>
+        <result property="serviceAddress" column="service_address"/>
+        <result property="dataChannel" column="data_channel"/>
+        <result property="commandChannel" column="command_channel"/>
+        <result property="status" column="device_status"/>
+        <result property="lastOnlineDate" column="last_online_date"/>
+    </resultMap>
+
+    <select id="selectTaskCaseInfo" resultMap="TaskCaseInfoResult">
+        SELECT
+            ttc.id as task_case_id,
+            ttc.case_id,
+            ttc.task_id,
+            sd.NAME AS scene_name,
+            sd.trajectory_info,
+            tc.scene_detail_id,
+            tc.resources_detail_id,
+            tc.detail_info,
+            tc.route_file,
+            tc.`status`,
+            dc.id AS config_id,
+            dc.type,
+            dc.participator_id,
+            dc.participator_name,
+            dc.device_id,
+            dd.device_name,
+            dd.device_type,
+            dd.support_roles,
+            dd.ip,
+            dd.service_address,
+            dd.data_channel,
+            dd.command_channel,
+            dd.`status` AS device_status,
+            dd.last_online_date,
+            rd.file_path,
+            rd.attribute4
+        FROM
+            tj_task_case ttc
+                LEFT JOIN tj_case tc ON tc.id = ttc.case_id
+                LEFT JOIN ( SELECT fsd.id, fs.NAME, fsd.trajectory_info FROM tj_fragmented_scene_detail fsd LEFT JOIN tj_fragmented_scenes fs ON fsd.fragmented_scene_id = fs.id ) sd ON sd.id = tc.scene_detail_id
+                LEFT JOIN tj_task_data_config dc ON dc.task_id = ttc.task_id
+                LEFT JOIN tj_resources_detail rd ON rd.id = tc.resources_detail_id
+                LEFT JOIN tj_device_detail dd ON dd.device_id = dc.device_id
+        WHERE ttc.id=#{taskCaseId}
+    </select>
 </mapper>

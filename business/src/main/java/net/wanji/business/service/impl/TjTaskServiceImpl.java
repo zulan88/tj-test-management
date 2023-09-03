@@ -1,20 +1,9 @@
 package net.wanji.business.service.impl;
 
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
+import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-
-import cn.hutool.core.util.ObjectUtil;
 import net.wanji.business.domain.bo.TaskBo;
 import net.wanji.business.domain.dto.CreateTaskDto;
 import net.wanji.business.domain.dto.TaskDto;
@@ -35,6 +24,15 @@ import net.wanji.business.service.TjTaskService;
 import net.wanji.common.core.page.TableDataInfo;
 import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.bean.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 /**
 * @author guowenhao
@@ -120,22 +118,22 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         tjTask.setTaskName(in.getTaskName());
         tjTask.setCaseCount(cases.length);
         tjTask.setCreateTime(new Date());
-        int taskId = tjTaskMapper.insert(tjTask);
+        tjTaskMapper.insert(tjTask);
         for (String aCase : cases) {
             TjTaskCase tjTaskCase = new TjTaskCase();
-            tjTaskCase.setTaskId(taskId);
+            tjTaskCase.setTaskId(tjTask.getId());
             tjTaskCase.setCaseId(Integer.parseInt(aCase));
             tjTaskCase.setStatus("待测试");
             tjTaskCaseMapper.insert(tjTaskCase);
         }
         List<TjTaskDataConfig> dataConfigs = in.getDataConfigs();
         for (TjTaskDataConfig dataConfig : dataConfigs) {
-            dataConfig.setTaskId(taskId);
+            dataConfig.setTaskId(tjTask.getId());
             tjTaskDataConfigMapper.insert(dataConfig);
         }
         List<TjTaskDc> diadynamicCriterias = in.getDiadynamicCriterias();
         for (TjTaskDc diadynamicCriteria : diadynamicCriterias) {
-            diadynamicCriteria.setTaskId(taskId);
+            diadynamicCriteria.setTaskId(tjTask.getId());
             tjTaskDcMapper.insert(diadynamicCriteria);
         }
         return 1;

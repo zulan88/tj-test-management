@@ -53,9 +53,10 @@ public class CountDown {
       rangeData.clear();
       CountDownDto countDownDto = new CountDownDto();
       countDownDto.setFullLength(fullLength);
-
+      double v = lengthRemaining(currentPoint);
+      countDownDto.setRemainLength(v);
       countDownDto.setTimeRemaining(
-          timeRemaining(lengthRemaining(currentPoint), currentSpeed));
+          timeRemaining(v, currentSpeed));
       dataI++;
       return countDownDto;
     }
@@ -91,8 +92,8 @@ public class CountDown {
 
   public static void main(String[] args) {
     ArrayList<Point2D.Double> doubles = new ArrayList<>();
-    doubles.add(new Point2D.Double(1.1, 1.1));
-    doubles.add(new Point2D.Double(1.1, 1.1));
+    doubles.add(new Point2D.Double(121.20139045333559,31.291346840918422));
+    doubles.add(new Point2D.Double(121.20180991330014,31.29134514856418));
     CountDown countDown = new CountDown(doubles);
     for (int i = 0; i < 20; i++) {
       CountDownDto countDownDto = countDown.countDown(0,

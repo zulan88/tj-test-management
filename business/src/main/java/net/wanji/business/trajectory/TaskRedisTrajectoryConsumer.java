@@ -1,32 +1,32 @@
 package net.wanji.business.trajectory;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.util.concurrent.DefaultThreadFactory;
-import net.wanji.business.common.Constants.MasterControl;
+import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.PartRole;
-import net.wanji.business.common.Constants.PointTypeEnum;
 import net.wanji.business.common.Constants.RedisMessageType;
 import net.wanji.business.component.CountDown;
 import net.wanji.business.component.PathwayPoints;
 import net.wanji.business.domain.RealWebsocketMessage;
-import net.wanji.business.domain.bo.CaseConfigBo;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
+import net.wanji.business.domain.bo.TaskCaseConfigBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.business.domain.dto.CountDownDto;
 import net.wanji.business.entity.TjCase;
-import net.wanji.business.entity.TjCaseRealRecord;
+import net.wanji.business.entity.TjTaskCase;
+import net.wanji.business.entity.TjTaskCaseRecord;
 import net.wanji.business.mapper.TjCaseMapper;
-import net.wanji.business.mapper.TjCaseRealRecordMapper;
+import net.wanji.business.mapper.TjTaskCaseMapper;
+import net.wanji.business.mapper.TjTaskCaseRecordMapper;
 import net.wanji.business.service.RouteService;
 import net.wanji.common.common.RealTestTrajectoryDto;
 import net.wanji.common.common.SimulationMessage;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.utils.DateUtils;
-import net.wanji.common.utils.GeoUtil;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
 import net.wanji.socket.simulation.WebSocketManage;
@@ -44,6 +44,7 @@ import javax.annotation.PostConstruct;
 import java.awt.geom.Point2D;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -63,7 +64,7 @@ import java.util.stream.Collectors;
  * @Descriptoin:
  */
 @Component
-public class ImitateRedisTrajectoryConsumer {
+public class TaskRedisTrajectoryConsumer {
 
     private static final Logger log = LoggerFactory.getLogger("business");
 
@@ -71,7 +72,7 @@ public class ImitateRedisTrajectoryConsumer {
 
     private final RedisMessageListenerContainer redisMessageListenerContainer;
 
-    public ImitateRedisTrajectoryConsumer(RedisMessageListenerContainer redisMessageListenerContainer) {
+    public TaskRedisTrajectoryConsumer(RedisMessageListenerContainer redisMessageListenerContainer) {
         this.redisMessageListenerContainer = redisMessageListenerContainer;
     }
 
@@ -82,12 +83,15 @@ public class ImitateRedisTrajectoryConsumer {
     private TjCaseMapper caseMapper;
 
     @Autowired
-    private TjCaseRealRecordMapper caseRealRecordMapper;
+    private TjTaskCaseMapper taskCaseMapper;
+
+    @Autowired
+    private TjTaskCaseRecordMapper taskCaseRecordMapper;
 
     @PostConstruct
     public void validChannel() {
         ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1,
-                new DefaultThreadFactory("ImitateRedisTrajectoryConsumer-removeListeners"));
+                new DefaultThreadFactory("TaskRedisTrajectoryConsumer-removeListeners"));
         scheduledExecutorService.scheduleAtFixedRate(
                 this::removeListeners, 0, 20, TimeUnit.SECONDS);
     }
@@ -95,33 +99,24 @@ public class ImitateRedisTrajectoryConsumer {
 
     /**
      * 订阅测试用例轨迹
-     * @param caseRealRecord 实车验证记录
+     * @param taskCaseRecord 实车验证记录
      * @param configBos 用例配置信息
      */
-    public void subscribeAndSend(TjCaseRealRecord caseRealRecord, List<CaseConfigBo> configBos) throws IOException {
+    public void subscribeAndSend(TjTaskCaseRecord taskCaseRecord, List<TaskCaseConfigBo> configBos) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
-        CaseTrajectoryDetailBo originalTrajectory = JSONObject.parseObject(caseRealRecord.getDetailInfo(),
+        CaseTrajectoryDetailBo originalTrajectory = JSONObject.parseObject(taskCaseRecord.getDetailInfo(),
                 CaseTrajectoryDetailBo.class);
         // 所有通道和业务车辆ID映射
-        Map<String, String> allChannelAndBusinessIdMap = configBos.stream().collect(Collectors.toMap(CaseConfigBo::getDataChannel, CaseConfigBo::getBusinessId));
+        Map<String, String> allChannelAndBusinessIdMap = configBos.stream().collect(Collectors.toMap(TaskCaseConfigBo::getDataChannel, TaskCaseConfigBo::getParticipatorId));
         // av配置
-        List<CaseConfigBo> avConfigs = configBos.stream().filter(item -> PartRole.AV.equals(item.getSupportRoles())).collect(Collectors.toList());
+        List<TaskCaseConfigBo> avConfigs = configBos.stream().filter(item -> PartRole.AV.equals(item.getType())).collect(Collectors.toList());
         // av类型通道和业务车辆ID映射
         Map<String, String> avChannelAndBusinessIdMap = avConfigs.stream().collect(Collectors.toMap(
-                CaseConfigBo::getDataChannel, CaseConfigBo::getBusinessId));
+                TaskCaseConfigBo::getDataChannel, TaskCaseConfigBo::getParticipatorId));
         // av类型通道和业务车辆名称映射
         Map<String, String> avChannelAndNameMap = configBos.stream().filter(item -> PartRole.AV.equals(item.getSupportRoles()))
-                .collect(Collectors.toMap(CaseConfigBo::getDataChannel, CaseConfigBo::getName));
-        // 业务ID和结束点坐标映射
-        Map<String, String> avBusinessIdPosMap = originalTrajectory.getParticipantTrajectories().stream().filter(item ->
-                avChannelAndBusinessIdMap.containsValue(item.getId())).collect(Collectors.toMap(
-                ParticipantTrajectoryBo::getId,
-                value -> {
-                    TrajectoryDetailBo trajectoryDetailBo = value.getTrajectory().stream().filter(point ->
-                            PointTypeEnum.END.getPointType().equals(point.getType())).findFirst().orElse(null);
-                    return ObjectUtils.isEmpty(trajectoryDetailBo) ? "" : trajectoryDetailBo.getPosition();
-                }));
-        CaseConfigBo caseConfigBo = avConfigs.get(0);
+                .collect(Collectors.toMap(TaskCaseConfigBo::getDataChannel, TaskCaseConfigBo::getParticipatorName));
+        TaskCaseConfigBo caseConfigBo = avConfigs.get(0);
         Map<String, List<TrajectoryDetailBo>> avBusinessIdPointsMap = originalTrajectory.getParticipantTrajectories()
                 .stream().filter(item ->
                         avChannelAndBusinessIdMap.containsValue(item.getId())).collect(Collectors.toMap(
@@ -129,7 +124,7 @@ public class ImitateRedisTrajectoryConsumer {
                                 ParticipantTrajectoryBo::getTrajectory
                 ));
         // 主车全部点位
-        List<TrajectoryDetailBo> avPoints = avBusinessIdPointsMap.get(caseConfigBo.getBusinessId());
+        List<TrajectoryDetailBo> avPoints = avBusinessIdPointsMap.get(caseConfigBo.getParticipatorId());
         // 主车全程、剩余时间、到达时间
         ArrayList<Point2D.Double> doubles = new ArrayList<>();
         for (TrajectoryDetailBo trajectoryDetailBo : avPoints) {
@@ -140,9 +135,9 @@ public class ImitateRedisTrajectoryConsumer {
         // 主车途径点提示
         PathwayPoints pathwayPoints = new PathwayPoints(avPoints);
         // 读取仿真验证主车轨迹
-        TjCase tjCase = caseMapper.selectById(caseRealRecord.getCaseId());
+        TjCase tjCase = caseMapper.selectById(taskCaseRecord.getCaseId());
         List<List<TrajectoryValueDto>> mainSimulations = routeService.readTrajectoryFromRouteFile(tjCase.getRouteFile(),
-                caseConfigBo.getName());
+                caseConfigBo.getParticipatorName());
         List<TrajectoryValueDto> mainSimuTrajectories = mainSimulations.stream()
                 .map(item -> item.get(0)).collect(Collectors.toList());
         Map<String, Object> realMap = new HashMap<>();
@@ -163,11 +158,11 @@ public class ImitateRedisTrajectoryConsumer {
                             trajectoryValueDto.setId(allChannelAndBusinessIdMap.get(channel));
                         }
                         // 无论是否有轨迹都保存
-                        receiveData(caseRealRecord.getId(), channel, simulationTrajectory);
+                        receiveData(taskCaseRecord.getId(), channel, simulationTrajectory);
                         if (CollectionUtils.isNotEmpty(data)) {
                             // send ws
                             String duration = DateUtils.secondsToDuration(
-                                    (int) Math.floor((double) (getDataSize(caseRealRecord.getId(), channel)) / 10));
+                                    (int) Math.floor((double) (getDataSize(taskCaseRecord.getId(), channel)) / 10));
                             if (!ObjectUtils.isEmpty(avChannelAndBusinessIdMap)
                                     && avChannelAndBusinessIdMap.containsKey(channel)) {
                                 CountDownDto countDownDto = countDown.countDown(data.get(0).getSpeed(),
@@ -205,13 +200,12 @@ public class ImitateRedisTrajectoryConsumer {
                                 }
                                 realMap.put("simuFuture", futureList);
                                 realMap.put("speed", data.get(0).getSpeed());
-                                System.out.println(JSONObject.toJSONString(realMap));
-                                RealWebsocketMessage msg = new RealWebsocketMessage(RedisMessageType.TRAJECTORY, realMap, data,
-                                        duration);
+                                RealWebsocketMessage msg = new RealWebsocketMessage(RedisMessageType.TRAJECTORY,
+                                        realMap, data, duration);
                                 WebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));
                             } else {
-                                RealWebsocketMessage msg = new RealWebsocketMessage(RedisMessageType.TRAJECTORY, null, data,
-                                        duration);
+                                RealWebsocketMessage msg = new RealWebsocketMessage(RedisMessageType.TRAJECTORY,
+                                        null, data, duration);
                                 WebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));
                             }
                         }
@@ -226,16 +220,26 @@ public class ImitateRedisTrajectoryConsumer {
                             log.info(StringUtils.format("结束接收{}数据：{}", tjCase.getCaseNumber(),
                                     JSONObject.toJSONString(end)));
                             Optional.ofNullable(end.getEvaluationVerify()).ifPresent(originalTrajectory::setEvaluationVerify);
-                            TjCaseRealRecord param = new TjCaseRealRecord();
-                            param.setId(caseRealRecord.getId());
+                            TjTaskCaseRecord param = new TjTaskCaseRecord();
+                            param.setId(taskCaseRecord.getId());
                             String duration = DateUtils.secondsToDuration(
-                                    (int) Math.floor((double) (getDataSize(caseRealRecord.getId(),
+                                    (int) Math.floor((double) (getDataSize(taskCaseRecord.getId(),
                                             caseConfigBo.getDataChannel())) / 10));
                             originalTrajectory.setDuration(duration);
                             param.setDetailInfo(JSONObject.toJSONString(originalTrajectory));
-                            int endSuccess = caseRealRecordMapper.updateById(param);
+                            int endSuccess = taskCaseRecordMapper.updateById(param);
+
+                            QueryWrapper<TjTaskCase> queryWrapper = new QueryWrapper<>();
+                            queryWrapper.eq(ColumnName.CASE_ID_COLUMN, taskCaseRecord.getCaseId()).eq(ColumnName.TASK_ID, taskCaseRecord.getTaskId());
+                            TjTaskCase taskCase = taskCaseMapper.selectOne(queryWrapper);
+                            taskCase.setStatus("已完成");
+                            taskCase.setEndTime(new Date());
+                            // todo 通过率计算
+                            taskCase.setPassingRate("100%");
+                            taskCase.setTestTotalTime(duration);
+                            taskCaseMapper.updateById(taskCase);
                             log.info(StringUtils.format("修改用例场景评价:{}", endSuccess));
-                            removeListenerThenSave(caseRealRecord.getId(), originalTrajectory);
+                            removeListenerThenSave(taskCaseRecord.getId(), originalTrajectory);
 
                             RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null, null,
                                     duration);
@@ -245,12 +249,14 @@ public class ImitateRedisTrajectoryConsumer {
                     default:
                         break;
                 }
+
+
             } catch (IOException e) {
                 e.printStackTrace();
-                removeListenerThenSave(caseRealRecord.getId(), originalTrajectory);
+                removeListenerThenSave(taskCaseRecord.getId(), originalTrajectory);
             }
         };
-        this.addRunningChannel(caseRealRecord.getId(), configBos, listener);
+        this.addRunningChannel(taskCaseRecord.getId(), configBos, listener);
     }
 
     public void removeMessageListeners(Integer recordId) {
@@ -264,13 +270,13 @@ public class ImitateRedisTrajectoryConsumer {
         redisMessageListenerContainer.removeMessageListener(channelListeners.get(0).getListener(), topics);
     }
 
-    public void addRunningChannel(Integer recordId, List<CaseConfigBo> configBos, MessageListener listener) {
+    public void addRunningChannel(Integer recordId, List<TaskCaseConfigBo> configBos, MessageListener listener) {
         if (this.runningChannel.containsKey(recordId)) {
             return;
         }
-        List<ChannelTopic> topics = configBos.stream().map(CaseConfigBo::getDataChannel).map(ChannelTopic::new).collect(Collectors.toList());
+        List<ChannelTopic> topics = configBos.stream().map(TaskCaseConfigBo::getDataChannel).map(ChannelTopic::new).collect(Collectors.toList());
         List<ChannelListener<SimulationTrajectoryDto>> listeners = new ArrayList<>();
-        for (CaseConfigBo configBo : configBos) {
+        for (TaskCaseConfigBo configBo : configBos) {
             ChannelListener<SimulationTrajectoryDto> channelListener =
                     new ChannelListener<>(recordId, configBo.getDataChannel(), SecurityUtils.getUsername(),
                             configBo.getSupportRoles(),

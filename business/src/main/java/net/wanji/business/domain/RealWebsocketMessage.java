@@ -17,4 +17,6 @@ public class RealWebsocketMessage {
     private Object info;
 
     private Object data;
+
+    private String countDown;
 }

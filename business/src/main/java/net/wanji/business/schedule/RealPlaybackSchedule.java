@@ -1,6 +1,7 @@
 package net.wanji.business.schedule;
 
 import net.wanji.business.exception.BusinessException;
+import net.wanji.common.common.RealTestTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.utils.StringUtils;
 import org.slf4j.Logger;
@@ -26,11 +27,11 @@ public class RealPlaybackSchedule {
     static Map<String, RealPlaybackDomain> futureMap = new HashMap<>(16);
 
 
-    public static void startSendingData(String key, Map<String, List<List<TrajectoryValueDto>>> data) throws BusinessException {
+    public static void startSendingData(String key, List<RealTestTrajectoryDto> realTestTrajectories) throws BusinessException {
         if (futureMap.containsKey(key)) {
             throw new BusinessException(StringUtils.format("实车回放任务{}已存在", key));
         }
-        RealPlaybackDomain realPlaybackDomain = new RealPlaybackDomain(executorService, key, data);
+        RealPlaybackDomain realPlaybackDomain = new RealPlaybackDomain(executorService, key, realTestTrajectories);
         futureMap.put(key, realPlaybackDomain);
         log.info("创建实车回放任务{}完成", key);
     }

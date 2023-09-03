@@ -19,8 +19,14 @@ public interface Constants {
     }
 
     class RedisMessageType {
+        public static final String SCORE = "score";
         public static final String TRAJECTORY = "trajectory";
         public static final String END = "end";
+    }
+
+    class MethodType {
+        public static final int REAL = 1;
+        public static final int TASK = 2;
     }
 
     /**
@@ -40,7 +46,7 @@ public interface Constants {
      * 内容模板
      */
     class ContentTemplate {
-        public static final String REAL_KEY_TEMPLATE = "REAL_{}_{}";
+        public static final String REAL_KEY_TEMPLATE = "REAL_BACK_{}_{}";
         public static final String EXPORT_NAME_TEMPLATE = "{}_{}";
         public static final String SCENE_NUMBER_TEMPLATE = "SC{}{}";
         public static final String CASE_NUMBER_TEMPLATE = "CASE{}{}";
@@ -99,6 +105,7 @@ public interface Constants {
         public static final String DEVICE_ID_COLUMN = "device_id";
         public static final String DEVICE_TYPE_COLUMN = "device_type";
         public static final String CREATED_DATE_COLUMN = "created_date";
+        public static final String TASK_ID = "task_id";
     }
 
     class ResourceType {
@@ -252,24 +259,6 @@ public interface Constants {
         public static final String TTMT = "threeTermMapping";
     }
 
-    class PointType {
-        /**
-         * 起始点
-         */
-        public static final String START = "start";
-        /**
-         * 途径点
-         */
-        public static final String PATH_WAY = "pathway";
-        /**
-         * 冲突
-         */
-        public static final String CONFLICT = "conflict";
-        /**
-         * 终点
-         */
-        public static final String END = "end";
-    }
 
     class TestingStatus {
         /**
@@ -340,6 +329,42 @@ public interface Constants {
                 map.put("dictLabel", item.label);
                 return map;
             }).collect(Collectors.toList());
+        }
+    }
+
+    /**
+     * 用例状态枚举
+     */
+    enum PointTypeEnum {
+        START("start", "开始"),
+        PATH_WAY("pathway", "途径点"),
+        CONFLICT("conflict", "冲突点"),
+        END("end", "结束点"),;
+
+        private String pointType;
+
+        private String desc;
+
+        PointTypeEnum(String pointType, String desc) {
+            this.pointType = pointType;
+            this.desc = desc;
+        }
+
+        public String getPointType() {
+            return pointType;
+        }
+
+        public String getDesc() {
+            return desc;
+        }
+
+        public static String getDescByPointType(String pointType) {
+            for (PointTypeEnum pointTypeEnum : values()) {
+                if (pointType.equals(pointTypeEnum.getPointType())) {
+                    return pointTypeEnum.getDesc();
+                }
+            }
+            return "";
         }
     }
 

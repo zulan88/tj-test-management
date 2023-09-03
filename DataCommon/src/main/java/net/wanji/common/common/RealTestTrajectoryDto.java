@@ -13,6 +13,15 @@ public class RealTestTrajectoryDto {
 
     private boolean main;
 
+    private String name;
+
+    /**
+     * 点位 List<TrajectoryDetailBo>
+     */
+    private String points;
+
+    private List<TrajectoryValueDto> mainSimuTrajectories;
+
     private List<SimulationTrajectoryDto> data;
 
     public String getChannel() {
@@ -23,12 +32,36 @@ public class RealTestTrajectoryDto {
         this.channel = channel;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public boolean isMain() {
         return main;
     }
 
     public void setMain(boolean main) {
         this.main = main;
+    }
+
+    public String getPoints() {
+        return points;
+    }
+
+    public void setPoints(String points) {
+        this.points = points;
+    }
+
+    public List<TrajectoryValueDto> getMainSimuTrajectories() {
+        return mainSimuTrajectories;
+    }
+
+    public void setMainSimuTrajectories(List<TrajectoryValueDto> mainSimuTrajectories) {
+        this.mainSimuTrajectories = mainSimuTrajectories;
     }
 
     public List<SimulationTrajectoryDto> getData() {

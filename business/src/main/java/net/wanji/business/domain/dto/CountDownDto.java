@@ -22,6 +22,11 @@ public class CountDownDto {
   @Setter
   private Double fullLength;
   /**
+   * 剩余长度
+   */
+  @Setter
+  private Double remainLength;
+  /**
    * 到达时间
    */
   private Date arrivalTime;

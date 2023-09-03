@@ -22,6 +22,7 @@ import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjCaseRealRecordMapper;
 import net.wanji.business.mapper.TjFragmentedSceneDetailMapper;
 import net.wanji.business.mapper.TjFragmentedScenesMapper;
+import net.wanji.business.mapper.TjTaskCaseMapper;
 import net.wanji.business.schedule.PlaybackSchedule;
 import net.wanji.business.schedule.RealPlaybackSchedule;
 import net.wanji.business.service.RestService;
@@ -45,6 +46,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
+import java.io.IOException;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -98,7 +100,7 @@ public class TestingServiceImpl implements TestingService {
                         Collectors.toMap(
                                 ParticipantTrajectoryBo::getId,
                                 item -> CollectionUtils.emptyIfNull(item.getTrajectory()).stream()
-                                        .filter(t -> PointType.START.equals(t.getType())).findFirst()
+                                        .filter(t -> PointTypeEnum.START.getPointType().equals(t.getType())).findFirst()
                                         .orElse(new TrajectoryDetailBo()).getPosition()));
         List<CaseConfigBo> configs = caseInfoBo.getCaseConfigs().stream().filter(info ->
                 !ObjectUtils.isEmpty(info.getDeviceId())).collect(Collectors.toList());
@@ -125,7 +127,7 @@ public class TestingServiceImpl implements TestingService {
                 // todo 具体距离待沟通
 
             }
-            caseConfigBo.setPositionStatus(YN.N_INT);
+            caseConfigBo.setPositionStatus(YN.Y_INT);
         }
         Map<String, List<CaseConfigBo>> statusMap = configs.stream().collect(
                 Collectors.groupingBy(CaseConfigBo::getParticipantRole));
@@ -143,9 +145,7 @@ public class TestingServiceImpl implements TestingService {
     @Override
     public CaseRealTestVo prepare(Integer caseId) throws BusinessException {
         CaseInfoBo caseInfoBo = caseMapper.selectCaseInfo(caseId);
-        if (ObjectUtils.isEmpty(caseInfoBo)) {
-            throw new BusinessException("查询用例失败");
-        }
+        this.validConfig(caseInfoBo);
         TjFragmentedSceneDetail sceneDetail = sceneDetailMapper.selectById(caseInfoBo.getSceneDetailId());
         if (ObjectUtils.isEmpty(sceneDetail) || StringUtils.isEmpty(sceneDetail.getTrajectoryInfo())) {
             throw new BusinessException("请先配置轨迹信息");
@@ -159,8 +159,7 @@ public class TestingServiceImpl implements TestingService {
         int pedestrianNum = partMap.containsKey(PartRole.SP) ? partMap.get(PartRole.SP).size() : 0;
         caseTrajectoryDetailBo.setSceneForm(StringUtils.format(ContentTemplate.SCENE_FORM_TEMPLATE, avNum,
                 simulationNum, pedestrianNum));
-        TjFragmentedScenes scenes = scenesMapper.selectById(sceneDetail.getFragmentedSceneId());
-        caseTrajectoryDetailBo.setSceneDesc(scenes.getName());
+        caseTrajectoryDetailBo.setSceneDesc(caseInfoBo.getSceneName());
 
         QueryWrapper<TjCaseRealRecord> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq(ColumnName.CASE_ID_COLUMN, caseId);
@@ -176,13 +175,13 @@ public class TestingServiceImpl implements TestingService {
         BeanUtils.copyProperties(tjCaseRealRecord, caseRealTestVo);
         caseRealTestVo.setChannels(caseInfoBo.getCaseConfigs().stream().map(CaseConfigBo::getDataChannel)
                 .collect(Collectors.toList()));
-        caseRealTestVo.setSceneName(scenes.getName());
+        caseRealTestVo.setSceneName(caseInfoBo.getSceneName());
         caseRealTestVo.setTestTypeName(dictDataService.selectDictLabel(SysType.TEST_TYPE, caseInfoBo.getTestType()));
         return caseRealTestVo;
     }
 
     @Override
-    public CaseRealTestVo start(Integer recordId, Integer action) throws BusinessException {
+    public CaseRealTestVo start(Integer recordId, Integer action) throws BusinessException, IOException {
         TjCaseRealRecord caseRealRecord = caseRealRecordMapper.selectById(recordId);
         if (ObjectUtils.isEmpty(caseRealRecord) || caseRealRecord.getStatus() > TestingStatus.NOT_START) {
             throw new BusinessException("未就绪");
@@ -218,7 +217,7 @@ public class TestingServiceImpl implements TestingService {
     }
 
     @Override
-    public void playback(Integer recordId, Integer action) throws BusinessException {
+    public void playback(Integer recordId, Integer action) throws BusinessException, IOException {
         TjCaseRealRecord caseRealRecord = caseRealRecordMapper.selectById(recordId);
         if (ObjectUtils.isEmpty(caseRealRecord)) {
             throw new BusinessException("未查询到实车验证记录");
@@ -231,24 +230,49 @@ public class TestingServiceImpl implements TestingService {
         if (CollectionUtils.isEmpty(configs)) {
             throw new BusinessException("请先进行角色配置");
         }
-        Map<String, String> participantNameMap = configs.stream().collect(Collectors.toMap(
-                TjCasePartConfig::getBusinessId, TjCasePartConfig::getName));
-        Map<String, String> participantIdMap = configs.stream().collect(Collectors.toMap(
-                TjCasePartConfig::getName, TjCasePartConfig::getBusinessId));
+        // 点位
+        CaseTrajectoryDetailBo originalTrajectory = JSONObject.parseObject(caseRealRecord.getDetailInfo(),
+                CaseTrajectoryDetailBo.class);
+        // 设备配置
+        List<CaseConfigBo> configBos = caseInfoBo.getCaseConfigs();
+        // av类型设备配置
+        List<CaseConfigBo> avConfigs = configBos.stream().filter(item -> PartRole.AV.equals(item.getSupportRoles())).collect(Collectors.toList());
+        // 主车配置
+        CaseConfigBo caseConfigBo = avConfigs.get(0);
+        // av类型通道和业务车辆ID映射
+        Map<String, String> avChannelAndBusinessIdMap = avConfigs.stream().collect(Collectors.toMap(
+                CaseConfigBo::getDataChannel, CaseConfigBo::getBusinessId));
+        // av类型通道和业务车辆名称映射
+        Map<String, String> avChannelAndNameMap = configBos.stream().filter(item -> PartRole.AV.equals(item.getSupportRoles()))
+                .collect(Collectors.toMap(CaseConfigBo::getDataChannel, CaseConfigBo::getName));
+        // 主车点位映射
+        Map<String, List<TrajectoryDetailBo>> avBusinessIdPointsMap = originalTrajectory.getParticipantTrajectories()
+                .stream().filter(item ->
+                        avChannelAndBusinessIdMap.containsValue(item.getId())).collect(Collectors.toMap(
+                        ParticipantTrajectoryBo::getId,
+                        ParticipantTrajectoryBo::getTrajectory
+                ));
+        // 主车全部点位
+        List<TrajectoryDetailBo> avPoints = avBusinessIdPointsMap.get(caseConfigBo.getBusinessId());
+        // 读取仿真验证主车轨迹
+        TjCase tjCase = caseMapper.selectById(caseRealRecord.getCaseId());
+        List<List<TrajectoryValueDto>> mainSimulations = routeService.readTrajectoryFromRouteFile(tjCase.getRouteFile(),
+                caseConfigBo.getName());
+        List<TrajectoryValueDto> mainSimuTrajectories = mainSimulations.stream()
+                .map(item -> item.get(0)).collect(Collectors.toList());
         String key = StringUtils.format(ContentTemplate.REAL_KEY_TEMPLATE, caseInfoBo.getId(), SecurityUtils.getUsername());
         switch (action) {
             case PlaybackAction.START:
-                List<RealTestTrajectoryDto> realTestTrajectoryDtos = routeService.readRealTrajectoryFromRouteFile(caseRealRecord.getRouteFile());
-//                Map<String, List<List<TrajectoryValueDto>>> trajectoryMap = routeService.readRealTrajectoryFromRouteFile(
-//                        caseRealRecord.getRouteFile());
-//                for (Entry<String, List<List<TrajectoryValueDto>>> entry : trajectoryMap.entrySet()) {
-//                    for (List<TrajectoryValueDto> trajectoryValueDtos : entry.getValue()) {
-//                        for (TrajectoryValueDto trajectoryValueDto : trajectoryValueDtos) {
-//                            trajectoryValueDto.setId(participantIdMap.get(trajectoryValueDto.getName()));
-//                        }
-//                    }
-//                    RealPlaybackSchedule.startSendingData(key, trajectoryMap);
-//                }
+                List<RealTestTrajectoryDto> realTestTrajectories = routeService.readRealTrajectoryFromRouteFile(caseRealRecord.getRouteFile());
+                for (RealTestTrajectoryDto realTestTrajectoryDto : realTestTrajectories) {
+                    if (avChannelAndBusinessIdMap.containsKey(realTestTrajectoryDto.getChannel())) {
+                        realTestTrajectoryDto.setName(avChannelAndNameMap.get(realTestTrajectoryDto.getChannel()));
+                        realTestTrajectoryDto.setMain(true);
+                        realTestTrajectoryDto.setMainSimuTrajectories(mainSimuTrajectories);
+                        realTestTrajectoryDto.setPoints(JSONObject.toJSONString(avPoints));
+                    }
+                }
+                RealPlaybackSchedule.startSendingData(key, realTestTrajectories);
                 break;
             case PlaybackAction.SUSPEND:
                 RealPlaybackSchedule.suspend(key);
@@ -261,7 +285,6 @@ public class TestingServiceImpl implements TestingService {
                 break;
             default:
                 break;
-
         }
     }
 
@@ -369,8 +392,8 @@ public class TestingServiceImpl implements TestingService {
         if (CollectionUtils.isEmpty(casePartConfigs)) {
             throw new BusinessException("用例未进行角色配置");
         }
-        List<CaseConfigBo> configs = caseInfoBo.getCaseConfigs().stream().filter(deviceId ->
-                !ObjectUtils.isEmpty(deviceId)).collect(Collectors.toList());
+        List<CaseConfigBo> configs = caseInfoBo.getCaseConfigs().stream().filter(config ->
+                !ObjectUtils.isEmpty(config.getDeviceId())).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(configs)) {
             throw new BusinessException("用例未进行设备配置");
         }

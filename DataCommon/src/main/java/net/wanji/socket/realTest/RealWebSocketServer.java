@@ -20,7 +20,7 @@ import java.util.Map;
  * @Date: 2022/6/16 10:30
  * @Descriptoin:
  */
-@ServerEndpoint(value = "/real/{id}")
+@ServerEndpoint(value = "/realWs/{channel}")
 @Component
 public class RealWebSocketServer {
 
@@ -38,7 +38,7 @@ public class RealWebSocketServer {
      */
     @OnOpen
     public void onOpen(Session session) {
-        String id = getIdFromSession(session);
+        String id = getChannelFromSession(session);
         if (StringUtils.isEmpty(id)) {
             onClose();
             return;
@@ -53,7 +53,7 @@ public class RealWebSocketServer {
     @OnClose
     public void onClose() {
         if (!ObjectUtils.isEmpty(this.session)) {
-            RealWebSocketManage.remove(getIdFromSession(this.session));
+            RealWebSocketManage.remove(getChannelFromSession(this.session));
         }
     }
 
@@ -83,9 +83,9 @@ public class RealWebSocketServer {
         return session;
     }
 
-    private String getIdFromSession(Session session) {
+    private String getChannelFromSession(Session session) {
         Map<String, String> pathParameters = session.getPathParameters();
-        return pathParameters.get("id");
+        return pathParameters.get("channel");
     }
 
 }

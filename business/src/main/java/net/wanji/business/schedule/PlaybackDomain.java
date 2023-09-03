@@ -2,6 +2,7 @@ package net.wanji.business.schedule;
 
 import com.alibaba.fastjson.JSONObject;
 import lombok.Data;
+import net.wanji.business.common.Constants.RedisMessageType;
 import net.wanji.business.domain.WebsocketMessage;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.common.common.TrajectoryValueDto;
@@ -40,12 +41,14 @@ public class PlaybackDomain {
                     return;
                 }
                 if (index >= data.size()) {
+                    WebsocketMessage message = new WebsocketMessage(RedisMessageType.END, null, null);
+                    WebSocketManage.sendInfo(id, JSONObject.toJSONString(message));
                     PlaybackSchedule.stopSendingData(id);
                     return;
                 }
                 String countDown = DateUtils.secondsToDuration(
                         (int) Math.floor((double) (data.size() - index) / 10));
-                WebsocketMessage message = new WebsocketMessage(countDown, data.get(index));
+                WebsocketMessage message = new WebsocketMessage(RedisMessageType.TRAJECTORY, countDown, data.get(index));
                 WebSocketManage.sendInfo(id, JSONObject.toJSONString(message));
                 index++;
             } catch (Exception e) {
