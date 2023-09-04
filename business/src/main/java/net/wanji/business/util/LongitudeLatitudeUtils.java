@@ -7,6 +7,7 @@ import org.gavaghan.geodesy.GlobalCoordinates;
 
 import java.awt.geom.Point2D;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -32,6 +33,19 @@ public class LongitudeLatitudeUtils {
       fullLength += ellipsoidalDistance(current, next);
     }
     return fullLength;
+  }
+
+  public static List<Double> distanceFromStartingPoint(
+      List<Point2D.Double> points) {
+    ArrayList<Double> distance = new ArrayList<>();
+    double distanceFromStart = 0.0;
+    for (int i = 0; i < points.size() - 1; i++) {
+      Point2D.Double current = points.get(i);
+      Point2D.Double next = points.get(i + 1);
+      distance.add(distanceFromStart);
+      distanceFromStart += ellipsoidalDistance(current, next);
+    }
+    return distance;
   }
 
   /**

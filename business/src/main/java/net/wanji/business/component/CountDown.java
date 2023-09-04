@@ -20,6 +20,7 @@ import java.util.List;
 @NotThreadSafe
 public class CountDown {
   private final List<Point2D.Double> points;
+  private List<Double> distanceFromStartingPoint;
   private final double fullLength;
   private int currentPointI = 1;
   private int dataI = 0;
@@ -30,6 +31,8 @@ public class CountDown {
   public CountDown(List<Point2D.Double> points) {
     this.points = points;
     fullLength = LongitudeLatitudeUtils.fullLength(points);
+    distanceFromStartingPoint = LongitudeLatitudeUtils.distanceFromStartingPoint(
+        points);
   }
 
   /**
@@ -55,8 +58,7 @@ public class CountDown {
       countDownDto.setFullLength(fullLength);
       double v = lengthRemaining(currentPoint);
       countDownDto.setRemainLength(v);
-      countDownDto.setTimeRemaining(
-          timeRemaining(v, currentSpeed));
+      countDownDto.setTimeRemaining(timeRemaining(v, currentSpeed));
       dataI++;
       return countDownDto;
     }
@@ -70,9 +72,10 @@ public class CountDown {
   }
 
   protected double lengthRemaining(Point2D.Double currentPoint) {
+    int index = currentPointI - 1;
     double v = LongitudeLatitudeUtils.ellipsoidalDistance(currentPoint,
-        points.get(currentPointI));
-    return fullLength - v;
+        points.get(index));
+    return fullLength - (v + distanceFromStartingPoint.get(index));
   }
 
   protected int getNextPointIndex() {
@@ -92,8 +95,8 @@ public class CountDown {
 
   public static void main(String[] args) {
     ArrayList<Point2D.Double> doubles = new ArrayList<>();
-    doubles.add(new Point2D.Double(121.20139045333559,31.291346840918422));
-    doubles.add(new Point2D.Double(121.20180991330014,31.29134514856418));
+    doubles.add(new Point2D.Double(121.20139045333559, 31.291346840918422));
+    doubles.add(new Point2D.Double(121.20180991330014, 31.29134514856418));
     CountDown countDown = new CountDown(doubles);
     for (int i = 0; i < 20; i++) {
       CountDownDto countDownDto = countDown.countDown(0,
