@@ -123,6 +123,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
             TjTaskCase tjTaskCase = new TjTaskCase();
             tjTaskCase.setTaskId(tjTask.getId());
             tjTaskCase.setCaseId(Integer.parseInt(aCase));
+            tjTaskCase.setCreateTime(new Date());
             tjTaskCase.setStatus("待测试");
             tjTaskCaseMapper.insert(tjTaskCase);
         }

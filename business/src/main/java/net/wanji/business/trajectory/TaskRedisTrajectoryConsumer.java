@@ -222,9 +222,9 @@ public class TaskRedisTrajectoryConsumer {
                             Optional.ofNullable(end.getEvaluationVerify()).ifPresent(originalTrajectory::setEvaluationVerify);
                             TjTaskCaseRecord param = new TjTaskCaseRecord();
                             param.setId(taskCaseRecord.getId());
-                            String duration = DateUtils.secondsToDuration(
-                                    (int) Math.floor((double) (getDataSize(taskCaseRecord.getId(),
-                                            caseConfigBo.getDataChannel())) / 10));
+                            int seconds = (int) Math.floor((double) (getDataSize(taskCaseRecord.getId(),
+                                    caseConfigBo.getDataChannel())) / 10);
+                            String duration = DateUtils.secondsToDuration(seconds);
                             originalTrajectory.setDuration(duration);
                             param.setDetailInfo(JSONObject.toJSONString(originalTrajectory));
                             int endSuccess = taskCaseRecordMapper.updateById(param);
@@ -235,8 +235,7 @@ public class TaskRedisTrajectoryConsumer {
                             taskCase.setStatus("已完成");
                             taskCase.setEndTime(new Date());
                             // todo 通过率计算
-                            taskCase.setPassingRate("100%");
-                            taskCase.setTestTotalTime(duration);
+                            taskCase.setTestTotalTime(String.valueOf(seconds));
                             taskCaseMapper.updateById(taskCase);
                             log.info(StringUtils.format("修改用例场景评价:{}", endSuccess));
                             removeListenerThenSave(taskCaseRecord.getId(), originalTrajectory);
@@ -322,12 +321,12 @@ public class TaskRedisTrajectoryConsumer {
             realTestTrajectoryDto.setChannel(channelListener.getChannel());
             realTestTrajectoryDto.setData(channelListener.getData());
             for (SimulationTrajectoryDto trajectoryDto : channelListener.getData()) {
-                routeService.checkRealRoute(recordId, originalTrajectory, trajectoryDto.getValue());
+                routeService.checkTaskRoute(recordId, originalTrajectory, trajectoryDto.getValue());
             }
             data.add(realTestTrajectoryDto);
         }
         try {
-            routeService.saveRealRouteFile(recordId, data);
+            routeService.saveTaskRouteFile(recordId, data, originalTrajectory);
         } catch (ExecutionException | InterruptedException e) {
             e.printStackTrace();
         }

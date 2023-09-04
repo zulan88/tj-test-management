@@ -1,11 +1,19 @@
 package net.wanji.business.service;
 
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.Extension;
 import net.wanji.business.common.Constants.TestingStatus;
 import net.wanji.business.common.Constants.WebsocketKey;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
+import net.wanji.business.entity.TjTask;
+import net.wanji.business.entity.TjTaskCase;
+import net.wanji.business.entity.TjTaskCaseRecord;
+import net.wanji.business.mapper.TjTaskCaseMapper;
+import net.wanji.business.mapper.TjTaskCaseRecordMapper;
+import net.wanji.business.mapper.TjTaskMapper;
 import net.wanji.common.common.RealTestTrajectoryDto;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.business.entity.TjCase;
@@ -16,6 +24,7 @@ import net.wanji.business.mapper.TjCaseRealRecordMapper;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.config.WanjiConfig;
+import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.GeoUtil;
 import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.file.FileUploadUtils;
@@ -31,6 +40,7 @@ import org.springframework.util.ObjectUtils;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,13 +58,19 @@ public class RouteService {
     private static final Logger log = LoggerFactory.getLogger("business");
 
     @Autowired
+    private TjTaskMapper taskMapper;
+
+    @Autowired
     private TjCaseMapper tjCaseMapper;
+
+    @Autowired
+    private TjTaskCaseMapper taskCaseMapper;
 
     @Autowired
     private TjCaseRealRecordMapper caseRealRecordMapper;
 
     @Autowired
-    private TjCasePartConfigMapper casePartConfigMapper;
+    private TjTaskCaseRecordMapper taskCaseRecordMapper;
 
     @Async
     public void saveRouteFile(Integer caseId, List<SimulationTrajectoryDto> data) throws ExecutionException, InterruptedException {
@@ -92,6 +108,58 @@ public class RouteService {
         }
     }
 
+    public void saveTaskRouteFile(Integer recordId, List<RealTestTrajectoryDto> data,
+                                  CaseTrajectoryDetailBo originalTrajectory)
+            throws ExecutionException, InterruptedException {
+        log.info(StringUtils.format("保存实车测试{}路径文件", recordId));
+        TjTaskCaseRecord taskCaseRecord = taskCaseRecordMapper.selectById(recordId);
+        // 保存本地文件
+        try {
+            int pointNum = 0;
+            int passNum = 0;
+            String path = FileUtils.writeRoute(data, WanjiConfig.getRoutePath(), Extension.TXT);
+            for (ParticipantTrajectoryBo participantTrajectory : originalTrajectory.getParticipantTrajectories()) {
+                for (TrajectoryDetailBo trajectoryDetailBo : participantTrajectory.getTrajectory()) {
+                    pointNum ++;
+                    if (trajectoryDetailBo.isPass()) {
+                        passNum ++;
+                        continue;
+                    }
+                }
+
+            }
+            log.info("saveTaskRouteFile routePath:{}", path);
+            taskCaseRecord.setRouteFile(path);
+            taskCaseRecord.setStatus(TestingStatus.FINISHED);
+            taskCaseRecord.setEndTime(LocalDateTime.now());
+            taskCaseRecordMapper.updateById(taskCaseRecord);
+
+            TjTaskCase taskCase = new TjTaskCase();
+            taskCase.setPassingRate(pointNum == 0 ? "100%" : (passNum / pointNum) * 100 + "%" );
+            QueryWrapper<TjTaskCase> updateMapper = new QueryWrapper<>();
+            updateMapper.eq(ColumnName.TASK_ID, taskCaseRecord.getTaskId()).eq(ColumnName.CASE_ID_COLUMN,
+                    taskCaseRecord.getCaseId());
+            taskCaseMapper.update(taskCase, updateMapper);
+
+            QueryWrapper<TjTaskCase> queryMapper = new QueryWrapper<>();
+            queryMapper.eq(ColumnName.TASK_ID, taskCaseRecord.getTaskId());
+            List<TjTaskCase> tjTaskCases = taskCaseMapper.selectList(queryMapper);
+            if (CollectionUtils.emptyIfNull(tjTaskCases).stream().allMatch(item -> "已完成".equals(item.getStatus()))) {
+                Integer taskId = tjTaskCases.get(0).getTaskId();
+                TjTask tjTask = new TjTask();
+                tjTask.setId(taskId);
+                tjTask.setEndTime(new Date());
+                tjTask.setTestTotalTime(DateUtils.secondsToDuration(tjTaskCases.stream().mapToInt(caseObj ->
+                                Integer.parseInt(caseObj.getTestTotalTime())).sum()));
+                taskMapper.updateById(tjTask);
+
+            }
+            log.info("更新完成");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void checkSimulaitonRoute(Integer caseId, CaseTrajectoryDetailBo oldDetail, List<TrajectoryValueDto> data) {
         if (CollectionUtils.isEmpty(data) || ObjectUtils.isEmpty(oldDetail)
                 || CollectionUtils.isEmpty(oldDetail.getParticipantTrajectories())) {
@@ -115,6 +183,19 @@ public class RouteService {
             caseRealRecord.setId(recordId);
             caseRealRecord.setDetailInfo(JSONObject.toJSONString(oldDetail));
             caseRealRecordMapper.updateById(caseRealRecord);
+        }
+    }
+
+    public void checkTaskRoute(Integer recordId, CaseTrajectoryDetailBo oldDetail, List<TrajectoryValueDto> data) {
+        if (CollectionUtils.isEmpty(data) || ObjectUtils.isEmpty(oldDetail)
+                || CollectionUtils.isEmpty(oldDetail.getParticipantTrajectories())) {
+            return;
+        }
+        if (check(oldDetail, data)) {
+            TjTaskCaseRecord taskCaseRecord = new TjTaskCaseRecord();
+            taskCaseRecord.setId(recordId);
+            taskCaseRecord.setDetailInfo(JSONObject.toJSONString(oldDetail));
+            taskCaseRecordMapper.updateById(taskCaseRecord);
         }
     }
 

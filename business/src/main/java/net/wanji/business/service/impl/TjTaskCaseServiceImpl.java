@@ -26,12 +26,14 @@ import net.wanji.business.domain.vo.CommunicationDelayVo;
 import net.wanji.business.domain.vo.RealTestResultVo;
 import net.wanji.business.domain.vo.TaskCaseVerificationPageVo;
 import net.wanji.business.entity.TjCase;
+import net.wanji.business.entity.TjTask;
 import net.wanji.business.entity.TjTaskCase;
 import net.wanji.business.entity.TjTaskCaseRecord;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjTaskCaseMapper;
 import net.wanji.business.mapper.TjTaskCaseRecordMapper;
+import net.wanji.business.mapper.TjTaskMapper;
 import net.wanji.business.schedule.RealPlaybackSchedule;
 import net.wanji.business.service.RestService;
 import net.wanji.business.service.RouteService;
@@ -81,6 +83,9 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
     @Autowired
     private RouteService routeService;
+
+    @Autowired
+    private TjTaskMapper taskMapper;
 
     @Autowired
     private TjCaseMapper caseMapper;
@@ -220,10 +225,16 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         taskRedisTrajectoryConsumer.subscribeAndSend(taskCaseRecord, caseInfoBo.getCaseConfigs());
         // 开启模拟客户端
         restService.taskClientUrl(configs);
-
-        taskCase.setStartTime(new Date());
+        Date date = new Date();
+        taskCase.setStartTime(date);
         taskCase.setStatus("测试中");
         taskCaseMapper.updateById(taskCase);
+
+        TjTask tjTask = taskMapper.selectById(taskCaseRecord.getTaskId());
+        if (ObjectUtils.isEmpty(tjTask.getStartTime())) {
+            tjTask.setStartTime(date);
+            taskMapper.updateById(tjTask);
+        }
         return caseRealTestVo;
     }
 
@@ -236,7 +247,10 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         if (TestingStatus.FINISHED > taskCaseRecord.getStatus() || StringUtils.isEmpty(taskCaseRecord.getRouteFile())) {
             throw new BusinessException("实车验证未完成");
         }
-        TaskCaseInfoBo caseInfoBo = taskCaseMapper.selectTaskCaseInfo(recordId);
+        QueryWrapper<TjTaskCase> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq(ColumnName.CASE_ID_COLUMN, taskCaseRecord.getCaseId()).eq(ColumnName.TASK_ID, taskCaseRecord.getTaskId());
+        TjTaskCase taskCase = taskCaseMapper.selectOne(queryWrapper);
+        TaskCaseInfoBo caseInfoBo = taskCaseMapper.selectTaskCaseInfo(taskCase.getId());
         List<TaskCaseConfigBo> configs = caseInfoBo.getCaseConfigs();
         if (CollectionUtils.isEmpty(configs)) {
             throw new BusinessException("请先进行角色配置");
@@ -342,7 +356,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 endTime = Date.from(((LocalDateTime) info.get("END_TIME"))
                         .atZone(ZoneId.systemDefault()).toInstant());
             }
-            String role = String.valueOf(info.get("PARTICIPANT_ROLE"));
+            String role = String.valueOf(info.get("TYPE"));
             type.add(role);
         }
         if (startTime == null | endTime == null) {
