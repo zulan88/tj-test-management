@@ -3,6 +3,7 @@ package net.wanji.common.utils;
 import net.dreamlu.iot.mqtt.core.client.MqttClient;
 import org.apache.commons.codec.binary.Hex;
 
+import java.text.DecimalFormat;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Calculate {
@@ -39,4 +40,21 @@ public class Calculate {
 
         return target;
     }
+
+    public static String getPercent(int a, int b) {
+
+        // 计算百分比
+        double percentage = (double) a / b * 100;
+
+        // 四舍五入
+        long roundedPercentage = Math.round(percentage);
+
+        // 创建DecimalFormat对象，指定输出格式为n%
+        DecimalFormat decimalFormat = new DecimalFormat("0'%'");
+
+        // 使用DecimalFormat格式化百分比
+        return decimalFormat.format(roundedPercentage);
+
+    }
+
 }

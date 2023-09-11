@@ -38,6 +38,18 @@ public class TjTaskDc implements Serializable {
     @TableField(value = "weight")
     private String weight;
 
+    /**
+     * 分数
+     */
+    @TableField(value = "score")
+    private String score;
+
+    /**
+     * 时长
+     */
+    @TableField(value = "time")
+    private String time;
+
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 }

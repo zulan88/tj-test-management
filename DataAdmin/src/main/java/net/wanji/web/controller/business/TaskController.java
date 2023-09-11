@@ -1,11 +1,38 @@
 package net.wanji.web.controller.business;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
+import com.alibaba.excel.EasyExcel;
+import com.alibaba.excel.ExcelWriter;
+import com.alibaba.excel.write.builder.ExcelWriterBuilder;
+import com.alibaba.excel.write.metadata.WriteSheet;
+import net.wanji.business.common.Constants.BatchGroup;
+import net.wanji.business.common.Constants.ContentTemplate;
+import net.wanji.business.domain.dto.TjCaseDto;
+import net.wanji.business.domain.vo.CaseVo;
+import net.wanji.business.domain.vo.DiadynamicDetailVo;
+import net.wanji.business.domain.vo.DiadynamicVo;
+import net.wanji.business.domain.vo.TaskCaseReportVo;
+import net.wanji.business.domain.vo.TaskReportVo;
+import net.wanji.business.entity.TjCase;
+import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.service.TjTaskCaseService;
+import net.wanji.common.utils.DateUtils;
+import net.wanji.common.utils.StringUtils;
+import net.wanji.common.utils.poi.ExcelUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import net.wanji.business.domain.bo.TaskBo;
@@ -17,6 +44,8 @@ import net.wanji.business.service.TjTaskService;
 import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
+
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * @author: guowenhao
@@ -121,5 +150,11 @@ public class TaskController extends BaseController {
     @GetMapping("/communicationDelay")
     public AjaxResult communicationDelayVo(@RequestParam Integer recordId) {
         return AjaxResult.success(taskCaseService.communicationDelayVo(recordId));
+    }
+
+    @PreAuthorize("@ss.hasPermi('task:report')")
+    @PostMapping("/report")
+    public void report(HttpServletResponse response, @RequestParam("taskId") Integer taskId) throws IOException {
+        tjTaskService.export(response, taskId);
     }
 }

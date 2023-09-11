@@ -1,5 +1,9 @@
 package net.wanji.business.service.impl;
 
+import com.alibaba.excel.EasyExcel;
+import com.alibaba.excel.read.builder.ExcelReaderBuilder;
+import com.alibaba.excel.write.builder.ExcelWriterBuilder;
+import com.alibaba.excel.write.handler.CellWriteHandler;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -12,19 +16,21 @@ import net.wanji.business.common.Constants.PointTypeEnum;
 import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.TestingStatus;
 import net.wanji.business.common.Constants.YN;
-import net.wanji.business.domain.bo.CaseConfigBo;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.bo.TaskCaseConfigBo;
 import net.wanji.business.domain.bo.TaskCaseInfoBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
+import net.wanji.business.domain.param.CaseRuleControl;
 import net.wanji.business.domain.param.DeviceConnInfo;
 import net.wanji.business.domain.param.DeviceConnRule;
 import net.wanji.business.domain.vo.CaseRealTestVo;
 import net.wanji.business.domain.vo.CommunicationDelayVo;
 import net.wanji.business.domain.vo.RealTestResultVo;
+import net.wanji.business.domain.vo.TaskCaseReportVo;
 import net.wanji.business.domain.vo.TaskCaseVerificationPageVo;
+import net.wanji.business.domain.vo.TaskReportVo;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjTask;
 import net.wanji.business.entity.TjTaskCase;
@@ -49,18 +55,23 @@ import net.wanji.system.service.ISysDictDataService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.repository.init.ResourceReader;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -201,14 +212,26 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         TjTaskCase taskCase = taskCaseMapper.selectOne(queryWrapper);
         TaskCaseInfoBo caseInfoBo = taskCaseMapper.selectTaskCaseInfo(taskCase.getId());
         this.validConfig(caseInfoBo);
-        List<TaskCaseConfigBo> configs = caseInfoBo.getCaseConfigs().stream().filter(deviceId ->
-                !ObjectUtils.isEmpty(deviceId)).collect(Collectors.toList());
-//        List<DeviceConnRule> deviceConnRules = generateDeviceConnRules(configs);
-//        restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(), String.valueOf(caseId), action,
-//                deviceConnRules));
+
+        // 开始监听所有数据通道
+        taskRedisTrajectoryConsumer.subscribeAndSend(taskCaseRecord, caseInfoBo.getCaseConfigs());
+        // 向主控发送开始请求
+        List<DeviceConnRule> deviceConnRules = generateDeviceConnRules(caseInfoBo);
+        restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(),
+                String.valueOf(taskCaseRecord.getTaskId()), action, deviceConnRules));
         taskCaseRecord.setStatus(TestingStatus.RUNNING);
         taskCaseRecord.setStartTime(LocalDateTime.now());
         taskCaseRecordMapper.updateById(taskCaseRecord);
+        Date date = new Date();
+        taskCase.setStartTime(date);
+        taskCase.setStatus("测试中");
+        taskCaseMapper.updateById(taskCase);
+        TjTask tjTask = taskMapper.selectById(taskCaseRecord.getTaskId());
+        if (ObjectUtils.isEmpty(tjTask.getStartTime())) {
+            tjTask.setStartTime(date);
+            taskMapper.updateById(tjTask);
+        }
+
         CaseRealTestVo caseRealTestVo = new CaseRealTestVo();
         BeanUtils.copyProperties(taskCaseRecord, caseRealTestVo);
         caseRealTestVo.setStartTime(DateUtils.getTime());
@@ -221,20 +244,12 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 ));
         caseRealTestVo.setMainTrajectories(mainTrajectoryMap);
 
-        // 开始监听所有数据通道
-        taskRedisTrajectoryConsumer.subscribeAndSend(taskCaseRecord, caseInfoBo.getCaseConfigs());
-        // 开启模拟客户端
-        restService.taskClientUrl(configs);
-        Date date = new Date();
-        taskCase.setStartTime(date);
-        taskCase.setStatus("测试中");
-        taskCaseMapper.updateById(taskCase);
 
-        TjTask tjTask = taskMapper.selectById(taskCaseRecord.getTaskId());
-        if (ObjectUtils.isEmpty(tjTask.getStartTime())) {
-            tjTask.setStartTime(date);
-            taskMapper.updateById(tjTask);
-        }
+        // 开启模拟客户端
+//        List<TaskCaseConfigBo> configs = caseInfoBo.getCaseConfigs().stream().filter(deviceId ->
+//                !ObjectUtils.isEmpty(deviceId)).collect(Collectors.toList());
+//        restService.taskClientUrl(configs);
+
         return caseRealTestVo;
     }
 
@@ -380,6 +395,13 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         return communicationDelayVo;
     }
 
+    @Override
+    public List<TaskReportVo> getReport(Integer taskId, Integer taskCaseId) {
+
+//        }
+        return new ArrayList<>();
+    }
+
     private void validStatus(TaskCaseVerificationPageVo pageVo) {
         Map<String, List<TaskCaseConfigBo>> statusMap = pageVo.getStatusMap();
         List<TaskCaseConfigBo> configs = new ArrayList<>();
@@ -424,29 +446,71 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         }
     }
 
-    private List<DeviceConnRule> generateDeviceConnRules(List<CaseConfigBo> caseConfigs) {
+    private List<DeviceConnRule> generateDeviceConnRules(TaskCaseInfoBo caseInfoBo) {
+        List<TaskCaseConfigBo> caseConfigs = caseInfoBo.getCaseConfigs().stream().filter(config ->
+                !StringUtils.isEmpty(config.getDeviceId())).collect(Collectors.toList());
+        Map<String, String> businessIdAndRoleMap = caseConfigs.stream().collect(Collectors.toMap(
+                TaskCaseConfigBo::getParticipatorId,
+                TaskCaseConfigBo::getType));
+
+        SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(caseInfoBo.getDetailInfo(), SceneTrajectoryBo.class);
+
+        Map<String, Object> tessParams = new HashMap<>();
+        Map<String, Object> param1 = new HashMap<>();
+        param1.put("caseId", caseInfoBo.getId());
+        List<Map<String, Object>> participantTrajectories = new ArrayList<>();
+        for (ParticipantTrajectoryBo participantTrajectory : sceneTrajectoryBo.getParticipantTrajectories()) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", participantTrajectory.getId());
+            map.put("model", participantTrajectory.getModel());
+            map.put("name", participantTrajectory.getName());
+            map.put("role", businessIdAndRoleMap.get(participantTrajectory.getId()));
+            map.put("trajectory", participantTrajectory.getTrajectory().stream().map(item -> {
+                Map<String, Object> t = new HashMap<>();
+                t.put("type", item.getType());
+                t.put("time", item.getTime());
+                t.put("lane", item.getLane());
+                t.put("speed", item.getSpeed());
+                String[] pos = item.getPosition().split(",");
+                t.put("position", Arrays.asList(pos[0], pos[1]));
+                return t;
+            }).collect(Collectors.toList()));
+            participantTrajectories.add(map);
+        }
+        param1.put("participantTrajectories", participantTrajectories);
+        tessParams.put("param1", JSONObject.toJSONString(param1));
+
         List<DeviceConnRule> rules = new ArrayList<>();
         for (int i = 0; i < caseConfigs.size(); i++) {
-            CaseConfigBo sourceDevice = caseConfigs.get(i);
+            TaskCaseConfigBo sourceDevice = caseConfigs.get(i);
             for (int j = 0; j < caseConfigs.size(); j++) {
                 if (j == i) {
                     continue;
                 }
-                CaseConfigBo targetDevice = caseConfigs.get(j);
+                Map<String, Object> sourceParams = new HashMap<>();
+                Map<String, Object> targetParams = new HashMap<>();
+
+                TaskCaseConfigBo targetDevice = caseConfigs.get(j);
+
                 DeviceConnRule rule = new DeviceConnRule();
-                rule.setSource(createConnInfo(sourceDevice));
-                rule.setTarget(createConnInfo(targetDevice));
+                if (PartRole.MV_SIMULATION.equals(sourceDevice.getType())
+                        && PartRole.AV.equals(targetDevice.getType()) ) {
+                    sourceParams = tessParams;
+                }
+                rule.setSource(createConnInfo(sourceDevice, sourceParams));
+                rule.setTarget(createConnInfo(targetDevice, targetParams));
                 rules.add(rule);
             }
         }
         return rules;
     }
 
-    private static DeviceConnInfo createConnInfo(CaseConfigBo config) {
+    private static DeviceConnInfo createConnInfo(TaskCaseConfigBo config, Map<String, Object> params) {
         DeviceConnInfo deviceConnInfo = new DeviceConnInfo();
         deviceConnInfo.setChannel(config.getDataChannel());
         deviceConnInfo.setControlChannel(config.getCommandChannel());
         deviceConnInfo.setId(String.valueOf(config.getDeviceId()));
+        deviceConnInfo.setParams(params);
         return deviceConnInfo;
     }
 

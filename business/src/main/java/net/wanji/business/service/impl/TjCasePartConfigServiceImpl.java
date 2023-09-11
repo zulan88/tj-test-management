@@ -112,8 +112,6 @@ public class TjCasePartConfigServiceImpl extends ServiceImpl<TjCasePartConfigMap
             List<TjCasePartConfig> configs = CollectionUtils.emptyIfNull(configSelect.getParts()).stream().map(part -> {
                 TjCasePartConfig config = new TjCasePartConfig();
                 BeanUtils.copyProperties(part, config);
-                CollectionUtils.emptyIfNull(part.getDevices()).stream().filter(item -> YN.Y_INT == item.getSelected())
-                        .findFirst().ifPresent(d -> config.setDeviceId(d.getDeviceId()));
                 return config;
             }).collect(Collectors.toList());
             saveList.addAll(configs);

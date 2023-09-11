@@ -69,8 +69,10 @@ spring:
   redis:
     # 地址
     host: 106.120.201.126
+#    host: 202.120.189.56
     # 端口，默认为6379
     port: 14611
+#    port: 5010
     # 数据库索引
     database: 14
     # 密码
@@ -98,7 +100,7 @@ token:
   expireTime: 30
 
 kafka:
-  servers: 10.102.1.113:9092
+  servers: 202.120.189.56:9092
   groupId: trajectory
   autoCommit: true
   keyDeserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -158,12 +160,14 @@ xss:
 
 # rest路径
 tess:
-  start: http://localhost:19303/test/start
+#  start: http://localhost:19303/test/start
 #  start: http://10.102.1.36:19303/test/start
-#  start: http://129.211.28.237:8000/test/start
+  start: http://129.211.28.237:8000/test/start
 masterControl:
-  sendRule: http://10.100.73.50:8082/masterControl/DeviceIA/deviceIARulesSend
+  sendRule: http://10.100.16.15:8082/masterControl/DeviceIA/deviceIARulesSend
+#  sendRule: http://192.168.7.17:8082/masterControl/DeviceIA/deviceIARulesSend
 imitate:
   client: http://localhost:19303/realTest/start
 #  client: http://10.102.1.36:19303/realTest/start
+#  client: http://192.168.7.17:19303/realTest/start
 

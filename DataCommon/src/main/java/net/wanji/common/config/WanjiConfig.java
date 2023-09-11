@@ -140,4 +140,12 @@ public class WanjiConfig
     {
         return getProfile() + "/route";
     }
+
+    /**
+     * 获取onSite文件路径
+     */
+    public static String getScenePath()
+    {
+        return getProfile() + "/scene";
+    }
 }

@@ -44,6 +44,7 @@ public class RealPlaybackDomain {
     private List<RealTestTrajectoryDto> realTestTrajectories;
     private boolean running;
     private int index;
+    private int length;
 
     public RealPlaybackDomain(ScheduledExecutorService executorService,
                               String key,
@@ -52,6 +53,10 @@ public class RealPlaybackDomain {
         this.realTestTrajectories = realTestTrajectories;
         this.running = true;
         this.index = 0;
+        this.length = realTestTrajectories.stream().map(RealTestTrajectoryDto::getData)
+                .mapToInt(List::size)
+                .max()
+                .orElse(0);
         this.future = new ArrayList<>(realTestTrajectories.size());
         for (RealTestTrajectoryDto realTestTrajectory : realTestTrajectories) {
             // 实际轨迹
@@ -61,9 +66,6 @@ public class RealPlaybackDomain {
             // 所有点位
             List<TrajectoryDetailBo> points = StringUtils.isEmpty(realTestTrajectory.getPoints()) ? new ArrayList<>()
                     : JSONObject.parseArray(realTestTrajectory.getPoints(), TrajectoryDetailBo.class);
-            // 结束点
-            TrajectoryDetailBo endPoint = CollectionUtils.emptyIfNull(points).stream().filter(point ->
-                    PointTypeEnum.END.getPointType().equals(point.getType())).findFirst().orElse(new TrajectoryDetailBo());
             // 主车全程、剩余时间、到达时间
             ArrayList<Point2D.Double> doubles = new ArrayList<>();
             for (TrajectoryDetailBo trajectoryDetailBo : points) {
@@ -76,66 +78,68 @@ public class RealPlaybackDomain {
             // 仿真车轨迹
             List<TrajectoryValueDto> mainSimuTrajectories = realTestTrajectory.getMainSimuTrajectories();
             Map<String, Object> realMap = new HashMap<>();
-            Map<String, Object> tipsMap = new HashMap<>();
             ScheduledFuture<?> scheduledFuture = executorService.scheduleAtFixedRate(() -> {
                 // send data
                 try {
                     if (!running) {
                         return;
                     }
-                    if (index >= actualTrajectories.size()) {
+                    if (index >= length) {
                         if (realTestTrajectory.isMain()) {
                             RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null,
                                     null, "00:00");
                             WebSocketManage.sendInfo(realTestTrajectory.getChannel(), JSONObject.toJSONString(endMsg));
+                            RealPlaybackSchedule.stopSendingData(key);
+                            return;
                         }
-                        RealPlaybackSchedule.stopSendingData(key);
-                        return;
                     }
                     String duration = DateUtils.secondsToDuration(
-                            (int) Math.floor((double) (actualTrajectories.size() - index) / 10));
-                    List<TrajectoryValueDto> data = actualTrajectories.get(index);
+                            (int) Math.floor((double) (length - index) / 10));
+                    List<TrajectoryValueDto> data = actualTrajectories.get(index >= actualTrajectories.size() ? actualTrajectories.size() - 1 : index);
                     if (realTestTrajectory.isMain()) {
-                        index ++;
-                        CountDownDto countDownDto = countDown.countDown(data.get(0).getSpeed(),
-                                new Point2D.Double(data.get(0).getLongitude(), data.get(0).getLatitude()));
-                        if (!ObjectUtils.isEmpty(countDownDto)) {
-                            double mileage = countDownDto.getFullLength();
-                            double remainLength = countDownDto.getRemainLength();
-                            realMap.put("mileage", String.format("%.2f", mileage));
-                            realMap.put("duration", countDownDto.getTimeRemaining());
-                            realMap.put("arriveTime", DateUtils.dateToString(countDownDto.getArrivalTime(), DateUtils.HH_MM_SS));
-                            double percent = 1 - (mileage / remainLength);
-                            realMap.put("percent", percent < 0 ? 100 : percent);
-                        }
-                        PathwayPoints nearestPoint = pathwayPoints.findNearestPoint(data.get(0).getLongitude(),
-                                data.get(0).getLatitude());
-                        if (nearestPoint.hasTips()) {
-                            tipsMap.put("name", realTestTrajectory.getName());
-                            tipsMap.put("pointName", nearestPoint.getPointName());
-                            tipsMap.put("pointDistance", nearestPoint.getDistance());
-                            tipsMap.put("pointSpeed", nearestPoint.getPointSpeed());
-                        }
-                        realMap.put("tips", tipsMap);
+                        if (CollectionUtils.isNotEmpty(data)) {
+                            CountDownDto countDownDto = countDown.countDown(data.get(0).getSpeed(),
+                                    new Point2D.Double(data.get(0).getLongitude(), data.get(0).getLatitude()));
+                            if (!ObjectUtils.isEmpty(countDownDto)) {
+                                double mileage = countDownDto.getFullLength();
+                                double remainLength = countDownDto.getRemainLength();
+                                realMap.put("mileage", String.format("%.2f", mileage));
+                                realMap.put("duration", countDownDto.getTimeRemaining());
+                                realMap.put("arriveTime", DateUtils.dateToString(countDownDto.getArrivalTime(), DateUtils.HH_MM_SS));
+                                double percent = mileage > 0 ? 1 - (remainLength / mileage) : 1;
+                                realMap.put("percent", percent * 100);
+                            }
+                            PathwayPoints nearestPoint = pathwayPoints.findNearestPoint(data.get(0).getLongitude(),
+                                    data.get(0).getLatitude());
+                            Map<String, Object> tipsMap = new HashMap<>();
+                            if (nearestPoint.hasTips()) {
+                                tipsMap.put("name", realTestTrajectory.getName());
+                                tipsMap.put("pointName", nearestPoint.getPointName());
+                                tipsMap.put("pointDistance", nearestPoint.getDistance());
+                                tipsMap.put("pointSpeed", nearestPoint.getPointSpeed());
+                            }
+                            realMap.put("tips", tipsMap);
 
-                        // 仿真车未来轨迹
-                        List<Map<String, Double>> futureList = new ArrayList<>();
-                        if (!CollectionUtils.isEmpty(mainSimuTrajectories)) {
-                            // 仿真验证中当前主车位置
-                            data.add(mainSimuTrajectories.remove(0));
-                            // 仿真验证中主车剩余轨迹
-                            futureList = mainSimuTrajectories.stream().map(item -> {
-                                Map<String, Double> posMap = new HashMap<>();
-                                posMap.put("longitude", item.getLongitude());
-                                posMap.put("latitude", item.getLatitude());
-                                return posMap;
-                            }).collect(Collectors.toList());
+                            // 仿真车未来轨迹
+                            List<Map<String, Double>> futureList = new ArrayList<>();
+                            if (!CollectionUtils.isEmpty(mainSimuTrajectories)) {
+                                // 仿真验证中当前主车位置
+                                data.add(mainSimuTrajectories.remove(0));
+                                // 仿真验证中主车剩余轨迹
+                                futureList = mainSimuTrajectories.stream().map(item -> {
+                                    Map<String, Double> posMap = new HashMap<>();
+                                    posMap.put("longitude", item.getLongitude());
+                                    posMap.put("latitude", item.getLatitude());
+                                    return posMap;
+                                }).collect(Collectors.toList());
+                            }
+                            realMap.put("simuFuture", futureList);
+                            realMap.put("speed", data.get(0).getSpeed());
                         }
-                        realMap.put("simuFuture", futureList);
-                        realMap.put("speed", data.get(0).getSpeed());
                         RealWebsocketMessage msg = new RealWebsocketMessage(RedisMessageType.TRAJECTORY, realMap, data, duration);
                         WebSocketManage.sendInfo(realTestTrajectory.getChannel(), JSONObject.toJSONString(msg));
                     } else {
+                        index ++;
                         RealWebsocketMessage msg = new RealWebsocketMessage(RedisMessageType.TRAJECTORY, null, data, duration);
                         WebSocketManage.sendInfo(realTestTrajectory.getChannel(), JSONObject.toJSONString(msg));
                     }

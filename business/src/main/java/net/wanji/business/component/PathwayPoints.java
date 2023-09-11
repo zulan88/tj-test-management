@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONObject;
 import net.wanji.business.common.Constants.PointTypeEnum;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.common.utils.GeoUtil;
+import net.wanji.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.ObjectUtils;
@@ -24,9 +25,9 @@ public class PathwayPoints {
 
     private static final Logger log = LoggerFactory.getLogger("business");
 
-    private static final int MAX_PROMPT_DIST = 80;
+    private static final int MAX_PROMPT_DIST = 50;
 
-    private static final int MIN_PROMPT_DIST = 1;
+    private static final int MIN_PROMPT_DIST = 3;
 
     /**
      * 全部点位
@@ -52,7 +53,7 @@ public class PathwayPoints {
         String name = PointTypeEnum.getDescByPointType(nearestPoint.getType());
         return ObjectUtil.isEmpty(nearestPoint) ? "" : (PointTypeEnum.END.getPointType().equals(nearestPoint.getType())
                 ? name
-                : name + this.index);
+                : name + this.index + 1);
     }
 
     public double getPointSpeed() {
@@ -76,34 +77,32 @@ public class PathwayPoints {
      * @return
      */
     public PathwayPoints findNearestPoint(double longitude, double latitude) {
-        for (int i = 0; i < this.pathWayPoints.size() - 1; i++) {
-            TrajectoryDetailBo detailBo1 = pathWayPoints.get(i);
-            List<Double> pos1 = Arrays.stream(detailBo1.getPosition().split(",")).map(Double::parseDouble).collect(Collectors.toList());
-            TrajectoryDetailBo detailBo2 = pathWayPoints.get(i + 1);
-            List<Double> pos2 = Arrays.stream(detailBo2.getPosition().split(",")).map(Double::parseDouble).collect(Collectors.toList());
-            Point2D.Double p1 = new Point2D.Double(pos1.get(0), pos1.get(1));
-            Point2D.Double p2 = new Point2D.Double(pos2.get(0), pos2.get(1));
-            Point2D.Double p = new Point2D.Double(longitude, latitude);
-            boolean pointBetweenPoints = this.isPointBetweenPoints(p, p1, p2);
-            if (!pointBetweenPoints) {
-                continue;
-            }
-            double dist = GeoUtil.calculateDistance(p.getY(), p.getX(), p2.getY(), p2.getX());
-            if (ObjectUtils.isEmpty(this.nearestPoint)) {
-                if (dist < MAX_PROMPT_DIST && dist > MIN_PROMPT_DIST) {
-                    this.index += 1;
-                    this.nearestPoint = detailBo2;
-                    this.distance = dist;
-                }
-
-            } else {
-                if (dist < MAX_PROMPT_DIST && dist > MIN_PROMPT_DIST) {
-                    this.distance = dist;
-                } else {
-                    this.reset();
-                }
-            }
+        if (index == pathWayPoints.size() - 1) {
             return this;
+        }
+        TrajectoryDetailBo detailBo1 = pathWayPoints.get(index);
+        List<Double> pos1 = Arrays.stream(detailBo1.getPosition().split(",")).map(Double::parseDouble).collect(Collectors.toList());
+        TrajectoryDetailBo detailBo2 = pathWayPoints.get(index + 1);
+        List<Double> pos2 = Arrays.stream(detailBo2.getPosition().split(",")).map(Double::parseDouble).collect(Collectors.toList());
+        Point2D.Double p1 = new Point2D.Double(pos1.get(0), pos1.get(1));
+        Point2D.Double p2 = new Point2D.Double(pos2.get(0), pos2.get(1));
+        Point2D.Double p = new Point2D.Double(longitude, latitude);
+        double dist = GeoUtil.calculateDistance(p.getY(), p.getX(), p2.getY(), p2.getX());
+        if (ObjectUtils.isEmpty(this.nearestPoint)) {
+            if (!this.isPointBetweenPoints(p, p1, p2)) {
+                return this;
+            }
+            if (dist < MAX_PROMPT_DIST && dist > MIN_PROMPT_DIST) {
+                this.nearestPoint = detailBo2;
+                this.distance = dist;
+            }
+        } else {
+            if (dist < MAX_PROMPT_DIST && dist > MIN_PROMPT_DIST) {
+                this.distance = dist;
+            } else {
+                this.reset();
+                this.index += 1;
+            }
         }
         return this;
     }

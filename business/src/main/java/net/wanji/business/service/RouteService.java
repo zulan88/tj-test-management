@@ -24,6 +24,7 @@ import net.wanji.business.mapper.TjCaseRealRecordMapper;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.config.WanjiConfig;
+import net.wanji.common.utils.Calculate;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.GeoUtil;
 import net.wanji.common.utils.StringUtils;
@@ -38,6 +39,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
@@ -135,7 +137,7 @@ public class RouteService {
             taskCaseRecordMapper.updateById(taskCaseRecord);
 
             TjTaskCase taskCase = new TjTaskCase();
-            taskCase.setPassingRate(pointNum == 0 ? "100%" : (passNum / pointNum) * 100 + "%" );
+            taskCase.setPassingRate(pointNum == 0 ? "100%" : Calculate.getPercent(passNum, pointNum));
             QueryWrapper<TjTaskCase> updateMapper = new QueryWrapper<>();
             updateMapper.eq(ColumnName.TASK_ID, taskCaseRecord.getTaskId()).eq(ColumnName.CASE_ID_COLUMN,
                     taskCaseRecord.getCaseId());
@@ -159,6 +161,23 @@ public class RouteService {
             e.printStackTrace();
         }
     }
+
+    public static void main(String[] args) {
+        int numerator = 5;
+        int denominator = 9;
+
+        // 将分数转换为浮点数
+        double fraction = (double) numerator / denominator * 100;
+
+        // 创建DecimalFormat对象，指定保留两位小数的格式
+        DecimalFormat decimalFormat = new DecimalFormat("#.00");
+
+        // 使用DecimalFormat格式化浮点数
+        String formattedFraction = decimalFormat.format(fraction);
+
+        System.out.println("Formatted fraction: " + formattedFraction + "%");
+    }
+
 
     public void checkSimulaitonRoute(Integer caseId, CaseTrajectoryDetailBo oldDetail, List<TrajectoryValueDto> data) {
         if (CollectionUtils.isEmpty(data) || ObjectUtils.isEmpty(oldDetail)
@@ -216,11 +235,11 @@ public class RouteService {
                     double latitude = Double.parseDouble(positionArray[1]);
                     double instance = GeoUtil.calculateDistance(latitude, longitude,
                             trajectory.getLatitude(), trajectory.getLongitude());
-                    if (instance <= 40) {
+                    if (instance <= 3) {
                         trajectoryDetailBo.setPass(true);
                         trajectoryDetailBo.setReason("已校验完成");
                     } else {
-                        trajectoryDetailBo.setReason("未经过该点位40米范围区域");
+                        trajectoryDetailBo.setReason("未经过该点位3米范围区域");
                     }
                     update = true;
                 }

@@ -4,20 +4,45 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="net.wanji.business.mapper.TjTaskMapper">
 
-    <resultMap id="BaseResultMap" type="net.wanji.business.entity.TjTask">
-            <id property="id" column="id" jdbcType="INTEGER"/>
-            <result property="taskName" column="task_name" jdbcType="VARCHAR"/>
-            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
-            <result property="caseCount" column="case_count" jdbcType="INTEGER"/>
-            <result property="passingRate" column="passing_rate" jdbcType="VARCHAR"/>
-            <result property="startTime" column="start_time" jdbcType="TIMESTAMP"/>
-            <result property="endTime" column="end_time" jdbcType="TIMESTAMP"/>
-            <result property="testTotalTime" column="test_total_time" jdbcType="VARCHAR"/>
-    </resultMap>
+    <select id="getExportList" resultType="net.wanji.business.domain.vo.TaskReportVo">
+        SELECT
+        tt.id AS task_id,
+        tt.task_name,
+        dc.participator_name,
+        tt.start_time,
+        tt.end_time,
+        tt.test_total_time,
+        tc.id AS case_id,
+        tc.case_number AS case_name,
+        ttc.passing_rate,
+        ttc.start_time AS case_start_time,
+        ttc.end_time AS case_end_time,
+        SEC_TO_TIME(ttc.test_total_time) AS case_test_time,
+        dia.type AS dc_type,
+        dia.weight AS dc_weight,
+        dia.`name` AS dia_name,
+        dia.score,
+        dia.time
+        FROM
+        tj_task tt
+        LEFT JOIN tj_task_data_config dc ON ( dc.task_id = tt.id AND dc.type = 'av' )
+        LEFT JOIN tj_task_case ttc ON ttc.task_id = tt.id
+        LEFT JOIN tj_case tc ON tc.id = ttc.case_id
+        LEFT JOIN (
+            SELECT
+            dc.id,
+            dc.type,
+            td.task_id,
+            dc.`name`,
+            td.weight,
+            td.score,
+            td.time
+            FROM
+            tj_task_dc td
+            INNER JOIN tj_diadynamic_criteria dc ON dc.id = td.dc_id
+        ) dia ON dia.task_id = tt.id
+        WHERE
+        tt.id = #{taskId}
 
-    <sql id="Base_Column_List">
-        id,task_name,create_time,
-        case_count,passing_rate,start_time,
-        end_time,test_total_time
-    </sql>
+    </select>
 </mapper>

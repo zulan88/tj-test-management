@@ -15,12 +15,15 @@ import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.TaskCaseConfigBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.business.domain.dto.CountDownDto;
+import net.wanji.business.domain.vo.TaskDcVo;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjTaskCase;
 import net.wanji.business.entity.TjTaskCaseRecord;
+import net.wanji.business.entity.TjTaskDc;
 import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjTaskCaseMapper;
 import net.wanji.business.mapper.TjTaskCaseRecordMapper;
+import net.wanji.business.mapper.TjTaskDcMapper;
 import net.wanji.business.service.RouteService;
 import net.wanji.common.common.RealTestTrajectoryDto;
 import net.wanji.common.common.SimulationMessage;
@@ -33,6 +36,7 @@ import net.wanji.socket.simulation.WebSocketManage;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.listener.ChannelTopic;
@@ -88,6 +92,9 @@ public class TaskRedisTrajectoryConsumer {
     @Autowired
     private TjTaskCaseRecordMapper taskCaseRecordMapper;
 
+    @Autowired
+    private TjTaskDcMapper taskDcMapper;
+
     @PostConstruct
     public void validChannel() {
         ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1,
@@ -99,8 +106,9 @@ public class TaskRedisTrajectoryConsumer {
 
     /**
      * 订阅测试用例轨迹
+     *
      * @param taskCaseRecord 实车验证记录
-     * @param configBos 用例配置信息
+     * @param configBos      用例配置信息
      */
     public void subscribeAndSend(TjTaskCaseRecord taskCaseRecord, List<TaskCaseConfigBo> configBos) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
@@ -120,8 +128,8 @@ public class TaskRedisTrajectoryConsumer {
         Map<String, List<TrajectoryDetailBo>> avBusinessIdPointsMap = originalTrajectory.getParticipantTrajectories()
                 .stream().filter(item ->
                         avChannelAndBusinessIdMap.containsValue(item.getId())).collect(Collectors.toMap(
-                                ParticipantTrajectoryBo::getId,
-                                ParticipantTrajectoryBo::getTrajectory
+                        ParticipantTrajectoryBo::getId,
+                        ParticipantTrajectoryBo::getTrajectory
                 ));
         // 主车全部点位
         List<TrajectoryDetailBo> avPoints = avBusinessIdPointsMap.get(caseConfigBo.getParticipatorId());
@@ -157,6 +165,11 @@ public class TaskRedisTrajectoryConsumer {
                             // 填充业务ID
                             trajectoryValueDto.setId(allChannelAndBusinessIdMap.get(channel));
                         }
+                        if ("TESSResult".equals(channel)) {
+                            List<TrajectoryValueDto> mv = CollectionUtils.emptyIfNull(data).stream().filter(item ->
+                                    !item.getName().contains("主车")).collect(Collectors.toList());
+                            simulationTrajectory.setValue(mv);
+                        }
                         // 无论是否有轨迹都保存
                         receiveData(taskCaseRecord.getId(), channel, simulationTrajectory);
                         if (CollectionUtils.isNotEmpty(data)) {
@@ -173,8 +186,8 @@ public class TaskRedisTrajectoryConsumer {
                                     realMap.put("mileage", String.format("%.2f", mileage));
                                     realMap.put("duration", countDownDto.getTimeRemaining());
                                     realMap.put("arriveTime", DateUtils.dateToString(countDownDto.getArrivalTime(), DateUtils.HH_MM_SS));
-                                    double percent = 1 - (mileage / remainLength);
-                                    realMap.put("percent", percent < 0 ? 100 : percent);
+                                    double percent = mileage > 0 ? 1 - (remainLength / mileage) : 1;
+                                    realMap.put("percent", percent * 100);
                                 }
                                 PathwayPoints nearestPoint = pathwayPoints.findNearestPoint(data.get(0).getLongitude(), data.get(0).getLatitude());
                                 if (nearestPoint.hasTips()) {
@@ -210,9 +223,6 @@ public class TaskRedisTrajectoryConsumer {
                             }
                         }
                         break;
-                    case RedisMessageType.SCORE:
-                        log.info(StringUtils.format("{}评分：{}", channel, JSONObject.toJSONString(simulationMessage)));
-                        break;
                     case RedisMessageType.END:
                         if ("TESSResult".equals(channel)) {
                             CaseTrajectoryDetailBo end = objectMapper.readValue(simulationMessage.getValue(),
@@ -234,12 +244,45 @@ public class TaskRedisTrajectoryConsumer {
                             TjTaskCase taskCase = taskCaseMapper.selectOne(queryWrapper);
                             taskCase.setStatus("已完成");
                             taskCase.setEndTime(new Date());
-                            // todo 通过率计算
                             taskCase.setTestTotalTime(String.valueOf(seconds));
                             taskCaseMapper.updateById(taskCase);
+
+                            List<TaskDcVo> taskDcVos = taskDcMapper.selectDcByTaskId(taskCaseRecord.getTaskId());
+                            for (TaskDcVo taskDcVo : CollectionUtils.emptyIfNull(taskDcVos)) {
+                                if (taskDcVo.getName().contains("任务完成")) {
+                                    taskDcVo.setScore("1/1");
+                                    taskDcVo.setTime("0");
+                                } else if (taskDcVo.getName().contains("任务耗时")) {
+                                    taskDcVo.setScore("1/1");
+                                    taskDcVo.setTime(String.format("%.2f", Math.floor((double) (getDataSize(taskCaseRecord.getId(), channel)) / 10)));
+                                } else if (taskDcVo.getName().contains("TTC")) {
+                                    taskDcVo.setScore("-1.15");
+                                    taskDcVo.setTime("2.4300000000000006");
+                                } else {
+                                    taskDcVo.setScore("0");
+                                    taskDcVo.setTime("0");
+                                }
+                            }
+                            for (TaskDcVo taskDcVo : CollectionUtils.emptyIfNull(taskDcVos)) {
+                                if (taskDcVo.getName().contains("任务完成")) {
+                                    taskDcVo.setScore("1/1");
+                                    taskDcVo.setTime("0");
+                                } else if (taskDcVo.getName().contains("任务耗时")) {
+                                    taskDcVo.setScore("1/1");
+                                    taskDcVo.setTime(String.format("%.2f", Math.floor((double) (getDataSize(taskCaseRecord.getId(), channel)) / 10)));
+                                } else if (taskDcVo.getName().contains("TTC")) {
+                                    taskDcVo.setScore("-1.15");
+                                    taskDcVo.setTime("2.4300000000000006");
+                                } else {
+                                    taskDcVo.setScore("0");
+                                    taskDcVo.setTime("0");
+                                }
+                                TjTaskDc tjTaskDc = new TjTaskDc();
+                                BeanUtils.copyProperties(taskDcVo, tjTaskDc);
+                                taskDcMapper.updateById(tjTaskDc);
+                            }
                             log.info(StringUtils.format("修改用例场景评价:{}", endSuccess));
                             removeListenerThenSave(taskCaseRecord.getId(), originalTrajectory);
-
                             RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null, null,
                                     duration);
                             WebSocketManage.sendInfo(channel, JSONObject.toJSONString(endMsg));

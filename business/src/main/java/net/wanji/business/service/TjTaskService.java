@@ -9,6 +9,9 @@ import net.wanji.business.entity.TjTask;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.common.core.page.TableDataInfo;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -42,5 +45,12 @@ public interface TjTaskService extends IService<TjTask> {
      * @return
      */
     public int saveTask(TaskDto in);
+
+    /**
+     * 导出
+     * @param response
+     * @param taskIds
+     */
+    void export(HttpServletResponse response, Integer taskId) throws IOException;
 
 }

@@ -20,7 +20,7 @@ public class CaseRuleControl {
     /**
      * 任务id
      */
-    private String taskId;
+    private String id;
     /**
      * 任务类型
      */

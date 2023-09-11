@@ -2,6 +2,8 @@ package net.wanji.business.domain.param;
 
 import lombok.Data;
 
+import java.util.Map;
+
 /**
  * @Auther: guanyuduo
  * @Date: 2023/8/23 17:43
@@ -21,4 +23,6 @@ public class DeviceConnInfo {
      * 通信频道
      */
     private String channel;
+
+    private Map<String, Object> params;
 }

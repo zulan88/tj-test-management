@@ -15,6 +15,8 @@ public class CaseTrajectoryDetailBo extends SceneTrajectoryBo {
     private String sceneForm;
     private String evaluationVerify;
     private String duration;
+    private String score;
+
 
     public String getSceneDesc() {
         return sceneDesc;
@@ -46,5 +48,13 @@ public class CaseTrajectoryDetailBo extends SceneTrajectoryBo {
 
     public void setDuration(String duration) {
         this.duration = duration;
+    }
+
+    public String getScore() {
+        return score;
+    }
+
+    public void setScore(String score) {
+        this.score = score;
     }
 }

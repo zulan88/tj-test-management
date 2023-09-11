@@ -112,15 +112,6 @@ public class ImitateRedisTrajectoryConsumer {
         // av类型通道和业务车辆名称映射
         Map<String, String> avChannelAndNameMap = configBos.stream().filter(item -> PartRole.AV.equals(item.getSupportRoles()))
                 .collect(Collectors.toMap(CaseConfigBo::getDataChannel, CaseConfigBo::getName));
-        // 业务ID和结束点坐标映射
-        Map<String, String> avBusinessIdPosMap = originalTrajectory.getParticipantTrajectories().stream().filter(item ->
-                avChannelAndBusinessIdMap.containsValue(item.getId())).collect(Collectors.toMap(
-                ParticipantTrajectoryBo::getId,
-                value -> {
-                    TrajectoryDetailBo trajectoryDetailBo = value.getTrajectory().stream().filter(point ->
-                            PointTypeEnum.END.getPointType().equals(point.getType())).findFirst().orElse(null);
-                    return ObjectUtils.isEmpty(trajectoryDetailBo) ? "" : trajectoryDetailBo.getPosition();
-                }));
         CaseConfigBo caseConfigBo = avConfigs.get(0);
         Map<String, List<TrajectoryDetailBo>> avBusinessIdPointsMap = originalTrajectory.getParticipantTrajectories()
                 .stream().filter(item ->
@@ -146,12 +137,12 @@ public class ImitateRedisTrajectoryConsumer {
         List<TrajectoryValueDto> mainSimuTrajectories = mainSimulations.stream()
                 .map(item -> item.get(0)).collect(Collectors.toList());
         Map<String, Object> realMap = new HashMap<>();
-        Map<String, Object> tipsMap = new HashMap<>();
         MessageListener listener = (message, pattern) -> {
             try {
                 String channel = new String(message.getChannel());
                 SimulationMessage simulationMessage = objectMapper.readValue(message.toString(),
                         SimulationMessage.class);
+                log.info("{}:{}", channel, JSONObject.toJSONString(simulationMessage));
                 switch (simulationMessage.getType()) {
                     case RedisMessageType.TRAJECTORY:
                         SimulationTrajectoryDto simulationTrajectory = objectMapper.readValue(simulationMessage.getValue(),
@@ -161,6 +152,11 @@ public class ImitateRedisTrajectoryConsumer {
                         for (TrajectoryValueDto trajectoryValueDto : CollectionUtils.emptyIfNull(data)) {
                             // 填充业务ID
                             trajectoryValueDto.setId(allChannelAndBusinessIdMap.get(channel));
+                        }
+                        if ("TESSResult".equals(channel)) {
+                            List<TrajectoryValueDto> mv = CollectionUtils.emptyIfNull(data).stream().filter(item ->
+                                    !item.getName().contains("主车")).collect(Collectors.toList());
+                            simulationTrajectory.setValue(mv);
                         }
                         // 无论是否有轨迹都保存
                         receiveData(caseRealRecord.getId(), channel, simulationTrajectory);
@@ -178,10 +174,11 @@ public class ImitateRedisTrajectoryConsumer {
                                     realMap.put("mileage", String.format("%.2f", mileage));
                                     realMap.put("duration", countDownDto.getTimeRemaining());
                                     realMap.put("arriveTime", DateUtils.dateToString(countDownDto.getArrivalTime(), DateUtils.HH_MM_SS));
-                                    double percent = 1 - (mileage / remainLength);
-                                    realMap.put("percent", percent < 0 ? 100 : percent);
+                                    double percent = mileage > 0 ? 1 - (remainLength / mileage) : 1;
+                                    realMap.put("percent", percent * 100);
                                 }
                                 PathwayPoints nearestPoint = pathwayPoints.findNearestPoint(data.get(0).getLongitude(), data.get(0).getLatitude());
+                                Map<String, Object> tipsMap = new HashMap<>();
                                 if (nearestPoint.hasTips()) {
                                     tipsMap.put("name", avChannelAndNameMap.get(channel));
                                     tipsMap.put("pointName", nearestPoint.getPointName());
@@ -189,7 +186,6 @@ public class ImitateRedisTrajectoryConsumer {
                                     tipsMap.put("pointSpeed", nearestPoint.getPointSpeed());
                                 }
                                 realMap.put("tips", tipsMap);
-
                                 // 仿真车未来轨迹
                                 List<Map<String, Double>> futureList = new ArrayList<>();
                                 if (!CollectionUtils.isEmpty(mainSimuTrajectories)) {
@@ -205,7 +201,6 @@ public class ImitateRedisTrajectoryConsumer {
                                 }
                                 realMap.put("simuFuture", futureList);
                                 realMap.put("speed", data.get(0).getSpeed());
-                                System.out.println(JSONObject.toJSONString(realMap));
                                 RealWebsocketMessage msg = new RealWebsocketMessage(RedisMessageType.TRAJECTORY, realMap, data,
                                         duration);
                                 WebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));
@@ -215,9 +210,6 @@ public class ImitateRedisTrajectoryConsumer {
                                 WebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));
                             }
                         }
-                        break;
-                    case RedisMessageType.SCORE:
-                        log.info(StringUtils.format("{}评分：{}", channel, JSONObject.toJSONString(simulationMessage)));
                         break;
                     case RedisMessageType.END:
                         if ("TESSResult".equals(channel)) {

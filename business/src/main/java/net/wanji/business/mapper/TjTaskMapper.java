@@ -1,7 +1,11 @@
 package net.wanji.business.mapper;
 
+import net.wanji.business.domain.vo.TaskReportVo;
 import net.wanji.business.entity.TjTask;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
 
 /**
 * @author guowenhao
@@ -11,6 +15,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 */
 public interface TjTaskMapper extends BaseMapper<TjTask> {
 
+    List<TaskReportVo> getExportList(Integer taskId);
 }
 
 

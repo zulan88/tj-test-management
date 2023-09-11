@@ -1,7 +1,10 @@
 package net.wanji.business.mapper;
 
+import net.wanji.business.domain.vo.TaskDcVo;
 import net.wanji.business.entity.TjTaskDc;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+
+import java.util.List;
 
 /**
 * @author guowenhao
@@ -10,6 +13,13 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 * @Entity net.wanji.business.entity.TjTaskDc
 */
 public interface TjTaskDcMapper extends BaseMapper<TjTaskDc> {
+
+    /**
+     * 查询任务指标
+     * @param taskId
+     * @return
+     */
+    List<TaskDcVo> selectDcByTaskId(Integer taskId);
 
 }
 

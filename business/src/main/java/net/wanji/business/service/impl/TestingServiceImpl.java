@@ -2,35 +2,41 @@ package net.wanji.business.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import net.wanji.business.common.Constants.*;
-import net.wanji.business.domain.bo.*;
+import net.wanji.business.common.Constants.ColumnName;
+import net.wanji.business.common.Constants.ContentTemplate;
+import net.wanji.business.common.Constants.PartRole;
+import net.wanji.business.common.Constants.PartType;
+import net.wanji.business.common.Constants.PlaybackAction;
+import net.wanji.business.common.Constants.PointTypeEnum;
+import net.wanji.business.common.Constants.SysType;
+import net.wanji.business.common.Constants.TestingStatus;
+import net.wanji.business.common.Constants.YN;
+import net.wanji.business.domain.bo.CaseConfigBo;
+import net.wanji.business.domain.bo.CaseInfoBo;
+import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
+import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
+import net.wanji.business.domain.bo.SceneTrajectoryBo;
+import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.business.domain.param.CaseRuleControl;
 import net.wanji.business.domain.param.DeviceConnInfo;
 import net.wanji.business.domain.param.DeviceConnRule;
-import net.wanji.business.domain.param.TestStartParam;
 import net.wanji.business.domain.vo.CaseRealTestVo;
 import net.wanji.business.domain.vo.CommunicationDelayVo;
 import net.wanji.business.domain.vo.RealTestResultVo;
 import net.wanji.business.domain.vo.RealVehicleVerificationPageVo;
 import net.wanji.business.entity.TjCase;
-import net.wanji.business.entity.TjCasePartConfig;
 import net.wanji.business.entity.TjCaseRealRecord;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
-import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjCaseRealRecordMapper;
 import net.wanji.business.mapper.TjFragmentedSceneDetailMapper;
-import net.wanji.business.mapper.TjFragmentedScenesMapper;
-import net.wanji.business.mapper.TjTaskCaseMapper;
-import net.wanji.business.schedule.PlaybackSchedule;
 import net.wanji.business.schedule.RealPlaybackSchedule;
 import net.wanji.business.service.RestService;
 import net.wanji.business.service.RouteService;
 import net.wanji.business.service.TestingService;
 import net.wanji.business.trajectory.ImitateRedisTrajectoryConsumer;
 import net.wanji.common.common.RealTestTrajectoryDto;
-import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.GeoUtil;
@@ -38,7 +44,6 @@ import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
 import net.wanji.system.service.ISysDictDataService;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.xmlbeans.impl.regex.Match;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
@@ -47,13 +52,16 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
 import java.io.IOException;
-import java.time.*;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -73,9 +81,6 @@ public class TestingServiceImpl implements TestingService {
 
     @Autowired
     private ISysDictDataService dictDataService;
-
-    @Autowired
-    private TjFragmentedScenesMapper scenesMapper;
 
     @Autowired
     private TjFragmentedSceneDetailMapper sceneDetailMapper;
@@ -189,11 +194,10 @@ public class TestingServiceImpl implements TestingService {
         Integer caseId = caseRealRecord.getCaseId();
         CaseInfoBo caseInfoBo = caseMapper.selectCaseInfo(caseId);
         this.validConfig(caseInfoBo);
-        List<CaseConfigBo> configs = caseInfoBo.getCaseConfigs().stream().filter(deviceId ->
-                !ObjectUtils.isEmpty(deviceId)).collect(Collectors.toList());
-//        List<DeviceConnRule> deviceConnRules = generateDeviceConnRules(configs);
-//        restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(), String.valueOf(caseId), action,
-//                deviceConnRules));
+
+        List<DeviceConnRule> deviceConnRules = generateDeviceConnRules(caseInfoBo);
+        restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(), String.valueOf(caseId), action,
+                deviceConnRules));
         caseRealRecord.setStatus(TestingStatus.RUNNING);
         caseRealRecord.setStartTime(LocalDateTime.now());
         caseRealRecordMapper.updateById(caseRealRecord);
@@ -212,7 +216,9 @@ public class TestingServiceImpl implements TestingService {
         // 开始监听所有数据通道
         imitateRedisTrajectoryConsumer.subscribeAndSend(caseRealRecord, caseInfoBo.getCaseConfigs());
         // 开启模拟客户端
-        restService.imitateClientUrl(configs);
+//        List<CaseConfigBo> caseConfigs = caseInfoBo.getCaseConfigs().stream().filter(deviceId ->
+//                !ObjectUtils.isEmpty(deviceId)).collect(Collectors.toList());
+//        restService.imitateClientUrl(caseConfigs);
         return caseRealTestVo;
     }
 
@@ -317,25 +323,25 @@ public class TestingServiceImpl implements TestingService {
     @Override
     public CommunicationDelayVo communicationDelayVo(Integer recordId) {
         List<Map<String, Object>> infos = caseRealRecordMapper.recordPartInfo(
-            recordId);
+                recordId);
         CommunicationDelayVo communicationDelayVo = new CommunicationDelayVo();
         List<String> type = new ArrayList<>();
         Date startTime = null;
         Date endTime = null;
         for (Map<String, Object> info : infos) {
-          if(null == startTime){
-            startTime = Date.from(((LocalDateTime) info.get("START_TIME"))
-                .atZone(ZoneId.systemDefault()).toInstant());
-          }
-          if(null == endTime){
-            endTime = Date.from(((LocalDateTime) info.get("END_TIME"))
-                .atZone(ZoneId.systemDefault()).toInstant());
-          }
+            if (null == startTime) {
+                startTime = Date.from(((LocalDateTime) info.get("START_TIME"))
+                        .atZone(ZoneId.systemDefault()).toInstant());
+            }
+            if (null == endTime) {
+                endTime = Date.from(((LocalDateTime) info.get("END_TIME"))
+                        .atZone(ZoneId.systemDefault()).toInstant());
+            }
             String role = String.valueOf(info.get("PARTICIPANT_ROLE"));
             type.add(role);
         }
-        if(startTime == null | endTime == null){
-          return null;
+        if (startTime == null | endTime == null) {
+            return null;
         }
         communicationDelayVo.setType(type);
         List<String> times = delayTimes(startTime, endTime);
@@ -343,16 +349,16 @@ public class TestingServiceImpl implements TestingService {
 
         ArrayList<List<Integer>> delay = new ArrayList<>();
         for (String t : communicationDelayVo.getType()) {
-          List<Integer> typeDelay = new ArrayList<>();
-          delay.add(typeDelay);
-          for (String time : times) {
-            typeDelay.add((int)(Math.random() * 100));
-          }
-      }
+            List<Integer> typeDelay = new ArrayList<>();
+            delay.add(typeDelay);
+            for (String time : times) {
+                typeDelay.add((int) (Math.random() * 100));
+            }
+        }
 
-      communicationDelayVo.setDelay(delay);
+        communicationDelayVo.setDelay(delay);
 
-      return communicationDelayVo;
+        return communicationDelayVo;
     }
 
     private void validStatus(RealVehicleVerificationPageVo pageVo) {
@@ -399,7 +405,40 @@ public class TestingServiceImpl implements TestingService {
         }
     }
 
-    private List<DeviceConnRule> generateDeviceConnRules(List<CaseConfigBo> caseConfigs) {
+    private List<DeviceConnRule> generateDeviceConnRules(CaseInfoBo caseInfoBo) {
+        List<CaseConfigBo> caseConfigs = caseInfoBo.getCaseConfigs().stream().filter(config ->
+                !ObjectUtils.isEmpty(config.getDeviceId())).collect(Collectors.toList());
+        Map<String, String> businessIdAndRoleMap = caseConfigs.stream().collect(Collectors.toMap(
+                CaseConfigBo::getBusinessId,
+                CaseConfigBo::getParticipantRole));
+
+        SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(caseInfoBo.getDetailInfo(), SceneTrajectoryBo.class);
+
+        Map<String, Object> tessParams = new HashMap<>();
+        Map<String, Object> param1 = new HashMap<>();
+        param1.put("caseId", caseInfoBo.getId());
+        List<Map<String, Object>> participantTrajectories = new ArrayList<>();
+        for (ParticipantTrajectoryBo participantTrajectory : sceneTrajectoryBo.getParticipantTrajectories()) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", participantTrajectory.getId());
+            map.put("model", participantTrajectory.getModel());
+            map.put("name", participantTrajectory.getName());
+            map.put("role", businessIdAndRoleMap.get(participantTrajectory.getId()));
+            map.put("trajectory", participantTrajectory.getTrajectory().stream().map(item -> {
+                Map<String, Object> t = new HashMap<>();
+                t.put("type", item.getType());
+                t.put("time", item.getTime());
+                t.put("lane", item.getLane());
+                t.put("speed", item.getSpeed());
+                String[] pos = item.getPosition().split(",");
+                t.put("position", Arrays.asList(pos[0], pos[1]));
+                return t;
+            }).collect(Collectors.toList()));
+            participantTrajectories.add(map);
+        }
+        param1.put("participantTrajectories", participantTrajectories);
+        tessParams.put("param1", JSONObject.toJSONString(param1));
+
         List<DeviceConnRule> rules = new ArrayList<>();
         for (int i = 0; i < caseConfigs.size(); i++) {
             CaseConfigBo sourceDevice = caseConfigs.get(i);
@@ -407,42 +446,52 @@ public class TestingServiceImpl implements TestingService {
                 if (j == i) {
                     continue;
                 }
+                Map<String, Object> sourceParams = new HashMap<>();
+                Map<String, Object> targetParams = new HashMap<>();
+
                 CaseConfigBo targetDevice = caseConfigs.get(j);
+
                 DeviceConnRule rule = new DeviceConnRule();
-                rule.setSource(createConnInfo(sourceDevice));
-                rule.setTarget(createConnInfo(targetDevice));
+                if (PartRole.MV_SIMULATION.equals(sourceDevice.getParticipantRole())
+                        && PartRole.AV.equals(targetDevice.getParticipantRole())) {
+                    sourceParams = tessParams;
+                }
+                rule.setSource(createConnInfo(sourceDevice, sourceParams));
+                rule.setTarget(createConnInfo(targetDevice, targetParams));
                 rules.add(rule);
             }
         }
         return rules;
     }
 
-    private static DeviceConnInfo createConnInfo(CaseConfigBo config) {
+    private static DeviceConnInfo createConnInfo(CaseConfigBo config, Map<String, Object> params) {
+        Map<String, Object> param = new HashMap<>();
         DeviceConnInfo deviceConnInfo = new DeviceConnInfo();
         deviceConnInfo.setChannel(config.getDataChannel());
         deviceConnInfo.setControlChannel(config.getCommandChannel());
         deviceConnInfo.setId(String.valueOf(config.getDeviceId()));
+        deviceConnInfo.setParams(params);
         return deviceConnInfo;
     }
 
-    private static List<String> delayTimes(Date startTime, Date endTime){
-      ArrayList<String> time = new ArrayList<>();
-      DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(
-          "HH:mm:ss");
+    private static List<String> delayTimes(Date startTime, Date endTime) {
+        ArrayList<String> time = new ArrayList<>();
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(
+                "HH:mm:ss");
       /*LocalTime localTime = startTime.toInstant().atZone(ZoneId.systemDefault())
           .toLocalTime();
       localTime.plusSeconds(1);
       localTime.format(dateTimeFormatter);*/
 
-      long seconds = Duration.between(startTime.toInstant(),
-          endTime.toInstant()).getSeconds();
-      for(int i = 1; i < seconds + 1;i++){
-        long hours = TimeUnit.SECONDS.toHours(i) % 24;
-        long minutes = TimeUnit.SECONDS.toMinutes(i) % 60;
-        long second = i % 60;
-        time.add(String.format("%02d:%02d:%02d", hours, minutes, second));
-      }
+        long seconds = Duration.between(startTime.toInstant(),
+                endTime.toInstant()).getSeconds();
+        for (int i = 1; i < seconds + 1; i++) {
+            long hours = TimeUnit.SECONDS.toHours(i) % 24;
+            long minutes = TimeUnit.SECONDS.toMinutes(i) % 60;
+            long second = i % 60;
+            time.add(String.format("%02d:%02d:%02d", hours, minutes, second));
+        }
 
-      return time;
+        return time;
     }
 }

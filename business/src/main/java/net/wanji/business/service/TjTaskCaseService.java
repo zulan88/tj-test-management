@@ -5,10 +5,12 @@ import net.wanji.business.domain.vo.CaseRealTestVo;
 import net.wanji.business.domain.vo.CommunicationDelayVo;
 import net.wanji.business.domain.vo.RealTestResultVo;
 import net.wanji.business.domain.vo.TaskCaseVerificationPageVo;
+import net.wanji.business.domain.vo.TaskReportVo;
 import net.wanji.business.entity.TjTaskCase;
 import net.wanji.business.exception.BusinessException;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
 * @author guowenhao
@@ -53,4 +55,6 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
      * @return
      */
     CommunicationDelayVo communicationDelayVo(Integer recordId);
+
+    List<TaskReportVo> getReport(Integer taskId, Integer taskCaseId);
 }
