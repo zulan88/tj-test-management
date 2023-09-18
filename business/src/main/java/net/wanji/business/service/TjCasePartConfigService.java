@@ -54,12 +54,4 @@ public interface TjCasePartConfigService extends IService<TjCasePartConfig> {
      */
     boolean removeThenSave(Integer caseId,  List<TjCasePartConfig> configs) throws BusinessException;
 
-    /**
-     * 构建tess仿真开始参数
-     *
-     * @param configs
-     * @return
-     */
-    TestStartParam buildStartParam(List<TjCasePartConfig> configs);
-
 }

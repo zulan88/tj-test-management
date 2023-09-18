@@ -16,6 +16,7 @@ import net.wanji.business.common.Constants.PointTypeEnum;
 import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.TestingStatus;
 import net.wanji.business.common.Constants.YN;
+import net.wanji.business.domain.bo.CaseConfigBo;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
@@ -123,8 +124,19 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                                 item -> CollectionUtils.emptyIfNull(item.getTrajectory()).stream()
                                         .filter(t -> PointTypeEnum.START.getPointType().equals(t.getType())).findFirst()
                                         .orElse(new TrajectoryDetailBo()).getPosition()));
-        List<TaskCaseConfigBo> configs = caseInfoBo.getCaseConfigs().stream().filter(info ->
+        List<TaskCaseConfigBo> caseConfigs = caseInfoBo.getCaseConfigs().stream().filter(info ->
                 !ObjectUtils.isEmpty(info.getDeviceId())).collect(Collectors.toList());
+        List<Integer> ids = new ArrayList<>();
+        List<TaskCaseConfigBo> configs = new ArrayList<>();
+        for (TaskCaseConfigBo caseConfig : caseConfigs) {
+            if (ids.contains(Integer.valueOf(caseConfig.getDeviceId()))) {
+                continue;
+            } else {
+                ids.add(Integer.valueOf(caseConfig.getDeviceId()));
+                configs.add(caseConfig);
+            }
+        }
+
         for (TaskCaseConfigBo caseConfigBo : configs) {
             // todo 设备信息查询逻辑待实现
             Map<String, Object> map = restService.searchDeviceInfo(caseConfigBo.getIp(), HttpMethod.POST);
@@ -480,17 +492,27 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         param1.put("participantTrajectories", participantTrajectories);
         tessParams.put("param1", JSONObject.toJSONString(param1));
 
+        List<Integer> ids = new ArrayList<>();
+        List<TaskCaseConfigBo> configs = new ArrayList<>();
+        for (TaskCaseConfigBo caseConfig : caseConfigs) {
+            if (!ids.contains(Integer.valueOf(caseConfig.getDeviceId()))) {
+                ids.add(Integer.valueOf(caseConfig.getDeviceId()));
+                configs.add(caseConfig);
+            }
+        }
+
+
         List<DeviceConnRule> rules = new ArrayList<>();
-        for (int i = 0; i < caseConfigs.size(); i++) {
-            TaskCaseConfigBo sourceDevice = caseConfigs.get(i);
-            for (int j = 0; j < caseConfigs.size(); j++) {
+        for (int i = 0; i < configs.size(); i++) {
+            TaskCaseConfigBo sourceDevice = configs.get(i);
+            for (int j = 0; j < configs.size(); j++) {
                 if (j == i) {
                     continue;
                 }
                 Map<String, Object> sourceParams = new HashMap<>();
                 Map<String, Object> targetParams = new HashMap<>();
 
-                TaskCaseConfigBo targetDevice = caseConfigs.get(j);
+                TaskCaseConfigBo targetDevice = configs.get(j);
 
                 DeviceConnRule rule = new DeviceConnRule();
                 if (PartRole.MV_SIMULATION.equals(sourceDevice.getType())

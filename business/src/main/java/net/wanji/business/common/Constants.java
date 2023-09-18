@@ -1,5 +1,7 @@
 package net.wanji.business.common;
 
+import org.springframework.util.ObjectUtils;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -440,6 +442,9 @@ public interface Constants {
         }
 
         public static String getDescByCode(Integer code) {
+            if (ObjectUtils.isEmpty(code)) {
+                return null;
+            }
             for (ModelEnum modelEnum : values()) {
                 if (code.equals(modelEnum.getModel())) {
                     return modelEnum.getModelName();

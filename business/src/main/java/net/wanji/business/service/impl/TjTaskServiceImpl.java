@@ -39,6 +39,7 @@ import net.wanji.business.util.CustomMergeStrategy;
 import net.wanji.business.util.ExcelFillCellMergePrevColUtils;
 import net.wanji.business.util.ExcelFillCellMergeStrategyUtils;
 import net.wanji.common.core.page.TableDataInfo;
+import net.wanji.common.utils.DataUtils;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.bean.BeanUtils;
@@ -59,6 +60,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -181,6 +183,28 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         TjTask task = this.getById(taskId);
         List<TaskReportVo> exportList = tjTaskMapper.getExportList(taskId);
         System.out.println(JSONObject.toJSONString(exportList));
+        double score = 100;
+        DecimalFormat decimalFormat = new DecimalFormat("#.0");
+
+        // 使用DecimalFormat格式化浮点数
+        try {
+            for (TaskReportVo taskReportVo : CollectionUtils.emptyIfNull(exportList)) {
+                if (taskReportVo.getScore().contains("-")) {
+                    try {
+                        score = score - Double.parseDouble(taskReportVo.getScore());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            for (TaskReportVo taskReportVo : CollectionUtils.emptyIfNull(exportList)) {
+                taskReportVo.setScoreTotal(decimalFormat.format(score));
+            }
+        } catch (Exception e) {
+            for (TaskReportVo taskReportVo : CollectionUtils.emptyIfNull(exportList)) {
+                taskReportVo.setScoreTotal("100");
+            }
+        }
 
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         response.setCharacterEncoding("utf-8");

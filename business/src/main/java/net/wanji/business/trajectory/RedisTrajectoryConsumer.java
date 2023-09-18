@@ -71,7 +71,6 @@ public class RedisTrajectoryConsumer {
                 this::removeListeners, 0, 20, TimeUnit.SECONDS);
     }
 
-
     /**
      * 订阅测试用例轨迹
      *

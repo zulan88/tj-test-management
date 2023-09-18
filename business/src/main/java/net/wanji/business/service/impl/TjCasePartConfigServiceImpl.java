@@ -136,33 +136,4 @@ public class TjCasePartConfigServiceImpl extends ServiceImpl<TjCasePartConfigMap
         return true;
     }
 
-    @Override
-    public TestStartParam buildStartParam(List<TjCasePartConfig> configs) {
-        int avNum = 0;
-        List<String> avNames = new ArrayList<>();
-        int simulationNum = 0;
-        List<String> simulationNames = new ArrayList<>();
-        int pedestrianNum = 0;
-        List<String> pedestrianNames = new ArrayList<>();
-        for (TjCasePartConfig config : CollectionUtils.emptyIfNull(configs)) {
-            switch (config.getParticipantRole()) {
-                case PartRole.AV:
-                    avNum ++;
-                    avNames.add(config.getName());
-                    break;
-                case PartRole.MV_SIMULATION:
-                    simulationNum ++;
-                    simulationNames.add(config.getName());
-                    break;
-                case PartRole.SP:
-                    pedestrianNum ++;
-                    pedestrianNames.add(config.getName());
-                    break;
-                default:
-                    break;
-            }
-        }
-        return new TestStartParam(avNum, avNames, simulationNum, simulationNames, pedestrianNum, pedestrianNames);
-    }
-
 }

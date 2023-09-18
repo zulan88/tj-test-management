@@ -35,6 +35,7 @@ import net.wanji.business.schedule.RealPlaybackSchedule;
 import net.wanji.business.service.RestService;
 import net.wanji.business.service.RouteService;
 import net.wanji.business.service.TestingService;
+import net.wanji.business.service.TjCaseService;
 import net.wanji.business.trajectory.ImitateRedisTrajectoryConsumer;
 import net.wanji.common.common.RealTestTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
@@ -80,6 +81,9 @@ public class TestingServiceImpl implements TestingService {
     private RouteService routeService;
 
     @Autowired
+    private TjCaseService caseService;
+
+    @Autowired
     private ISysDictDataService dictDataService;
 
     @Autowired
@@ -96,8 +100,7 @@ public class TestingServiceImpl implements TestingService {
 
     @Override
     public RealVehicleVerificationPageVo getStatus(Integer caseId) throws BusinessException {
-        CaseInfoBo caseInfoBo = caseMapper.selectCaseInfo(caseId);
-        this.validConfig(caseInfoBo);
+        CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
         CaseTrajectoryDetailBo trajectoryDetail = JSONObject.parseObject(caseInfoBo.getDetailInfo(),
                 CaseTrajectoryDetailBo.class);
         Map<String, String> partStartMap =
@@ -107,8 +110,21 @@ public class TestingServiceImpl implements TestingService {
                                 item -> CollectionUtils.emptyIfNull(item.getTrajectory()).stream()
                                         .filter(t -> PointTypeEnum.START.getPointType().equals(t.getType())).findFirst()
                                         .orElse(new TrajectoryDetailBo()).getPosition()));
-        List<CaseConfigBo> configs = caseInfoBo.getCaseConfigs().stream().filter(info ->
+        List<CaseConfigBo> caseConfigs = caseInfoBo.getCaseConfigs().stream().filter(info ->
                 !ObjectUtils.isEmpty(info.getDeviceId())).collect(Collectors.toList());
+
+        List<Integer> ids = new ArrayList<>();
+        List<CaseConfigBo> configs = new ArrayList<>();
+        for (CaseConfigBo caseConfig : caseConfigs) {
+            if (ids.contains(caseConfig.getDeviceId())) {
+                continue;
+            } else {
+                ids.add(caseConfig.getDeviceId());
+                configs.add(caseConfig);
+            }
+        }
+
+
         for (CaseConfigBo caseConfigBo : configs) {
             // todo 设备信息查询逻辑待实现
             Map<String, Object> map = restService.searchDeviceInfo(caseConfigBo.getIp(), HttpMethod.POST);
@@ -136,6 +152,7 @@ public class TestingServiceImpl implements TestingService {
         }
         Map<String, List<CaseConfigBo>> statusMap = configs.stream().collect(
                 Collectors.groupingBy(CaseConfigBo::getParticipantRole));
+        // todo  设备去重
         RealVehicleVerificationPageVo result = new RealVehicleVerificationPageVo();
         result.setCaseId(caseId);
         result.setFilePath(caseInfoBo.getFilePath());
@@ -149,8 +166,7 @@ public class TestingServiceImpl implements TestingService {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public CaseRealTestVo prepare(Integer caseId) throws BusinessException {
-        CaseInfoBo caseInfoBo = caseMapper.selectCaseInfo(caseId);
-        this.validConfig(caseInfoBo);
+        CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
         TjFragmentedSceneDetail sceneDetail = sceneDetailMapper.selectById(caseInfoBo.getSceneDetailId());
         if (ObjectUtils.isEmpty(sceneDetail) || StringUtils.isEmpty(sceneDetail.getTrajectoryInfo())) {
             throw new BusinessException("请先配置轨迹信息");
@@ -192,9 +208,7 @@ public class TestingServiceImpl implements TestingService {
             throw new BusinessException("未就绪");
         }
         Integer caseId = caseRealRecord.getCaseId();
-        CaseInfoBo caseInfoBo = caseMapper.selectCaseInfo(caseId);
-        this.validConfig(caseInfoBo);
-
+        CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
         List<DeviceConnRule> deviceConnRules = generateDeviceConnRules(caseInfoBo);
         restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(), String.valueOf(caseId), action,
                 deviceConnRules));
@@ -231,7 +245,7 @@ public class TestingServiceImpl implements TestingService {
         if (TestingStatus.FINISHED > caseRealRecord.getStatus() || StringUtils.isEmpty(caseRealRecord.getRouteFile())) {
             throw new BusinessException("实车验证未完成");
         }
-        CaseInfoBo caseInfoBo = caseMapper.selectCaseInfo(caseRealRecord.getCaseId());
+        CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseRealRecord.getCaseId());
         List<CaseConfigBo> configs = caseInfoBo.getCaseConfigs();
         if (CollectionUtils.isEmpty(configs)) {
             throw new BusinessException("请先进行角色配置");
@@ -439,17 +453,28 @@ public class TestingServiceImpl implements TestingService {
         param1.put("participantTrajectories", participantTrajectories);
         tessParams.put("param1", JSONObject.toJSONString(param1));
 
+        List<Integer> ids = new ArrayList<>();
+        List<CaseConfigBo> configs = new ArrayList<>();
+        for (CaseConfigBo caseConfig : caseConfigs) {
+            if (ids.contains(caseConfig.getDeviceId())) {
+                continue;
+            } else {
+                ids.add(caseConfig.getDeviceId());
+                configs.add(caseConfig);
+            }
+        }
+
         List<DeviceConnRule> rules = new ArrayList<>();
-        for (int i = 0; i < caseConfigs.size(); i++) {
-            CaseConfigBo sourceDevice = caseConfigs.get(i);
-            for (int j = 0; j < caseConfigs.size(); j++) {
+        for (int i = 0; i < configs.size(); i++) {
+            CaseConfigBo sourceDevice = configs.get(i);
+            for (int j = 0; j < configs.size(); j++) {
                 if (j == i) {
                     continue;
                 }
                 Map<String, Object> sourceParams = new HashMap<>();
                 Map<String, Object> targetParams = new HashMap<>();
 
-                CaseConfigBo targetDevice = caseConfigs.get(j);
+                CaseConfigBo targetDevice = configs.get(j);
 
                 DeviceConnRule rule = new DeviceConnRule();
                 if (PartRole.MV_SIMULATION.equals(sourceDevice.getParticipantRole())

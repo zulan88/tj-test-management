@@ -30,4 +30,17 @@ public class DataUtils {
         }
         return mapList;
     }
+
+    public static String convertUnicodeToChinese(String unicodeString) {
+        if (!unicodeString.contains("\\u")) {
+            return unicodeString;
+        }
+        StringBuilder chineseBuilder = new StringBuilder();
+        String[] hexCodes = unicodeString.split("\\\\u");
+        for (int i = 1; i < hexCodes.length; i++) {
+            int codePoint = Integer.parseInt(hexCodes[i], 16);
+            chineseBuilder.append((char) codePoint);
+        }
+        return chineseBuilder.toString();
+    }
 }

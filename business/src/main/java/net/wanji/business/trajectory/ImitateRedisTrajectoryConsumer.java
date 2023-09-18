@@ -25,6 +25,7 @@ import net.wanji.common.common.RealTestTrajectoryDto;
 import net.wanji.common.common.SimulationMessage;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
+import net.wanji.common.utils.DataUtils;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.GeoUtil;
 import net.wanji.common.utils.SecurityUtils;
@@ -103,7 +104,7 @@ public class ImitateRedisTrajectoryConsumer {
         CaseTrajectoryDetailBo originalTrajectory = JSONObject.parseObject(caseRealRecord.getDetailInfo(),
                 CaseTrajectoryDetailBo.class);
         // 所有通道和业务车辆ID映射
-        Map<String, String> allChannelAndBusinessIdMap = configBos.stream().collect(Collectors.toMap(CaseConfigBo::getDataChannel, CaseConfigBo::getBusinessId));
+        Map<String, List<CaseConfigBo>> allChannelAndBusinessIdMap = configBos.stream().collect(Collectors.groupingBy(CaseConfigBo::getDataChannel));
         // av配置
         List<CaseConfigBo> avConfigs = configBos.stream().filter(item -> PartRole.AV.equals(item.getSupportRoles())).collect(Collectors.toList());
         // av类型通道和业务车辆ID映射
@@ -150,13 +151,14 @@ public class ImitateRedisTrajectoryConsumer {
                         // 实际轨迹消息
                         List<TrajectoryValueDto> data = simulationTrajectory.getValue();
                         for (TrajectoryValueDto trajectoryValueDto : CollectionUtils.emptyIfNull(data)) {
-                            // 填充业务ID
-                            trajectoryValueDto.setId(allChannelAndBusinessIdMap.get(channel));
+                            trajectoryValueDto.setName(DataUtils.convertUnicodeToChinese(trajectoryValueDto.getName()));
+                            allChannelAndBusinessIdMap.get(channel).stream().filter(item -> item.getName().equals(trajectoryValueDto.getName())).findFirst().ifPresent(item -> trajectoryValueDto.setId(item.getBusinessId()));
                         }
                         if ("TESSResult".equals(channel)) {
                             List<TrajectoryValueDto> mv = CollectionUtils.emptyIfNull(data).stream().filter(item ->
                                     !item.getName().contains("主车")).collect(Collectors.toList());
                             simulationTrajectory.setValue(mv);
+                            data = mv;
                         }
                         // 无论是否有轨迹都保存
                         receiveData(caseRealRecord.getId(), channel, simulationTrajectory);
@@ -188,17 +190,17 @@ public class ImitateRedisTrajectoryConsumer {
                                 realMap.put("tips", tipsMap);
                                 // 仿真车未来轨迹
                                 List<Map<String, Double>> futureList = new ArrayList<>();
-                                if (!CollectionUtils.isEmpty(mainSimuTrajectories)) {
-                                    // 仿真验证中当前主车位置
-                                    data.add(mainSimuTrajectories.remove(0));
-                                    // 仿真验证中主车剩余轨迹
-                                    futureList = mainSimuTrajectories.stream().map(item -> {
-                                        Map<String, Double> posMap = new HashMap<>();
-                                        posMap.put("longitude", item.getLongitude());
-                                        posMap.put("latitude", item.getLatitude());
-                                        return posMap;
-                                    }).collect(Collectors.toList());
-                                }
+//                                if (!CollectionUtils.isEmpty(mainSimuTrajectories)) {
+//                                    // 仿真验证中当前主车位置
+//                                    data.add(mainSimuTrajectories.remove(0));
+//                                    // 仿真验证中主车剩余轨迹
+//                                    futureList = mainSimuTrajectories.stream().map(item -> {
+//                                        Map<String, Double> posMap = new HashMap<>();
+//                                        posMap.put("longitude", item.getLongitude());
+//                                        posMap.put("latitude", item.getLatitude());
+//                                        return posMap;
+//                                    }).collect(Collectors.toList());
+//                                }
                                 realMap.put("simuFuture", futureList);
                                 realMap.put("speed", data.get(0).getSpeed());
                                 RealWebsocketMessage msg = new RealWebsocketMessage(RedisMessageType.TRAJECTORY, realMap, data,
@@ -217,7 +219,11 @@ public class ImitateRedisTrajectoryConsumer {
                                     CaseTrajectoryDetailBo.class);
                             log.info(StringUtils.format("结束接收{}数据：{}", tjCase.getCaseNumber(),
                                     JSONObject.toJSONString(end)));
-                            Optional.ofNullable(end.getEvaluationVerify()).ifPresent(originalTrajectory::setEvaluationVerify);
+                            try {
+                                Optional.ofNullable(end.getEvaluationVerify()).ifPresent(originalTrajectory::setEvaluationVerify);
+                            } catch (Exception e) {
+                                originalTrajectory.setEvaluationVerify("True");
+                            }
                             TjCaseRealRecord param = new TjCaseRealRecord();
                             param.setId(caseRealRecord.getId());
                             String duration = DateUtils.secondsToDuration(

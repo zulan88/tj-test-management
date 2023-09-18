@@ -1,5 +1,6 @@
 package net.wanji.business.trajectory;
 
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,6 +11,7 @@ import net.wanji.business.common.Constants.RedisMessageType;
 import net.wanji.business.component.CountDown;
 import net.wanji.business.component.PathwayPoints;
 import net.wanji.business.domain.RealWebsocketMessage;
+import net.wanji.business.domain.bo.CaseConfigBo;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.TaskCaseConfigBo;
@@ -29,6 +31,7 @@ import net.wanji.common.common.RealTestTrajectoryDto;
 import net.wanji.common.common.SimulationMessage;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
+import net.wanji.common.utils.DataUtils;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
@@ -115,7 +118,7 @@ public class TaskRedisTrajectoryConsumer {
         CaseTrajectoryDetailBo originalTrajectory = JSONObject.parseObject(taskCaseRecord.getDetailInfo(),
                 CaseTrajectoryDetailBo.class);
         // 所有通道和业务车辆ID映射
-        Map<String, String> allChannelAndBusinessIdMap = configBos.stream().collect(Collectors.toMap(TaskCaseConfigBo::getDataChannel, TaskCaseConfigBo::getParticipatorId));
+        Map<String, List<TaskCaseConfigBo>> allChannelAndBusinessIdMap = configBos.stream().collect(Collectors.groupingBy(TaskCaseConfigBo::getDataChannel));
         // av配置
         List<TaskCaseConfigBo> avConfigs = configBos.stream().filter(item -> PartRole.AV.equals(item.getType())).collect(Collectors.toList());
         // av类型通道和业务车辆ID映射
@@ -144,10 +147,10 @@ public class TaskRedisTrajectoryConsumer {
         PathwayPoints pathwayPoints = new PathwayPoints(avPoints);
         // 读取仿真验证主车轨迹
         TjCase tjCase = caseMapper.selectById(taskCaseRecord.getCaseId());
-        List<List<TrajectoryValueDto>> mainSimulations = routeService.readTrajectoryFromRouteFile(tjCase.getRouteFile(),
-                caseConfigBo.getParticipatorName());
-        List<TrajectoryValueDto> mainSimuTrajectories = mainSimulations.stream()
-                .map(item -> item.get(0)).collect(Collectors.toList());
+//        List<List<TrajectoryValueDto>> mainSimulations = routeService.readTrajectoryFromRouteFile(tjCase.getRouteFile(),
+//                caseConfigBo.getParticipatorName());
+//        List<TrajectoryValueDto> mainSimuTrajectories = mainSimulations.stream()
+//                .map(item -> item.get(0)).collect(Collectors.toList());
         Map<String, Object> realMap = new HashMap<>();
         Map<String, Object> tipsMap = new HashMap<>();
         MessageListener listener = (message, pattern) -> {
@@ -163,7 +166,10 @@ public class TaskRedisTrajectoryConsumer {
                         List<TrajectoryValueDto> data = simulationTrajectory.getValue();
                         for (TrajectoryValueDto trajectoryValueDto : CollectionUtils.emptyIfNull(data)) {
                             // 填充业务ID
-                            trajectoryValueDto.setId(allChannelAndBusinessIdMap.get(channel));
+//                            trajectoryValueDto.setId(allChannelAndBusinessIdMap.get(channel));
+                            trajectoryValueDto.setName(DataUtils.convertUnicodeToChinese(trajectoryValueDto.getName()));
+                            allChannelAndBusinessIdMap.get(channel).stream().filter(item -> item.getParticipatorName().equals(trajectoryValueDto.getName())).findFirst().ifPresent(item -> trajectoryValueDto.setId(item.getParticipatorId()));
+
                         }
                         if ("TESSResult".equals(channel)) {
                             List<TrajectoryValueDto> mv = CollectionUtils.emptyIfNull(data).stream().filter(item ->
@@ -200,17 +206,17 @@ public class TaskRedisTrajectoryConsumer {
 
                                 // 仿真车未来轨迹
                                 List<Map<String, Double>> futureList = new ArrayList<>();
-                                if (!CollectionUtils.isEmpty(mainSimuTrajectories)) {
-                                    // 仿真验证中当前主车位置
-                                    data.add(mainSimuTrajectories.remove(0));
-                                    // 仿真验证中主车剩余轨迹
-                                    futureList = mainSimuTrajectories.stream().map(item -> {
-                                        Map<String, Double> posMap = new HashMap<>();
-                                        posMap.put("longitude", item.getLongitude());
-                                        posMap.put("latitude", item.getLatitude());
-                                        return posMap;
-                                    }).collect(Collectors.toList());
-                                }
+//                                if (!CollectionUtils.isEmpty(mainSimuTrajectories)) {
+//                                    // 仿真验证中当前主车位置
+//                                    data.add(mainSimuTrajectories.remove(0));
+//                                    // 仿真验证中主车剩余轨迹
+//                                    futureList = mainSimuTrajectories.stream().map(item -> {
+//                                        Map<String, Double> posMap = new HashMap<>();
+//                                        posMap.put("longitude", item.getLongitude());
+//                                        posMap.put("latitude", item.getLatitude());
+//                                        return posMap;
+//                                    }).collect(Collectors.toList());
+//                                }
                                 realMap.put("simuFuture", futureList);
                                 realMap.put("speed", data.get(0).getSpeed());
                                 RealWebsocketMessage msg = new RealWebsocketMessage(RedisMessageType.TRAJECTORY,
@@ -230,39 +236,12 @@ public class TaskRedisTrajectoryConsumer {
                             log.info(StringUtils.format("结束接收{}数据：{}", tjCase.getCaseNumber(),
                                     JSONObject.toJSONString(end)));
                             Optional.ofNullable(end.getEvaluationVerify()).ifPresent(originalTrajectory::setEvaluationVerify);
-                            TjTaskCaseRecord param = new TjTaskCaseRecord();
-                            param.setId(taskCaseRecord.getId());
-                            int seconds = (int) Math.floor((double) (getDataSize(taskCaseRecord.getId(),
-                                    caseConfigBo.getDataChannel())) / 10);
-                            String duration = DateUtils.secondsToDuration(seconds);
-                            originalTrajectory.setDuration(duration);
-                            param.setDetailInfo(JSONObject.toJSONString(originalTrajectory));
-                            int endSuccess = taskCaseRecordMapper.updateById(param);
-
-                            QueryWrapper<TjTaskCase> queryWrapper = new QueryWrapper<>();
-                            queryWrapper.eq(ColumnName.CASE_ID_COLUMN, taskCaseRecord.getCaseId()).eq(ColumnName.TASK_ID, taskCaseRecord.getTaskId());
-                            TjTaskCase taskCase = taskCaseMapper.selectOne(queryWrapper);
-                            taskCase.setStatus("已完成");
-                            taskCase.setEndTime(new Date());
-                            taskCase.setTestTotalTime(String.valueOf(seconds));
-                            taskCaseMapper.updateById(taskCase);
-
+//                            try {
+//                                Optional.ofNullable(end.getScore()).ifPresent(score -> this.handleScore(taskCaseRecord.getTaskId(), score));
+//                            } catch (Exception e) {
+//
+//                            }
                             List<TaskDcVo> taskDcVos = taskDcMapper.selectDcByTaskId(taskCaseRecord.getTaskId());
-                            for (TaskDcVo taskDcVo : CollectionUtils.emptyIfNull(taskDcVos)) {
-                                if (taskDcVo.getName().contains("任务完成")) {
-                                    taskDcVo.setScore("1/1");
-                                    taskDcVo.setTime("0");
-                                } else if (taskDcVo.getName().contains("任务耗时")) {
-                                    taskDcVo.setScore("1/1");
-                                    taskDcVo.setTime(String.format("%.2f", Math.floor((double) (getDataSize(taskCaseRecord.getId(), channel)) / 10)));
-                                } else if (taskDcVo.getName().contains("TTC")) {
-                                    taskDcVo.setScore("-1.15");
-                                    taskDcVo.setTime("2.4300000000000006");
-                                } else {
-                                    taskDcVo.setScore("0");
-                                    taskDcVo.setTime("0");
-                                }
-                            }
                             for (TaskDcVo taskDcVo : CollectionUtils.emptyIfNull(taskDcVos)) {
                                 if (taskDcVo.getName().contains("任务完成")) {
                                     taskDcVo.setScore("1/1");
@@ -281,6 +260,23 @@ public class TaskRedisTrajectoryConsumer {
                                 BeanUtils.copyProperties(taskDcVo, tjTaskDc);
                                 taskDcMapper.updateById(tjTaskDc);
                             }
+                            TjTaskCaseRecord param = new TjTaskCaseRecord();
+                            param.setId(taskCaseRecord.getId());
+                            int seconds = (int) Math.floor((double) (getDataSize(taskCaseRecord.getId(),
+                                    caseConfigBo.getDataChannel())) / 10);
+                            String duration = DateUtils.secondsToDuration(seconds);
+                            originalTrajectory.setDuration(duration);
+                            param.setDetailInfo(JSONObject.toJSONString(originalTrajectory));
+                            int endSuccess = taskCaseRecordMapper.updateById(param);
+
+                            QueryWrapper<TjTaskCase> queryWrapper = new QueryWrapper<>();
+                            queryWrapper.eq(ColumnName.CASE_ID_COLUMN, taskCaseRecord.getCaseId()).eq(ColumnName.TASK_ID, taskCaseRecord.getTaskId());
+                            TjTaskCase taskCase = taskCaseMapper.selectOne(queryWrapper);
+                            taskCase.setStatus("已完成");
+                            taskCase.setEndTime(new Date());
+                            taskCase.setTestTotalTime(String.valueOf(seconds));
+                            taskCaseMapper.updateById(taskCase);
+
                             log.info(StringUtils.format("修改用例场景评价:{}", endSuccess));
                             removeListenerThenSave(taskCaseRecord.getId(), originalTrajectory);
                             RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null, null,
@@ -291,14 +287,77 @@ public class TaskRedisTrajectoryConsumer {
                     default:
                         break;
                 }
-
-
             } catch (IOException e) {
                 e.printStackTrace();
                 removeListenerThenSave(taskCaseRecord.getId(), originalTrajectory);
             }
         };
         this.addRunningChannel(taskCaseRecord.getId(), configBos, listener);
+    }
+
+
+    public void handleScore(Integer taskId, String score) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            String scoreJsonString = score.replaceAll("\\\\", ""); // 移除转义斜杠
+            scoreJsonString = scoreJsonString.replaceAll("\"\\{", "{"); // 移除双引号前的斜杠
+            scoreJsonString = scoreJsonString.replaceAll("\\}\"", "}"); // 移除双引号后的斜杠
+
+            // 解析为 JSON 对象
+            Object scoreObject = mapper.readValue(scoreJsonString, Object.class);
+
+            // 将 JSON 对象转换为格式化的字符串
+            String scoreFormattedJson = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(scoreObject);
+            JSONObject jsonObject = JSONObject.parseObject(scoreFormattedJson, JSONObject.class);
+            JSONArray testScene = jsonObject.getJSONArray("testScene");
+            JSONObject infoMap = new JSONObject();
+            if (CollectionUtils.isNotEmpty(testScene)) {
+                infoMap = testScene.getJSONObject(0).getJSONObject("info");
+            }
+
+            List<TaskDcVo> taskDcVos = taskDcMapper.selectDcByTaskId(taskId);
+
+            for (TaskDcVo taskDcVo : CollectionUtils.emptyIfNull(taskDcVos)) {
+                if (infoMap.containsKey("efficiency")) {
+                    JSONArray efficiency = infoMap.getJSONArray("efficiency");
+                    for (Object o : efficiency) {
+                        JSONObject item = (JSONObject) o;
+                        String index = DataUtils.convertUnicodeToChinese(item.getString("index"));
+                        if (taskDcVo.getName().equals(index)) {
+                            taskDcVo.setScore(item.getString("score"));
+                            taskDcVo.setTime(item.getString("time"));
+                        }
+                    }
+                }
+                if (infoMap.containsKey("comfortable")) {
+                    JSONArray comfortable = infoMap.getJSONArray("comfortable");
+                    for (Object o : comfortable) {
+                        JSONObject item = (JSONObject) o;
+                        String index = DataUtils.convertUnicodeToChinese(item.getString("index"));
+                        if (taskDcVo.getName().equals(index)) {
+                            taskDcVo.setScore(item.getString("type") + ":" + item.getString("score"));
+                            taskDcVo.setTime(item.getString("time"));
+                        }
+                    }
+                }
+                if (infoMap.containsKey("safe")) {
+                    JSONArray safe = infoMap.getJSONArray("safe");
+                    for (Object o : safe) {
+                        JSONObject item = (JSONObject) o;
+                        String index = DataUtils.convertUnicodeToChinese(item.getString("index"));
+                        if (taskDcVo.getName().equals(index)) {
+                            taskDcVo.setScore(item.getString("score"));
+                            taskDcVo.setTime(item.getString("time"));
+                        }
+                    }
+                }
+                TjTaskDc tjTaskDc = new TjTaskDc();
+                BeanUtils.copyProperties(taskDcVo, tjTaskDc);
+                taskDcMapper.updateById(tjTaskDc);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void removeMessageListeners(Integer recordId) {

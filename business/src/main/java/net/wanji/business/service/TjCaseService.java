@@ -8,6 +8,7 @@ import java.util.concurrent.ExecutionException;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import net.wanji.business.domain.PartConfigSelect;
+import net.wanji.business.domain.bo.CaseInfoBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.dto.TjCaseDto;
 import net.wanji.business.domain.vo.CaseVerificationVo;
@@ -88,15 +89,13 @@ public interface TjCaseService extends IService<TjCase> {
      */
     Integer saveCase(TjCaseDto tjCaseDto) throws BusinessException;
 
-
     /**
-     * 查询场景下包含测试用例的子场景
+     * 获取用例详情
      *
-     * @param testType          测试方法
-     * @param fragmentedSceneId 片段式场景id
+     * @param id
      * @return
      */
-    List<TjFragmentedSceneDetail> selectSubscenesInCase(String testType, Integer fragmentedSceneId);
+    CaseInfoBo getCaseDetail(Integer id) throws BusinessException;
 
     /**
      * 轨迹回放

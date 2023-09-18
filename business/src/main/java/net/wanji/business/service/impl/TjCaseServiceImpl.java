@@ -13,9 +13,13 @@ import net.wanji.business.common.Constants.PlaybackAction;
 import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.PartConfigSelect;
+import net.wanji.business.domain.bo.CaseConfigBo;
+import net.wanji.business.domain.bo.CaseInfoBo;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
+import net.wanji.business.domain.bo.TaskCaseConfigBo;
+import net.wanji.business.domain.bo.TaskCaseInfoBo;
 import net.wanji.business.domain.dto.TjCaseDto;
 import net.wanji.business.domain.param.TestStartParam;
 import net.wanji.business.domain.vo.CasePartConfigVo;
@@ -288,6 +292,9 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     @Override
     public List<CaseVo> getCases(TjCaseDto tjCaseDto) {
         List<CaseVo> result = caseMapper.selectCases(tjCaseDto);
+        for (CaseVo caseVo : CollectionUtils.emptyIfNull(result)) {
+            caseVo.setCaseNumber(caseVo.getCaseNumber() + "_" + caseVo.getId());
+        }
         return result;
     }
 
@@ -355,47 +362,50 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     }
 
     @Override
-    public List<TjFragmentedSceneDetail> selectSubscenesInCase(String testType, Integer fragmentedSceneId) {
-        return caseMapper.selectSubscenesInCase(testType, fragmentedSceneId);
+    public CaseInfoBo getCaseDetail(Integer caseId) throws BusinessException {
+        CaseInfoBo caseInfoBo = caseMapper.selectCaseInfo(caseId);
+        if (ObjectUtils.isEmpty(caseInfoBo)) {
+            throw new BusinessException("用例查询异常");
+        }
+        List<CaseConfigBo> casePartConfigs = caseInfoBo.getCaseConfigs();
+        if (CollectionUtils.isEmpty(casePartConfigs)) {
+            throw new BusinessException("用例未进行角色配置");
+        }
+        if (Integer.parseInt(CaseStatusEnum.SIMULATION_VERIFICATION.getCode()) > Integer.parseInt(caseInfoBo.getStatus())
+                && casePartConfigs.stream().anyMatch(config -> ObjectUtils.isEmpty(config.getDeviceId()))) {
+            throw new BusinessException("用例未进行设备配置");
+        }
+        return caseInfoBo;
     }
+
 
     @Override
     public void playback(Integer id, String participantId, int action) throws BusinessException, IOException {
-        TjCase tjCase = this.getById(id);
-        if (StringUtils.equals(tjCase.getStatus(), CaseStatusEnum.TO_BE_SIMULATED.getCode())) {
-            throw new BusinessException("请先进行导入");
-        }
-        QueryWrapper<TjCasePartConfig> configQueryWrapper = new QueryWrapper<>();
-        configQueryWrapper.eq(ColumnName.CASE_ID_COLUMN, id);
-        List<TjCasePartConfig> configs = casePartConfigService.list(configQueryWrapper);
-        if (CollectionUtils.isEmpty(configs)) {
-            throw new BusinessException("请先进行角色配置");
-        }
+        CaseInfoBo caseInfoBo = this.getCaseDetail(id);
+        List<CaseConfigBo> configs = caseInfoBo.getCaseConfigs();
         Map<String, String> participantNameMap = configs.stream().collect(Collectors.toMap(
                 TjCasePartConfig::getBusinessId, TjCasePartConfig::getName));
         Map<String, String> participantIdMap = configs.stream().collect(Collectors.toMap(
                 TjCasePartConfig::getName, TjCasePartConfig::getBusinessId));
         switch (action) {
             case PlaybackAction.CALL:
-                TestStartParam startParam = casePartConfigService.buildStartParam(configs);
+                TestStartParam startParam = this.buildStartParam(caseInfoBo);
                 startParam.setCaseId(id);
-                startParam.setChannel(tjCase.getCaseNumber());
+                startParam.setChannel(caseInfoBo.getCaseNumber());
                 boolean start = restService.start(startParam);
                 if (!start) {
                     throw new BusinessException("仿真失败");
                 }
-                redisTrajectoryConsumer.subscribeAndSend(tjCase, participantId,
+                redisTrajectoryConsumer.subscribeAndSend(caseInfoBo, participantId,
                         participantNameMap.get(participantId));
                 break;
             case PlaybackAction.START:
-                if (ObjectUtils.isEmpty(tjCase) || StringUtils.isEmpty(tjCase.getCaseNumber())) {
-                    throw new BusinessException("用例不存在");
-                }
-                if (StringUtils.isEmpty(tjCase.getRouteFile())) {
+                if (StringUtils.isEmpty(caseInfoBo.getRouteFile())) {
                     this.playback(id, participantId, PlaybackAction.CALL);
                     break;
                 }
-                List<List<TrajectoryValueDto>> e1List = routeService.readTrajectoryFromRouteFile(tjCase.getRouteFile(),
+                List<List<TrajectoryValueDto>> e1List = routeService.readTrajectoryFromRouteFile(
+                        caseInfoBo.getRouteFile(),
                         participantNameMap.get(participantId));
                 if (CollectionUtils.isEmpty(e1List)) {
                     throw new BusinessException("未查询到轨迹");
@@ -559,5 +569,28 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     public synchronized String buildCaseNumber() {
         return StringUtils.format(ContentTemplate.CASE_NUMBER_TEMPLATE, DateUtils.getNowDayString(),
                 CounterUtil.getNextNumber(ContentTemplate.CASE_NUMBER_TEMPLATE));
+    }
+
+    public TestStartParam buildStartParam(CaseInfoBo caseInfo) {
+        // 计算caseInfo.getCaseConfigs()中各个角色的数量
+        long avNum = (int) caseInfo.getCaseConfigs().stream().filter(config ->
+                PartRole.AV.equals(config.getParticipantRole())).count();
+        List<String> avNames = caseInfo.getCaseConfigs().stream().filter(config ->
+                PartRole.AV.equals(config.getParticipantRole())).map(TjCasePartConfig::getName)
+                .collect(Collectors.toList());
+        long simulationNum = caseInfo.getCaseConfigs().stream().filter(config ->
+                PartRole.MV_SIMULATION.equals(config.getParticipantRole())).count();
+        List<String> simulationNames = caseInfo.getCaseConfigs().stream().filter(config ->
+                PartRole.MV_SIMULATION.equals(config.getParticipantRole())).map(TjCasePartConfig::getName)
+                .collect(Collectors.toList());
+        long pedestrianNum = caseInfo.getCaseConfigs().stream().filter(config ->
+                PartRole.SP.equals(config.getParticipantRole())).count();
+        List<String> pedestrianNames = caseInfo.getCaseConfigs().stream().filter(config ->
+                PartRole.SP.equals(config.getParticipantRole())).map(TjCasePartConfig::getName)
+                .collect(Collectors.toList());
+        SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(caseInfo.getDetailInfo(), SceneTrajectoryBo.class);
+
+        return new TestStartParam(caseInfo.getId(), caseInfo.getCaseNumber(), (int) avNum, avNames, (int) simulationNum,
+                simulationNames, (int) pedestrianNum, pedestrianNames, sceneTrajectoryBo.getParticipantTrajectories());
     }
 }
