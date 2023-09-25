@@ -2,6 +2,7 @@ package net.wanji.business.domain.bo;
 
 import lombok.Data;
 import net.wanji.business.entity.TjCase;
+import net.wanji.business.entity.TjCaseRealRecord;
 
 import java.util.List;
 
@@ -18,6 +19,8 @@ public class CaseInfoBo extends TjCase {
     private String filePath;
 
     private String geoJsonPath;
+
+    private TjCaseRealRecord caseRealRecord;
 
     private List<CaseConfigBo> caseConfigs;
 }

@@ -2,26 +2,25 @@ package net.wanji.business.schedule;
 
 import com.alibaba.fastjson.JSONObject;
 import lombok.Data;
-import net.wanji.business.common.Constants.PointTypeEnum;
 import net.wanji.business.common.Constants.RedisMessageType;
 import net.wanji.business.component.CountDown;
 import net.wanji.business.component.PathwayPoints;
 import net.wanji.business.domain.RealWebsocketMessage;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.business.domain.dto.CountDownDto;
-import net.wanji.business.entity.TjCase;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.common.common.RealTestTrajectoryDto;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.utils.DateUtils;
-import net.wanji.common.utils.GeoUtil;
 import net.wanji.common.utils.StringUtils;
-import net.wanji.socket.simulation.WebSocketManage;
+import net.wanji.business.socket.WebSocketManage;
+import net.wanji.framework.manager.AsyncManager;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 
 import java.awt.geom.Point2D;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,9 +45,7 @@ public class RealPlaybackDomain {
     private int index;
     private int length;
 
-    public RealPlaybackDomain(ScheduledExecutorService executorService,
-                              String key,
-                              List<RealTestTrajectoryDto> realTestTrajectories) {
+    public RealPlaybackDomain(String key, List<RealTestTrajectoryDto> realTestTrajectories) {
         this.key = key;
         this.realTestTrajectories = realTestTrajectories;
         this.running = true;
@@ -77,8 +74,10 @@ public class RealPlaybackDomain {
             PathwayPoints pathwayPoints = new PathwayPoints(points);
             // 仿真车轨迹
             List<TrajectoryValueDto> mainSimuTrajectories = realTestTrajectory.getMainSimuTrajectories();
+            // wskey
+            String wsKey = key.concat("_").concat(realTestTrajectory.getChannel());
             Map<String, Object> realMap = new HashMap<>();
-            ScheduledFuture<?> scheduledFuture = executorService.scheduleAtFixedRate(() -> {
+            ScheduledFuture<?> scheduledFuture = AsyncManager.me().execute(() -> {
                 // send data
                 try {
                     if (!running) {
@@ -88,7 +87,7 @@ public class RealPlaybackDomain {
                         if (realTestTrajectory.isMain()) {
                             RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null,
                                     null, "00:00");
-                            WebSocketManage.sendInfo(realTestTrajectory.getChannel(), JSONObject.toJSONString(endMsg));
+                            WebSocketManage.sendInfo(wsKey, JSONObject.toJSONString(endMsg));
                             RealPlaybackSchedule.stopSendingData(key);
                             return;
                         }
@@ -137,21 +136,18 @@ public class RealPlaybackDomain {
                             realMap.put("speed", data.get(0).getSpeed());
                         }
                         RealWebsocketMessage msg = new RealWebsocketMessage(RedisMessageType.TRAJECTORY, realMap, data, duration);
-                        WebSocketManage.sendInfo(realTestTrajectory.getChannel(), JSONObject.toJSONString(msg));
+                        WebSocketManage.sendInfo(wsKey, JSONObject.toJSONString(msg));
                     } else {
                         index ++;
                         RealWebsocketMessage msg = new RealWebsocketMessage(RedisMessageType.TRAJECTORY, null, data, duration);
-                        WebSocketManage.sendInfo(realTestTrajectory.getChannel(), JSONObject.toJSONString(msg));
+                        WebSocketManage.sendInfo(wsKey, JSONObject.toJSONString(msg));
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            }, 0, 100, TimeUnit.MILLISECONDS);
+            }, 0, 100);
             future.add(scheduledFuture);
-
         }
-
-
     }
 
 
@@ -168,13 +164,13 @@ public class RealPlaybackDomain {
         this.running = true;
     }
 
-    public synchronized void stopSendingData() throws BusinessException {
+    public synchronized void stopSendingData() throws BusinessException, IOException {
         this.validFuture();
         this.running = false;
         for (ScheduledFuture<?> scheduledFuture : this.future) {
             scheduledFuture.cancel(true);
         }
-        WebSocketManage.close(this.key);
+        WebSocketManage.remove(this.key);
     }
 
     private void validFuture() throws BusinessException {

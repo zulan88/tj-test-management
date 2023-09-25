@@ -6,7 +6,7 @@ import net.wanji.business.common.Constants.RedisMessageType;
 import net.wanji.business.domain.WebsocketMessage;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.openScenario.properties.OpenScenarioProject;
-import net.wanji.socket.simulation.WebSocketManage;
+import net.wanji.business.socket.WebSocketManage;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -53,7 +53,6 @@ public class ScenarioService {
         final ScheduledFuture<?>[] futures = new ScheduledFuture<?>[1];
         ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(2);
         Runnable task = () -> {
-
             int size = 0;
             List<JSONObject> tra = new ArrayList<>();
             for (JSONArray jsonArray : list) {

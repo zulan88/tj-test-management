@@ -16,11 +16,8 @@ import java.util.stream.Collectors;
 
 public interface Constants {
 
-    class WebsocketKey {
-        public static final String DEFAULT_KEY = "ALL_VEHICLE";
-    }
-
     class RedisMessageType {
+        public static final String START = "start";
         public static final String SCORE = "score";
         public static final String TRAJECTORY = "trajectory";
         public static final String END = "end";
@@ -48,7 +45,8 @@ public interface Constants {
      * 内容模板
      */
     class ContentTemplate {
-        public static final String REAL_KEY_TEMPLATE = "REAL_BACK_{}_{}";
+        public static final String SIMULATION_KEY_TEMPLATE = "{}_{}_{}";
+        public static final String REAL_KEY_TEMPLATE = "{}_{}_{}_{}";
         public static final String EXPORT_NAME_TEMPLATE = "{}_{}";
         public static final String SCENE_NUMBER_TEMPLATE = "SC{}{}";
         public static final String CASE_NUMBER_TEMPLATE = "CASE{}{}";

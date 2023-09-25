@@ -7,9 +7,12 @@ import net.wanji.business.domain.WebsocketMessage;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.utils.DateUtils;
-import net.wanji.socket.simulation.WebSocketManage;
+import net.wanji.business.socket.WebSocketManage;
+import net.wanji.common.utils.SecurityUtils;
+import net.wanji.framework.manager.AsyncManager;
 import org.springframework.util.ObjectUtils;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -22,19 +25,18 @@ import java.util.concurrent.TimeUnit;
  */
 @Data
 public class PlaybackDomain {
-
-    private ScheduledFuture<?> future;
-    private String id;
+    private String key;
     private List<List<TrajectoryValueDto>> data;
     private int index;
     private boolean running;
+    private ScheduledFuture<?> future;
 
-    public PlaybackDomain(ScheduledExecutorService executorService, String id, List<List<TrajectoryValueDto>> data) {
-        this.id = id;
+    public PlaybackDomain(String key, List<List<TrajectoryValueDto>> data) {
+        this.key = key;
         this.data = data;
         this.index = 0;
         this.running = true;
-        this.future = executorService.scheduleAtFixedRate(() -> {
+        this.future = AsyncManager.me().execute(() -> {
             // send data
             try {
                 if (!running) {
@@ -42,19 +44,20 @@ public class PlaybackDomain {
                 }
                 if (index >= data.size()) {
                     WebsocketMessage message = new WebsocketMessage(RedisMessageType.END, null, null);
-                    WebSocketManage.sendInfo(id, JSONObject.toJSONString(message));
-                    PlaybackSchedule.stopSendingData(id);
+                    WebSocketManage.sendInfo(key, JSONObject.toJSONString(message));
+                    PlaybackSchedule.stopSendingData(key);
                     return;
                 }
-                String countDown = DateUtils.secondsToDuration(
-                        (int) Math.floor((double) (data.size() - index) / 10));
-                WebsocketMessage message = new WebsocketMessage(RedisMessageType.TRAJECTORY, countDown, data.get(index));
-                WebSocketManage.sendInfo(id, JSONObject.toJSONString(message));
+                WebsocketMessage message = new WebsocketMessage(
+                        RedisMessageType.TRAJECTORY,
+                        DateUtils.secondsToDuration((int) Math.floor((double) (data.size() - index) / 10)),
+                        data.get(index));
+                WebSocketManage.sendInfo(key, JSONObject.toJSONString(message));
                 index++;
-            } catch (Exception e) {
+            } catch (BusinessException | IOException e) {
                 e.printStackTrace();
             }
-        }, 0, 100, TimeUnit.MILLISECONDS);
+        }, 0, 100);
     }
 
     public void suspend() throws BusinessException {
@@ -70,11 +73,10 @@ public class PlaybackDomain {
         this.running = true;
     }
 
-    public synchronized void stopSendingData() throws BusinessException {
+    public synchronized void stopSendingData() throws BusinessException, IOException {
         this.validFuture();
         this.running = false;
         this.future.cancel(true);
-        WebSocketManage.close(this.id);
     }
 
     private void validFuture() throws BusinessException {
@@ -82,5 +84,4 @@ public class PlaybackDomain {
             throw new BusinessException("任务不存在");
         }
     }
-
 }

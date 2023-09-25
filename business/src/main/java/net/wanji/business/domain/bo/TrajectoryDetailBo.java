@@ -1,6 +1,8 @@
 package net.wanji.business.domain.bo;
 
 import lombok.Data;
+import net.wanji.common.utils.StringUtils;
+import org.springframework.util.ObjectUtils;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -19,11 +21,24 @@ public class TrajectoryDetailBo implements Serializable {
     private String time;
     private Long frameId;
     private String position;
+    private String longitude;
+    private String latitude;
     private String lane;
     private Double speed;
     private String speedUnit;
     private boolean pass;
     private String reason = "等待校验";
+
+    public void setPosition(String position) {
+        if (StringUtils.isNotEmpty(position)) {
+            this.position = position;
+            String[] pos = position.split(",");
+            if (!ObjectUtils.isEmpty(pos)) {
+                this.longitude = pos[0];
+                this.latitude = pos[1];
+            }
+        }
+    }
 
     @Override
     public boolean equals(Object o) {

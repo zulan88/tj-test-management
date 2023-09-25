@@ -18,26 +18,18 @@ public class TestStartParam {
     private String channel;
 
     private int avNum;
-    private List<String> avNames;
     private int simulationNum;
-    private List<String> simulationNames;
     private int pedestrianNum;
-    private List<String> pedestrianNames;
     private List<ParticipantTrajectoryBo> participantTrajectories;
     private int frequency;
 
-    public TestStartParam(Integer caseId, String channel, int avNum, List<String> avNames,
-                          int simulationNum, List<String> simulationNames,
-                          int pedestrianNum, List<String> pedestrianNames,
+    public TestStartParam(Integer caseId, String channel, int avNum, int simulationNum, int pedestrianNum,
                           List<ParticipantTrajectoryBo> participantTrajectories) {
         this.caseId = caseId;
         this.channel = channel;
         this.avNum = avNum;
-        this.avNames = avNames;
         this.simulationNum = simulationNum;
-        this.simulationNames = simulationNames;
         this.pedestrianNum = pedestrianNum;
-        this.pedestrianNames = pedestrianNames;
         this.participantTrajectories = participantTrajectories;
         this.frequency = 10;
     }

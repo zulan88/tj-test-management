@@ -19,6 +19,5 @@ public class WebsocketMessage {
 
     private String countDown;
 
-
     private Object data;
 }

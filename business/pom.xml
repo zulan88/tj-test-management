@@ -26,6 +26,11 @@
             <groupId>net.wanji</groupId>
             <artifactId>DataSystem</artifactId>
         </dependency>
+        <!-- 数据模块-->
+        <dependency>
+            <groupId>net.wanji</groupId>
+            <artifactId>DataFramework</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>com.google.code.gson</groupId>

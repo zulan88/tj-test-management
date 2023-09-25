@@ -35,7 +35,7 @@ public interface RestService {
      * @param caseRuleControl
      * @return
      */
-    Object sendRuleUrl(CaseRuleControl caseRuleControl);
+    boolean sendRuleUrl(CaseRuleControl caseRuleControl);
 
     Object imitateClientUrl(List<CaseConfigBo> param);
 

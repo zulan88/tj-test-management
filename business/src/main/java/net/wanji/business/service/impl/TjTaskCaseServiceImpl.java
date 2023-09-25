@@ -45,6 +45,7 @@ import net.wanji.business.schedule.RealPlaybackSchedule;
 import net.wanji.business.service.RestService;
 import net.wanji.business.service.RouteService;
 import net.wanji.business.service.TjTaskCaseService;
+import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.trajectory.TaskRedisTrajectoryConsumer;
 import net.wanji.common.common.RealTestTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
@@ -308,10 +309,10 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         List<TrajectoryDetailBo> avPoints = avBusinessIdPointsMap.get(caseConfigBo.getParticipatorId());
         // 读取仿真验证主车轨迹
         List<List<TrajectoryValueDto>> mainSimulations = routeService.readTrajectoryFromRouteFile(caseInfoBo.getRouteFile(),
-                caseConfigBo.getParticipatorName());
+                caseConfigBo.getParticipatorId());
         List<TrajectoryValueDto> mainSimuTrajectories = mainSimulations.stream()
                 .map(item -> item.get(0)).collect(Collectors.toList());
-        String key = StringUtils.format(ContentTemplate.REAL_KEY_TEMPLATE, caseInfoBo.getId(), SecurityUtils.getUsername());
+        String key = StringUtils.format(ContentTemplate.REAL_KEY_TEMPLATE, SecurityUtils.getUsername(), caseInfoBo.getId(), WebSocketManage.REAL, recordId);
         switch (action) {
             case PlaybackAction.START:
                 List<RealTestTrajectoryDto> realTestTrajectories =

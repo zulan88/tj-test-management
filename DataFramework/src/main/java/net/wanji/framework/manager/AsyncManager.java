@@ -2,6 +2,7 @@ package net.wanji.framework.manager;
 
 import java.util.TimerTask;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import net.wanji.common.utils.Threads;
 import net.wanji.common.utils.spring.SpringUtils;
@@ -43,6 +44,17 @@ public class AsyncManager
     public void execute(TimerTask task)
     {
         executor.schedule(task, OPERATE_DELAY_TIME, TimeUnit.MILLISECONDS);
+    }
+
+
+    /**
+     * 执行任务
+     *
+     * @param task 任务
+     * @param delay 延迟时间
+     */
+    public ScheduledFuture<?> execute(Runnable task, long delay, long period) {
+        return executor.scheduleAtFixedRate(task, delay, period, TimeUnit.MILLISECONDS);
     }
 
     /**

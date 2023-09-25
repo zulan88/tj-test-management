@@ -55,12 +55,12 @@ public class RestServiceImpl implements RestService {
             HttpHeaders httpHeaders = new HttpHeaders();
             httpHeaders.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<TestStartParam> resultHttpEntity = new HttpEntity<>(startParam, httpHeaders);
-            log.info("============================== tess start：{}", JSONObject.toJSONString(startParam));
+            log.info("============================== tess start param：{}", JSONObject.toJSONString(startParam));
             ResponseEntity<String> response =
                     restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);
             if (response.getStatusCodeValue() == 200) {
                 JSONObject result = JSONObject.parseObject(response.getBody(), JSONObject.class);
-                log.info("============================== tess start  result:{}", JSONObject.toJSONString(result));
+                log.info("============================== tess start result:{}", JSONObject.toJSONString(result));
                 if (Objects.isNull(result) || !"success".equals(result.get("status"))) {
                     log.error("远程服务调用失败:{}", result.get("msg"));
                     return false;
@@ -84,7 +84,7 @@ public class RestServiceImpl implements RestService {
     }
 
     @Override
-    public Object sendRuleUrl(CaseRuleControl caseRuleControl) {
+    public boolean sendRuleUrl(CaseRuleControl caseRuleControl) {
         try {
             String resultUrl = sendRuleUrl;
             log.info("============================== connectMasterControl：{}", sendRuleUrl);

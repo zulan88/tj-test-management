@@ -2,6 +2,7 @@ package net.wanji.business.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import net.wanji.business.common.Constants.CaseStatusEnum;
 import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.business.common.Constants.PartRole;
@@ -36,6 +37,7 @@ import net.wanji.business.service.RestService;
 import net.wanji.business.service.RouteService;
 import net.wanji.business.service.TestingService;
 import net.wanji.business.service.TjCaseService;
+import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.trajectory.ImitateRedisTrajectoryConsumer;
 import net.wanji.common.common.RealTestTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
@@ -101,6 +103,9 @@ public class TestingServiceImpl implements TestingService {
     @Override
     public RealVehicleVerificationPageVo getStatus(Integer caseId) throws BusinessException {
         CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
+        if (caseInfoBo.getCaseConfigs().stream().allMatch(config -> ObjectUtils.isEmpty(config.getDeviceId()))) {
+            throw new BusinessException("用例未进行设备配置");
+        }
         CaseTrajectoryDetailBo trajectoryDetail = JSONObject.parseObject(caseInfoBo.getDetailInfo(),
                 CaseTrajectoryDetailBo.class);
         Map<String, String> partStartMap =
@@ -112,19 +117,14 @@ public class TestingServiceImpl implements TestingService {
                                         .orElse(new TrajectoryDetailBo()).getPosition()));
         List<CaseConfigBo> caseConfigs = caseInfoBo.getCaseConfigs().stream().filter(info ->
                 !ObjectUtils.isEmpty(info.getDeviceId())).collect(Collectors.toList());
-
         List<Integer> ids = new ArrayList<>();
         List<CaseConfigBo> configs = new ArrayList<>();
         for (CaseConfigBo caseConfig : caseConfigs) {
-            if (ids.contains(caseConfig.getDeviceId())) {
-                continue;
-            } else {
+            if (!ids.contains(caseConfig.getDeviceId())) {
                 ids.add(caseConfig.getDeviceId());
                 configs.add(caseConfig);
             }
         }
-
-
         for (CaseConfigBo caseConfigBo : configs) {
             // todo 设备信息查询逻辑待实现
             Map<String, Object> map = restService.searchDeviceInfo(caseConfigBo.getIp(), HttpMethod.POST);
@@ -167,6 +167,9 @@ public class TestingServiceImpl implements TestingService {
     @Override
     public CaseRealTestVo prepare(Integer caseId) throws BusinessException {
         CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
+        if (caseInfoBo.getCaseConfigs().stream().allMatch(config -> ObjectUtils.isEmpty(config.getDeviceId()))) {
+            throw new BusinessException("用例未进行设备配置");
+        }
         TjFragmentedSceneDetail sceneDetail = sceneDetailMapper.selectById(caseInfoBo.getSceneDetailId());
         if (ObjectUtils.isEmpty(sceneDetail) || StringUtils.isEmpty(sceneDetail.getTrajectoryInfo())) {
             throw new BusinessException("请先配置轨迹信息");
@@ -203,22 +206,34 @@ public class TestingServiceImpl implements TestingService {
 
     @Override
     public CaseRealTestVo start(Integer recordId, Integer action) throws BusinessException, IOException {
+        // todo recordId可以换成caseId
         TjCaseRealRecord caseRealRecord = caseRealRecordMapper.selectById(recordId);
         if (ObjectUtils.isEmpty(caseRealRecord) || caseRealRecord.getStatus() > TestingStatus.NOT_START) {
             throw new BusinessException("未就绪");
         }
         Integer caseId = caseRealRecord.getCaseId();
         CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
-        List<DeviceConnRule> deviceConnRules = generateDeviceConnRules(caseInfoBo);
-        restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(), String.valueOf(caseId), action,
-                deviceConnRules));
-        caseRealRecord.setStatus(TestingStatus.RUNNING);
-        caseRealRecord.setStartTime(LocalDateTime.now());
-        caseRealRecordMapper.updateById(caseRealRecord);
+        if (caseInfoBo.getCaseConfigs().stream().allMatch(config -> ObjectUtils.isEmpty(config.getDeviceId()))) {
+            throw new BusinessException("用例未进行设备配置");
+        }
+        if (!restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(), String.valueOf(caseId), action,
+                generateDeviceConnRules(caseInfoBo)))) {
+            throw new BusinessException("主控响应异常");
+        }
+        TjCaseRealRecord realRecord = caseInfoBo.getCaseRealRecord();
+        realRecord.setStatus(TestingStatus.RUNNING);
+        realRecord.setStartTime(LocalDateTime.now());
+        caseRealRecordMapper.updateById(realRecord);
+        // 开始监听所有数据通道
+        imitateRedisTrajectoryConsumer.subscribeAndSend(caseInfoBo);
+        // 开启模拟客户端
+//        List<CaseConfigBo> caseConfigs = caseInfoBo.getCaseConfigs().stream().filter(deviceId ->
+//                !ObjectUtils.isEmpty(deviceId)).collect(Collectors.toList());
+//        restService.imitateClientUrl(caseConfigs);
         CaseRealTestVo caseRealTestVo = new CaseRealTestVo();
-        BeanUtils.copyProperties(caseRealRecord, caseRealTestVo);
+        BeanUtils.copyProperties(realRecord, caseRealTestVo);
         caseRealTestVo.setStartTime(DateUtils.getTime());
-        SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(caseRealRecord.getDetailInfo(),
+        SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(realRecord.getDetailInfo(),
                 SceneTrajectoryBo.class);
         Map<String, List<TrajectoryDetailBo>> mainTrajectoryMap = sceneTrajectoryBo.getParticipantTrajectories()
                 .stream().filter(item -> PartType.MAIN.equals(item.getType())).collect(Collectors.toMap(
@@ -226,13 +241,6 @@ public class TestingServiceImpl implements TestingService {
                         ParticipantTrajectoryBo::getTrajectory
                 ));
         caseRealTestVo.setMainTrajectories(mainTrajectoryMap);
-
-        // 开始监听所有数据通道
-        imitateRedisTrajectoryConsumer.subscribeAndSend(caseRealRecord, caseInfoBo.getCaseConfigs());
-        // 开启模拟客户端
-//        List<CaseConfigBo> caseConfigs = caseInfoBo.getCaseConfigs().stream().filter(deviceId ->
-//                !ObjectUtils.isEmpty(deviceId)).collect(Collectors.toList());
-//        restService.imitateClientUrl(caseConfigs);
         return caseRealTestVo;
     }
 
@@ -246,9 +254,8 @@ public class TestingServiceImpl implements TestingService {
             throw new BusinessException("实车验证未完成");
         }
         CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseRealRecord.getCaseId());
-        List<CaseConfigBo> configs = caseInfoBo.getCaseConfigs();
-        if (CollectionUtils.isEmpty(configs)) {
-            throw new BusinessException("请先进行角色配置");
+        if (caseInfoBo.getCaseConfigs().stream().allMatch(config -> ObjectUtils.isEmpty(config.getDeviceId()))) {
+            throw new BusinessException("用例未进行设备配置");
         }
         // 点位
         CaseTrajectoryDetailBo originalTrajectory = JSONObject.parseObject(caseRealRecord.getDetailInfo(),
@@ -277,10 +284,10 @@ public class TestingServiceImpl implements TestingService {
         // 读取仿真验证主车轨迹
         TjCase tjCase = caseMapper.selectById(caseRealRecord.getCaseId());
         List<List<TrajectoryValueDto>> mainSimulations = routeService.readTrajectoryFromRouteFile(tjCase.getRouteFile(),
-                caseConfigBo.getName());
+                caseConfigBo.getBusinessId());
         List<TrajectoryValueDto> mainSimuTrajectories = mainSimulations.stream()
                 .map(item -> item.get(0)).collect(Collectors.toList());
-        String key = StringUtils.format(ContentTemplate.REAL_KEY_TEMPLATE, caseInfoBo.getId(), SecurityUtils.getUsername());
+        String key = WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(caseInfoBo.getCaseRealRecord().getId()), WebSocketManage.REAL, null);
         switch (action) {
             case PlaybackAction.START:
                 List<RealTestTrajectoryDto> realTestTrajectories = routeService.readRealTrajectoryFromRouteFile(caseRealRecord.getRouteFile());
