@@ -2,6 +2,7 @@ package net.wanji.business.trajectory;
 
 import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.lang.Collections;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import net.wanji.business.common.Constants.PartRole;
 import net.wanji.business.common.Constants.RedisMessageType;
@@ -19,7 +20,6 @@ import net.wanji.business.entity.TjCaseRealRecord;
 import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjCaseRealRecordMapper;
 import net.wanji.business.service.RouteService;
-import net.wanji.business.trajectory.RedisTrajectoryConsumer.ChannelListener;
 import net.wanji.common.common.RealTestTrajectoryDto;
 import net.wanji.common.common.SimulationMessage;
 import net.wanji.common.common.SimulationTrajectoryDto;
@@ -33,6 +33,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
@@ -83,12 +84,19 @@ public class ImitateRedisTrajectoryConsumer {
     @Autowired
     private TjCaseRealRecordMapper caseRealRecordMapper;
 
+    @Autowired
+    private DeviceStateListener deviceStateListener;
+    @Value("${redis.channel.device.state}")
+    private String deviceStateChannel;
+
     @PostConstruct
     public void validChannel() {
         ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1,
                 new DefaultThreadFactory("ImitateRedisTrajectoryConsumer-removeListeners"));
         scheduledExecutorService.scheduleAtFixedRate(
                 this::removeListeners, 0, 20, TimeUnit.SECONDS);
+        // 开启监听设备状态
+        deviceStateListener();
     }
 
 
@@ -378,6 +386,11 @@ public class ImitateRedisTrajectoryConsumer {
                 .collect(Collectors.toList());
         log.info("removeMessageListeners:{}", JSONObject.toJSONString(topics));
         redisMessageListenerContainer.removeMessageListener(channelListeners.get(0).getListener(), topics);
+    }
+
+    private void deviceStateListener(){
+        redisMessageListenerContainer.addMessageListener(deviceStateListener,
+            new ChannelTopic(deviceStateChannel));
     }
 
     public static class ChannelListener<T> {

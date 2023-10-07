@@ -172,3 +172,7 @@ imitate:
 #  client: http://10.102.1.36:19303/realTest/start
 #  client: http://192.168.7.17:19303/realTest/start
 
+redis:
+    channel:
+      device:
+        state: deviceState
