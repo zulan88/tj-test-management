@@ -1,6 +1,7 @@
 package net.wanji.business.service.impl;
 
 import net.wanji.business.annotion.DeviceReport;
+import net.wanji.business.component.DeviceStateToRedis;
 import net.wanji.business.domain.dto.device.DeviceReadyStateDto;
 import net.wanji.business.service.DeviceReportService;
 import org.springframework.stereotype.Service;
@@ -16,8 +17,16 @@ import org.springframework.stereotype.Service;
 @Service
 public class DeviceReadyStateReportImpl
     implements DeviceReportService<DeviceReadyStateDto> {
+
+  private final DeviceStateToRedis deviceStateToRedis;
+
+  public DeviceReadyStateReportImpl(DeviceStateToRedis deviceStateToRedis) {
+    this.deviceStateToRedis = deviceStateToRedis;
+  }
+
   @Override
   public void dataProcess(DeviceReadyStateDto deviceReadyStateDto) {
-
+    deviceStateToRedis.save(deviceReadyStateDto.getDeviceId(),
+        DeviceStateToRedis.DEVICE_READY_STATE_PREFIX);
   }
 }
