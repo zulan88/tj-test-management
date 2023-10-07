@@ -6,6 +6,7 @@ import net.wanji.business.common.Constants.OtherGroup;
 import net.wanji.business.common.Constants.SceneType;
 import net.wanji.business.common.Constants.UpdateGroup;
 import net.wanji.business.domain.BusinessTreeSelect;
+import net.wanji.business.domain.dto.SceneDebugDto;
 import net.wanji.business.domain.dto.SceneQueryDto;
 import net.wanji.business.domain.dto.TreeTypeDto;
 import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
@@ -29,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -146,4 +148,13 @@ public class SceneBaseController extends BaseController {
     public AjaxResult selectScene(@Validated @RequestBody SceneQueryDto queryDto) throws BusinessException {
         return AjaxResult.success(tjFragmentedSceneDetailService.selectScene(queryDto));
     }
+
+    @PreAuthorize("@ss.hasPermi('sceneBase:debugging')")
+    @PostMapping("/debugging")
+    public AjaxResult debugging(@Validated(value = OtherGroup.class) @RequestBody SceneDebugDto sceneDebugDto)
+            throws BusinessException, IOException {
+        tjFragmentedSceneDetailService.debugging(sceneDebugDto);
+        return AjaxResult.success();
+    }
+
 }

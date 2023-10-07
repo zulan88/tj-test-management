@@ -65,8 +65,11 @@
             <if test="collectStatus != null ">
                 AND sd.collect_status=#{collectStatus}
             </if>
+            <if test="finished != null ">
+                AND sd.finished=#{finished}
+            </if>
         </where>
-        ORDER BY sd.collect_status DESC, sd.created_date DESC
+        ORDER BY sd.created_date DESC, sd.finished DESC
     </select>
 
     <select id="selectUsingResources" resultType="java.lang.Integer">

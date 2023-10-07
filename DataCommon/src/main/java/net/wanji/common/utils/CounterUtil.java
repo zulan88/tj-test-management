@@ -6,6 +6,7 @@ import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -52,5 +53,15 @@ public class CounterUtil {
             AtomicInteger counter = counterMap.get(type);
             counter.set(1);
         }
+    }
+
+    // 获取6位随机大写字母
+    public static String getRandomChar() {
+        StringBuilder result = new StringBuilder();
+        Random random = new Random();
+        for (int i = 0; i < 4; i++) {
+            result.append((char) (random.nextInt(26) + 65));
+        }
+        return result.toString();
     }
 }

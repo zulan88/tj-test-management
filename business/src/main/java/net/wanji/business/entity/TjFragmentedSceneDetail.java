@@ -138,10 +138,16 @@ public class TjFragmentedSceneDetail implements Serializable {
 
 
     /**
+     * 是否完成（0：未完成；1：已完成）
+     */
+    @TableField("finished")
+    private boolean finished;
+
+    /**
      * 收藏状态（未收藏：0；已收藏：1；）
      */
     @TableField("collect_status")
-    private Integer collectStatus;
+    private boolean collectStatus;
 
     /**
      * 标签
@@ -154,6 +160,12 @@ public class TjFragmentedSceneDetail implements Serializable {
      */
     @TableField("trajectory_info")
     private String trajectoryInfo;
+
+    /**
+     * 轨迹文件
+     */
+    @TableField("route_file")
+    private String routeFile;
 
     /**
      * 图片路径

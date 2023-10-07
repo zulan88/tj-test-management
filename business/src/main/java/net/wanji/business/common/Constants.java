@@ -217,6 +217,14 @@ public interface Constants {
          * 从车
          */
         public static final String SLAVE = "slave";
+        /**
+         * 行人
+         */
+        public static final String PEDESTRIAN = "pedestrian";
+        /**
+         * 障碍物
+         */
+        public static final String OBSTACLE = "obstacle";
     }
 
     /**
@@ -410,6 +418,7 @@ public interface Constants {
                     : code;
         }
     }
+
 
 
     /**

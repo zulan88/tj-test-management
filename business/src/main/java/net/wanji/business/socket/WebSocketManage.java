@@ -55,11 +55,11 @@ public class WebSocketManage {
             return;
         }
         String key = webSocketHandle.getProperties().getKey();
-        if (CLIENTS.containsKey(key)) {
-            log.info(StringUtils.format("{}客户端{}已加入", CLIENT_TYPE.get(webSocketHandle.getProperties().getClientType()), key));
-            webSocketHandle.closeSession();
-            return;
-        }
+//        if (CLIENTS.containsKey(key)) {
+//            log.info(StringUtils.format("{}客户端{}已加入", CLIENT_TYPE.get(webSocketHandle.getProperties().getClientType()), key));
+//            CLIENTS.get(key).closeSession();
+//            return;
+//        }
         CLIENTS.put(key, webSocketHandle);
         log.info(StringUtils.format("客户端{}加入，当前在线数量：{}", key, getOnlineCount()));
     }

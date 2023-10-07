@@ -197,6 +197,20 @@ public class RouteService {
         }
     }
 
+
+    /**
+     * 仿真轨迹点位检查
+     * @param oldDetail
+     * @param data
+     */
+    public void checkSimulaitonRoute2(CaseTrajectoryDetailBo oldDetail, List<TrajectoryValueDto> data) {
+        if (CollectionUtils.isEmpty(data) || ObjectUtils.isEmpty(oldDetail)
+                || CollectionUtils.isEmpty(oldDetail.getParticipantTrajectories())) {
+            return;
+        }
+        check(oldDetail, data);
+    }
+
     public void checkRealRoute(Integer recordId, CaseTrajectoryDetailBo oldDetail, List<TrajectoryValueDto> data) {
         if (CollectionUtils.isEmpty(data) || ObjectUtils.isEmpty(oldDetail)
                 || CollectionUtils.isEmpty(oldDetail.getParticipantTrajectories())) {
@@ -285,7 +299,7 @@ public class RouteService {
                     result.put(item.getKey(), list);
                 }
             }
-        } catch (BusinessException e) {
+        } catch (Exception e) {
             log.error("轨迹文件读取异常，请重新进行验证");
         }
         return result;

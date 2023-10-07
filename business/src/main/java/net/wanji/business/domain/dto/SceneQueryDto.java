@@ -30,6 +30,7 @@ public class SceneQueryDto {
     private String roadType; // 道路类型(多选以,分隔)
     private String weather; // 天气(多选以,分隔)
     private String roadCondition; // 路面状况(多选以,分隔)
-    private Integer collectStatus; // 收藏状态（未收藏：0；已收藏：1）
+    private Boolean collectStatus; // 收藏状态（未收藏：0；已收藏：1）
+    private Boolean finished; // 是否完成（未完成：0；已完成：1）
     private List<Integer> fragmentedSceneIds;
 }

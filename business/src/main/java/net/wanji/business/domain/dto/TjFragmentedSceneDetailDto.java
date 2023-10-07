@@ -5,6 +5,7 @@ import net.wanji.business.common.Constants.InsertGroup;
 import net.wanji.business.common.Constants.OtherGroup;
 import net.wanji.business.common.Constants.QueryGroup;
 import net.wanji.business.common.Constants.UpdateGroup;
+import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
 
 import javax.validation.constraints.NotBlank;
@@ -23,6 +24,8 @@ public class TjFragmentedSceneDetailDto {
 
     @NotNull(message = "请选择一个子场景", groups = {OtherGroup.class})
     private Integer id;
+
+    private String number;
 
     /**
      * 片段式场景id
@@ -136,7 +139,17 @@ public class TjFragmentedSceneDetailDto {
      * 轨迹信息
      */
     @NotNull(message = "请进行点位标记", groups = {OtherGroup.class})
-    private SceneTrajectoryBo trajectoryJson;
+    private CaseTrajectoryDetailBo trajectoryJson;
+
+    /**
+     * 轨迹文件
+     */
+    private String routeFile;
+
+    /**
+     * 是否完成（0：未完成；1：已完成）
+     */
+    private Integer finished;
 
     /**
      * 收藏状态（未收藏：0；已收藏：1；）

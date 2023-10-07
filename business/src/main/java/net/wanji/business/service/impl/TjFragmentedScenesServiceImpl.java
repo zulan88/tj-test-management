@@ -25,6 +25,8 @@ import net.wanji.business.service.TjResourcesDetailService;
 import net.wanji.business.util.BusinessTreeUtils;
 import net.wanji.common.core.domain.SimpleSelect;
 import net.wanji.common.core.domain.entity.SysDictData;
+import net.wanji.common.utils.CounterUtil;
+import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.bean.BeanUtils;
@@ -79,7 +81,7 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
     private TjFragmentedScenesMapper fragmentedScenesMapper;
 
     @Override
-    public Map<String, List<SimpleSelect>> init() {
+    public Map<String, Object> init() {
         List<SysDictData> sceneTreeType = dictTypeService.selectDictDataByType(SysType.SCENE_TREE_TYPE);
         List<SysDictData> sceneType = dictTypeService.selectDictDataByType(SysType.SCENE_TYPE);
         List<SysDictData> sceneComplexity = dictTypeService.selectDictDataByType(SysType.SCENE_COMPLEXITY);
@@ -87,7 +89,7 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
         List<SysDictData> roadType = dictTypeService.selectDictDataByType(SysType.ROAD_TYPE);
         List<SysDictData> weather = dictTypeService.selectDictDataByType(SysType.WEATHER);
         List<SysDictData> roadCondition = dictTypeService.selectDictDataByType(SysType.ROAD_CONDITION);
-        Map<String, List<SimpleSelect>> result = new HashMap<>(7);
+        Map<String, Object> result = new HashMap<>(8);
         result.put(SysType.SCENE_TREE_TYPE, CollectionUtils.emptyIfNull(sceneTreeType).stream()
                 .map(SimpleSelect::new).collect(Collectors.toList()));
         result.put(SysType.SCENE_TYPE, CollectionUtils.emptyIfNull(sceneType).stream()
@@ -102,6 +104,7 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
                 .map(SimpleSelect::new).collect(Collectors.toList()));
         result.put(SysType.ROAD_CONDITION, CollectionUtils.emptyIfNull(roadCondition).stream()
                 .map(SimpleSelect::new).collect(Collectors.toList()));
+        result.put("number", buildSceneNumber());
         return result;
     }
 
@@ -429,4 +432,8 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
         return getChildList(list, t).size() > 0;
     }
 
+    public synchronized String buildSceneNumber() {
+        return StringUtils.format(ContentTemplate.SCENE_NUMBER_TEMPLATE, DateUtils.getNowDayString(),
+                CounterUtil.getRandomChar());
+    }
 }

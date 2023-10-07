@@ -26,7 +26,7 @@ public interface TjFragmentedScenesService extends IService<TjFragmentedScenes> 
      * 初始化
      * @return
      */
-    Map<String, List<SimpleSelect>> init();
+    Map<String, Object> init();
 
     /**
      * 初始化编辑页

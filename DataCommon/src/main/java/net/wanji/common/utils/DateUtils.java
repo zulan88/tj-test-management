@@ -46,7 +46,7 @@ public class DateUtils extends org.apache.commons.lang3.time.DateUtils
     }
 
     public static String getNowDayString() {
-        return LocalDateTime.now().format(dayFormatter);
+        return LocalDateTime.now().format(secondFormatter);
     }
 
     /**
