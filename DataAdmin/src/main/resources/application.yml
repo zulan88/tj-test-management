@@ -175,4 +175,4 @@ imitate:
 redis:
     channel:
       device:
-        state: deviceState
+        state: STATUSResult
