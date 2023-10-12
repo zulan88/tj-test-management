@@ -1,16 +1,17 @@
 package net.wanji.web.controller.business;
 
 import com.alibaba.fastjson2.JSON;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import net.wanji.business.common.Constants.InsertGroup;
 import net.wanji.business.common.Constants.OtherGroup;
-import net.wanji.business.common.Constants.SceneType;
 import net.wanji.business.common.Constants.UpdateGroup;
 import net.wanji.business.domain.BusinessTreeSelect;
 import net.wanji.business.domain.dto.SceneDebugDto;
 import net.wanji.business.domain.dto.SceneQueryDto;
-import net.wanji.business.domain.dto.TreeTypeDto;
 import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
 import net.wanji.business.domain.dto.TjFragmentedScenesDto;
+import net.wanji.business.domain.dto.TreeTypeDto;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
 import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.exception.BusinessException;
@@ -20,7 +21,6 @@ import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.util.ObjectUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -40,6 +40,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/sceneBase")
+@Api("场景库控制器")
 public class SceneBaseController extends BaseController {
 
     @Autowired
@@ -53,6 +54,13 @@ public class SceneBaseController extends BaseController {
     @GetMapping("/init")
     public AjaxResult init() {
         return AjaxResult.success(JSON.toJSON(tjFragmentedScenesService.init()));
+    }
+
+    @ApiOperation("创建场景编号")
+    @PreAuthorize("@ss.hasPermi('sceneBase:buildSceneNumber')")
+    @GetMapping("/buildSceneNumber")
+    public AjaxResult buildSceneNumber() {
+        return AjaxResult.success(JSON.toJSON(tjFragmentedScenesService.buildSceneNumber()));
     }
 
     @PreAuthorize("@ss.hasPermi('sceneBase:initEditPage')")
@@ -102,6 +110,7 @@ public class SceneBaseController extends BaseController {
                 : AjaxResult.error("删除失败");
     }
 
+    @ApiOperation("查询场景详情")
     @PreAuthorize("@ss.hasPermi('sceneBase:getDetailVo')")
     @GetMapping("/getDetailVo/{id}")
     public AjaxResult getDetailVo(@PathVariable("id") Integer id) throws BusinessException {
@@ -109,15 +118,12 @@ public class SceneBaseController extends BaseController {
         return AjaxResult.success(detailVo);
     }
 
+    @ApiOperation("保存场景详情")
     @PreAuthorize("@ss.hasPermi('sceneBase:saveSceneDetail')")
     @PostMapping("/saveSceneDetail")
     public AjaxResult saveSceneDetail(@Validated(value = {InsertGroup.class, UpdateGroup.class})
                                           @RequestBody TjFragmentedSceneDetailDto sceneDetailDto)
             throws BusinessException {
-        if (SceneType.SIMULATION.equals(sceneDetailDto.getSceneType())
-                && ObjectUtils.isEmpty(sceneDetailDto.getResourcesDetailId())) {
-            throw new BusinessException("请选择地图");
-        }
         return tjFragmentedSceneDetailService.saveSceneDetail(sceneDetailDto)
                 ? AjaxResult.success("成功")
                 : AjaxResult.error("失败");
@@ -149,6 +155,7 @@ public class SceneBaseController extends BaseController {
         return AjaxResult.success(tjFragmentedSceneDetailService.selectScene(queryDto));
     }
 
+    @ApiOperation("场景调试")
     @PreAuthorize("@ss.hasPermi('sceneBase:debugging')")
     @PostMapping("/debugging")
     public AjaxResult debugging(@Validated(value = OtherGroup.class) @RequestBody SceneDebugDto sceneDebugDto)

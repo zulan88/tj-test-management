@@ -69,10 +69,10 @@ spring:
   redis:
     # 地址
     host: 106.120.201.126
-#    host: 192.168.7.17
+    #    host: 192.168.7.17
     # 端口，默认为6379
     port: 14611
-#    port: 5010
+    #    port: 5010
     # 数据库索引
     database: 14
     # 密码
@@ -158,14 +158,21 @@ xss:
   # 匹配链接
   urlPatterns: /system/*,/monitor/*,/tool/*
 
+#日志级别
+console:
+  log:
+    level: INFO
+
 # rest路径
 tess:
-#  start: http://localhost:19303/test/start
+  start: http://localhost:19303/test/start
 #  start: http://10.102.1.36:19303/test/start
-  start: http://129.211.28.237:8000/test/start
+#  start: http://129.211.28.237:8000/test/start
 #  start: http://192.168.7.23:7778/test/start
 masterControl:
-  sendRule: http://10.100.16.15:8082/masterControl/DeviceIA/deviceIARulesSend
+  sendRule: http://localhost:8082/masterControl/DeviceIA/deviceIARulesSend
+#  sendRule: http://10.100.16.15:8082/masterControl/DeviceIA/deviceIARulesSend
+#  sendRule: http://10.102.1.36:8082/masterControl/DeviceIA/deviceIARulesSend
 #  sendRule: http://192.168.7.17:8082/masterControl/DeviceIA/deviceIARulesSend
 imitate:
   client: http://localhost:19303/realTest/start
@@ -173,6 +180,6 @@ imitate:
 #  client: http://192.168.7.17:19303/realTest/start
 
 redis:
-    channel:
-      device:
-        state: STATUSResult
+  channel:
+    device:
+      state: STATUSResult

@@ -29,6 +29,12 @@ public interface TjFragmentedScenesService extends IService<TjFragmentedScenes> 
     Map<String, Object> init();
 
     /**
+     * 创建场景编号
+     * @return
+     */
+    String buildSceneNumber();
+
+    /**
      * 初始化编辑页
      * @param type
      * @return

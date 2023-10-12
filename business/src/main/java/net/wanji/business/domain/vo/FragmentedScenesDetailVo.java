@@ -1,6 +1,8 @@
 package net.wanji.business.domain.vo;
 
 import com.alibaba.fastjson2.JSONObject;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.extern.log4j.Log4j2;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
@@ -8,7 +10,6 @@ import net.wanji.common.utils.StringUtils;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
  * @Descriptoin:
  */
 @Log4j2
+@ApiModel("场景库详情")
 public class FragmentedScenesDetailVo extends TjFragmentedSceneDetail {
 
     private String typeName;
@@ -24,26 +26,31 @@ public class FragmentedScenesDetailVo extends TjFragmentedSceneDetail {
     /**
      * 资源名称
      */
+    @ApiModelProperty(value = "资源名称")
     private String resourcesName;
 
     /**
      * 资源缩略图
      */
+    @ApiModelProperty(value = "资源缩略图")
     private String resourcesImgPath;
 
     /**
      * 资源文件路径
      */
+    @ApiModelProperty(value = "资源文件路径")
     private String filePath;
 
     /**
      * 地图的geoJson文件路径
      */
+    @ApiModelProperty(value = "地图的geoJson文件路径")
     private String geoJsonPath;
 
     /**
      * 道路类型名称
      */
+    @ApiModelProperty(value = "道路类型名称")
     private String roadTypeName;
 
     private String roadWayName;
@@ -162,12 +169,12 @@ public class FragmentedScenesDetailVo extends TjFragmentedSceneDetail {
     }
 
     public SceneTrajectoryBo getTrajectoryJson() {
-        try{
+        try {
             if (StringUtils.isNotEmpty(this.getTrajectoryInfo())) {
                 return JSONObject.parseObject(this.getTrajectoryInfo(), SceneTrajectoryBo.class);
             }
-        }catch (Exception e){
-            if(log.isErrorEnabled()){
+        } catch (Exception e) {
+            if (log.isErrorEnabled()) {
                 log.error("parse error!", e);
             }
         }

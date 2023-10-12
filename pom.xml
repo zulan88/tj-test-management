@@ -16,6 +16,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>1.8</java.version>
+        <spring-boot.version>2.7.1</spring-boot.version>
+        <spring-cloud-alibaba.version>2.2.5.RELEASE
+        </spring-cloud-alibaba.version>
         <maven-jar-plugin.version>3.1.1</maven-jar-plugin.version>
 <!--        <druid.version>1.2.8</druid.version>-->
         <bitwalker.version>1.21</bitwalker.version>
@@ -36,12 +39,19 @@
     <!-- 依赖声明 -->
     <dependencyManagement>
         <dependencies>
-
+            <!-- SpringCloud Alibaba 微服务 -->
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${spring-cloud-alibaba.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <!-- SpringBoot的依赖配置-->
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
-                <version>2.7.1</version>
+                <version>${spring-boot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -105,6 +115,20 @@
                         <artifactId>swagger-models</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <!-- knife4j -->
+            <dependency>
+                <groupId>com.github.xiaoymin</groupId>
+                <artifactId>knife4j-spring-boot-starter</artifactId>
+                <version>3.0.3</version>
+            </dependency>
+
+            <!-- 引入swagger-bootstrap-ui包 -->
+            <dependency>
+                <groupId>com.github.xiaoymin</groupId>
+                <artifactId>swagger-bootstrap-ui</artifactId>
+                <version>1.8.5</version>
             </dependency>
 
             <!-- io常用工具类 -->

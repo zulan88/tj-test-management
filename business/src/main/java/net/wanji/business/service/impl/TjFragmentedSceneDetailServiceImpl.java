@@ -102,8 +102,8 @@ public class TjFragmentedSceneDetailServiceImpl
             if (YN.N_INT == scenes.getIsFolder() && !ObjectUtils.isEmpty(detail)) {
                 BeanUtils.copyBeanProp(detailVo, detail);
                 detailVo.setTypeName(dictDataService.selectDictLabel(SysType.SCENE_TREE_TYPE, scenes.getType()));
-                detailVo.setRoadWayName(dictDataService.selectDictLabel(SysType.ROAD_WAY_TYPE, detail.getRoadWayType()));
-                detailVoTranslate(detailVo);
+//                detailVo.setRoadWayName(dictDataService.selectDictLabel(SysType.ROAD_WAY_TYPE, detail.getRoadWayType()));
+//                detailVoTranslate(detailVo);
             }
         }
         return detailVo;

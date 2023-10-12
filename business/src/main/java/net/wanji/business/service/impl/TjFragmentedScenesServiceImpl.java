@@ -432,6 +432,7 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
         return getChildList(list, t).size() > 0;
     }
 
+    @Override
     public synchronized String buildSceneNumber() {
         return StringUtils.format(ContentTemplate.SCENE_NUMBER_TEMPLATE, DateUtils.getNowDayString(),
                 CounterUtil.getRandomChar());

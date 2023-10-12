@@ -1,5 +1,6 @@
 package net.wanji.web.core.config;
 
+import com.github.xiaoymin.knife4j.spring.annotations.EnableKnife4j;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.models.auth.In;
 import net.wanji.common.config.WanjiConfig;
@@ -31,6 +32,7 @@ import java.util.List;
  */
 @Configuration
 @EnableOpenApi
+@EnableKnife4j
 public class SwaggerConfig
 {
     /** 系统基础配置 */
@@ -117,9 +119,9 @@ public class SwaggerConfig
         // 用ApiInfoBuilder进行定制
         return new ApiInfoBuilder()
                 // 设置标题
-                .title("标题：若依管理系统_接口文档")
+                .title("测试管理系统_接口文档")
                 // 描述
-                .description("描述：用于管理集团旗下公司的人员信息,具体包括XXX,XXX模块...")
+                .description("同济大学测试管理系统,具体包括场景库、测试用例库、任务管理、资源管理、权限管理")
                 // 作者信息
                 .contact(new Contact(wanjiConfig.getName(), null, null))
                 // 版本
@@ -128,12 +130,12 @@ public class SwaggerConfig
     }
 
     @Bean
-    public Docket createRestDSApi() {
+    public Docket createRestBSApi() {
         return new Docket(DocumentationType.OAS_30)
                 .apiInfo(apiInfo())
-                .groupName("DataSet")
+                .groupName("Business")
                 .select()
-                .apis(RequestHandlerSelectors.basePackage("net.wanji.web.controller.dataset"))
+                .apis(RequestHandlerSelectors.basePackage("net.wanji.web.controller.business"))
                 .paths(PathSelectors.any())
                 .build()
                 .securitySchemes(securitySchemes())
