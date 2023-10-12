@@ -2,13 +2,11 @@ package net.wanji.business.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import net.wanji.business.common.Constants.CaseStatusEnum;
 import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.business.common.Constants.PartRole;
 import net.wanji.business.common.Constants.PartType;
 import net.wanji.business.common.Constants.PlaybackAction;
-import net.wanji.business.common.Constants.PointTypeEnum;
 import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.TestingStatus;
 import net.wanji.business.common.Constants.YN;
@@ -18,6 +16,8 @@ import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
+import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
+import net.wanji.business.domain.dto.device.ParamsDto;
 import net.wanji.business.domain.param.CaseRuleControl;
 import net.wanji.business.domain.param.DeviceConnInfo;
 import net.wanji.business.domain.param.DeviceConnRule;
@@ -37,19 +37,19 @@ import net.wanji.business.service.RestService;
 import net.wanji.business.service.RouteService;
 import net.wanji.business.service.TestingService;
 import net.wanji.business.service.TjCaseService;
+import net.wanji.business.service.TjDeviceDetailService;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.trajectory.ImitateRedisTrajectoryConsumer;
+import net.wanji.business.util.TrajectoryUtils;
 import net.wanji.common.common.RealTestTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.utils.DateUtils;
-import net.wanji.common.utils.GeoUtil;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
 import net.wanji.system.service.ISysDictDataService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
@@ -61,10 +61,12 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -89,6 +91,9 @@ public class TestingServiceImpl implements TestingService {
     private ISysDictDataService dictDataService;
 
     @Autowired
+    private TjDeviceDetailService deviceDetailService;
+
+    @Autowired
     private TjFragmentedSceneDetailMapper sceneDetailMapper;
 
     @Autowired
@@ -108,57 +113,50 @@ public class TestingServiceImpl implements TestingService {
         }
         CaseTrajectoryDetailBo trajectoryDetail = JSONObject.parseObject(caseInfoBo.getDetailInfo(),
                 CaseTrajectoryDetailBo.class);
-        Map<String, String> partStartMap =
-                CollectionUtils.emptyIfNull(trajectoryDetail.getParticipantTrajectories()).stream().collect(
-                        Collectors.toMap(
-                                ParticipantTrajectoryBo::getId,
-                                item -> CollectionUtils.emptyIfNull(item.getTrajectory()).stream()
-                                        .filter(t -> PointTypeEnum.START.getPointType().equals(t.getType())).findFirst()
-                                        .orElse(new TrajectoryDetailBo()).getPosition()));
+        // 获取参与者起始点
+        Map<String, String> partStartMap = TrajectoryUtils.getStartPoint(trajectoryDetail.getParticipantTrajectories());
+        // 重复设备过滤
         List<CaseConfigBo> caseConfigs = caseInfoBo.getCaseConfigs().stream().filter(info ->
-                !ObjectUtils.isEmpty(info.getDeviceId())).collect(Collectors.toList());
-        List<Integer> ids = new ArrayList<>();
-        List<CaseConfigBo> configs = new ArrayList<>();
-        for (CaseConfigBo caseConfig : caseConfigs) {
-            if (!ids.contains(caseConfig.getDeviceId())) {
-                ids.add(caseConfig.getDeviceId());
-                configs.add(caseConfig);
-            }
-        }
-        for (CaseConfigBo caseConfigBo : configs) {
-            // todo 设备信息查询逻辑待实现
-            Map<String, Object> map = restService.searchDeviceInfo(caseConfigBo.getIp(), HttpMethod.POST);
-            caseConfigBo.setStatus((int) map.get("status"));
-            String start = partStartMap.get(caseConfigBo.getBusinessId());
-            if (StringUtils.isEmpty(start)) {
+                !ObjectUtils.isEmpty(info.getDeviceId())).collect(Collectors.collectingAndThen(
+                        Collectors.toCollection(() ->
+                                new TreeSet<>(Comparator.comparing(CaseConfigBo::getDeviceId))), ArrayList::new));
+        for (CaseConfigBo caseConfigBo : caseConfigs) {
+            // 查询设备状态
+            Integer status = deviceDetailService.selectDeviceState(caseConfigBo.getDeviceId(), caseConfigBo.getCommandChannel());
+            caseConfigBo.setStatus(status);
+            if (ObjectUtils.isEmpty(status) || status == 0) {
+                // 不在线无需确认准备状态
                 continue;
             }
-            String[] position = start.split(",");
-            double longitude = (double) map.get("longitude");
-            double latitude = (double) map.get("latitude");
-            double courseAngle = (double) map.get("courseAngle");
-            caseConfigBo.setStartLongitude(Double.parseDouble(position[0]));
-            caseConfigBo.setStartLatitude(Double.parseDouble(position[1]));
-            caseConfigBo.setLongitude(longitude);
-            caseConfigBo.setLatitude(latitude);
-            caseConfigBo.setCourseAngle(courseAngle);
-            double v = GeoUtil.calculateDistance(latitude, longitude, Double.parseDouble(position[1]),
-                    Double.parseDouble(position[0]));
-            if (v > 5) {
-                // todo 具体距离待沟通
-
+            // 查询设备准备状态
+            DeviceReadyStateParam stateParam = new DeviceReadyStateParam();
+            stateParam.setCaseId(caseId);
+            stateParam.setDeviceId(caseConfigBo.getDeviceId());
+            stateParam.setType(1);
+            stateParam.setTimestamp(System.currentTimeMillis());
+            if (PartRole.AV.equals(caseConfigBo.getSupportRoles())) {
+                // av车需要主车全部轨迹
+                List<String> participantTrajectories = null;
+                try {
+                    List<List<TrajectoryValueDto>> mainSimulations = routeService.readTrajectoryFromRouteFile(caseInfoBo.getRouteFile(),
+                            caseConfigBo.getBusinessId());
+                    participantTrajectories = mainSimulations.stream().map(JSONObject::toJSONString).collect(Collectors.toList());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                stateParam.setParams(new ParamsDto(caseId, participantTrajectories));
             }
-            caseConfigBo.setPositionStatus(YN.Y_INT);
+            Integer readyState = restService.selectDeviceReadyState(stateParam);
+            caseConfigBo.setPositionStatus(readyState);
         }
-        Map<String, List<CaseConfigBo>> statusMap = configs.stream().collect(
-                Collectors.groupingBy(CaseConfigBo::getParticipantRole));
         // todo  设备去重
         RealVehicleVerificationPageVo result = new RealVehicleVerificationPageVo();
         result.setCaseId(caseId);
         result.setFilePath(caseInfoBo.getFilePath());
         result.setGeoJsonPath(caseInfoBo.getGeoJsonPath());
-        result.setStatusMap(statusMap);
-        result.setChannels(configs.stream().map(CaseConfigBo::getDataChannel).collect(Collectors.toSet()));
+        result.setStatusMap(caseConfigs.stream().collect(
+                Collectors.groupingBy(CaseConfigBo::getParticipantRole)));
+        result.setChannels(caseConfigs.stream().map(CaseConfigBo::getDataChannel).collect(Collectors.toSet()));
         validStatus(result);
         return result;
     }

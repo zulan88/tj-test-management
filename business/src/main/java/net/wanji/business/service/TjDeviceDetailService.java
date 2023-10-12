@@ -2,6 +2,7 @@ package net.wanji.business.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import net.wanji.business.domain.dto.TjDeviceDetailDto;
+import net.wanji.business.domain.dto.TjDeviceDto;
 import net.wanji.business.domain.vo.DeviceDetailVo;
 import net.wanji.business.entity.TjDeviceDetail;
 
@@ -54,4 +55,13 @@ public interface TjDeviceDetailService extends IService<TjDeviceDetail> {
      * @return
      */
     boolean batchDeleteDevice(List<Integer> deviceIds);
+
+    /**
+     * 查询设备状态
+     * @param deviceId
+     * @param channel 控制通道
+     * @return
+     */
+    Integer selectDeviceState(Integer deviceId, String channel);
+
 }

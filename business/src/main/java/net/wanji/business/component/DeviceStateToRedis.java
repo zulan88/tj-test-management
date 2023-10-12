@@ -20,7 +20,7 @@ public class DeviceStateToRedis {
 
   private final RedisTemplate<String, Integer> redisTemplate;
 
-  public DeviceStateToRedis(RedisTemplate<String, Integer> redisTemplate) {
+  public DeviceStateToRedis(RedisTemplate redisTemplate) {
     this.redisTemplate = redisTemplate;
   }
 
@@ -33,7 +33,7 @@ public class DeviceStateToRedis {
     save(deviceId, 1, prefix);
   }
 
-  private Integer query(Integer deviceId, String prefix) {
+  public Integer query(Integer deviceId, String prefix) {
     return redisTemplate.opsForValue().get(getKey(deviceId, prefix));
   }
 

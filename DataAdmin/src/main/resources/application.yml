@@ -170,10 +170,11 @@ tess:
 #  start: http://129.211.28.237:8000/test/start
 #  start: http://192.168.7.23:7778/test/start
 masterControl:
-  sendRule: http://localhost:8082/masterControl/DeviceIA/deviceIARulesSend
-#  sendRule: http://10.100.16.15:8082/masterControl/DeviceIA/deviceIARulesSend
+#  sendRule: http://localhost:8082/masterControl/DeviceIA/deviceIARulesSend
+  sendRule: http://10.100.16.15:8082/masterControl/DeviceIA/deviceIARulesSend
 #  sendRule: http://10.102.1.36:8082/masterControl/DeviceIA/deviceIARulesSend
 #  sendRule: http://192.168.7.17:8082/masterControl/DeviceIA/deviceIARulesSend
+  queryDeviceReadyState: http://10.100.16.15:8082/masterControl/DeviceIA/deviceReadyState
 imitate:
   client: http://localhost:19303/realTest/start
 #  client: http://10.102.1.36:19303/realTest/start

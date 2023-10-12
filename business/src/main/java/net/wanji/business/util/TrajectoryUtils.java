@@ -1,9 +1,15 @@
 package net.wanji.business.util;
 
+import net.wanji.business.common.Constants.PointTypeEnum;
+import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
+import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.utils.GeoUtil;
+import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @Auther: guanyuduo
@@ -27,4 +33,17 @@ public class TrajectoryUtils {
         return mileage;
     }
 
+    /**
+     * 获取所有参与者的起始点
+     * @param participantTrajectories
+     * @return
+     */
+    public static Map<String, String> getStartPoint(List<ParticipantTrajectoryBo> participantTrajectories) {
+        return CollectionUtils.emptyIfNull(participantTrajectories).stream().collect(
+                        Collectors.toMap(
+                                ParticipantTrajectoryBo::getId,
+                                item -> CollectionUtils.emptyIfNull(item.getTrajectory()).stream()
+                                        .filter(t -> PointTypeEnum.START.getPointType().equals(t.getType())).findFirst()
+                                        .orElse(new TrajectoryDetailBo()).getPosition()));
+    }
 }

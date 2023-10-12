@@ -2,6 +2,8 @@ package net.wanji.business.service;
 
 import net.wanji.business.domain.bo.CaseConfigBo;
 import net.wanji.business.domain.bo.TaskCaseConfigBo;
+import net.wanji.business.domain.dto.device.DeviceReadyStateDto;
+import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.param.CaseRuleControl;
 import net.wanji.business.domain.param.TestStartParam;
 import org.springframework.http.HttpMethod;
@@ -29,6 +31,13 @@ public interface RestService {
      * @return
      */
     Map<String, Object> searchDeviceInfo(String ip, HttpMethod method);
+
+    /**
+     * 查询设备准备状态
+     * @param deviceReadyStateParam
+     * @return
+     */
+    Integer selectDeviceReadyState(DeviceReadyStateParam deviceReadyStateParam);
 
     /**
      * 主控交互

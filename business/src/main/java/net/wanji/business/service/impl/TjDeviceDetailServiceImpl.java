@@ -4,11 +4,13 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import net.wanji.business.common.Constants.DeviceStatusEnum;
 import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.YN;
+import net.wanji.business.component.DeviceStateToRedis;
 import net.wanji.business.domain.dto.TjDeviceDetailDto;
+import net.wanji.business.domain.dto.device.DeviceStateDto;
 import net.wanji.business.domain.vo.DeviceDetailVo;
-import net.wanji.business.entity.TjCasePartConfig;
 import net.wanji.business.entity.TjDeviceDetail;
 import net.wanji.business.mapper.TjDeviceDetailMapper;
+import net.wanji.business.service.DeviceStateSendService;
 import net.wanji.business.service.TjDeviceDetailService;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.system.service.ISysDictDataService;
@@ -18,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
+import javax.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,6 +38,21 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
 
     @Autowired
     private TjDeviceDetailMapper deviceDetailMapper;
+
+    @Autowired
+    private DeviceStateToRedis deviceStateToRedis;
+
+    @Autowired
+    private DeviceStateSendService deviceStateSendService;
+
+    @PostConstruct
+    public void initDeviceState() {
+        List<TjDeviceDetail> deviceDetails = this.list();
+        for (TjDeviceDetail deviceDetail : deviceDetails) {
+            selectDeviceState(deviceDetail.getDeviceId(), deviceDetail.getCommandChannel());
+        }
+    }
+
 
     @Override
     public List<DeviceDetailVo> getAllDevices(TjDeviceDetailDto deviceDto) {
@@ -87,5 +105,19 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
     @Override
     public boolean batchDeleteDevice(List<Integer> deviceIds) {
         return this.removeByIds(deviceIds);
+    }
+
+    @Override
+    public Integer selectDeviceState(Integer deviceId, String channel) {
+        Integer state = deviceStateToRedis.query(deviceId, DeviceStateToRedis.DEVICE_STATE_PREFIX);
+        if (!ObjectUtils.isEmpty(state)) {
+            return state;
+        }
+        DeviceStateDto deviceStateDto = new DeviceStateDto();
+        deviceStateDto.setDeviceId(deviceId);
+        deviceStateDto.setType(0);
+        deviceStateDto.setTimestamp(System.currentTimeMillis());
+        deviceStateSendService.sendData(channel, deviceStateDto);
+        return deviceStateToRedis.query(deviceId, DeviceStateToRedis.DEVICE_STATE_PREFIX);
     }
 }

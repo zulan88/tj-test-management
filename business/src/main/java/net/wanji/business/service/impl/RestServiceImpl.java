@@ -4,6 +4,8 @@ import com.alibaba.fastjson.JSONObject;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.bo.CaseConfigBo;
 import net.wanji.business.domain.bo.TaskCaseConfigBo;
+import net.wanji.business.domain.dto.device.DeviceReadyStateDto;
+import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.param.CaseRuleControl;
 import net.wanji.business.domain.param.TestStartParam;
 import net.wanji.business.entity.TjDevice;
@@ -40,6 +42,9 @@ public class RestServiceImpl implements RestService {
 
     @Value("${tess.start}")
     private String tessStartUrl;
+
+    @Value("${masterControl.queryDeviceReadyState}")
+    private String queryDeviceReadyStateUrl;
 
     @Value("${masterControl.sendRule}")
     private String sendRuleUrl;
@@ -81,6 +86,30 @@ public class RestServiceImpl implements RestService {
         result.put("latitude", 31.291084438789756);
         result.put("courseAngle", 0.3);
         return result;
+    }
+
+    @Override
+    public Integer selectDeviceReadyState(DeviceReadyStateParam deviceReadyStateParam) {
+        try {
+            String resultUrl = queryDeviceReadyStateUrl;
+            log.info("============================== queryDeviceReadyStateUrl：{}", queryDeviceReadyStateUrl);
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<DeviceReadyStateDto> resultHttpEntity = new HttpEntity<>(deviceReadyStateParam, httpHeaders);
+            log.info("============================== queryDeviceReadyStateUrl：{}", JSONObject.toJSONString(deviceReadyStateParam));
+            ResponseEntity<String> response =
+                    restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);
+            if (response.getStatusCodeValue() == 200) {
+                if (!"success".equals(response.getBody())) {
+                    log.error("远程服务调用失败:{}", response.getBody());
+                    return 0;
+                }
+                return 1;
+            }
+        } catch (Exception e) {
+            log.error("远程服务调用失败:{}", e);
+        }
+        return 0;
     }
 
     @Override
