@@ -22,7 +22,7 @@ public class DeviceStateDto {
    */
   private Integer type;
   /**
-   * 自定义参数（设备准备状态校验条件）
+   * 设备状态，0：离线；1：在线
    */
   private Integer state;
   /**
