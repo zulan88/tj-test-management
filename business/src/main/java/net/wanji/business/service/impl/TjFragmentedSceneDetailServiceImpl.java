@@ -146,7 +146,10 @@ public class TjFragmentedSceneDetailServiceImpl
             detail.setUpdatedBy(SecurityUtils.getUsername());
             detail.setUpdatedDate(LocalDateTime.now());
         }
-        if (StringUtils.isNotEmpty(sceneDetailDto.getRouteFile())) {
+//        if (StringUtils.isNotEmpty(sceneDetailDto.getRouteFile())) {
+//            detail.setFinished(true);
+//        }
+        if(Integer.valueOf(1).equals(sceneDetailDto.getFinished())){
             detail.setFinished(true);
         }
         detail.setLabel(CollectionUtils.isNotEmpty(sceneDetailDto.getLabelList())

@@ -119,6 +119,11 @@ public class TjFragmentedSceneDetailDto {
     private String driverDataFilePath;
 
     /**
+     * 完成标志，区分提交和保存
+     */
+    private Integer finished;
+
+    /**
      * 标签
      */
     @ApiModelProperty(value = "标签")
