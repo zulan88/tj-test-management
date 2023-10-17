@@ -2,6 +2,7 @@ package net.wanji.business.domain.vo;
 
 import lombok.Data;
 import net.wanji.business.domain.bo.CaseConfigBo;
+import net.wanji.common.utils.StringUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -28,4 +29,11 @@ public class RealVehicleVerificationPageVo {
     private boolean canStart;
 
     private String message;
+
+    public void setMessage(String message) {
+        this.message = message;
+        if (StringUtils.isEmpty(message)) {
+            this.canStart = true;
+        }
+    }
 }

@@ -152,7 +152,7 @@ public class FileUtils {
         return FileUploadUtils.getPathFileName(uploadDir, pathName);
     }
 
-    public static List<List<TrajectoryValueDto>> readE1(String filePath) {
+    public static List<List<TrajectoryValueDto>> readTrajectory(String filePath) {
         List<List<TrajectoryValueDto>> list = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
             String line;
@@ -160,6 +160,19 @@ public class FileUtils {
                 SimulationTrajectoryDto data = JSONObject.parseObject(line, SimulationTrajectoryDto.class);
                 List<TrajectoryValueDto> mapList = data.getValue();
                 list.add(mapList);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public static List<SimulationTrajectoryDto> readOriTrajectory(String filePath) {
+        List<SimulationTrajectoryDto> list = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                list.add(JSONObject.parseObject(line, SimulationTrajectoryDto.class));
             }
         } catch (IOException e) {
             e.printStackTrace();

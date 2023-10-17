@@ -19,6 +19,7 @@ public interface Constants {
     class RedisMessageType {
         public static final String START = "start";
         public static final String SCORE = "score";
+        public static final String OPTIMIZE = "optimize";
         public static final String TRAJECTORY = "trajectory";
         public static final String END = "end";
     }

@@ -37,7 +37,7 @@ public interface RestService {
      * @param deviceReadyStateParam
      * @return
      */
-    Integer selectDeviceReadyState(DeviceReadyStateParam deviceReadyStateParam);
+    boolean selectDeviceReadyState(DeviceReadyStateParam deviceReadyStateParam);
 
     /**
      * 主控交互

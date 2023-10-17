@@ -17,6 +17,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>1.8</java.version>
         <spring-boot.version>2.7.1</spring-boot.version>
+        <spring-cloud.version>2021.0.6</spring-cloud.version>
         <spring-cloud-alibaba.version>2.2.5.RELEASE
         </spring-cloud-alibaba.version>
         <maven-jar-plugin.version>3.1.1</maven-jar-plugin.version>
@@ -39,6 +40,19 @@
     <!-- 依赖声明 -->
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-starter-bootstrap</artifactId>
+                <version>3.0.1</version>
+            </dependency>
+            <!-- SpringCloud 微服务 -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <!-- SpringCloud Alibaba 微服务 -->
             <dependency>
                 <groupId>com.alibaba.cloud</groupId>

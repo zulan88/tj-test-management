@@ -319,7 +319,7 @@ public class RouteService {
 
     public List<List<TrajectoryValueDto>> readRouteFile(String fileName) throws IOException {
         String routeFile = FileUploadUtils.getAbsolutePathFileName(fileName);
-        return FileUtils.readE1(routeFile);
+        return FileUtils.readTrajectory(routeFile);
     }
 
     public List<List<TrajectoryValueDto>> readTrajectoryFromData(List<List<TrajectoryValueDto>> data, String participantId) {
@@ -333,6 +333,31 @@ public class RouteService {
                     participantId.equals(route.getId())).collect(Collectors.toList())
                 : data;
     }
+
+    /**
+     * 读取仿真验证轨迹原始文件
+     * @param fileName
+     * @param participantId
+     * @return
+     * @throws IOException
+     */
+    public List<SimulationTrajectoryDto> readOriTrajectoryFromRouteFile(String fileName, String participantId) throws IOException {
+        List<SimulationTrajectoryDto> data = readOriRouteFile(fileName);
+        return readOriTrajectoryFromData(data, participantId);
+    }
+
+    public List<SimulationTrajectoryDto> readOriRouteFile(String fileName) throws IOException {
+        String routeFile = FileUploadUtils.getAbsolutePathFileName(fileName);
+        return FileUtils.readOriTrajectory(routeFile);
+    }
+
+    public List<SimulationTrajectoryDto> readOriTrajectoryFromData(List<SimulationTrajectoryDto> data, String participantId) {
+        for (SimulationTrajectoryDto simulationTrajectoryDto : data) {
+            simulationTrajectoryDto.setValue(filterParticipant(simulationTrajectoryDto.getValue(), participantId));
+        }
+        return data;
+    }
+
 
     /**
      * 读取实车验证轨迹文件

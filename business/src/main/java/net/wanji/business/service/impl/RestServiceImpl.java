@@ -89,7 +89,7 @@ public class RestServiceImpl implements RestService {
     }
 
     @Override
-    public Integer selectDeviceReadyState(DeviceReadyStateParam deviceReadyStateParam) {
+    public boolean selectDeviceReadyState(DeviceReadyStateParam deviceReadyStateParam) {
         try {
             String resultUrl = queryDeviceReadyStateUrl;
             log.info("============================== queryDeviceReadyStateUrl：{}", queryDeviceReadyStateUrl);
@@ -102,14 +102,14 @@ public class RestServiceImpl implements RestService {
             if (response.getStatusCodeValue() == 200) {
                 if (!"success".equals(response.getBody())) {
                     log.error("远程服务调用失败:{}", response.getBody());
-                    return 0;
+                    return false;
                 }
-                return 1;
+                return true;
             }
         } catch (Exception e) {
             log.error("远程服务调用失败:{}", e);
         }
-        return 0;
+        return false;
     }
 
     @Override

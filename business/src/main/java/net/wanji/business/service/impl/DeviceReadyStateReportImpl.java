@@ -1,9 +1,11 @@
 package net.wanji.business.service.impl;
 
+import com.alibaba.fastjson2.JSONObject;
 import net.wanji.business.annotion.DeviceReport;
 import net.wanji.business.component.DeviceStateToRedis;
 import net.wanji.business.domain.dto.device.DeviceReadyStateDto;
 import net.wanji.business.service.DeviceReportService;
+import net.wanji.business.service.StatusManage;
 import org.springframework.stereotype.Service;
 
 /**
@@ -16,7 +18,7 @@ import org.springframework.stereotype.Service;
 @DeviceReport("1")
 @Service
 public class DeviceReadyStateReportImpl
-    implements DeviceReportService<DeviceReadyStateDto> {
+    implements DeviceReportService<JSONObject> {
 
   private final DeviceStateToRedis deviceStateToRedis;
 
@@ -25,8 +27,11 @@ public class DeviceReadyStateReportImpl
   }
 
   @Override
-  public void dataProcess(DeviceReadyStateDto deviceReadyStateDto) {
+  public void dataProcess(JSONObject jsonObject) {
+    DeviceReadyStateDto deviceReadyStateDto = JSONObject.parseObject(String.valueOf(jsonObject), DeviceReadyStateDto.class);
     deviceStateToRedis.save(deviceReadyStateDto.getDeviceId(),
         DeviceStateToRedis.DEVICE_READY_STATE_PREFIX);
+    String key =  DeviceStateToRedis.DEVICE_READY_STATE_PREFIX + "_" + deviceReadyStateDto.getDeviceId();
+    StatusManage.countDown(key, deviceReadyStateDto.getState());
   }
 }

@@ -1,5 +1,7 @@
 package net.wanji.business.component;
 
+import lombok.extern.slf4j.Slf4j;
+import net.wanji.common.utils.StringUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
@@ -14,6 +16,7 @@ import java.time.temporal.ChronoUnit;
  * @date 2023/10/7 16:31
  **/
 @Component
+@Slf4j
 public class DeviceStateToRedis {
   public static final String DEVICE_STATE_PREFIX = "deviceState";
   public static final String DEVICE_READY_STATE_PREFIX = "deviceReadyState";
@@ -26,7 +29,7 @@ public class DeviceStateToRedis {
 
   public void save(Integer deviceId, Integer state, String prefix) {
     redisTemplate.opsForValue().set(getKey(deviceId, prefix), state,
-        Duration.of(1, ChronoUnit.SECONDS));
+        Duration.of(50, ChronoUnit.SECONDS));
   }
 
   public void save(Integer deviceId, String prefix) {

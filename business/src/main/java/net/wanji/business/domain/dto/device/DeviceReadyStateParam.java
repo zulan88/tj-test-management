@@ -14,6 +14,10 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class DeviceReadyStateParam extends DeviceReadyStateDto{
   /**
+   * 控制通道
+   */
+  private String controlChannel;
+  /**
    * 自定义参数
    */
   private ParamsDto params;

@@ -42,6 +42,7 @@ import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.trajectory.ImitateRedisTrajectoryConsumer;
 import net.wanji.business.util.TrajectoryUtils;
 import net.wanji.common.common.RealTestTrajectoryDto;
+import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
@@ -111,10 +112,6 @@ public class TestingServiceImpl implements TestingService {
         if (caseInfoBo.getCaseConfigs().stream().allMatch(config -> ObjectUtils.isEmpty(config.getDeviceId()))) {
             throw new BusinessException("用例未进行设备配置");
         }
-        CaseTrajectoryDetailBo trajectoryDetail = JSONObject.parseObject(caseInfoBo.getDetailInfo(),
-                CaseTrajectoryDetailBo.class);
-        // 获取参与者起始点
-        Map<String, String> partStartMap = TrajectoryUtils.getStartPoint(trajectoryDetail.getParticipantTrajectories());
         // 重复设备过滤
         List<CaseConfigBo> caseConfigs = caseInfoBo.getCaseConfigs().stream().filter(info ->
                 !ObjectUtils.isEmpty(info.getDeviceId())).collect(Collectors.collectingAndThen(
@@ -132,13 +129,14 @@ public class TestingServiceImpl implements TestingService {
             DeviceReadyStateParam stateParam = new DeviceReadyStateParam();
             stateParam.setCaseId(caseId);
             stateParam.setDeviceId(caseConfigBo.getDeviceId());
+            stateParam.setControlChannel(caseConfigBo.getCommandChannel());
             stateParam.setType(1);
             stateParam.setTimestamp(System.currentTimeMillis());
             if (PartRole.AV.equals(caseConfigBo.getSupportRoles())) {
                 // av车需要主车全部轨迹
                 List<String> participantTrajectories = null;
                 try {
-                    List<List<TrajectoryValueDto>> mainSimulations = routeService.readTrajectoryFromRouteFile(caseInfoBo.getRouteFile(),
+                    List<SimulationTrajectoryDto> mainSimulations = routeService.readOriTrajectoryFromRouteFile(caseInfoBo.getRouteFile(),
                             caseConfigBo.getBusinessId());
                     participantTrajectories = mainSimulations.stream().map(JSONObject::toJSONString).collect(Collectors.toList());
                 } catch (IOException e) {
@@ -146,10 +144,8 @@ public class TestingServiceImpl implements TestingService {
                 }
                 stateParam.setParams(new ParamsDto(caseId, participantTrajectories));
             }
-            Integer readyState = restService.selectDeviceReadyState(stateParam);
-            caseConfigBo.setPositionStatus(readyState);
+            caseConfigBo.setPositionStatus(deviceDetailService.selectDeviceReadyState(caseConfigBo.getDeviceId(), stateParam));
         }
-        // todo  设备去重
         RealVehicleVerificationPageVo result = new RealVehicleVerificationPageVo();
         result.setCaseId(caseId);
         result.setFilePath(caseInfoBo.getFilePath());
@@ -157,7 +153,7 @@ public class TestingServiceImpl implements TestingService {
         result.setStatusMap(caseConfigs.stream().collect(
                 Collectors.groupingBy(CaseConfigBo::getParticipantRole)));
         result.setChannels(caseConfigs.stream().map(CaseConfigBo::getDataChannel).collect(Collectors.toSet()));
-        validStatus(result);
+        result.setMessage(validStatus(caseConfigs));
         return result;
     }
 
@@ -380,27 +376,19 @@ public class TestingServiceImpl implements TestingService {
         return communicationDelayVo;
     }
 
-    private void validStatus(RealVehicleVerificationPageVo pageVo) {
-        Map<String, List<CaseConfigBo>> statusMap = pageVo.getStatusMap();
-        List<CaseConfigBo> configs = new ArrayList<>();
-        statusMap.values().stream().flatMap(List::stream).forEach(configs::add);
+    private String validStatus(List<CaseConfigBo> configs) {
         StringBuilder messageBuilder = new StringBuilder();
         for (CaseConfigBo config : configs) {
-            if (YN.Y_INT != config.getStatus()) {
+            if (ObjectUtils.isEmpty(config.getStatus()) || YN.Y_INT != config.getStatus()) {
                 messageBuilder.append(StringUtils.format(ContentTemplate.DEVICE_OFFLINE_TEMPLATE,
                         config.getDeviceName()));
             }
-            if (YN.Y_INT != config.getPositionStatus()) {
+            if (ObjectUtils.isEmpty(config.getPositionStatus()) || YN.Y_INT != config.getPositionStatus()) {
                 messageBuilder.append(StringUtils.format(ContentTemplate.DEVICE_POS_ERROR_TEMPLATE,
                         config.getDeviceName()));
             }
         }
-        String message = messageBuilder.toString();
-        if (StringUtils.isNotEmpty(message)) {
-            pageVo.setMessage(message);
-        } else {
-            pageVo.setCanStart(true);
-        }
+        return messageBuilder.toString();
     }
 
     /**

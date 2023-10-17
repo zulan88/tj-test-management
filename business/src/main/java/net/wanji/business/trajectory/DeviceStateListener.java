@@ -1,7 +1,10 @@
 package net.wanji.business.trajectory;
 
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import net.wanji.business.component.DeviceReportFactory;
+import net.wanji.business.component.DeviceStateToRedis;
 import net.wanji.business.domain.dto.device.DeviceStateDto;
 import net.wanji.business.service.DeviceReportService;
 import org.springframework.data.redis.connection.Message;
@@ -23,6 +26,7 @@ import javax.annotation.Resource;
 public class DeviceStateListener implements MessageListener {
   @Resource
   private RedisTemplate<String, String> redisTemplate;
+
   @Resource
   private DeviceReportFactory deviceReportFactory;
 
@@ -36,9 +40,10 @@ public class DeviceStateListener implements MessageListener {
       }
       return;
     }
-    DeviceStateDto deviceStateDto = (DeviceStateDto) object;
-    DeviceReportService<Object> deviceReportService = deviceReportFactory.create(
-        deviceStateDto.getType());
-    deviceReportService.dataProcess(object);
+    // todo redis反序列化方式待调整
+//    DeviceStateDto deviceStateDto = JSONObject.parseObject(String.valueOf(object), DeviceStateDto.class);
+    JSONObject jsonObject = (JSONObject) object;
+    DeviceReportService<Object> deviceReportService = deviceReportFactory.create(jsonObject.getInteger("type"));
+    deviceReportService.dataProcess(jsonObject);
   }
 }

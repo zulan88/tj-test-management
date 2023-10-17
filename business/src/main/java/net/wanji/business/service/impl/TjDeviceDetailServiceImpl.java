@@ -1,18 +1,24 @@
 package net.wanji.business.service.impl;
 
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.extern.slf4j.Slf4j;
 import net.wanji.business.common.Constants.DeviceStatusEnum;
 import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.component.DeviceStateToRedis;
 import net.wanji.business.domain.dto.TjDeviceDetailDto;
+import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.DeviceStateDto;
 import net.wanji.business.domain.vo.DeviceDetailVo;
 import net.wanji.business.entity.TjDeviceDetail;
 import net.wanji.business.mapper.TjDeviceDetailMapper;
 import net.wanji.business.service.DeviceStateSendService;
+import net.wanji.business.service.RestService;
+import net.wanji.business.service.StatusManage;
 import net.wanji.business.service.TjDeviceDetailService;
 import net.wanji.common.utils.SecurityUtils;
+import net.wanji.common.utils.StringUtils;
 import net.wanji.system.service.ISysDictDataService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.BeanUtils;
@@ -31,6 +37,7 @@ import java.util.stream.Collectors;
  * @createDate 2023-08-17 10:56:39
  */
 @Service
+@Slf4j
 public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper, TjDeviceDetail> implements TjDeviceDetailService {
 
     @Autowired
@@ -44,6 +51,9 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
 
     @Autowired
     private DeviceStateSendService deviceStateSendService;
+
+    @Autowired
+    private RestService restService;
 
     @PostConstruct
     public void initDeviceState() {
@@ -117,7 +127,32 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
         deviceStateDto.setDeviceId(deviceId);
         deviceStateDto.setType(0);
         deviceStateDto.setTimestamp(System.currentTimeMillis());
+        log.info("发送数据：查询设备{}状态  {}", deviceId, JSONObject.toJSONString(deviceStateDto));
         deviceStateSendService.sendData(channel, deviceStateDto);
-        return deviceStateToRedis.query(deviceId, DeviceStateToRedis.DEVICE_STATE_PREFIX);
+        String key =  DeviceStateToRedis.DEVICE_STATE_PREFIX + "_" + deviceId;
+        try {
+            StatusManage.addCountDownLatch(key);
+        } catch (InterruptedException e) {
+            log.error("查询设备状态异常", e);
+        }
+        log.info("等待设备{}状态  {}", deviceId, channel);
+        return (Integer) StatusManage.getValue(key);
+    }
+
+    @Override
+    public Integer selectDeviceReadyState(Integer deviceId, DeviceReadyStateParam stateParam) {
+        Integer state = deviceStateToRedis.query(deviceId, DeviceStateToRedis.DEVICE_READY_STATE_PREFIX);
+        if (!ObjectUtils.isEmpty(state)) {
+            return state;
+        }
+        restService.selectDeviceReadyState(stateParam);
+        String key =  DeviceStateToRedis.DEVICE_READY_STATE_PREFIX + "_" + deviceId;
+        try {
+            StatusManage.addCountDownLatch(key);
+        } catch (InterruptedException e) {
+            log.error("查询设备准备状态异常", e);
+        }
+        log.info("等待设备 {} 准备状态", deviceId);
+        return (Integer) StatusManage.getValue(key);
     }
 }

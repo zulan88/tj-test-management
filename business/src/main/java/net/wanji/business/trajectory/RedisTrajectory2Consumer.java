@@ -11,6 +11,7 @@ import net.wanji.business.domain.dto.SceneDebugDto;
 import net.wanji.business.service.RouteService;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.common.common.SimulationMessage;
+import net.wanji.common.common.SimulationOptimizeDto;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.config.WanjiConfig;
@@ -34,11 +35,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * @Auther: guanyuduo
@@ -71,6 +74,7 @@ public class RedisTrajectory2Consumer {
 
     /**
      * 在线调试
+     *
      * @param sceneDebugDto
      */
     public void subscribeAndSend(SceneDebugDto sceneDebugDto) {
@@ -82,10 +86,7 @@ public class RedisTrajectory2Consumer {
     /**
      * 添加监听器
      *
-     * @param caseId
-     * @param channel
-     * @param participantId
-     * @param originalTrajectory
+     * @param sceneDebugDto
      */
     public void addRunningChannel(SceneDebugDto sceneDebugDto) {
         String channel = WebSocketManage.buildKey(SecurityUtils.getUsername(), sceneDebugDto.getNumber(),
@@ -151,6 +152,10 @@ public class RedisTrajectory2Consumer {
                             WebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));
                         }
                         break;
+                    case RedisMessageType.OPTIMIZE:
+                        log.info("{}接收到轨迹优化消息：{}", methodLog, simulationMessage.getValue());
+                        handleOptimize(simulationMessage.getValue());
+                        break;
                     // 结束消息
                     case RedisMessageType.END:
                         if (!channelListener.started) {
@@ -187,6 +192,20 @@ public class RedisTrajectory2Consumer {
                 removeListener(channel);
             }
         };
+    }
+
+    public void handleOptimize(String optimizeInfo) {
+        JSONObject jsonObject = JSONObject.parseObject(optimizeInfo);
+        List<SimulationOptimizeDto> list = new ArrayList<>();
+        for (Entry<String, Object> entry : jsonObject.entrySet()) {
+            JSONObject points = JSONObject.parseObject((String) entry.getValue());
+            for (Entry<String, Object> detail : points.entrySet()) {
+                list.add(new SimulationOptimizeDto(entry.getKey(), detail.getKey(), detail.getValue()));
+            }
+        }
+        Map<String, List<SimulationOptimizeDto>> result = list.stream()
+                .collect(Collectors.groupingBy(SimulationOptimizeDto::getId));
+        log.info("优化结果：{}", JSONObject.toJSONString(result));
     }
 
     /**

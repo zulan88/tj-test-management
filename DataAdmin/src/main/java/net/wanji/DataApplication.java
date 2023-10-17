@@ -4,6 +4,7 @@ import net.wanji.web.core.config.SwaggerConfig;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.client.ClientHttpRequestFactory;
@@ -29,6 +30,7 @@ import java.nio.charset.StandardCharsets;
 @EnableWebSocket
 @MapperScan("net.wanji.*.mapper")
 @SpringBootApplication(exclude = { DataSourceAutoConfiguration.class })
+@EnableDiscoveryClient
 public class DataApplication
 {
     public static void main(String[] args)

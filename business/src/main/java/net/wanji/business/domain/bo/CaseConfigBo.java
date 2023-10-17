@@ -82,5 +82,5 @@ public class CaseConfigBo extends TjCasePartConfig {
     /**
      * 是否到达指定位置
      */
-    private int positionStatus;
+    private Integer positionStatus;
 }
