@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="net.wanji.business.mapper.LabelsMapper">
+    
+    <resultMap type="Labels" id="LabelsResult">
+        <result property="id"    column="id"    />
+        <result property="name"    column="name"    />
+        <result property="parentId"    column="parent_Id"    />
+    </resultMap>
+
+    <sql id="selectLabelsVo">
+        select id, name, parent_Id from tj_labels
+    </sql>
+
+    <select id="selectLabelsList" parameterType="Labels" resultMap="LabelsResult">
+        <include refid="selectLabelsVo"/>
+        <where>  
+            <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
+            <if test="parentId != null "> and parent_Id = #{parentId}</if>
+        </where>
+    </select>
+    
+    <select id="selectLabelsById" parameterType="Long" resultMap="LabelsResult">
+        <include refid="selectLabelsVo"/>
+        where id = #{id}
+    </select>
+        
+    <insert id="insertLabels" parameterType="Labels" useGeneratedKeys="true" keyProperty="id">
+        insert into tj_labels
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="name != null">name,</if>
+            <if test="parentId != null">parent_Id,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="name != null">#{name},</if>
+            <if test="parentId != null">#{parentId},</if>
+         </trim>
+    </insert>
+
+    <update id="updateLabels" parameterType="Labels">
+        update tj_labels
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="name != null">name = #{name},</if>
+            <if test="parentId != null">parent_Id = #{parentId},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteLabelsById" parameterType="Long">
+        delete from tj_labels where id = #{id}
+    </delete>
+
+    <delete id="deleteLabelsByIds" parameterType="String">
+        delete from tj_labels where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>
