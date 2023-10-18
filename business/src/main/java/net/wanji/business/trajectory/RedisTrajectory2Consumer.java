@@ -8,6 +8,7 @@ import net.wanji.business.common.Constants.RedisMessageType;
 import net.wanji.business.domain.WebsocketMessage;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.dto.SceneDebugDto;
+import net.wanji.business.domain.vo.ParticipantTrajectoryVo;
 import net.wanji.business.service.RouteService;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.common.common.SimulationMessage;
@@ -141,7 +142,7 @@ public class RedisTrajectory2Consumer {
                             // 实际轨迹消息
                             List<TrajectoryValueDto> data = simulationTrajectory.getValue();
                             // 检查轨迹
-                            routeService.checkSimulaitonRoute2(sceneDebugDto.getTrajectoryJson(), data);
+                            List<ParticipantTrajectoryVo> res = routeService.checkSimulaitonRoute2(sceneDebugDto.getTrajectoryJson(), data);
                             // 保存轨迹(本地)
                             receiveData(channel, simulationTrajectory);
                             // send ws
@@ -149,6 +150,7 @@ public class RedisTrajectory2Consumer {
                                     RedisMessageType.TRAJECTORY,
                                     duration,
                                     data);
+                            msg.setObjlist(res);
                             WebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));
                         }
                         break;

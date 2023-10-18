@@ -18,6 +18,7 @@ import net.wanji.business.domain.dto.SceneQueryDto;
 import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
 import net.wanji.business.domain.param.TestStartParam;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
+import net.wanji.business.domain.vo.SceneDetailVo;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.entity.TjResourcesDetail;
@@ -298,5 +299,10 @@ public class TjFragmentedSceneDetailServiceImpl
                 WebSocketManage.buildKey(SecurityUtils.getUsername(), sceneDebugDto.getNumber(),
                         WebSocketManage.SIMULATION, null), (int) avNum, (int) simulationNum,
                 (int) pedestrianNum, sceneTrajectoryBo.getParticipantTrajectories());
+    }
+
+    @Override
+    public List<SceneDetailVo> selectTjFragmentedSceneDetailList(SceneDetailVo sceneDetailVo){
+        return sceneDetailMapper.selectTjFragmentedSceneDetailList(sceneDetailVo);
     }
 }

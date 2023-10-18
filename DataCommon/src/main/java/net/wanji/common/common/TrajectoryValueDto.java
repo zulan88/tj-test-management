@@ -8,7 +8,8 @@ import java.util.Map;
  * @Date: 2023/8/9 10:13
  * @Descriptoin:
  */
-public class TrajectoryValueDto {
+public class
+TrajectoryValueDto {
     private String timestamp;
     private String globalTimeStamp;
     private Integer frameId;
