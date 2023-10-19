@@ -1,6 +1,6 @@
 package net.wanji.web.controller.business;
 
-import net.wanji.business.domain.Labels;
+import net.wanji.business.domain.Label;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
 import net.wanji.business.domain.vo.TreeNode;
 import net.wanji.business.exception.BusinessException;
@@ -11,6 +11,7 @@ import net.wanji.common.core.domain.AjaxResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.PostConstruct;
 import java.util.*;
 
 @RestController
@@ -23,12 +24,13 @@ public class LabelsController extends BaseController {
     @Autowired
     private TjFragmentedSceneDetailService tjFragmentedSceneDetailService;
 
+
     //输出为树形结构
     @GetMapping("/list")
     public AjaxResult list(Integer id) throws BusinessException {
-        List<Labels> labelsList = labelsService.selectLabelsList(new Labels());
-        Map<Long, TreeNode> labelToNodeMap = new HashMap<>();
-        List<TreeNode> roots = new ArrayList<>();
+        List<Label> labelList = labelsService.selectLabelsList(new Label());
+        Map<Long, Label> labelToNodeMap = new HashMap<>();
+        List<Label> roots = new ArrayList<>();
         Set<Long> set = new HashSet<>();
         if(id!=null) {
             FragmentedScenesDetailVo detailVo = tjFragmentedSceneDetailService.getDetailVo(id);
@@ -42,21 +44,21 @@ public class LabelsController extends BaseController {
                 }
             }
         }
-        for (Labels label : labelsList) {
+        for (Label label : labelList) {
             TreeNode node = new TreeNode();
             if(set.contains(label.getId())){
                 label.setStatus(true);
             }
             node.setData(label);
-            labelToNodeMap.put(label.getId(), node);
+            labelToNodeMap.put(label.getId(), label);
 
             if (label.getParentId() == null) {
-                roots.add(node);
+                roots.add(label);
             }
         }
-        for (Labels label : labelsList) {
-            TreeNode currentNode = labelToNodeMap.get(label.getId());
-            TreeNode parentNode = labelToNodeMap.get(label.getParentId());
+        for (Label label : labelList) {
+            Label currentNode = labelToNodeMap.get(label.getId());
+            Label parentNode = labelToNodeMap.get(label.getParentId());
 
             if (parentNode != null) {
                 parentNode.getChildren().add(currentNode);
@@ -67,13 +69,13 @@ public class LabelsController extends BaseController {
     }
 
     @PostMapping
-    public AjaxResult add(@RequestBody Labels labels){
-        return toAjax(labelsService.insertLabels(labels));
+    public AjaxResult add(@RequestBody Label label){
+        return toAjax(labelsService.insertLabels(label));
     }
 
     @PutMapping
-    public AjaxResult edit(@RequestBody Labels labels){
-        return toAjax(labelsService.updateLabels(labels));
+    public AjaxResult edit(@RequestBody Label label){
+        return toAjax(labelsService.updateLabels(label));
     }
 
     @DeleteMapping("/{ids}")

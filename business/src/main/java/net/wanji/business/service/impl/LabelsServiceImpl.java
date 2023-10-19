@@ -4,7 +4,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import net.wanji.business.mapper.LabelsMapper;
-import net.wanji.business.domain.Labels;
+import net.wanji.business.domain.Label;
 import net.wanji.business.service.ILabelsService;
 
 /**
@@ -26,7 +26,7 @@ public class LabelsServiceImpl implements ILabelsService
      * @return labels
      */
     @Override
-    public Labels selectLabelsById(Long id)
+    public Label selectLabelsById(Long id)
     {
         return labelsMapper.selectLabelsById(id);
     }
@@ -34,37 +34,37 @@ public class LabelsServiceImpl implements ILabelsService
     /**
      * 查询labels列表
      * 
-     * @param labels labels
+     * @param label labels
      * @return labels
      */
     @Override
-    public List<Labels> selectLabelsList(Labels labels)
+    public List<Label> selectLabelsList(Label label)
     {
-        return labelsMapper.selectLabelsList(labels);
+        return labelsMapper.selectLabelsList(label);
     }
 
     /**
      * 新增labels
      * 
-     * @param labels labels
+     * @param label labels
      * @return 结果
      */
     @Override
-    public int insertLabels(Labels labels)
+    public int insertLabels(Label label)
     {
-        return labelsMapper.insertLabels(labels);
+        return labelsMapper.insertLabels(label);
     }
 
     /**
      * 修改labels
      * 
-     * @param labels labels
+     * @param label labels
      * @return 结果
      */
     @Override
-    public int updateLabels(Labels labels)
+    public int updateLabels(Label label)
     {
-        return labelsMapper.updateLabels(labels);
+        return labelsMapper.updateLabels(label);
     }
 
     /**

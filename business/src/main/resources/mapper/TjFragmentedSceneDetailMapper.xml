@@ -86,19 +86,21 @@
     </delete>
 
     <sql id="selectTjFragmentedSceneDetailVo">
-        select id, fragmented_scene_id, number, lane_num, resources_detail_id, scene_source, img_url, scene_type, scene_complexity, traffic_flow_status, road_type, weather, road_condition, finished, collect_status, label, trajectory_info, route_file, road_way_type, hazard_index, video_data_file_path, rada_data_file_path, gps_data_file_path, driver_data_file_path, test_scene_desc, created_by, created_date, updated_by, updated_date from tj_fragmented_scene_detail
+        select id, fragmented_scene_id, number, lane_num, resources_detail_id, scene_source, img_url, scene_type, scene_complexity, traffic_flow_status, road_type, weather, road_condition, finished, collect_status, label, trajectory_info, route_file, road_way_type, hazard_index, video_data_file_path, rada_data_file_path, gps_data_file_path, driver_data_file_path, test_scene_desc, created_by, created_date, updated_by, updated_date, scene_status from tj_fragmented_scene_detail
     </sql>
 
     <select id="selectTjFragmentedSceneDetailList" parameterType="net.wanji.business.domain.vo.SceneDetailVo" resultType="net.wanji.business.domain.vo.SceneDetailVo">
         <include refid="selectTjFragmentedSceneDetailVo"/>
         <where>
             <if test="fragmentedSceneId != null "> and fragmented_scene_id = #{fragmentedSceneId}</if>
+            <if test="number != null  and number != ''"> and number = #{number}</if>
             <if test="sceneSource != null  and sceneSource != ''"> and scene_source = #{sceneSource}</if>
             <if test="sceneType != null  and sceneType != ''"> and scene_type = #{sceneType}</if>
             <if test="finished != null "> and finished = #{finished}</if>
+            <if test="sceneStatus != null "> and scene_status = #{sceneStatus}</if>
             <if test="collectStatus != null "> and collect_status = #{collectStatus}</if>
             <if test="label != null  and label != ''"> and FIND_IN_SET(#{label},label)</if>
-            <if test="createdDate != null "> and created_date between #{startDate} and #{endDate}</if>
+            <if test="startDate != null and startDate != '' and endDate != null"> and created_date between #{startDate} and #{endDate}</if>
             <if test="updatedDate != null "> and updated_date = #{updatedDate}</if>
         </where>
     </select>

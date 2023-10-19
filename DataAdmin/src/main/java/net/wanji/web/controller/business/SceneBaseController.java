@@ -13,12 +13,16 @@ import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
 import net.wanji.business.domain.dto.TjFragmentedScenesDto;
 import net.wanji.business.domain.dto.TreeTypeDto;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
+import net.wanji.business.domain.vo.SceneDetailVo;
+import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.exception.BusinessException;
+import net.wanji.business.schedule.SceneLabelMap;
 import net.wanji.business.service.TjFragmentedSceneDetailService;
 import net.wanji.business.service.TjFragmentedScenesService;
 import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
+import net.wanji.common.core.page.TableDataInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -30,6 +34,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.util.List;
 
@@ -49,6 +54,14 @@ public class SceneBaseController extends BaseController {
     @Autowired
     private TjFragmentedSceneDetailService tjFragmentedSceneDetailService;
 
+    @Autowired
+    private SceneLabelMap sceneLabelMap;
+
+
+    @PostConstruct
+    public void initClass(){
+        sceneLabelMap.reset(2l);
+    }
 
     @PreAuthorize("@ss.hasPermi('sceneBase:init')")
     @GetMapping("/init")
@@ -162,6 +175,33 @@ public class SceneBaseController extends BaseController {
             throws BusinessException, IOException {
         tjFragmentedSceneDetailService.debugging(sceneDebugDto);
         return AjaxResult.success();
+    }
+
+    @PostMapping("/scenelist")
+    public TableDataInfo scenelist(@RequestBody SceneDetailVo sceneDetailVo) throws BusinessException {
+        startPage();
+        List<SceneDetailVo> list = tjFragmentedSceneDetailService.selectTjFragmentedSceneDetailList(sceneDetailVo);
+        for(SceneDetailVo sceneDetailVo1 : list){
+            String labels = sceneDetailVo1.getLabel();
+            StringBuilder labelshows = new StringBuilder();
+            for (String str : labels.split(",")) {
+                try {
+                    long intValue = Long.parseLong(str);
+                    String labelshow = sceneLabelMap.getSceneLabel(intValue);
+                    if(labelshow!=null) {
+                        if(labelshows.length()>0) {
+                            labelshows.append(",").append(labelshow);
+                        }else {
+                            labelshows.append(labelshow);
+                        }
+                    }
+                } catch (NumberFormatException e) {
+                    // 处理无效的整数字符串
+                }
+            }
+            sceneDetailVo1.setSceneSort(labelshows.toString());
+        }
+        return getDataTable(list);
     }
 
 }
