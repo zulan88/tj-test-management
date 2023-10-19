@@ -2,7 +2,7 @@ package net.wanji.web.controller.business;
 
 import net.wanji.business.domain.Label;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
-import net.wanji.business.domain.vo.TreeNode;
+import net.wanji.business.domain.vo.TreeVo;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.ILabelsService;
 import net.wanji.business.service.TjFragmentedSceneDetailService;
@@ -11,7 +11,6 @@ import net.wanji.common.core.domain.AjaxResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.PostConstruct;
 import java.util.*;
 
 @RestController
@@ -30,6 +29,8 @@ public class LabelsController extends BaseController {
     public AjaxResult list(Integer id) throws BusinessException {
         List<Label> labelList = labelsService.selectLabelsList(new Label());
         Map<Long, Label> labelToNodeMap = new HashMap<>();
+        TreeVo treeVo = new TreeVo();
+        treeVo.setTotal(labelList.size());
         List<Label> roots = new ArrayList<>();
         Set<Long> set = new HashSet<>();
         if(id!=null) {
@@ -45,11 +46,9 @@ public class LabelsController extends BaseController {
             }
         }
         for (Label label : labelList) {
-            TreeNode node = new TreeNode();
             if(set.contains(label.getId())){
                 label.setStatus(true);
             }
-            node.setData(label);
             labelToNodeMap.put(label.getId(), label);
 
             if (label.getParentId() == null) {
@@ -64,8 +63,8 @@ public class LabelsController extends BaseController {
                 parentNode.getChildren().add(currentNode);
             }
         }
-
-        return AjaxResult.success(roots);
+        treeVo.setTrees(roots);
+        return AjaxResult.success(treeVo);
     }
 
     @PostMapping

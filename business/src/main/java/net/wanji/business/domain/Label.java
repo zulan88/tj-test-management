@@ -2,7 +2,6 @@ package net.wanji.business.domain;
 
 
 import lombok.Data;
-import net.wanji.business.domain.vo.TreeNode;
 
 import java.util.ArrayList;
 import java.util.List;
