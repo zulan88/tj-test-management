@@ -10,6 +10,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import net.wanji.business.domain.PartConfigSelect;
 import net.wanji.business.domain.bo.CaseInfoBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
+import net.wanji.business.domain.dto.CaseQueryDto;
 import net.wanji.business.domain.dto.TjCaseDto;
 import net.wanji.business.domain.vo.CaseVerificationVo;
 import net.wanji.business.domain.vo.CaseVo;
@@ -43,6 +44,17 @@ public interface TjCaseService extends IService<TjCase> {
      * @return caseId
      */
     Map<String, Object> initEditPage(Integer sceneDetailId, Integer caseId) throws BusinessException;
+
+    /**
+     * 分页列表
+     * @param caseDto
+     * @return
+     * @throws BusinessException
+     */
+    List<CaseVo> pageList(TjCaseDto caseDto) throws BusinessException;
+
+
+
 
     /**
      * 获取配置信息
@@ -79,7 +91,7 @@ public interface TjCaseService extends IService<TjCase> {
      * @param tjCaseDto
      * @return
      */
-    List<CaseVo> getCases(TjCaseDto tjCaseDto);
+    List<CaseVo> getCases(CaseQueryDto caseQueryDto);
 
     /**
      * 创建测试用例

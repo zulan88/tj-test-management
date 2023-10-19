@@ -24,4 +24,6 @@ public interface TjFragmentedSceneDetailMapper extends BaseMapper<TjFragmentedSc
     List<Integer> selectUsingResources();
 
     int deleteBySceneIds(@Param("sceneIds") List<Integer> sceneIds);
+
+
 }

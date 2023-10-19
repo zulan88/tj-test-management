@@ -1,6 +1,10 @@
 package net.wanji.web.controller.business;
 
 import com.github.pagehelper.PageHelper;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
+import io.swagger.annotations.ApiOperation;
 import net.wanji.business.common.Constants.BatchGroup;
 import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.business.common.Constants.DeleteGroup;
@@ -8,14 +12,18 @@ import net.wanji.business.common.Constants.InsertGroup;
 import net.wanji.business.common.Constants.QueryGroup;
 import net.wanji.business.domain.BusinessTreeSelect;
 import net.wanji.business.domain.PartConfigSelect;
+import net.wanji.business.domain.dto.CaseQueryDto;
+import net.wanji.business.domain.dto.CaseTreeDto;
 import net.wanji.business.domain.dto.SceneQueryDto;
 import net.wanji.business.domain.dto.TjCaseDto;
 import net.wanji.business.domain.vo.CaseVo;
 import net.wanji.business.entity.TjCase;
+import net.wanji.business.entity.TjCaseTree;
 import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.TjCasePartConfigService;
 import net.wanji.business.service.TjCaseService;
+import net.wanji.business.service.TjCaseTreeService;
 import net.wanji.business.service.TjFragmentedSceneDetailService;
 import net.wanji.business.service.TjFragmentedScenesService;
 import net.wanji.common.core.controller.BaseController;
@@ -44,9 +52,14 @@ import java.util.concurrent.ExecutionException;
  * @Date: 2023/6/29 13:23
  * @Descriptoin:
  */
+@Api("测试用例服务")
 @RestController
 @RequestMapping("/case")
 public class CaseController extends BaseController {
+
+
+    @Autowired
+    private TjCaseTreeService caseTreeService;
 
     @Autowired
     private TjCaseService caseService;
@@ -60,6 +73,25 @@ public class CaseController extends BaseController {
     @Autowired
     private TjCasePartConfigService casePartConfigService;
 
+    @ApiOperation("查询测试用例树")
+    @PreAuthorize("@ss.hasPermi('case:selectTree')")
+    @GetMapping("/selectTree")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "type", value = "类型", required = true, dataType = "String", paramType = "query"),
+            @ApiImplicitParam(name = "name", value = "名称", dataType = "String", paramType = "query")
+    })
+    public AjaxResult selectTree(String type, String name) {
+        return AjaxResult.success(caseTreeService.selectTree(type, name));
+    }
+
+    @ApiOperation("修改测试用例树")
+    @PreAuthorize("@ss.hasPermi('case:saveTree')")
+    @PostMapping("/saveTree")
+    public AjaxResult saveTree(@RequestBody CaseTreeDto caseTreeDto) {
+        return AjaxResult.success(caseTreeService.saveTree(caseTreeDto));
+    }
+
+    @ApiOperation("测试用例列表页初始化")
     @PreAuthorize("@ss.hasPermi('case:init')")
     @GetMapping("/init")
     public AjaxResult init() {
@@ -74,13 +106,11 @@ public class CaseController extends BaseController {
         return AjaxResult.success(caseService.initEditPage(sceneDetailId, caseId));
     }
 
-    @PreAuthorize("@ss.hasPermi('case:selectTree')")
-    @GetMapping("/selectTree")
-    public AjaxResult selectTree(@RequestParam(value = "type") String type,
-                                 @RequestParam(value = "name", required = false) String name) {
-        List<TjFragmentedScenes> usingScenes = scenesService.selectUsingScenes(type);
-        List<BusinessTreeSelect> tree = scenesService.buildSceneTreeSelect(usingScenes, name);
-        return AjaxResult.success(tree);
+    @PreAuthorize("@ss.hasPermi('case:pageForCase')")
+    @PostMapping("/pageForCase")
+    public TableDataInfo pageForCase(@RequestBody CaseQueryDto caseQueryDto) {
+        PageHelper.startPage(caseQueryDto.getPageNum(), caseQueryDto.getPageSize());
+        return getDataTable(caseService.getCases(caseQueryDto));
     }
 
     @PreAuthorize("@ss.hasPermi('case:getSubscenesList')")
@@ -90,12 +120,7 @@ public class CaseController extends BaseController {
         return AjaxResult.success(sceneDetailService.selectScene(sceneQueryDto));
     }
 
-    @PreAuthorize("@ss.hasPermi('case:pageForCase')")
-    @PostMapping("/pageForCase")
-    public TableDataInfo pageForCase(@Validated(value = QueryGroup.class) @RequestBody TjCaseDto tjCaseDto) {
-        PageHelper.startPage(tjCaseDto.getPageNum(), tjCaseDto.getPageSize());
-        return getDataTable(caseService.getCases(tjCaseDto));
-    }
+
 
     @PreAuthorize("@ss.hasPermi('case:saveCase')")
     @PostMapping("/saveCase")
@@ -158,18 +183,18 @@ public class CaseController extends BaseController {
                 : AjaxResult.error("失败");
     }
 
-    @PreAuthorize("@ss.hasPermi('case:export')")
-    @PostMapping("/export")
-    public void export(HttpServletResponse response,
-                       @Validated(value = BatchGroup.class) @RequestBody TjCaseDto tjCaseDto) {
-        List<CaseVo> caseVos = caseService.getCases(tjCaseDto);
-        TjCase tjCase = caseService.getById(tjCaseDto.getIds().get(0));
-        TjFragmentedScenes scenes = scenesService.getById(tjCase.getSceneDetailId());
-        String fileName = StringUtils.format(ContentTemplate.EXPORT_NAME_TEMPLATE, scenes.getName(),
-                DateUtils.getNowSecondString());
-        ExcelUtil<CaseVo> util = new ExcelUtil<CaseVo>(CaseVo.class);
-        util.exportExcel(response, caseVos, fileName);
-    }
+//    @PreAuthorize("@ss.hasPermi('case:export')")
+//    @PostMapping("/export")
+//    public void export(HttpServletResponse response,
+//                       @Validated(value = BatchGroup.class) @RequestBody TjCaseDto tjCaseDto) {
+//        List<CaseVo> caseVos = caseService.getCases(tjCaseDto);
+//        TjCase tjCase = caseService.getById(tjCaseDto.getIds().get(0));
+//        TjFragmentedScenes scenes = scenesService.getById(tjCase.getSceneDetailId());
+//        String fileName = StringUtils.format(ContentTemplate.EXPORT_NAME_TEMPLATE, scenes.getName(),
+//                DateUtils.getNowSecondString());
+//        ExcelUtil<CaseVo> util = new ExcelUtil<CaseVo>(CaseVo.class);
+//        util.exportExcel(response, caseVos, fileName);
+//    }
 
     @PreAuthorize("@ss.hasPermi('case:playback')")
     @GetMapping("/playback")

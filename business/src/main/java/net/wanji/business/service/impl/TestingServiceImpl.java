@@ -10,12 +10,14 @@ import net.wanji.business.common.Constants.PlaybackAction;
 import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.TestingStatus;
 import net.wanji.business.common.Constants.YN;
+import net.wanji.business.domain.PartConfigSelect;
 import net.wanji.business.domain.bo.CaseConfigBo;
 import net.wanji.business.domain.bo.CaseInfoBo;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
+import net.wanji.business.domain.dto.TjCaseDto;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.ParamsDto;
 import net.wanji.business.domain.param.CaseRuleControl;
@@ -107,6 +109,48 @@ public class TestingServiceImpl implements TestingService {
     private ImitateRedisTrajectoryConsumer imitateRedisTrajectoryConsumer;
 
     @Override
+    public List<CaseConfigBo> list(TjCaseDto caseDto) throws BusinessException {
+        // 1.获取场景库信息
+        // 2.场景分类
+        // 3.角色配置
+        return null;
+    }
+
+    @Override
+    public List<PartConfigSelect> configDetail(Integer sceneDetailId, Integer caseId) throws BusinessException {
+        return null;
+    }
+
+    @Override
+    public boolean configRole(TjCaseDto caseDto) throws BusinessException {
+        // 1.角色配置
+
+        // 2.创建用例
+        return false;
+    }
+
+    @Override
+    public boolean updateState(Integer caseId) throws BusinessException {
+        // 1.参数不为空
+        // 2.带配置无法修改
+        // 3.待验证、停用 -> 有效
+        // 4.有效 -> 待验证、停用
+        return false;
+    }
+
+    @Override
+    public boolean delete(Integer caseId) throws BusinessException {
+        // 删除用例
+        return false;
+    }
+
+    @Override
+    public boolean configDevice(TjCaseDto caseDto) throws BusinessException {
+        // 1.角色配置
+        return false;
+    }
+
+    @Override
     public RealVehicleVerificationPageVo getStatus(Integer caseId) throws BusinessException {
         CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
         if (caseInfoBo.getCaseConfigs().stream().allMatch(config -> ObjectUtils.isEmpty(config.getDeviceId()))) {
@@ -117,14 +161,17 @@ public class TestingServiceImpl implements TestingService {
                 !ObjectUtils.isEmpty(info.getDeviceId())).collect(Collectors.collectingAndThen(
                         Collectors.toCollection(() ->
                                 new TreeSet<>(Comparator.comparing(CaseConfigBo::getDeviceId))), ArrayList::new));
+        Map<String, String> businessIdAndRoleMap = caseInfoBo.getCaseConfigs().stream().collect(Collectors.toMap(
+                CaseConfigBo::getBusinessId,
+                CaseConfigBo::getParticipantRole));
         for (CaseConfigBo caseConfigBo : caseConfigs) {
             // 查询设备状态
             Integer status = deviceDetailService.selectDeviceState(caseConfigBo.getDeviceId(), caseConfigBo.getCommandChannel());
             caseConfigBo.setStatus(status);
-            if (ObjectUtils.isEmpty(status) || status == 0) {
-                // 不在线无需确认准备状态
-                continue;
-            }
+//            if (ObjectUtils.isEmpty(status) || status == 0) {
+//                // 不在线无需确认准备状态
+//                continue;
+//            }
             // 查询设备准备状态
             DeviceReadyStateParam stateParam = new DeviceReadyStateParam();
             stateParam.setCaseId(caseId);
@@ -143,6 +190,35 @@ public class TestingServiceImpl implements TestingService {
                     e.printStackTrace();
                 }
                 stateParam.setParams(new ParamsDto(caseId, participantTrajectories));
+            }
+            if (PartRole.MV_SIMULATION.equals(caseConfigBo.getSupportRoles())) {
+                SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(caseInfoBo.getDetailInfo(), SceneTrajectoryBo.class);
+                Map<String, Object> tessParams = new HashMap<>();
+                Map<String, Object> param1 = new HashMap<>();
+                param1.put("caseId", caseInfoBo.getId());
+                List<Map<String, Object>> participantTrajectories = new ArrayList<>();
+                for (ParticipantTrajectoryBo participantTrajectory : sceneTrajectoryBo.getParticipantTrajectories()) {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", participantTrajectory.getId());
+                    map.put("model", participantTrajectory.getModel());
+                    map.put("name", participantTrajectory.getName());
+                    map.put("role", businessIdAndRoleMap.get(participantTrajectory.getId()));
+                    map.put("trajectory", participantTrajectory.getTrajectory().stream().map(item -> {
+                        Map<String, Object> t = new HashMap<>();
+                        t.put("type", item.getType());
+                        t.put("time", item.getTime());
+                        t.put("lane", item.getLane());
+                        t.put("speed", item.getSpeed());
+                        String[] pos = item.getPosition().split(",");
+                        t.put("position", Arrays.asList(pos[0], pos[1]));
+                        return t;
+                    }).collect(Collectors.toList()));
+                    participantTrajectories.add(map);
+                }
+                param1.put("participantTrajectories", participantTrajectories);
+                tessParams.put("param1", JSONObject.toJSONString(param1));
+
+                stateParam.setParams(tessParams);
             }
             caseConfigBo.setPositionStatus(deviceDetailService.selectDeviceReadyState(caseConfigBo.getDeviceId(), stateParam));
         }
@@ -199,6 +275,7 @@ public class TestingServiceImpl implements TestingService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public CaseRealTestVo start(Integer recordId, Integer action) throws BusinessException, IOException {
         // todo recordId可以换成caseId
         TjCaseRealRecord caseRealRecord = caseRealRecordMapper.selectById(recordId);

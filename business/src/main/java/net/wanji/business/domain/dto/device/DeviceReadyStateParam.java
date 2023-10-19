@@ -20,5 +20,5 @@ public class DeviceReadyStateParam extends DeviceReadyStateDto{
   /**
    * 自定义参数
    */
-  private ParamsDto params;
+  private Object params;
 }

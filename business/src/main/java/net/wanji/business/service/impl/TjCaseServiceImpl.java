@@ -21,6 +21,7 @@ import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.bo.TaskCaseConfigBo;
 import net.wanji.business.domain.bo.TaskCaseInfoBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
+import net.wanji.business.domain.dto.CaseQueryDto;
 import net.wanji.business.domain.dto.TjCaseDto;
 import net.wanji.business.domain.param.TestStartParam;
 import net.wanji.business.domain.vo.CasePartConfigVo;
@@ -293,8 +294,8 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     }
 
     @Override
-    public List<CaseVo> getCases(TjCaseDto tjCaseDto) {
-        List<CaseVo> result = caseMapper.selectCases(tjCaseDto);
+    public List<CaseVo> getCases(CaseQueryDto caseQueryDto) {
+        List<CaseVo> result = caseMapper.selectCases(caseQueryDto);
         for (CaseVo caseVo : CollectionUtils.emptyIfNull(result)) {
             caseVo.setCaseNumber(caseVo.getCaseNumber() + "_" + caseVo.getId());
         }

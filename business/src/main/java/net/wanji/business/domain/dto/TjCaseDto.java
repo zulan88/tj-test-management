@@ -31,30 +31,12 @@ public class TjCaseDto {
     @NotNull(message = "请选择一条数据", groups = {UpdateGroup.class, DeleteGroup.class})
     private Integer id;
 
-    @NotBlank(message = "请选择测试类型", groups = {QueryGroup.class, InsertGroup.class})
-    private String testType;
+    @NotBlank(message = "请选择所属文件夹", groups = {QueryGroup.class, InsertGroup.class})
+    private String treeId;
 
     private String caseNumber;
 
     private String label;
-
-    @NotNull(message = "请确认所属场景", groups = {QueryGroup.class, InsertGroup.class})
-    private Integer sceneDetailId;
-
-    @NotBlank(message = "请输入测试目标", groups = {InsertGroup.class, UpdateGroup.class})
-    private String testTarget;
-
-    @NotBlank(message = "请输入测试要求", groups = {InsertGroup.class, UpdateGroup.class})
-    private String evaObject;
-
-    @NotBlank(message = "请输入测试场景", groups = {InsertGroup.class, UpdateGroup.class})
-    private String testScene;
-
-    @NotBlank(message = "请选择状态", groups = {QueryGroup.class})
-    private String status;
-
-    @NotEmpty(message = "请输入标签", groups = {InsertGroup.class, UpdateGroup.class})
-    private List<String> labelList;
 
     @NotEmpty(message = "请选择至少一条数据", groups = {BatchGroup.class})
     private List<Integer> ids;

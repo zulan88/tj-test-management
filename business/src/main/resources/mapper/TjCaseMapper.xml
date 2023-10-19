@@ -12,22 +12,17 @@
     <select id="selectCases" resultType="net.wanji.business.domain.vo.CaseVo">
         select
         c.id,
-        c.test_type,
+        c.tree_id,
         c.case_number,
-        sd.hazard_index,
-        c.label,
         c.scene_detail_id,
         c.resources_detail_id,
         c.test_target,
-        c.eva_object,
+        c.test_status,
         c.status,
-        c.created_by,
-        c.created_date,
-        c.updated_date,
-        rd.name as resourcesName
+        c.updated_date
         from tj_case c
         inner join tj_fragmented_scene_detail sd on sd.id = c.scene_detail_id
-        left join tj_resources_detail rd on rd.id = c.resources_detail_id
+        left join tj_case_part_config ps on ps.case_id = c.id
         <where>
             and c.test_type = #{testType}
             and c.status = #{status}
@@ -35,8 +30,23 @@
             <if test="caseNumber != null and caseNumber !='' ">
                 and c.case_number like concat('%',#{caseNumber},'%')
             </if>
-            <if test="label != null and label !='' ">
-                and c.label like concat('%',#{label},'%')
+            <if test="status != null">
+                and c.status = #{status}
+            </if>
+            <if test="testStatus != null">
+                and c.test_status = #{testStatus}
+            </if>
+            <if test="startTime != null and startTime != ''">
+                and c.updated_date &gt;= #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                and c.updated_date &lt;= #{endTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                and c.updated_date &lt;= #{endTime}
+            </if>
+            <if test="label != null and label != ''">
+                and find_in_set(#{label}, sd.label) > 0
             </if>
         </where>
     </select>
