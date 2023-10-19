@@ -12,6 +12,7 @@ import net.wanji.business.domain.bo.CaseInfoBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.dto.CaseQueryDto;
 import net.wanji.business.domain.dto.TjCaseDto;
+import net.wanji.business.domain.vo.CasePageVo;
 import net.wanji.business.domain.vo.CaseVerificationVo;
 import net.wanji.business.domain.vo.CaseVo;
 import net.wanji.business.entity.TjCase;
@@ -47,13 +48,19 @@ public interface TjCaseService extends IService<TjCase> {
 
     /**
      * 分页列表
-     * @param caseDto
+     * @param caseQueryDto
      * @return
      * @throws BusinessException
      */
-    List<CaseVo> pageList(TjCaseDto caseDto) throws BusinessException;
+    List<CasePageVo> pageList(CaseQueryDto caseQueryDto);
 
-
+    /**
+     * 获取用例详情
+     *
+     * @param caseId
+     * @return
+     */
+    CaseInfoBo getCaseDetail(Integer caseId);
 
 
     /**
@@ -100,14 +107,6 @@ public interface TjCaseService extends IService<TjCase> {
      * @return
      */
     Integer saveCase(TjCaseDto tjCaseDto) throws BusinessException;
-
-    /**
-     * 获取用例详情
-     *
-     * @param id
-     * @return
-     */
-    CaseInfoBo getCaseDetail(Integer id) throws BusinessException;
 
     /**
      * 轨迹回放

@@ -24,11 +24,13 @@ import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.business.domain.dto.CaseQueryDto;
 import net.wanji.business.domain.dto.TjCaseDto;
 import net.wanji.business.domain.param.TestStartParam;
+import net.wanji.business.domain.vo.CasePageVo;
 import net.wanji.business.domain.vo.CasePartConfigVo;
 import net.wanji.business.domain.vo.CaseVerificationVo;
 import net.wanji.business.domain.vo.CaseVo;
 import net.wanji.business.domain.vo.DeviceDetailVo;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
+import net.wanji.business.domain.vo.SceneDetailVo;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjCasePartConfig;
 import net.wanji.business.entity.TjDeviceDetail;
@@ -39,6 +41,7 @@ import net.wanji.business.exception.BusinessException;
 import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjResourcesDetailMapper;
 import net.wanji.business.schedule.PlaybackSchedule;
+import net.wanji.business.schedule.SceneLabelMap;
 import net.wanji.business.service.RestService;
 import net.wanji.business.service.RouteService;
 import net.wanji.business.service.TjCasePartConfigService;
@@ -56,6 +59,7 @@ import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.bean.BeanUtils;
+import net.wanji.system.service.ISysDictDataService;
 import net.wanji.system.service.ISysDictTypeService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
@@ -92,6 +96,9 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     private ISysDictTypeService dictTypeService;
 
     @Autowired
+    private ISysDictDataService dictDataService;
+
+    @Autowired
     private TjFragmentedScenesService scenesService;
 
     @Autowired
@@ -118,11 +125,14 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     @Autowired
     private RedisTrajectoryConsumer redisTrajectoryConsumer;
 
+    @Autowired
+    private SceneLabelMap sceneLabelMap;
+
     @Override
     public Map<String, List<SimpleSelect>> init() {
-        List<SysDictData> sceneTreeType = dictTypeService.selectDictDataByType(SysType.SCENE_TREE_TYPE);
+        List<SysDictData> testStatus = dictTypeService.selectDictDataByType(SysType.CASE_STATUS);
         Map<String, List<SimpleSelect>> result = new HashMap<>(1);
-        result.put(SysType.SCENE_TREE_TYPE, CollectionUtils.emptyIfNull(sceneTreeType).stream()
+        result.put(SysType.CASE_STATUS, CollectionUtils.emptyIfNull(testStatus).stream()
                 .map(SimpleSelect::new).collect(Collectors.toList()));
         return result;
     }
@@ -146,6 +156,60 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
                 JSONObject.parseObject(sceneDetail.getTrajectoryInfo(), SceneTrajectoryBo.class), false);
         result.put(SysType.PART_ROLE, configSelect);
         return result;
+    }
+
+    @Override
+    public List<CasePageVo> pageList(CaseQueryDto caseQueryDto) {
+        List<CasePageVo> caseVos = caseMapper.selectCases(caseQueryDto);
+        for (CasePageVo casePageVo : caseVos) {
+            // 状态名称
+            casePageVo.setStatusName(dictDataService.selectDictLabel(SysType.CASE_STATUS, casePageVo.getStatus()));
+            // 场景分类
+            if (StringUtils.isNotEmpty(casePageVo.getLabel())) {
+                StringBuilder labelSort = new StringBuilder();
+
+                for (String str : casePageVo.getLabel().split(",")) {
+                    try {
+                        long intValue = Long.parseLong(str);
+                        String labelName = sceneLabelMap.getSceneLabel(intValue);
+                        if (StringUtils.isNotEmpty(labelName)) {
+                            if (labelSort.length() > 0) {
+                                labelSort.append(",").append(labelName);
+                            } else {
+                                labelSort.append(labelName);
+                            }
+                        }
+                    } catch (NumberFormatException e) {
+                        // 处理无效的整数字符串
+                    }
+                }
+                casePageVo.setSceneSort(labelSort.toString());
+            }
+            // 角色配置
+            if (CollectionUtils.isNotEmpty(casePageVo.getPartConfigs())) {
+                StringBuilder roleConfigSort = new StringBuilder();
+                Map<String, List<TjCasePartConfig>> roleGroup = casePageVo.getPartConfigs().stream().collect(Collectors.groupingBy(TjCasePartConfig::getParticipantRole));
+                for (Entry<String, List<TjCasePartConfig>> entry : roleGroup.entrySet()) {
+                    String roleName = dictDataService.selectDictLabel(SysType.PART_ROLE, entry.getKey());
+                    if (entry.getValue().stream().anyMatch(item -> !ObjectUtils.isEmpty(item.getDeviceId()))) {
+                        Map<Integer, List<TjCasePartConfig>> deviceGroup = entry.getValue().stream().collect(Collectors.groupingBy(TjCasePartConfig::getDeviceId));
+                        for (Entry<Integer, List<TjCasePartConfig>> deviceEntry : deviceGroup.entrySet()) {
+                            TjDeviceDetail deviceDetail = deviceDetailService.getById(deviceEntry.getKey());
+                            if (ObjectUtils.isEmpty(deviceDetail)) {
+                                roleConfigSort.append(StringUtils.format(ContentTemplate.CASE_ROLE_TEMPLATE, roleName, deviceEntry.getValue().size()));
+                            } else {
+                                roleConfigSort.append(StringUtils.format(ContentTemplate.CASE_ROLE_DEVICE_TEMPLATE, deviceDetail.getDeviceName(), roleName, deviceEntry.getValue().size()));
+                            }
+                        }
+                    } else {
+                        roleConfigSort.append(StringUtils.format(ContentTemplate.CASE_ROLE_TEMPLATE, roleName, entry.getValue().size()));
+                    }
+                }
+                casePageVo.setRoleConfigSort(roleConfigSort.toString());
+            }
+        }
+
+        return caseVos;
     }
 
     @Override
@@ -295,11 +359,12 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
 
     @Override
     public List<CaseVo> getCases(CaseQueryDto caseQueryDto) {
-        List<CaseVo> result = caseMapper.selectCases(caseQueryDto);
-        for (CaseVo caseVo : CollectionUtils.emptyIfNull(result)) {
-            caseVo.setCaseNumber(caseVo.getCaseNumber() + "_" + caseVo.getId());
-        }
-        return result;
+//        List<CaseVo> result = caseMapper.selectCases(caseQueryDto);
+//        for (CaseVo caseVo : CollectionUtils.emptyIfNull(result)) {
+//            caseVo.setCaseNumber(caseVo.getCaseNumber() + "_" + caseVo.getId());
+//        }
+//        return result;
+        return null;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -324,7 +389,6 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
             BeanUtils.copyBeanProp(tjCase, tjCaseDto);
             tjCase.setResourcesDetailId(sceneDetail.getResourcesDetailId());
             tjCase.setCaseNumber(this.buildCaseNumber());
-            tjCase.setLabel(String.join(",", tjCaseDto.getLabelList()));
             tjCase.setDetailInfo(JSONObject.toJSONString(caseTrajectoryDetailBo));
             tjCase.setStatus(CaseStatusEnum.TO_BE_SIMULATED.getCode());
             tjCase.setCreatedBy(SecurityUtils.getUsername());
@@ -333,10 +397,6 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
             caseId = tjCase.getId();
         } else {
             TjCase tjCase = caseMapper.selectById(caseId);
-            tjCase.setTestScene(tjCaseDto.getTestScene());
-            tjCase.setEvaObject(tjCaseDto.getEvaObject());
-            tjCase.setTestTarget(tjCaseDto.getTestTarget());
-            tjCase.setLabel(String.join(",", tjCaseDto.getLabelList()));
             tjCase.setDetailInfo(JSONObject.toJSONString(caseTrajectoryDetailBo));
             tjCase.setUpdatedDate(LocalDateTime.now());
             tjCase.setUpdatedBy(SecurityUtils.getUsername());
@@ -366,15 +426,15 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     }
 
     @Override
-    public CaseInfoBo getCaseDetail(Integer caseId) throws BusinessException {
+    public CaseInfoBo getCaseDetail(Integer caseId) {
         CaseInfoBo caseInfoBo = caseMapper.selectCaseInfo(caseId);
-        if (ObjectUtils.isEmpty(caseInfoBo)) {
-            throw new BusinessException("用例查询异常");
-        }
-        List<CaseConfigBo> casePartConfigs = caseInfoBo.getCaseConfigs();
-        if (CollectionUtils.isEmpty(casePartConfigs)) {
-            throw new BusinessException("用例未进行角色配置");
-        }
+//        if (ObjectUtils.isEmpty(caseInfoBo)) {
+//            throw new BusinessException("用例查询异常");
+//        }
+//        List<CaseConfigBo> casePartConfigs = caseInfoBo.getCaseConfigs();
+//        if (CollectionUtils.isEmpty(casePartConfigs)) {
+//            throw new BusinessException("用例未进行角色配置");
+//        }
         return caseInfoBo;
     }
 

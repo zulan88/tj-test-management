@@ -209,7 +209,6 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         caseRealTestVo.setChannels(caseInfoBo.getCaseConfigs().stream().map(TaskCaseConfigBo::getDataChannel)
                 .collect(Collectors.toList()));
         caseRealTestVo.setSceneName(caseInfoBo.getSceneName());
-        caseRealTestVo.setTestTypeName(dictDataService.selectDictLabel(SysType.TEST_TYPE, caseInfoBo.getTestType()));
         return caseRealTestVo;
     }
 
@@ -363,7 +362,6 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         realTestResultVo.setEndTime(taskCaseRecord.getEndTime());
 
         TjCase tjCase = caseMapper.selectById(taskCaseRecord.getCaseId());
-        realTestResultVo.setTestTypeName(dictDataService.selectDictLabel(SysType.TEST_TYPE, tjCase.getTestType()));
         return realTestResultVo;
     }
 

@@ -253,7 +253,7 @@ public class TestingServiceImpl implements TestingService {
         int pedestrianNum = partMap.containsKey(PartRole.SP) ? partMap.get(PartRole.SP).size() : 0;
         caseTrajectoryDetailBo.setSceneForm(StringUtils.format(ContentTemplate.SCENE_FORM_TEMPLATE, avNum,
                 simulationNum, pedestrianNum));
-        caseTrajectoryDetailBo.setSceneDesc(caseInfoBo.getSceneName());
+//        caseTrajectoryDetailBo.setSceneDesc(caseInfoBo.getSceneName());
 
         QueryWrapper<TjCaseRealRecord> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq(ColumnName.CASE_ID_COLUMN, caseId);
@@ -269,8 +269,6 @@ public class TestingServiceImpl implements TestingService {
         BeanUtils.copyProperties(tjCaseRealRecord, caseRealTestVo);
         caseRealTestVo.setChannels(caseInfoBo.getCaseConfigs().stream().map(CaseConfigBo::getDataChannel)
                 .collect(Collectors.toList()));
-        caseRealTestVo.setSceneName(caseInfoBo.getSceneName());
-        caseRealTestVo.setTestTypeName(dictDataService.selectDictLabel(SysType.TEST_TYPE, caseInfoBo.getTestType()));
         return caseRealTestVo;
     }
 
@@ -408,7 +406,6 @@ public class TestingServiceImpl implements TestingService {
         realTestResultVo.setEndTime(caseRealRecord.getEndTime());
 
         TjCase tjCase = caseMapper.selectById(caseRealRecord.getCaseId());
-        realTestResultVo.setTestTypeName(dictDataService.selectDictLabel(SysType.TEST_TYPE, tjCase.getTestType()));
         return realTestResultVo;
     }
 

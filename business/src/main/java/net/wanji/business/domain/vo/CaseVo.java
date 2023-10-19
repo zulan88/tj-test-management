@@ -1,52 +1,38 @@
 package net.wanji.business.domain.vo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.swagger.annotations.ApiModel;
 import net.wanji.business.entity.TjCase;
-import net.wanji.common.annotation.Excel;
-import net.wanji.common.utils.StringUtils;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * @Auther: guanyuduo
  * @Date: 2023/6/29 17:23
  * @Descriptoin:
  */
-
+@ApiModel("测试用例")
 public class CaseVo extends TjCase {
 
-    @Excel(name = "资源名称")
-    private String resourcesName;
+    @JsonIgnore
+    private String label;
 
-    private Integer hazardIndex;
+    /**
+     * 场景分类
+     */
+    private String sceneSort;
 
-    private List<String> labelList;
-
-    public String getResourcesName() {
-        return resourcesName;
+    public String getLabel() {
+        return label;
     }
 
-    public void setResourcesName(String resourcesName) {
-        this.resourcesName = resourcesName;
+    public void setLabel(String label) {
+        this.label = label;
     }
 
-    public Integer getHazardIndex() {
-        return hazardIndex;
+    public String getSceneSort() {
+        return sceneSort;
     }
 
-    public void setHazardIndex(Integer hazardIndex) {
-        this.hazardIndex = hazardIndex;
-    }
-
-    public List<String> getLabelList() {
-        if (StringUtils.isNotEmpty(this.getLabel())) {
-            return Arrays.stream(this.getLabel().split(",")).collect(Collectors.toList());
-        }
-        return labelList;
-    }
-
-    public void setLabelList(List<String> labelList) {
-        this.labelList = labelList;
+    public void setSceneSort(String sceneSort) {
+        this.sceneSort = sceneSort;
     }
 }

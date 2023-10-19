@@ -32,53 +32,27 @@ public class TjCase implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
 
+    @TableField("tree_id")
+    private Integer treeId;
 
-    @TableField("test_type")
-    private String testType;
-
-    /**
-     * 用例编号
-     */
     @TableField("case_number")
     @Excel(name = "用例编号")
     private String caseNumber;
 
-    /**
-     * 标签
-     */
-    @TableField("label")
-    @Excel(name = "标签")
-    private String label;
-
-    /**
-     * 所属场景详情id
-     */
     @TableField("scene_detail_id")
     private Integer sceneDetailId;
 
-    /**
-     * 所属资源详情id
-     */
     @TableField("resources_detail_id")
     private Integer resourcesDetailId;
 
-    /**
-     * 测试目标
-     */
     @TableField("test_target")
-    @Excel(name = "测试目标")
+    @Excel(name = "测试说明")
     private String testTarget;
 
-    /**
-     * 评价对象
-     */
     @TableField("eva_object")
     @Excel(name = "评价对象")
     private String evaObject;
 
-    /**
-     * 测试场景
-     */
     @TableField("test_scene")
     @Excel(name = "测试场景")
     private String testScene;
@@ -96,19 +70,18 @@ public class TjCase implements Serializable {
     private String localFile;
 
     /**
-     * topic
-     */
-    @TableField("topic")
-    private String topic;
-
-    /**
      * 轨迹文件
      */
     @TableField("route_file")
     private String routeFile;
 
     /**
-     * 状态：待配置：0；待仿真1；仿真验证2；实车验证3；待入库4
+     * 测试状态
+     */
+    private String testStatus;
+
+    /**
+     * 状态：（无效：0；有效1；)
      */
     @TableField("status")
     private String status;

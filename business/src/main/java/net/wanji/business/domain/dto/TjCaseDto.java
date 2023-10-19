@@ -31,12 +31,16 @@ public class TjCaseDto {
     @NotNull(message = "请选择一条数据", groups = {UpdateGroup.class, DeleteGroup.class})
     private Integer id;
 
+    private Integer sceneDetailId;
+
     @NotBlank(message = "请选择所属文件夹", groups = {QueryGroup.class, InsertGroup.class})
     private String treeId;
 
     private String caseNumber;
 
     private String label;
+
+    private String status;
 
     @NotEmpty(message = "请选择至少一条数据", groups = {BatchGroup.class})
     private List<Integer> ids;

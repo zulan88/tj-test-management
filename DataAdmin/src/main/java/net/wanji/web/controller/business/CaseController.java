@@ -52,7 +52,7 @@ import java.util.concurrent.ExecutionException;
  * @Date: 2023/6/29 13:23
  * @Descriptoin:
  */
-@Api("测试用例服务")
+@Api(tags = "测试用例服务")
 @RestController
 @RequestMapping("/case")
 public class CaseController extends BaseController {
@@ -73,7 +73,7 @@ public class CaseController extends BaseController {
     @Autowired
     private TjCasePartConfigService casePartConfigService;
 
-    @ApiOperation("查询测试用例树")
+    @ApiOperation("1.查询测试用例树")
     @PreAuthorize("@ss.hasPermi('case:selectTree')")
     @GetMapping("/selectTree")
     @ApiImplicitParams({
@@ -84,18 +84,34 @@ public class CaseController extends BaseController {
         return AjaxResult.success(caseTreeService.selectTree(type, name));
     }
 
-    @ApiOperation("修改测试用例树")
+    @ApiOperation("2.修改测试用例树")
     @PreAuthorize("@ss.hasPermi('case:saveTree')")
     @PostMapping("/saveTree")
     public AjaxResult saveTree(@RequestBody CaseTreeDto caseTreeDto) {
         return AjaxResult.success(caseTreeService.saveTree(caseTreeDto));
     }
 
-    @ApiOperation("测试用例列表页初始化")
+    @ApiOperation("3.测试用例列表页初始化")
     @PreAuthorize("@ss.hasPermi('case:init')")
     @GetMapping("/init")
     public AjaxResult init() {
         return AjaxResult.success(caseService.init());
+    }
+
+    @ApiOperation("4.测试用例列表页查询")
+    @PreAuthorize("@ss.hasPermi('case:pageForCase')")
+    @PostMapping("/pageForCase")
+    public TableDataInfo pageForCase(@RequestBody CaseQueryDto caseQueryDto) {
+        PageHelper.startPage(caseQueryDto.getPageNum(), caseQueryDto.getPageSize());
+        return getDataTable(caseService.pageList(caseQueryDto));
+    }
+
+    @ApiOperation("5.用例详情")
+    @PreAuthorize("@ss.hasPermi('case:selectDetail')")
+    @GetMapping("/selectDetail")
+    @ApiImplicitParam(name = "caseId", value = "用例id", required = true, dataType = "Integer", paramType = "query")
+    public AjaxResult selectDetail(Integer caseId) {
+        return AjaxResult.success(caseService.getCaseDetail(caseId));
     }
 
     @PreAuthorize("@ss.hasPermi('case:initEditPage')")
@@ -106,12 +122,7 @@ public class CaseController extends BaseController {
         return AjaxResult.success(caseService.initEditPage(sceneDetailId, caseId));
     }
 
-    @PreAuthorize("@ss.hasPermi('case:pageForCase')")
-    @PostMapping("/pageForCase")
-    public TableDataInfo pageForCase(@RequestBody CaseQueryDto caseQueryDto) {
-        PageHelper.startPage(caseQueryDto.getPageNum(), caseQueryDto.getPageSize());
-        return getDataTable(caseService.getCases(caseQueryDto));
-    }
+
 
     @PreAuthorize("@ss.hasPermi('case:getSubscenesList')")
     @PostMapping("/getSubscenesList")

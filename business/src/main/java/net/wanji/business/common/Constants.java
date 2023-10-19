@@ -55,6 +55,9 @@ public interface Constants {
         public static final String DEVICE_OFFLINE_TEMPLATE = "设备{}离线；";
         public static final String DEVICE_POS_ERROR_TEMPLATE = "{}未达到规定位置；";
         public static final String SCENE_FORM_TEMPLATE = "该场景包含 AV车数量：{}；仿真车数量：{}；行人数量：{}；仿真频率：10HZ；";
+        public static final String CASE_ROLE_TEMPLATE = "{}*{} ";
+        public static final String CASE_ROLE_DEVICE_TEMPLATE = "{}-{}*{} ";
+
     }
 
     class FileExtension {
@@ -180,6 +183,10 @@ public interface Constants {
          * 测试类型
          */
         public static final String TEST_TYPE = "test_type";
+        /**
+         * 用例状态
+         */
+        public static final String CASE_STATUS = "case_status";
     }
 
 

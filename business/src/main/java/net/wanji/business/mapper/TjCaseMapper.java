@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import net.wanji.business.domain.bo.CaseInfoBo;
 import net.wanji.business.domain.dto.CaseQueryDto;
 import net.wanji.business.domain.dto.TjCaseDto;
+import net.wanji.business.domain.vo.CasePageVo;
 import net.wanji.business.domain.vo.CaseVo;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
@@ -22,7 +23,7 @@ import java.util.List;
  */
 public interface TjCaseMapper extends BaseMapper<TjCase> {
 
-    List<CaseVo> selectCases(CaseQueryDto caseQueryDto);
+    List<CasePageVo> selectCases(CaseQueryDto caseQueryDto);
 
     int updateCaseStatus(@Param("ids") List<Integer> ids, @Param("status") String status);
 

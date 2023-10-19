@@ -9,17 +9,32 @@
         </foreach>
     </update>
 
-    <select id="selectCases" resultType="net.wanji.business.domain.vo.CaseVo">
+    <resultMap id="CasePageResult" type="net.wanji.business.domain.vo.CasePageVo">
+        <id property="id" column="id" jdbcType="INTEGER"/>
+        <result property="treeId" column="tree_id" jdbcType="INTEGER"/>
+        <result property="caseNumber" column="case_number" jdbcType="VARCHAR"/>
+        <result property="label" column="label" jdbcType="VARCHAR"/>
+        <result property="status" column="status" jdbcType="VARCHAR"/>
+        <result property="updatedDate" column="updated_date" jdbcType="TIMESTAMP"/>
+        <collection property="partConfigs" javaType="net.wanji.business.entity.TjCasePartConfig">
+            <id property="id" column="config_id" jdbcType="INTEGER"/>
+            <result property="participantRole" column="participant_role" jdbcType="VARCHAR"/>
+            <result property="deviceId" column="deviceId" jdbcType="INTEGER"/>
+        </collection>
+    </resultMap>
+
+    <select id="selectCases" resultMap="CasePageResult">
         select
         c.id,
         c.tree_id,
         c.case_number,
-        c.scene_detail_id,
-        c.resources_detail_id,
+        sd.label,
         c.test_target,
-        c.test_status,
         c.status,
-        c.updated_date
+        c.updated_date,
+        ps.id as config_id,
+        ps.participant_role,
+        ps.device_id
         from tj_case c
         inner join tj_fragmented_scene_detail sd on sd.id = c.scene_detail_id
         left join tj_case_part_config ps on ps.case_id = c.id
@@ -93,8 +108,6 @@
 
     <resultMap id="CaseInfoResult" type="net.wanji.business.domain.bo.CaseInfoBo">
         <id property="id" column="id"/>
-        <result property="testType" column="test_type"/>
-        <result property="sceneName" column="scene_name"/>
         <result property="caseNumber" column="case_number"/>
         <result property="label" column="label"/>
         <result property="sceneDetailId" column="scene_detail_id"/>
@@ -140,53 +153,43 @@
     </resultMap>
 
     <select id="selectCaseInfo" resultMap="CaseInfoResult">
-        SELECT
-            tc.id,
-            sd.NAME as scene_name,
-            tc.test_type,
-            tc.case_number,
-            tc.label,
-            tc.scene_detail_id,
-            tc.resources_detail_id,
-            tc.test_target,
-            tc.eva_object,
-            tc.test_scene,
-            tc.detail_info,
-            tc.route_file,
-            tc.`status`,
-            pc.id AS config_id,
-            pc.case_id,
-            pc.participant_role,
-            pc.business_id,
-            pc.business_type,
-            pc.`name` AS business_name,
-            pc.model,
-            pc.device_id,
-            dd.device_name,
-            dd.device_type,
-            dd.support_roles,
-            dd.ip,
-            dd.service_address,
-            dd.data_channel,
-            dd.command_channel,
-            dd.`status` AS device_status,
-            dd.last_online_date,
-            rd.file_path,
-            rd.attribute4,
-            rr.id AS r_id,
-            rr.detail_info AS r_detail_info,
-            rr.route_file AS r_route_file,
-            rr.`status` AS r_status,
-            rr.start_time AS r_start_time,
-            rr.end_time AS r_end_time
-        FROM
-            tj_case tc
-                LEFT JOIN ( SELECT fsd.id, fs.NAME FROM tj_fragmented_scene_detail fsd LEFT JOIN tj_fragmented_scenes fs ON fsd.fragmented_scene_id = fs.id ) sd ON sd.id = tc.scene_detail_id
-                LEFT JOIN tj_resources_detail rd ON rd.id = tc.resources_detail_id
-                LEFT JOIN tj_case_part_config pc ON pc.case_id = tc.id
-                LEFT JOIN tj_device_detail dd ON dd.device_id = pc.device_id
-                LEFT JOIN tj_case_real_record rr ON rr.case_id = tc.id
-        WHERE tc.id=#{caseId}
+        SELECT tc.id,
+               sd.number,
+               sd.img_url,
+               sd.test_scene_desc,
+               sd.label,
+               tc.case_number,
+               tc.test_target,
+               tc.`status`,
+               pc.id AS config_id,
+               pc.case_id,
+               pc.participant_role,
+               pc.business_id,
+               pc.business_type,
+               pc.`name`      AS business_name,
+               pc.model,
+               pc.device_id,
+               dd.device_name,
+               dd.device_type,
+               dd.support_roles,
+               dd.ip,
+               dd.service_address,
+               dd.data_channel,
+               dd.command_channel,
+               dd.`status`    AS device_status,
+               dd.last_online_date,
+               rr.id          AS r_id,
+               rr.detail_info AS r_detail_info,
+               rr.route_file  AS r_route_file,
+               rr.`status`    AS r_status,
+               rr.start_time  AS r_start_time,
+               rr.end_time    AS r_end_time
+        FROM tj_case tc
+                 inner join tj_fragmented_scene_detail sd on sd.id = tc.scene_detail_id
+                 LEFT JOIN tj_case_part_config pc ON pc.case_id = tc.id
+                 LEFT JOIN tj_device_detail dd ON dd.device_id = pc.device_id
+                 LEFT JOIN tj_case_real_record rr ON rr.case_id = tc.id
+        WHERE tc.id = #{caseId}
     </select>
 
 
