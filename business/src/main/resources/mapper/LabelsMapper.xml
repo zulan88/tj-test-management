@@ -4,7 +4,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="net.wanji.business.mapper.LabelsMapper">
     
-    <resultMap type="Labels" id="LabelsResult">
+    <resultMap type="net.wanji.business.domain.Label" id="LabelsResult">
         <result property="id"    column="id"    />
         <result property="name"    column="name"    />
         <result property="parentId"    column="parent_Id"    />
@@ -14,7 +14,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select id, name, parent_Id from tj_labels
     </sql>
 
-    <select id="selectLabelsList" parameterType="Labels" resultMap="LabelsResult">
+    <select id="selectLabelsList" parameterType="net.wanji.business.domain.Label" resultMap="LabelsResult">
         <include refid="selectLabelsVo"/>
         <where>  
             <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
@@ -27,7 +27,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where id = #{id}
     </select>
         
-    <insert id="insertLabels" parameterType="Labels" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertLabels" parameterType="net.wanji.business.domain.Label" useGeneratedKeys="true" keyProperty="id">
         insert into tj_labels
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="name != null">name,</if>
@@ -39,7 +39,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          </trim>
     </insert>
 
-    <update id="updateLabels" parameterType="Labels">
+    <update id="updateLabels" parameterType="net.wanji.business.domain.Label">
         update tj_labels
         <trim prefix="SET" suffixOverrides=",">
             <if test="name != null">name = #{name},</if>

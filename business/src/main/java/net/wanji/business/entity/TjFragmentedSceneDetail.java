@@ -205,5 +205,11 @@ public class TjFragmentedSceneDetail implements Serializable {
     @JsonFormat(shape= JsonFormat.Shape.STRING, pattern="yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updatedDate;
 
+    /**
+     * 场景状态(0-停用，1-启用)
+     */
+    @TableField("scene_status")
+    private Integer sceneStatus;
+
 
 }

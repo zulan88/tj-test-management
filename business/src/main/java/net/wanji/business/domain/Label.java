@@ -3,6 +3,9 @@ package net.wanji.business.domain;
 
 import lombok.Data;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 /**
  * labels对象 labels
@@ -11,7 +14,7 @@ import lombok.Data;
  * @date 2023-10-16
  */
 @Data
-public class Labels
+public class Label
 {
 
     /** id */
@@ -24,5 +27,15 @@ public class Labels
     private Long parentId;
 
     private boolean status;
+
+    private List<Label> children;
+
+    public List<Label> getChildren() {
+        if(children==null){
+            children = new ArrayList<>();
+        }
+        return children;
+
+    }
 
 }

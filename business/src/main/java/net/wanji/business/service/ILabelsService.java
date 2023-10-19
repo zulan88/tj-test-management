@@ -1,7 +1,7 @@
 package net.wanji.business.service;
 
 import java.util.List;
-import net.wanji.business.domain.Labels;
+import net.wanji.business.domain.Label;
 
 /**
  * labelsService接口
@@ -17,31 +17,31 @@ public interface ILabelsService
      * @param id labelsID
      * @return labels
      */
-    public Labels selectLabelsById(Long id);
+    public Label selectLabelsById(Long id);
 
     /**
      * 查询labels列表
      * 
-     * @param labels labels
+     * @param label labels
      * @return labels集合
      */
-    public List<Labels> selectLabelsList(Labels labels);
+    public List<Label> selectLabelsList(Label label);
 
     /**
      * 新增labels
      * 
-     * @param labels labels
+     * @param label labels
      * @return 结果
      */
-    public int insertLabels(Labels labels);
+    public int insertLabels(Label label);
 
     /**
      * 修改labels
      * 
-     * @param labels labels
+     * @param label labels
      * @return 结果
      */
-    public int updateLabels(Labels labels);
+    public int updateLabels(Label label);
 
     /**
      * 批量删除labels

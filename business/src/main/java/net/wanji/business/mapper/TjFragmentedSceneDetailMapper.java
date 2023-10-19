@@ -3,6 +3,7 @@ package net.wanji.business.mapper;
 import net.wanji.business.domain.dto.SceneQueryDto;
 import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
+import net.wanji.business.domain.vo.SceneDetailVo;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Param;
@@ -25,5 +26,5 @@ public interface TjFragmentedSceneDetailMapper extends BaseMapper<TjFragmentedSc
 
     int deleteBySceneIds(@Param("sceneIds") List<Integer> sceneIds);
 
-
+    List<SceneDetailVo> selectTjFragmentedSceneDetailList(SceneDetailVo sceneDetailVo);
 }

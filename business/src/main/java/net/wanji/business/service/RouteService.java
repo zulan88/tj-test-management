@@ -8,6 +8,8 @@ import net.wanji.business.common.Constants.TestingStatus;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
+import net.wanji.business.domain.vo.ParticipantTrajectoryVo;
+import net.wanji.business.domain.vo.TrajectoryDetailVo;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjCaseRealRecord;
 import net.wanji.business.entity.TjTask;
@@ -203,12 +205,23 @@ public class RouteService {
      * @param oldDetail
      * @param data
      */
-    public void checkSimulaitonRoute2(CaseTrajectoryDetailBo oldDetail, List<TrajectoryValueDto> data) {
+    public List<ParticipantTrajectoryVo> checkSimulaitonRoute2(CaseTrajectoryDetailBo oldDetail, List<TrajectoryValueDto> data) {
         if (CollectionUtils.isEmpty(data) || ObjectUtils.isEmpty(oldDetail)
                 || CollectionUtils.isEmpty(oldDetail.getParticipantTrajectories())) {
-            return;
+            return null;
         }
+        List<ParticipantTrajectoryVo> res = new ArrayList<>();
         check(oldDetail, data);
+        for (ParticipantTrajectoryBo trajectoryBo : oldDetail.getParticipantTrajectories()) {
+            ParticipantTrajectoryVo participantTrajectoryVo = new ParticipantTrajectoryVo();
+            participantTrajectoryVo.setId(trajectoryBo.getId());
+            for (TrajectoryDetailBo trajectoryDetailBo : trajectoryBo.getTrajectory()) {
+                TrajectoryDetailVo trajectoryDetailVo = new TrajectoryDetailVo(trajectoryDetailBo.getFrameId(),trajectoryDetailBo.isPass());
+                participantTrajectoryVo.addtrajectory(trajectoryDetailVo);
+            }
+            res.add(participantTrajectoryVo);
+        }
+        return res;
     }
 
     public void checkRealRoute(Integer recordId, CaseTrajectoryDetailBo oldDetail, List<TrajectoryValueDto> data) {
