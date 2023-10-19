@@ -26,6 +26,8 @@ public class Label
     /** 父id */
     private Long parentId;
 
+    private String direction;
+
     private boolean status;
 
     private List<Label> children;

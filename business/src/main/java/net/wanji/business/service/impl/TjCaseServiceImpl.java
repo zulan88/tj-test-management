@@ -212,6 +212,11 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
         return caseVos;
     }
 
+//    @Override
+    public List<CaseVo> pageList(TjCaseDto caseDto) throws BusinessException {
+        return null;
+    }
+
     @Override
     public List<PartConfigSelect> getConfigSelect(Integer caseId,
                                                   SceneTrajectoryBo sceneTrajectoryBo,

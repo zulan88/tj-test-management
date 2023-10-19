@@ -8,10 +8,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="id"    column="id"    />
         <result property="name"    column="name"    />
         <result property="parentId"    column="parent_Id"    />
+        <result property="direction"    column="direction"  />
     </resultMap>
 
     <sql id="selectLabelsVo">
-        select id, name, parent_Id from tj_labels
+        select id, name, parent_Id, direction from tj_labels
     </sql>
 
     <select id="selectLabelsList" parameterType="net.wanji.business.domain.Label" resultMap="LabelsResult">
@@ -32,10 +33,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="name != null">name,</if>
             <if test="parentId != null">parent_Id,</if>
+            <if test="direction != null">direction,</if>
          </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="name != null">#{name},</if>
             <if test="parentId != null">#{parentId},</if>
+            <if test="direction != null">#{direction},</if>
          </trim>
     </insert>
 
