@@ -63,26 +63,26 @@ public class SceneBaseController extends BaseController {
         sceneLabelMap.reset(2l);
     }
 
-    @PreAuthorize("@ss.hasPermi('sceneBase:init')")
+    //@PreAuthorize("@ss.hasPermi('sceneBase:init')")
     @GetMapping("/init")
     public AjaxResult init() {
         return AjaxResult.success(JSON.toJSON(tjFragmentedScenesService.init()));
     }
 
     @ApiOperation("创建场景编号")
-    @PreAuthorize("@ss.hasPermi('sceneBase:buildSceneNumber')")
+    //@PreAuthorize("@ss.hasPermi('sceneBase:buildSceneNumber')")
     @GetMapping("/buildSceneNumber")
     public AjaxResult buildSceneNumber() {
         return AjaxResult.success(JSON.toJSON(tjFragmentedScenesService.buildSceneNumber()));
     }
 
-    @PreAuthorize("@ss.hasPermi('sceneBase:initEditPage')")
+    //@PreAuthorize("@ss.hasPermi('sceneBase:initEditPage')")
     @GetMapping("/initEditPage")
     public AjaxResult initEditPage() {
         return AjaxResult.success(tjFragmentedScenesService.initEditPage());
     }
 
-    @PreAuthorize("@ss.hasPermi('sceneBase:saveTreeType')")
+    //@PreAuthorize("@ss.hasPermi('sceneBase:saveTreeType')")
     @PostMapping("/saveTreeType")
     public AjaxResult saveTreeType(@Validated @RequestBody TreeTypeDto treeTypeDto) throws BusinessException {
         return tjFragmentedScenesService.saveSceneTreeType(treeTypeDto)
@@ -90,7 +90,7 @@ public class SceneBaseController extends BaseController {
                 : AjaxResult.error("失败");
     }
 
-    @PreAuthorize("@ss.hasPermi('sceneBase:deleteTreeType')")
+    //@PreAuthorize("@ss.hasPermi('sceneBase:deleteTreeType')")
     @GetMapping("/deleteTreeType/{dictCode}")
     public AjaxResult deleteTreeType(@PathVariable("dictCode") Long dictCode) throws BusinessException {
         return tjFragmentedScenesService.deleteTreeType(dictCode)
@@ -98,7 +98,7 @@ public class SceneBaseController extends BaseController {
                 : AjaxResult.error("失败");
     }
 
-    @PreAuthorize("@ss.hasPermi('sceneBase:selectTree')")
+    //@PreAuthorize("@ss.hasPermi('sceneBase:selectTree')")
     @GetMapping("/selectTree")
     public AjaxResult selectTree(@RequestParam(value = "type") String type,
                                  @RequestParam(value = "name", required = false) String name) {
@@ -107,7 +107,7 @@ public class SceneBaseController extends BaseController {
         return AjaxResult.success(tree);
     }
 
-    @PreAuthorize("@ss.hasPermi('sceneBase:saveSceneTree')")
+    //@PreAuthorize("@ss.hasPermi('sceneBase:saveSceneTree')")
     @PostMapping("/saveSceneTree")
     public AjaxResult saveSceneTree(@Validated @RequestBody TjFragmentedScenesDto fragmentedScenesDto) {
         return tjFragmentedScenesService.saveSceneTree(fragmentedScenesDto)
@@ -115,7 +115,7 @@ public class SceneBaseController extends BaseController {
                 : AjaxResult.error("失败");
     }
 
-    @PreAuthorize("@ss.hasPermi('sceneBase:deleteScene')")
+    //@PreAuthorize("@ss.hasPermi('sceneBase:deleteScene')")
     @GetMapping("/deleteScene/{sceneId}")
     public AjaxResult deleteScene(@PathVariable("sceneId") Integer sceneId) throws BusinessException {
         return tjFragmentedScenesService.deleteSceneById(sceneId)
@@ -124,7 +124,7 @@ public class SceneBaseController extends BaseController {
     }
 
     @ApiOperation("查询场景详情")
-    @PreAuthorize("@ss.hasPermi('sceneBase:getDetailVo')")
+    //@PreAuthorize("@ss.hasPermi('sceneBase:getDetailVo')")
     @GetMapping("/getDetailVo/{id}")
     public AjaxResult getDetailVo(@PathVariable("id") Integer id) throws BusinessException {
         FragmentedScenesDetailVo detailVo = tjFragmentedSceneDetailService.getDetailVo(id);
@@ -132,7 +132,7 @@ public class SceneBaseController extends BaseController {
     }
 
     @ApiOperation("保存场景详情")
-    @PreAuthorize("@ss.hasPermi('sceneBase:saveSceneDetail')")
+    //@PreAuthorize("@ss.hasPermi('sceneBase:saveSceneDetail')")
     @PostMapping("/saveSceneDetail")
     public AjaxResult saveSceneDetail(@Validated(value = {InsertGroup.class, UpdateGroup.class})
                                           @RequestBody TjFragmentedSceneDetailDto sceneDetailDto)
@@ -142,7 +142,7 @@ public class SceneBaseController extends BaseController {
                 : AjaxResult.error("失败");
     }
 
-    @PreAuthorize("@ss.hasPermi('sceneBase:saveSceneTrajectory')")
+    //@PreAuthorize("@ss.hasPermi('sceneBase:saveSceneTrajectory')")
     @PostMapping("/saveSceneTrajectory")
     public AjaxResult saveSceneTrajectory(@Validated(value = OtherGroup.class)
                                               @RequestBody TjFragmentedSceneDetailDto sceneDetailDto)
@@ -152,7 +152,7 @@ public class SceneBaseController extends BaseController {
                 : AjaxResult.error("失败");
     }
 
-    @PreAuthorize("@ss.hasPermi('sceneBase:deleteSceneDetail')")
+    //@PreAuthorize("@ss.hasPermi('sceneBase:deleteSceneDetail')")
     @PostMapping("/deleteSceneDetail/{id}")
     public AjaxResult deleteSceneDetail(@PathVariable("id") Integer id) throws BusinessException {
         return tjFragmentedSceneDetailService.deleteSceneDetail(id)
@@ -169,7 +169,7 @@ public class SceneBaseController extends BaseController {
     }
 
     @ApiOperation("场景调试")
-    @PreAuthorize("@ss.hasPermi('sceneBase:debugging')")
+    //@PreAuthorize("@ss.hasPermi('sceneBase:debugging')")
     @PostMapping("/debugging")
     public AjaxResult debugging(@Validated(value = OtherGroup.class) @RequestBody SceneDebugDto sceneDebugDto)
             throws BusinessException, IOException {

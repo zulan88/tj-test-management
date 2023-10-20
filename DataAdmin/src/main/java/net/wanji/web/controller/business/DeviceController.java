@@ -55,13 +55,13 @@ public class DeviceController extends BaseController {
     @Autowired
     private TjDeviceDetailService deviceDetailService;
 
-    @PreAuthorize("@ss.hasPermi('devices:init')")
+    //@PreAuthorize("@ss.hasPermi('devices:init')")
     @GetMapping("/init")
     public AjaxResult init() {
         return AjaxResult.success(deviceService.init());
     }
 
-    @PreAuthorize("@ss.hasPermi('devices:saveTreeType')")
+    //@PreAuthorize("@ss.hasPermi('devices:saveTreeType')")
     @PostMapping("/saveTreeType")
     public AjaxResult saveTreeType(@Validated @RequestBody TreeTypeDto treeTypeDto) throws BusinessException {
         return deviceService.saveTreeType(treeTypeDto)
@@ -69,7 +69,7 @@ public class DeviceController extends BaseController {
                 : AjaxResult.error("失败");
     }
 
-    @PreAuthorize("@ss.hasPermi('devices:deleteTreeType')")
+    //@PreAuthorize("@ss.hasPermi('devices:deleteTreeType')")
     @GetMapping("/deleteTreeType/{dictCode}")
     public AjaxResult deleteTreeType(@PathVariable("dictCode") Long dictCode) throws BusinessException {
         return deviceService.deleteTreeType(dictCode)
@@ -77,7 +77,7 @@ public class DeviceController extends BaseController {
                 : AjaxResult.error("失败");
     }
 
-    @PreAuthorize("@ss.hasPermi('devices:selectTree')")
+    //@PreAuthorize("@ss.hasPermi('devices:selectTree')")
     @GetMapping("/selectTree")
     public AjaxResult selectTree(@RequestParam(value = "type") String type,
                                  @RequestParam(value = "name", required = false) String name) {
@@ -86,7 +86,7 @@ public class DeviceController extends BaseController {
         return AjaxResult.success(tree);
     }
 
-    @PreAuthorize("@ss.hasPermi('devices:saveDevicesTree')")
+    //@PreAuthorize("@ss.hasPermi('devices:saveDevicesTree')")
     @PostMapping("/saveDevicesTree")
     public AjaxResult saveDevicesTree(@Validated @RequestBody TjDeviceDto deviceDto) {
         return deviceService.saveDevicesTree(deviceDto)
@@ -94,7 +94,7 @@ public class DeviceController extends BaseController {
                 : AjaxResult.error("失败");
     }
 
-    @PreAuthorize("@ss.hasPermi('devices:deleteDeviceTree')")
+    //@PreAuthorize("@ss.hasPermi('devices:deleteDeviceTree')")
     @GetMapping("/deleteDeviceTree/{id}")
     public AjaxResult deleteDeviceTree(@PathVariable("id") Integer id) throws BusinessException {
         return deviceService.deleteDeviceTree(id)
@@ -102,27 +102,27 @@ public class DeviceController extends BaseController {
                 : AjaxResult.error("删除失败");
     }
     
-    @PreAuthorize("@ss.hasPermi('devices:pageForDevice')")
+    //@PreAuthorize("@ss.hasPermi('devices:pageForDevice')")
     @PostMapping("/pageForDevice")
     public TableDataInfo pageForDevice(@Validated(value = QueryGroup.class) @RequestBody TjDeviceDetailDto deviceDto) {
         PageHelper.startPage(deviceDto.getPageNum(), deviceDto.getPageSize());
         return getDataTable(deviceDetailService.getAllDevices(deviceDto));
     }
 
-    @PreAuthorize("@ss.hasPermi('devices:save')")
+    //@PreAuthorize("@ss.hasPermi('devices:save')")
     @PostMapping("/save")
     public AjaxResult save(@Validated(value = {InsertGroup.class, UpdateGroup.class})
                                @RequestBody TjDeviceDetailDto deviceDto) {
         return deviceDetailService.saveDevice(deviceDto) ? AjaxResult.success("保存成功") : AjaxResult.error("保存失败");
     }
 
-    @PreAuthorize("@ss.hasPermi('devices:detail')")
+    //@PreAuthorize("@ss.hasPermi('devices:detail')")
     @PostMapping("/detail")
     public AjaxResult detail(@Validated(value = DeleteGroup.class) @RequestBody TjDeviceDetailDto deviceDto) {
         return AjaxResult.success(deviceDetailService.getDeviceDetail(deviceDto));
     }
 
-    @PreAuthorize("@ss.hasPermi('devices:delete')")
+    //@PreAuthorize("@ss.hasPermi('devices:delete')")
     @PostMapping("/delete")
     public AjaxResult delete(@Validated(value = DeleteGroup.class) @RequestBody TjDeviceDetailDto deviceDto) {
         return deviceDetailService.deleteDevice(deviceDto.getDeviceId())
@@ -130,7 +130,7 @@ public class DeviceController extends BaseController {
                 : AjaxResult.error("删除失败");
     }
 
-    @PreAuthorize("@ss.hasPermi('devices:batchDelete')")
+    //@PreAuthorize("@ss.hasPermi('devices:batchDelete')")
     @PostMapping("/batchDelete")
     public AjaxResult batchDelete(@Validated(value = BatchGroup.class) @RequestBody TjDeviceDetailDto deviceDto) {
         return deviceDetailService.batchDeleteDevice(deviceDto.getDeviceIds())
@@ -138,7 +138,7 @@ public class DeviceController extends BaseController {
                 : AjaxResult.error("删除失败");
     }
 
-    @PreAuthorize("@ss.hasPermi('devices:export')")
+    //@PreAuthorize("@ss.hasPermi('devices:export')")
     @PostMapping("/export")
     public void export(HttpServletResponse response,
                        @Validated(value = BatchGroup.class) @RequestBody TjDeviceDetailDto tjCaseDto) {

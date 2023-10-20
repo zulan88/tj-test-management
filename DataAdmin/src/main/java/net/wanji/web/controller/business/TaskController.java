@@ -67,7 +67,7 @@ public class TaskController extends BaseController {
      * @param bo
      * @return
      */
-    @PreAuthorize("@ss.hasPermi('task:pageList')")
+    //@PreAuthorize("@ss.hasPermi('task:pageList')")
     @GetMapping("/pageList")
     public TableDataInfo pageList(TaskBo bo)
     {
@@ -81,7 +81,7 @@ public class TaskController extends BaseController {
      * 创建任务
      * @return
      */
-    @PreAuthorize("@ss.hasPermi('task:create')")
+    //@PreAuthorize("@ss.hasPermi('task:create')")
     @PostMapping("/create")
     public AjaxResult create(@RequestBody CreateTaskDto dto)
     {
@@ -102,7 +102,7 @@ public class TaskController extends BaseController {
      * 保存测试任务
      * @return
      */
-    @PreAuthorize("@ss.hasPermi('task:save')")
+    //@PreAuthorize("@ss.hasPermi('task:save')")
     @PostMapping("/save")
     public AjaxResult edit(@RequestBody TaskDto dto)
     {
@@ -113,26 +113,26 @@ public class TaskController extends BaseController {
     }
 
 
-    @PreAuthorize("@ss.hasPermi('task:getStatus')")
+    //@PreAuthorize("@ss.hasPermi('task:getStatus')")
     @GetMapping("/getStatus")
     public AjaxResult getStatus(@RequestParam("caseId") Integer caseId) throws BusinessException {
         return AjaxResult.success(taskCaseService.getStatus(caseId));
     }
 
-    @PreAuthorize("@ss.hasPermi('task:prepare')")
+    //@PreAuthorize("@ss.hasPermi('task:prepare')")
     @GetMapping("/prepare")
     public AjaxResult prepare(@RequestParam("caseId") Integer caseId) throws BusinessException {
         return AjaxResult.success(taskCaseService.prepare(caseId));
     }
 
-    @PreAuthorize("@ss.hasPermi('task:start')")
+    //@PreAuthorize("@ss.hasPermi('task:start')")
     @GetMapping("/start")
     public AjaxResult start(@RequestParam("recordId") Integer recordId,
                             @RequestParam("action") Integer action) throws BusinessException, IOException {
         return  AjaxResult.success(taskCaseService.start(recordId, action));
     }
 
-    @PreAuthorize("@ss.hasPermi('task:playback')")
+    //@PreAuthorize("@ss.hasPermi('task:playback')")
     @GetMapping("/playback")
     public AjaxResult playback(@RequestParam("recordId") Integer recordId, @RequestParam("action") Integer action)
             throws BusinessException, IOException {
@@ -140,19 +140,19 @@ public class TaskController extends BaseController {
         return  AjaxResult.success();
     }
 
-    @PreAuthorize("@ss.hasPermi('task:getResult')")
+    //@PreAuthorize("@ss.hasPermi('task:getResult')")
     @GetMapping("/getResult")
     public AjaxResult getResult(@RequestParam("recordId") Integer recordId) throws BusinessException {
         return AjaxResult.success(taskCaseService.getResult(recordId));
     }
 
-    @PreAuthorize("@ss.hasPermi('task:communicationDelay')")
+    //@PreAuthorize("@ss.hasPermi('task:communicationDelay')")
     @GetMapping("/communicationDelay")
     public AjaxResult communicationDelayVo(@RequestParam Integer recordId) {
         return AjaxResult.success(taskCaseService.communicationDelayVo(recordId));
     }
 
-    @PreAuthorize("@ss.hasPermi('task:report')")
+    //@PreAuthorize("@ss.hasPermi('task:report')")
     @PostMapping("/report")
     public void report(HttpServletResponse response, @RequestParam("taskId") Integer taskId) throws IOException {
         tjTaskService.export(response, taskId);

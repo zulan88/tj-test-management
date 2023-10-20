@@ -40,13 +40,13 @@ public class ResourcesController extends BaseController {
     @Autowired
     private TjResourcesDetailService tjResourcesDetailService;
 
-    @PreAuthorize("@ss.hasPermi('resource:init')")
+    //@PreAuthorize("@ss.hasPermi('resource:init')")
     @GetMapping("/init")
     public AjaxResult init() {
         return AjaxResult.success(tjResourcesService.init());
     }
 
-    @PreAuthorize("@ss.hasPermi('resource:selectTree')")
+    //@PreAuthorize("@ss.hasPermi('resource:selectTree')")
     @GetMapping("/selectTree")
     public AjaxResult selectTree(@RequestParam("type") String type,
                                  @RequestParam(value = "name", required = false) String name) {
@@ -55,7 +55,7 @@ public class ResourcesController extends BaseController {
         return AjaxResult.success(tree);
     }
 
-    @PreAuthorize("@ss.hasPermi('resource:deleteTree')")
+    //@PreAuthorize("@ss.hasPermi('resource:deleteTree')")
     @GetMapping("/deleteTree")
     public AjaxResult deleteTree(@RequestParam("resourceId") Integer resourceId) throws BusinessException {
         return tjResourcesService.deleteTree(resourceId)
@@ -63,7 +63,7 @@ public class ResourcesController extends BaseController {
                 : AjaxResult.error("删除失败");
     }
 
-    @PreAuthorize("@ss.hasPermi('resource:saveTree')")
+    //@PreAuthorize("@ss.hasPermi('resource:saveTree')")
     @PostMapping("/saveTree")
     public AjaxResult saveTree(@Validated(InsertGroup.class) @RequestBody TjResourcesDto resourcesDto) {
         return tjResourcesService.saveTree(resourcesDto)
@@ -71,21 +71,21 @@ public class ResourcesController extends BaseController {
                 : AjaxResult.error("失败");
     }
 
-    @PreAuthorize("@ss.hasPermi('resources:getDetailList')")
+    //@PreAuthorize("@ss.hasPermi('resources:getDetailList')")
     @GetMapping("/getDetailList")
     public AjaxResult getDetailList(@RequestParam("resourceId") Integer resourceId,
                                     @RequestParam(value = "name", required = false) String name) {
         return AjaxResult.success(tjResourcesDetailService.getDetailList(resourceId, name));
     }
 
-    @PreAuthorize("@ss.hasPermi('resource:preview')")
+    //@PreAuthorize("@ss.hasPermi('resource:preview')")
     @PostMapping("/preview")
     public AjaxResult preview(@Validated(value = OtherGroup.class) @RequestBody TjResourcesDetailDto resourcesDetailDto)
             throws BusinessException, IOException {
         return AjaxResult.success(tjResourcesDetailService.preview(resourcesDetailDto));
     }
 
-    @PreAuthorize("@ss.hasPermi('resource:saveResourceDetail')")
+    //@PreAuthorize("@ss.hasPermi('resource:saveResourceDetail')")
     @PostMapping("/saveResourceDetail")
     public AjaxResult saveResourceDetail(@Validated(value = {InsertGroup.class, UpdateGroup.class})
                                              @RequestBody TjResourcesDetailDto resourcesDetailDto)
@@ -95,7 +95,7 @@ public class ResourcesController extends BaseController {
                 : AjaxResult.error("失败");
     }
 
-    @PreAuthorize("@ss.hasPermi('resource:deleteResourceDetail')")
+    //@PreAuthorize("@ss.hasPermi('resource:deleteResourceDetail')")
     @GetMapping("/deleteResourceDetail")
     public AjaxResult deleteResourceDetail(@RequestParam("id") Integer id)
             throws BusinessException{
@@ -104,7 +104,7 @@ public class ResourcesController extends BaseController {
                 : AjaxResult.error("删除失败");
     }
 
-    @PreAuthorize("@ss.hasPermi('resource:collectResourceDetail')")
+    //@PreAuthorize("@ss.hasPermi('resource:collectResourceDetail')")
     @GetMapping("/collectResourceDetail")
     public AjaxResult collectResourceDetail(@RequestParam("id") Integer id) {
         return tjResourcesDetailService.collectByDetailId(id)
@@ -112,7 +112,7 @@ public class ResourcesController extends BaseController {
                 : AjaxResult.error("收藏失败");
     }
 
-    @PreAuthorize("@ss.hasPermi('resource:getResourceSelect')")
+    //@PreAuthorize("@ss.hasPermi('resource:getResourceSelect')")
     @GetMapping("/getResourceSelect")
     public AjaxResult getResourceSelect(@RequestParam(value = "type", required = false) String type,
                                         @RequestParam(value = "sceneTreeType", required = false) String sceneTreeType,
