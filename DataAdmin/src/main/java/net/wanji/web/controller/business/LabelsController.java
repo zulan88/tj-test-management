@@ -4,6 +4,7 @@ import net.wanji.business.domain.Label;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
 import net.wanji.business.domain.vo.TreeVo;
 import net.wanji.business.exception.BusinessException;
+import net.wanji.business.schedule.SceneLabelMap;
 import net.wanji.business.service.ILabelsService;
 import net.wanji.business.service.TjFragmentedSceneDetailService;
 import net.wanji.common.core.controller.BaseController;
@@ -22,6 +23,9 @@ public class LabelsController extends BaseController {
 
     @Autowired
     private TjFragmentedSceneDetailService tjFragmentedSceneDetailService;
+
+    @Autowired
+    private SceneLabelMap sceneLabelMap;
 
 
     //输出为树形结构
@@ -69,18 +73,54 @@ public class LabelsController extends BaseController {
 
     @PostMapping
     public AjaxResult add(@RequestBody Label label){
-        return toAjax(labelsService.insertLabels(label));
+        labelsService.insertLabels(label);
+        sceneLabelMap.reset(2l);
+        return AjaxResult.success();
     }
 
     @PutMapping
     public AjaxResult edit(@RequestBody Label label){
-        return toAjax(labelsService.updateLabels(label));
+        labelsService.updateLabels(label);
+        sceneLabelMap.reset(2l);
+        return AjaxResult.success();
     }
 
     @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable Long[] ids)
     {
         return toAjax(labelsService.deleteLabelsByIds(ids));
+    }
+
+    @GetMapping("/getlabel")
+    public AjaxResult getlabel(Integer id) throws BusinessException {
+        List<Label> labelList = labelsService.selectLabelsList(new Label());
+        Map<Long,String> sceneMap = new HashMap<>();
+        for(Label tlabel : labelList){
+            Long parentId = tlabel.getParentId();
+            String prelabel = null;
+            if(parentId!=null) {
+               prelabel = sceneMap.getOrDefault(parentId, null);
+            }
+            if(prelabel==null){
+                sceneMap.put(tlabel.getId(),tlabel.getName());
+            }else {
+                sceneMap.put(tlabel.getId(),prelabel+"-"+tlabel.getName());
+            }
+        }
+        List<String> data = new ArrayList<>();
+        if(id!=null) {
+            FragmentedScenesDetailVo detailVo = tjFragmentedSceneDetailService.getDetailVo(id);
+            List<String> labels = detailVo.getLabelList();
+            for (String str : labels) {
+                try {
+                    long intValue = Long.parseLong(str);
+                    data.add(sceneMap.get(intValue));
+                } catch (NumberFormatException e) {
+                    // 处理无效的整数字符串
+                }
+            }
+        }
+        return AjaxResult.success(data);
     }
 
 }

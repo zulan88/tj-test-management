@@ -216,7 +216,7 @@ public class RouteService {
             ParticipantTrajectoryVo participantTrajectoryVo = new ParticipantTrajectoryVo();
             participantTrajectoryVo.setId(trajectoryBo.getId());
             for (TrajectoryDetailBo trajectoryDetailBo : trajectoryBo.getTrajectory()) {
-                TrajectoryDetailVo trajectoryDetailVo = new TrajectoryDetailVo(trajectoryDetailBo.getFrameId(),trajectoryDetailBo.isPass());
+                TrajectoryDetailVo trajectoryDetailVo = new TrajectoryDetailVo(trajectoryDetailBo.getFrameId(),trajectoryDetailBo.isPass(),trajectoryDetailBo.getSpeed(),trajectoryDetailBo.getTime());
                 participantTrajectoryVo.addtrajectory(trajectoryDetailVo);
             }
             res.add(participantTrajectoryVo);
