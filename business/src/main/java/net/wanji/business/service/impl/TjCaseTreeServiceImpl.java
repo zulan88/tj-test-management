@@ -1,17 +1,23 @@
 package net.wanji.business.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.dto.CaseTreeDto;
 import net.wanji.business.domain.vo.CaseTreeVo;
 import net.wanji.business.entity.TjCaseTree;
+import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.TjCaseTreeService;
 import net.wanji.business.mapper.TjCaseTreeMapper;
+import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.bean.BeanUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
+import java.sql.SQLIntegrityConstraintViolationException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,13 +40,30 @@ public class TjCaseTreeServiceImpl extends ServiceImpl<TjCaseTreeMapper, TjCaseT
     }
 
     @Override
-    public boolean saveTree(CaseTreeDto caseTreeDto) {
+    public boolean saveTree(CaseTreeDto caseTreeDto) throws BusinessException {
         TjCaseTree caseTree = new TjCaseTree();
         if (ObjectUtils.isEmpty(caseTreeDto.getId())) {
             BeanUtils.copyBeanProp(caseTree, caseTreeDto);
+            caseTree.setCreatedBy(SecurityUtils.getUsername());
+            caseTree.setCreatedDate(LocalDateTime.now());
         } else {
             caseTree = this.getById(caseTreeDto.getId());
+            caseTree.setName(caseTreeDto.getName());
+            caseTree.setType(caseTreeDto.getType());
+            caseTree.setUpdatedBy(SecurityUtils.getUsername());
+            caseTree.setUpdatedDate(LocalDateTime.now());
         }
-        return saveOrUpdate(caseTree);
+        try {
+            return saveOrUpdate(caseTree);
+        } catch (DuplicateKeyException e) {
+            throw new BusinessException("文件名称重复！");
+        }
+    }
+
+    @Override
+    public boolean deleteTree(Integer id) {
+        TjCaseTree caseTree = this.getById(id);
+        caseTree.setStatus(YN.Y_INT);
+        return this.updateById(caseTree);
     }
 }

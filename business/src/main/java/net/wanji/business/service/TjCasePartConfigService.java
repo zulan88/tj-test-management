@@ -3,7 +3,6 @@ package net.wanji.business.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import net.wanji.business.domain.PartConfigSelect;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
-import net.wanji.business.domain.param.TestStartParam;
 import net.wanji.business.domain.vo.CasePartConfigVo;
 import net.wanji.business.entity.TjCasePartConfig;
 import net.wanji.business.exception.BusinessException;

@@ -7,17 +7,14 @@ import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.business.common.Constants.PartRole;
 import net.wanji.business.common.Constants.PartType;
 import net.wanji.business.common.Constants.PlaybackAction;
-import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.TestingStatus;
 import net.wanji.business.common.Constants.YN;
-import net.wanji.business.domain.PartConfigSelect;
 import net.wanji.business.domain.bo.CaseConfigBo;
 import net.wanji.business.domain.bo.CaseInfoBo;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
-import net.wanji.business.domain.dto.TjCaseDto;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.ParamsDto;
 import net.wanji.business.domain.param.CaseRuleControl;
@@ -42,7 +39,6 @@ import net.wanji.business.service.TjCaseService;
 import net.wanji.business.service.TjDeviceDetailService;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.trajectory.ImitateRedisTrajectoryConsumer;
-import net.wanji.business.util.TrajectoryUtils;
 import net.wanji.common.common.RealTestTrajectoryDto;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
@@ -109,44 +105,8 @@ public class TestingServiceImpl implements TestingService {
     private ImitateRedisTrajectoryConsumer imitateRedisTrajectoryConsumer;
 
     @Override
-    public List<CaseConfigBo> list(TjCaseDto caseDto) throws BusinessException {
-        // 1.获取场景库信息
-        // 2.场景分类
-        // 3.角色配置
-        return null;
-    }
-
-    @Override
-    public List<PartConfigSelect> configDetail(Integer sceneDetailId, Integer caseId) throws BusinessException {
-        return null;
-    }
-
-    @Override
-    public boolean configRole(TjCaseDto caseDto) throws BusinessException {
-        // 1.角色配置
-
-        // 2.创建用例
-        return false;
-    }
-
-    @Override
-    public boolean updateState(Integer caseId) throws BusinessException {
-        // 1.参数不为空
-        // 2.带配置无法修改
-        // 3.待验证、停用 -> 有效
-        // 4.有效 -> 待验证、停用
-        return false;
-    }
-
-    @Override
     public boolean delete(Integer caseId) throws BusinessException {
         // 删除用例
-        return false;
-    }
-
-    @Override
-    public boolean configDevice(TjCaseDto caseDto) throws BusinessException {
-        // 1.角色配置
         return false;
     }
 
@@ -168,10 +128,10 @@ public class TestingServiceImpl implements TestingService {
             // 查询设备状态
             Integer status = deviceDetailService.selectDeviceState(caseConfigBo.getDeviceId(), caseConfigBo.getCommandChannel());
             caseConfigBo.setStatus(status);
-//            if (ObjectUtils.isEmpty(status) || status == 0) {
-//                // 不在线无需确认准备状态
-//                continue;
-//            }
+            if (ObjectUtils.isEmpty(status) || status == 0) {
+                // 不在线无需确认准备状态
+                continue;
+            }
             // 查询设备准备状态
             DeviceReadyStateParam stateParam = new DeviceReadyStateParam();
             stateParam.setCaseId(caseId);

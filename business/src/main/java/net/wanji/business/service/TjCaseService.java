@@ -1,25 +1,24 @@
 package net.wanji.business.service;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-
 import com.baomidou.mybatisplus.extension.service.IService;
-
 import net.wanji.business.domain.PartConfigSelect;
 import net.wanji.business.domain.bo.CaseInfoBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.dto.CaseQueryDto;
 import net.wanji.business.domain.dto.TjCaseDto;
+import net.wanji.business.domain.vo.CaseDetailVo;
 import net.wanji.business.domain.vo.CasePageVo;
 import net.wanji.business.domain.vo.CaseVerificationVo;
 import net.wanji.business.domain.vo.CaseVo;
 import net.wanji.business.entity.TjCase;
-import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.common.core.domain.SimpleSelect;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 /**
  * <p>
@@ -39,15 +38,8 @@ public interface TjCaseService extends IService<TjCase> {
     Map<String, List<SimpleSelect>> init();
 
     /**
-     * 配置页初始化
-     *
-     * @return sceneDetailId
-     * @return caseId
-     */
-    Map<String, Object> initEditPage(Integer sceneDetailId, Integer caseId) throws BusinessException;
-
-    /**
      * 分页列表
+     *
      * @param caseQueryDto
      * @return
      * @throws BusinessException
@@ -55,16 +47,25 @@ public interface TjCaseService extends IService<TjCase> {
     List<CasePageVo> pageList(CaseQueryDto caseQueryDto);
 
     /**
+     * 查询用例详情
+     *
+     * @param caseId
+     * @return
+     */
+    CaseDetailVo selectCaseDetail(Integer caseId);
+
+    /**
      * 获取用例详情
      *
      * @param caseId
      * @return
      */
-    CaseInfoBo getCaseDetail(Integer caseId);
+    CaseInfoBo getCaseDetail(Integer caseId) throws BusinessException;
 
 
     /**
      * 获取配置信息
+     *
      * @param caseId
      * @param sceneTrajectoryBo
      * @return
@@ -75,6 +76,7 @@ public interface TjCaseService extends IService<TjCase> {
 
     /**
      * 获取配置信息
+     *
      * @param caseId
      * @param sceneTrajectoryBo
      * @return
@@ -82,6 +84,32 @@ public interface TjCaseService extends IService<TjCase> {
      * @throws ExecutionException
      */
     List<PartConfigSelect> getConfigSelect(Integer caseId, SceneTrajectoryBo sceneTrajectoryBo);
+
+    /**
+     * 保存测试用例
+     *
+     * @param tjCaseDto
+     * @return
+     */
+    boolean saveCase(TjCaseDto tjCaseDto) throws BusinessException;
+
+
+    /**
+     * 修改状态
+     *
+     * @param caseId
+     * @return
+     */
+    boolean updateStatus(Integer caseId) throws BusinessException;
+
+    /**
+     * 修改状态
+     *
+     * @param caseIds
+     * @param action  1:启用 2:禁用
+     * @return
+     */
+    boolean batchUpdateStatus(List<Integer> caseIds, Integer action) throws BusinessException;
 
     /**
      * 查询测试用例中包含的场景
@@ -100,13 +128,6 @@ public interface TjCaseService extends IService<TjCase> {
      */
     List<CaseVo> getCases(CaseQueryDto caseQueryDto);
 
-    /**
-     * 创建测试用例
-     *
-     * @param tjCaseDto
-     * @return
-     */
-    Integer saveCase(TjCaseDto tjCaseDto) throws BusinessException;
 
     /**
      * 轨迹回放
@@ -133,7 +154,7 @@ public interface TjCaseService extends IService<TjCase> {
      * @param tjCaseDto
      * @return
      */
-    boolean deleteCase(TjCaseDto tjCaseDto);
+    boolean batchDelete(List<Integer> caseIds) throws BusinessException;
 
     /**
      * 导出
@@ -145,14 +166,6 @@ public interface TjCaseService extends IService<TjCase> {
     void exportCases(List<TjCase> cases, String fileName) throws IOException;
 
     /**
-     * 修改状态
-     *
-     * @param tjCaseDto
-     */
-    boolean updateStatus(TjCaseDto tjCaseDto) throws BusinessException;
-
-
-    /**
      * 查询用例仿真详情
      *
      * @param caseId
@@ -162,6 +175,7 @@ public interface TjCaseService extends IService<TjCase> {
 
     /**
      * 获取配置详情
+     *
      * @param caseId
      * @return
      * @throws BusinessException
@@ -170,12 +184,12 @@ public interface TjCaseService extends IService<TjCase> {
 
     /**
      * 获取测试任务配置详情
+     *
      * @param caseId
      * @return
      * @throws BusinessException
      */
     List<PartConfigSelect> getTaskConfigDetail(Integer caseId) throws BusinessException, InterruptedException, ExecutionException;
-
 
 
 }

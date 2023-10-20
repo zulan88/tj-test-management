@@ -76,11 +76,6 @@ public class TjCase implements Serializable {
     private String routeFile;
 
     /**
-     * 测试状态
-     */
-    private String testStatus;
-
-    /**
      * 状态：（无效：0；有效1；)
      */
     @TableField("status")

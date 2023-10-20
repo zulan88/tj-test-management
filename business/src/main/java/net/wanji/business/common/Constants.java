@@ -388,11 +388,10 @@ public interface Constants {
      * 用例状态枚举
      */
     enum CaseStatusEnum {
-        TO_BE_SIMULATED("1", "待仿真"),
-        SIMULATION_VERIFICATION("2", "仿真验证"),
-        REAL_VERIFICATION("3", "实车验证"),
-        TO_BE_IN_BASE("4", "待入库"),
-        IN_BASE("5", "已入库");
+        WAIT_CONFIG("wait_config", "待配置"),
+        WAIT_TEST("wait_test", "待试验"),
+        INVALID("invalid", "无效"),
+        EFFECTIVE("effective", "有效");
 
         private String code;
 
@@ -418,12 +417,6 @@ public interface Constants {
                 }
             }
             return "";
-        }
-
-        public static String getNextStatus(String code) {
-            return Integer.parseInt(code) > 0 && Integer.parseInt(code) < Integer.parseInt(IN_BASE.code)
-                    ? String.valueOf(Integer.parseInt(code) + 1)
-                    : code;
         }
     }
 

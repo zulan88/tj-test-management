@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import net.wanji.business.domain.dto.CaseTreeDto;
 import net.wanji.business.domain.vo.CaseTreeVo;
 import net.wanji.business.entity.TjCaseTree;
+import net.wanji.business.exception.BusinessException;
 
 import java.util.List;
 
@@ -27,6 +28,13 @@ public interface TjCaseTreeService extends IService<TjCaseTree> {
      * @param caseTreeDto
      * @return
      */
-    boolean saveTree(CaseTreeDto caseTreeDto);
+    boolean saveTree(CaseTreeDto caseTreeDto) throws BusinessException;
+
+    /**
+     * 删除测试用例树
+     * @param id
+     * @return
+     */
+    boolean deleteTree(Integer id);
 
 }

@@ -13,14 +13,25 @@
         <id property="id" column="id" jdbcType="INTEGER"/>
         <result property="treeId" column="tree_id" jdbcType="INTEGER"/>
         <result property="caseNumber" column="case_number" jdbcType="VARCHAR"/>
+        <result property="sceneNumber" column="scene_number" jdbcType="VARCHAR"/>
+        <result property="imgUrl" column="img_url" jdbcType="VARCHAR"/>
+        <result property="testSceneDesc" column="test_scene_desc" jdbcType="VARCHAR"/>
         <result property="label" column="label" jdbcType="VARCHAR"/>
+        <result property="trajectoryInfo" column="trajectory_info" jdbcType="VARCHAR"/>
+        <result property="testTarget" column="test_target" jdbcType="VARCHAR"/>
         <result property="status" column="status" jdbcType="VARCHAR"/>
         <result property="updatedDate" column="updated_date" jdbcType="TIMESTAMP"/>
-        <collection property="partConfigs" javaType="net.wanji.business.entity.TjCasePartConfig">
-            <id property="id" column="config_id" jdbcType="INTEGER"/>
-            <result property="participantRole" column="participant_role" jdbcType="VARCHAR"/>
-            <result property="deviceId" column="deviceId" jdbcType="INTEGER"/>
-        </collection>
+        <collection property="partConfigs" javaType="java.util.List" resultMap="PartConfigResult" />
+    </resultMap>
+
+    <resultMap id="PartConfigResult" type="net.wanji.business.entity.TjCasePartConfig">
+        <id property="id" column="config_id" jdbcType="INTEGER"/>
+        <result property="participantRole" column="participant_role" jdbcType="VARCHAR"/>
+        <result property="businessId" column="business_id" jdbcType="VARCHAR"/>
+        <result property="businessType" column="business_type" jdbcType="VARCHAR"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="model" column="model" jdbcType="INTEGER"/>
+        <result property="deviceId" column="deviceId" jdbcType="INTEGER"/>
     </resultMap>
 
     <select id="selectCases" resultMap="CasePageResult">
@@ -28,34 +39,40 @@
         c.id,
         c.tree_id,
         c.case_number,
+        sd.number as scene_number,
+        sd.img_url,
+        sd.test_scene_desc,
         sd.label,
+        sd.trajectory_info,
         c.test_target,
         c.status,
         c.updated_date,
         ps.id as config_id,
         ps.participant_role,
+        ps.business_id,
+        ps.business_type,
+        ps.name,
+        ps.model,
         ps.device_id
         from tj_case c
         inner join tj_fragmented_scene_detail sd on sd.id = c.scene_detail_id
         left join tj_case_part_config ps on ps.case_id = c.id
         <where>
-            and c.test_type = #{testType}
-            and c.status = #{status}
-            and c.scene_detail_id = #{sceneDetailId}
+
+            <if test="id != null and id > 0 ">
+                and c.id = #{id}
+            </if>
+            <if test="treeId != null and treeId > 0 ">
+                and c.tree_id = #{treeId}
+            </if>
             <if test="caseNumber != null and caseNumber !='' ">
                 and c.case_number like concat('%',#{caseNumber},'%')
             </if>
             <if test="status != null">
                 and c.status = #{status}
             </if>
-            <if test="testStatus != null">
-                and c.test_status = #{testStatus}
-            </if>
             <if test="startTime != null and startTime != ''">
                 and c.updated_date &gt;= #{startTime}
-            </if>
-            <if test="endTime != null and endTime != ''">
-                and c.updated_date &lt;= #{endTime}
             </if>
             <if test="endTime != null and endTime != ''">
                 and c.updated_date &lt;= #{endTime}
@@ -64,6 +81,7 @@
                 and find_in_set(#{label}, sd.label) > 0
             </if>
         </where>
+        order by c.updated_date desc
     </select>
 
     <select id="selectCountBySceneIds" resultType="java.lang.Integer">

@@ -15,26 +15,21 @@ import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.PartConfigSelect;
 import net.wanji.business.domain.bo.CaseConfigBo;
 import net.wanji.business.domain.bo.CaseInfoBo;
-import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
-import net.wanji.business.domain.bo.TaskCaseConfigBo;
-import net.wanji.business.domain.bo.TaskCaseInfoBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.business.domain.dto.CaseQueryDto;
 import net.wanji.business.domain.dto.TjCaseDto;
 import net.wanji.business.domain.param.TestStartParam;
+import net.wanji.business.domain.vo.CaseDetailVo;
 import net.wanji.business.domain.vo.CasePageVo;
 import net.wanji.business.domain.vo.CasePartConfigVo;
 import net.wanji.business.domain.vo.CaseVerificationVo;
 import net.wanji.business.domain.vo.CaseVo;
 import net.wanji.business.domain.vo.DeviceDetailVo;
-import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
-import net.wanji.business.domain.vo.SceneDetailVo;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjCasePartConfig;
 import net.wanji.business.entity.TjDeviceDetail;
-import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.entity.TjResourcesDetail;
 import net.wanji.business.exception.BusinessException;
@@ -72,11 +67,11 @@ import org.springframework.util.ObjectUtils;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
@@ -130,44 +125,25 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
 
     @Override
     public Map<String, List<SimpleSelect>> init() {
-        List<SysDictData> testStatus = dictTypeService.selectDictDataByType(SysType.CASE_STATUS);
+        List<SysDictData> caseStatus = dictTypeService.selectDictDataByType(SysType.CASE_STATUS);
         Map<String, List<SimpleSelect>> result = new HashMap<>(1);
-        result.put(SysType.CASE_STATUS, CollectionUtils.emptyIfNull(testStatus).stream()
+        result.put(SysType.CASE_STATUS, CollectionUtils.emptyIfNull(caseStatus).stream()
                 .map(SimpleSelect::new).collect(Collectors.toList()));
         return result;
     }
 
     @Override
-    public Map<String, Object> initEditPage(Integer sceneDetailId, Integer caseId) throws BusinessException {
-        Map<String, Object> result = new HashMap<>(3);
-        FragmentedScenesDetailVo sceneDetail = sceneDetailService.getDetailVo(sceneDetailId);
-        if (ObjectUtils.isEmpty(sceneDetail)) {
-            throw new BusinessException("未找到对应场景");
-        }
-        result.put("sceneDetail", sceneDetail);
-
-        if (!ObjectUtils.isEmpty(caseId)) {
-            TjCase tjCase = this.getById(caseId);
-            CaseVo caseVo = new CaseVo();
-            BeanUtils.copyBeanProp(caseVo, tjCase);
-            result.put("caseDetail", caseVo);
-        }
-        List<PartConfigSelect> configSelect = getConfigSelect(caseId,
-                JSONObject.parseObject(sceneDetail.getTrajectoryInfo(), SceneTrajectoryBo.class), false);
-        result.put(SysType.PART_ROLE, configSelect);
-        return result;
-    }
-
-    @Override
     public List<CasePageVo> pageList(CaseQueryDto caseQueryDto) {
-        List<CasePageVo> caseVos = caseMapper.selectCases(caseQueryDto);
-        for (CasePageVo casePageVo : caseVos) {
+        List<CaseDetailVo> caseVos = caseMapper.selectCases(caseQueryDto);
+        return CollectionUtils.emptyIfNull(caseVos).stream().map(t -> {
+            handleLabel(t);
+            CasePageVo casePageVo = new CasePageVo();
+            BeanUtils.copyBeanProp(casePageVo, t);
             // 状态名称
             casePageVo.setStatusName(dictDataService.selectDictLabel(SysType.CASE_STATUS, casePageVo.getStatus()));
             // 场景分类
             if (StringUtils.isNotEmpty(casePageVo.getLabel())) {
                 StringBuilder labelSort = new StringBuilder();
-
                 for (String str : casePageVo.getLabel().split(",")) {
                     try {
                         long intValue = Long.parseLong(str);
@@ -185,12 +161,19 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
                 }
                 casePageVo.setSceneSort(labelSort.toString());
             }
-            // 角色配置
             if (CollectionUtils.isNotEmpty(casePageVo.getPartConfigs())) {
+
+                TreeMap<String, List<String>> roleConfigDetail = new TreeMap<>();
                 StringBuilder roleConfigSort = new StringBuilder();
-                Map<String, List<TjCasePartConfig>> roleGroup = casePageVo.getPartConfigs().stream().collect(Collectors.groupingBy(TjCasePartConfig::getParticipantRole));
+                TreeMap<String, List<TjCasePartConfig>> roleGroup = casePageVo.getPartConfigs().stream()
+                        .collect(Collectors.groupingBy(TjCasePartConfig::getParticipantRole, TreeMap::new,
+                                Collectors.toList()));
                 for (Entry<String, List<TjCasePartConfig>> entry : roleGroup.entrySet()) {
                     String roleName = dictDataService.selectDictLabel(SysType.PART_ROLE, entry.getKey());
+                    // 角色配置详情
+                    roleConfigDetail.put(roleName, entry.getValue().stream().map(TjCasePartConfig::getName).collect(Collectors.toList()));
+
+                    // 角色配置简述
                     if (entry.getValue().stream().anyMatch(item -> !ObjectUtils.isEmpty(item.getDeviceId()))) {
                         Map<Integer, List<TjCasePartConfig>> deviceGroup = entry.getValue().stream().collect(Collectors.groupingBy(TjCasePartConfig::getDeviceId));
                         for (Entry<Integer, List<TjCasePartConfig>> deviceEntry : deviceGroup.entrySet()) {
@@ -205,12 +188,42 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
                         roleConfigSort.append(StringUtils.format(ContentTemplate.CASE_ROLE_TEMPLATE, roleName, entry.getValue().size()));
                     }
                 }
+                casePageVo.setRoleConfigDetail(roleConfigDetail);
                 casePageVo.setRoleConfigSort(roleConfigSort.toString());
             }
-        }
-
-        return caseVos;
+            return casePageVo;
+        }).collect(Collectors.toList());
     }
+
+    @Override
+    public CaseDetailVo selectCaseDetail(Integer caseId) {
+        CaseQueryDto caseQueryDto = new CaseQueryDto();
+        caseQueryDto.setId(caseId);
+        List<CaseDetailVo> caseVos = caseMapper.selectCases(caseQueryDto);
+        if (CollectionUtils.isNotEmpty(caseVos)) {
+            CaseDetailVo caseDetailVo = caseVos.get(0);
+            handleLabel(caseDetailVo);
+            handleCasePartConfig(caseDetailVo);
+            return caseDetailVo;
+        }
+        return null;
+    }
+
+    private void handleLabel(CaseDetailVo caseDetailVo) {
+        // todo 标签处理
+        List<String> a = new ArrayList<>();
+        a.add("标签1");
+        a.add("标签2");
+        a.add("标签3");
+        caseDetailVo.setLabelDetail(a);
+    }
+
+    private void handleCasePartConfig(CaseDetailVo caseDetailVo) {
+        List<PartConfigSelect> configSelect = this.getConfigSelect(caseDetailVo.getId(),
+                JSONObject.parseObject(caseDetailVo.getTrajectoryInfo(), SceneTrajectoryBo.class), false);
+        caseDetailVo.setPartConfigSelects(configSelect);
+    }
+
 
     @Override
     public List<PartConfigSelect> getConfigSelect(Integer caseId,
@@ -239,28 +252,27 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
                         List<TjCasePartConfig> businessConfigs = caseRoleConfigMap.get(role.getDictValue());
                         List<String> businessIds = CollectionUtils.emptyIfNull(businessConfigs).stream()
                                 .map(TjCasePartConfig::getBusinessId).collect(Collectors.toList());
-                        if (deviceConfig && !businessIds.contains(config.getBusinessId())) {
-                            continue;
-                        }
-                        Map<String, TjCasePartConfig> businessConfigMap = CollectionUtils.emptyIfNull(businessConfigs)
-                                .stream().collect(Collectors.toMap(TjCasePartConfig::getBusinessId, value -> value));
                         CasePartConfigVo part = new CasePartConfigVo();
                         if (businessIds.contains(config.getBusinessId())) {
+                            Map<String, TjCasePartConfig> businessConfigMap = CollectionUtils.emptyIfNull(businessConfigs)
+                                    .stream().collect(Collectors.toMap(TjCasePartConfig::getBusinessId, value -> value));
                             BeanUtils.copyBeanProp(part, businessConfigMap.get(config.getBusinessId()));
                             part.setSelected(YN.Y_INT);
                         } else {
                             BeanUtils.copyBeanProp(part, config);
                         }
                         part.setModelName(ModelEnum.getDescByCode(part.getModel()));
-                        List<DeviceDetailVo> deviceVos = CollectionUtils.emptyIfNull(devices).stream().map(device -> {
-                            DeviceDetailVo detailVo = new DeviceDetailVo();
-                            BeanUtils.copyBeanProp(detailVo, device);
-                            if (detailVo.getDeviceId().equals(part.getDeviceId())) {
-                                detailVo.setSelected(YN.Y_INT);
-                            }
-                            return detailVo;
-                        }).collect(Collectors.toList());
-                        part.setDevices(deviceVos);
+                        if (deviceConfig) {
+                            List<DeviceDetailVo> deviceVos = CollectionUtils.emptyIfNull(devices).stream().map(device -> {
+                                DeviceDetailVo detailVo = new DeviceDetailVo();
+                                BeanUtils.copyBeanProp(detailVo, device);
+                                if (detailVo.getDeviceId().equals(part.getDeviceId())) {
+                                    detailVo.setSelected(YN.Y_INT);
+                                }
+                                return detailVo;
+                            }).collect(Collectors.toList());
+                            part.setDevices(deviceVos);
+                        }
                         parts.add(part);
                     }
                     PartConfigSelect partConfigSelect = new PartConfigSelect();
@@ -369,72 +381,52 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
 
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public Integer saveCase(TjCaseDto tjCaseDto) throws BusinessException {
-        TjFragmentedSceneDetail sceneDetail = sceneDetailService.getById(tjCaseDto.getSceneDetailId());
-        if (ObjectUtils.isEmpty(sceneDetail) || StringUtils.isEmpty(sceneDetail.getTrajectoryInfo())) {
-            throw new BusinessException("请先配置轨迹信息");
-        }
-        CaseTrajectoryDetailBo caseTrajectoryDetailBo =
-                JSONObject.parseObject(sceneDetail.getTrajectoryInfo(), CaseTrajectoryDetailBo.class);
-        int avNum = tjCaseDto.getPartConfig().get(PartRole.AV).size();
-        int simulationNum = tjCaseDto.getPartConfig().get(PartRole.MV_SIMULATION).size();
-        int pedestrianNum = tjCaseDto.getPartConfig().get(PartRole.SP).size();
-        caseTrajectoryDetailBo.setSceneForm(StringUtils.format(ContentTemplate.SCENE_FORM_TEMPLATE, avNum,
-                simulationNum, pedestrianNum));
-        TjFragmentedScenes scenes = scenesService.getById(sceneDetail.getFragmentedSceneId());
-        caseTrajectoryDetailBo.setSceneDesc(scenes.getName());
-        Integer caseId = tjCaseDto.getId();
-        if (ObjectUtils.isEmpty(caseId)) {
-            TjCase tjCase = new TjCase();
-            BeanUtils.copyBeanProp(tjCase, tjCaseDto);
-            tjCase.setResourcesDetailId(sceneDetail.getResourcesDetailId());
+    public boolean saveCase(TjCaseDto tjCaseDto) throws BusinessException {
+        TjCase tjCase = new TjCase();
+        BeanUtils.copyBeanProp(tjCase, tjCaseDto);
+        tjCase.setUpdatedDate(LocalDateTime.now());
+        tjCase.setUpdatedBy(SecurityUtils.getUsername());
+        if (ObjectUtils.isEmpty(tjCaseDto.getId())) {
             tjCase.setCaseNumber(this.buildCaseNumber());
-            tjCase.setDetailInfo(JSONObject.toJSONString(caseTrajectoryDetailBo));
-            tjCase.setStatus(CaseStatusEnum.TO_BE_SIMULATED.getCode());
             tjCase.setCreatedBy(SecurityUtils.getUsername());
             tjCase.setCreatedDate(LocalDateTime.now());
-            this.save(tjCase);
-            caseId = tjCase.getId();
         } else {
-            TjCase tjCase = caseMapper.selectById(caseId);
-            tjCase.setDetailInfo(JSONObject.toJSONString(caseTrajectoryDetailBo));
-            tjCase.setUpdatedDate(LocalDateTime.now());
-            tjCase.setUpdatedBy(SecurityUtils.getUsername());
-            this.updateById(tjCase);
-        }
-        Map<String, ParticipantTrajectoryBo> partTrajectoryMap =
-                CollectionUtils.emptyIfNull(caseTrajectoryDetailBo.getParticipantTrajectories()).stream()
-                        .collect(Collectors.toMap(ParticipantTrajectoryBo::getId, item -> item));
-        List<TjCasePartConfig> configs = new ArrayList<>();
-        for (Entry<String, List<TjCasePartConfig>> entry : tjCaseDto.getPartConfig().entrySet()) {
-            for (TjCasePartConfig config : CollectionUtils.emptyIfNull(entry.getValue())) {
-                if (!partTrajectoryMap.containsKey(config.getBusinessId())) {
-                    continue;
-                }
-                config.setCaseId(caseId);
-                config.setParticipantRole(entry.getKey());
-                config.setName(partTrajectoryMap.get(config.getBusinessId()).getName());
-                config.setModel(partTrajectoryMap.get(config.getBusinessId()).getModel());
-                configs.add(config);
+            List<TjCasePartConfig> configs = new ArrayList<>();
+            for (PartConfigSelect partConfigSelect : tjCaseDto.getPartConfigSelects()) {
+                CollectionUtils.emptyIfNull(partConfigSelect.getParts()).forEach(part -> {
+                    if (part.getSelected() == YN.N_INT) {
+                        return;
+                    }
+                    TjCasePartConfig config = new TjCasePartConfig();
+                    BeanUtils.copyBeanProp(config, part);
+                    config.setCaseId(tjCase.getId());
+                    config.setParticipantRole(partConfigSelect.getDictValue());
+                    config.setName(part.getName());
+                    config.setModel(part.getModel());
+                    configs.add(config);
+                });
+            }
+            boolean saveConfig = casePartConfigService.removeThenSave(tjCaseDto.getId(), configs);
+            if (!saveConfig) {
+                throw new BusinessException("保存配置失败");
+            }
+            if (tjCase.getStatus().equals(CaseStatusEnum.WAIT_CONFIG.getCode())) {
+                tjCase.setStatus(CaseStatusEnum.WAIT_TEST.getCode());
             }
         }
-        boolean saveConfig = casePartConfigService.removeThenSave(caseId, configs);
-        if (!saveConfig) {
-            throw new BusinessException("保存角色配置失败");
-        }
-        return sceneDetail.getFragmentedSceneId();
+        return this.saveOrUpdate(tjCase);
     }
 
     @Override
-    public CaseInfoBo getCaseDetail(Integer caseId) {
+    public CaseInfoBo getCaseDetail(Integer caseId) throws BusinessException {
         CaseInfoBo caseInfoBo = caseMapper.selectCaseInfo(caseId);
-//        if (ObjectUtils.isEmpty(caseInfoBo)) {
-//            throw new BusinessException("用例查询异常");
-//        }
-//        List<CaseConfigBo> casePartConfigs = caseInfoBo.getCaseConfigs();
-//        if (CollectionUtils.isEmpty(casePartConfigs)) {
-//            throw new BusinessException("用例未进行角色配置");
-//        }
+        if (ObjectUtils.isEmpty(caseInfoBo)) {
+            throw new BusinessException("用例查询异常");
+        }
+        List<CaseConfigBo> casePartConfigs = caseInfoBo.getCaseConfigs();
+        if (CollectionUtils.isEmpty(casePartConfigs)) {
+            throw new BusinessException("用例未进行角色配置");
+        }
         return caseInfoBo;
     }
 
@@ -493,19 +485,25 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
 
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public boolean deleteCase(TjCaseDto tjCaseDto) {
-        QueryWrapper<TjCasePartConfig> deleteWrapper = new QueryWrapper<>();
-        if (!ObjectUtils.isEmpty(tjCaseDto.getId())) {
-            deleteWrapper.eq(ColumnName.CASE_ID_COLUMN, tjCaseDto.getId());
-            casePartConfigService.remove(deleteWrapper);
-            return this.removeById(tjCaseDto.getId());
+    public boolean batchDelete(List<Integer> caseIds) throws BusinessException {
+        if (CollectionUtils.isEmpty(caseIds)) {
+            return false;
         }
-        if (!ObjectUtils.isEmpty(tjCaseDto.getIds())) {
-            deleteWrapper.in(ColumnName.CASE_ID_COLUMN, tjCaseDto.getIds());
-            casePartConfigService.remove(deleteWrapper);
-            return this.removeByIds(tjCaseDto.getIds());
+        QueryWrapper<TjCasePartConfig> configQueryWrapper = new QueryWrapper<>();
+        configQueryWrapper.in(ColumnName.CASE_ID_COLUMN, caseIds);
+        List<TjCasePartConfig> tjCasePartConfigs = casePartConfigService.list(configQueryWrapper);
+        if (CollectionUtils.isNotEmpty(tjCasePartConfigs)) {
+            List<Integer> configIds = tjCasePartConfigs.stream().map(TjCasePartConfig::getId).collect(Collectors.toList());
+            boolean removeConfig = casePartConfigService.removeByIds(configIds);
+            if (!removeConfig) {
+                throw new BusinessException("删除配置失败");
+            }
         }
-        return false;
+        boolean removeCase = this.removeByIds(caseIds);
+        if (!removeCase) {
+            throw new BusinessException("删除用例失败");
+        }
+        return true;
     }
 
     @Override
@@ -514,44 +512,53 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     }
 
     @Override
-    public boolean updateStatus(TjCaseDto tjCaseDto) throws BusinessException {
-        QueryWrapper<TjCase> queryWrapper = new QueryWrapper<>();
-        queryWrapper.in(ColumnName.ID_COLUMN, tjCaseDto.getIds()).eq(ColumnName.STATUS_COLUMN, tjCaseDto.getStatus());
-        List<TjCase> tjCases = this.list(queryWrapper);
-        if (CollectionUtils.isEmpty(tjCases)) {
-            throw new BusinessException("操作失败");
+    public boolean updateStatus(Integer caseId) throws BusinessException {
+        TjCase tjCase = this.getById(caseId);
+        if (ObjectUtils.isEmpty(tjCase)) {
+            throw new BusinessException("用例不存在！");
         }
-        QueryWrapper<TjCasePartConfig> configQueryWrapper = new QueryWrapper<>();
-        configQueryWrapper.in(ColumnName.CASE_ID_COLUMN, tjCases.stream().map(TjCase::getId).collect(Collectors.toList()));
-        List<TjCasePartConfig> configList = casePartConfigService.list(configQueryWrapper);
-        Map<Integer, List<TjCasePartConfig>> configMap = CollectionUtils.emptyIfNull(configList).stream()
-                .collect(Collectors.groupingBy(TjCasePartConfig::getCaseId));
-        if (StringUtils.equals(tjCaseDto.getStatus(), CaseStatusEnum.TO_BE_SIMULATED.getCode())) {
-            for (TjCase caseItem : tjCases) {
-                if (!configMap.containsKey(caseItem.getId())) {
-                    throw new BusinessException(StringUtils.format("{}未进行角色配置", caseItem.getCaseNumber()));
+        if (CaseStatusEnum.WAIT_CONFIG.getCode().equals(tjCase.getStatus())) {
+            throw new BusinessException("用例未进行角色配置，无法进行状态操作！");
+        }
+        if (CaseStatusEnum.WAIT_TEST.getCode().equals(tjCase.getStatus())
+                || CaseStatusEnum.INVALID.getCode().equals(tjCase.getStatus())) {
+            tjCase.setStatus(CaseStatusEnum.EFFECTIVE.getCode());
+            return this.updateById(tjCase);
+        }
+        if (CaseStatusEnum.EFFECTIVE.getCode().equals(tjCase.getStatus())) {
+            tjCase.setStatus(CaseStatusEnum.INVALID.getCode());
+            return this.updateById(tjCase);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean batchUpdateStatus(List<Integer> caseIds, Integer action) throws BusinessException {
+        List<TjCase> cases = this.listByIds(caseIds);
+        if (CollectionUtils.isEmpty(cases)) {
+            throw new BusinessException("用例信息异常！");
+        }
+        if (action == 1) {
+            for (TjCase tjCase : cases) {
+                if (CaseStatusEnum.WAIT_TEST.getCode().equals(tjCase.getStatus())
+                        || CaseStatusEnum.INVALID.getCode().equals(tjCase.getStatus())) {
+                    tjCase.setStatus(CaseStatusEnum.EFFECTIVE.getCode());
                 }
             }
+            return this.updateBatchById(cases);
         }
-        // todo 仿真点位验证逻辑
-        if (StringUtils.equals(tjCaseDto.getStatus(), CaseStatusEnum.SIMULATION_VERIFICATION.getCode())) {
-//            for (TjCase caseItem : tjCases) {
-//                CaseTrajectoryDetailBo caseTrajectoryDetailBo = JSONObject.parseObject(caseItem.getDetailInfo(),
-//                        CaseTrajectoryDetailBo.class);
-//                if (caseTrajectoryDetailBo.getParticipantTrajectories().stream().noneMatch(trajectories ->
-//                        routeService.verifyRoute(trajectories.getTrajectory()))) {
-//                    throw new BusinessException(StringUtils.format("用例{}仿真校验失败", caseItem.getCaseNumber()));
-//                }
-//            }
+        if (action == 2) {
+            for (TjCase tjCase : cases) {
+                if (CaseStatusEnum.WAIT_TEST.getCode().equals(tjCase.getStatus())
+                        || CaseStatusEnum.EFFECTIVE.getCode().equals(tjCase.getStatus())) {
+                    tjCase.setStatus(CaseStatusEnum.INVALID.getCode());
+                }
+            }
+            return this.updateBatchById(cases);
         }
-        String nextStatus = CaseStatusEnum.getNextStatus(String.valueOf(tjCaseDto.getStatus()));
-        for (TjCase tjCase : tjCases) {
-            tjCase.setStatus(nextStatus);
-            tjCase.setUpdatedDate(LocalDateTime.now());
-            tjCase.setUpdatedBy(SecurityUtils.getUsername());
-        }
-        return this.updateBatchById(tjCases);
+        return false;
     }
+
 
     @Override
     public CaseVerificationVo getSimulationDetail(Integer caseId) throws BusinessException {

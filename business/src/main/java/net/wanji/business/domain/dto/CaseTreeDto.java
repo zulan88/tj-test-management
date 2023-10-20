@@ -15,14 +15,14 @@ import javax.validation.constraints.NotEmpty;
 @Data
 public class CaseTreeDto {
 
-    @ApiModelProperty(value = "id")
+    @ApiModelProperty(value = "id", example = "1")
     private Integer id;
 
-    @ApiModelProperty(value = "测试类型")
+    @ApiModelProperty(value = "测试类型", example = "virtualRealFusion")
     @NotEmpty(message = "请选择测试类型")
     private String type;
 
-    @ApiModelProperty(value = "文件夹名称")
+    @ApiModelProperty(value = "文件夹名称", example = "新场景")
     @NotEmpty(message = "请输入文件夹名称")
     private String name;
 }

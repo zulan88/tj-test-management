@@ -4,7 +4,10 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 /**
@@ -77,7 +80,8 @@ public class TjCaseTree implements Serializable {
     /**
      * 创建日期
      */
-    private Date createdDate;
+    @JsonFormat(shape= JsonFormat.Shape.STRING, pattern="yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime createdDate;
 
     /**
      * 修改人
@@ -87,7 +91,8 @@ public class TjCaseTree implements Serializable {
     /**
      * 修改日期
      */
-    private Date updatedDate;
+    @JsonFormat(shape= JsonFormat.Shape.STRING, pattern="yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime updatedDate;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
@@ -263,14 +268,14 @@ public class TjCaseTree implements Serializable {
     /**
      * 创建日期
      */
-    public Date getCreatedDate() {
+    public LocalDateTime getCreatedDate() {
         return createdDate;
     }
 
     /**
      * 创建日期
      */
-    public void setCreatedDate(Date createdDate) {
+    public void setCreatedDate(LocalDateTime createdDate) {
         this.createdDate = createdDate;
     }
 
@@ -291,14 +296,14 @@ public class TjCaseTree implements Serializable {
     /**
      * 修改日期
      */
-    public Date getUpdatedDate() {
+    public LocalDateTime getUpdatedDate() {
         return updatedDate;
     }
 
     /**
      * 修改日期
      */
-    public void setUpdatedDate(Date updatedDate) {
+    public void setUpdatedDate(LocalDateTime updatedDate) {
         this.updatedDate = updatedDate;
     }
 
