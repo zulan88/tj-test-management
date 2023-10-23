@@ -148,7 +148,7 @@ public class SceneBaseController extends BaseController {
                                               @RequestBody TjFragmentedSceneDetailDto sceneDetailDto)
             throws BusinessException {
         return tjFragmentedSceneDetailService.saveSceneDetail(sceneDetailDto)
-                ? AjaxResult.success("成功")
+                ? AjaxResult.success(sceneDetailDto.getId())
                 : AjaxResult.error("失败");
     }
 

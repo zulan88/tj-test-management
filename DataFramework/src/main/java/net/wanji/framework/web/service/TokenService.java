@@ -209,9 +209,10 @@ public class TokenService
      */
     private String createToken(Map<String, Object> claims)
     {
-        String token = Jwts.builder()
-                .setClaims(claims)
-                .signWith(SignatureAlgorithm.HS512, secret).compact();
+//        String token = Jwts.builder()
+//                .setClaims(claims)
+//                .signWith(SignatureAlgorithm.HS512, secret).compact();
+        String token = claims.get(Constants.LOGIN_USER_KEY).toString();
         return token;
     }
 

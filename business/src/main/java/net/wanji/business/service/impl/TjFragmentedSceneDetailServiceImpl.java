@@ -160,7 +160,10 @@ public class TjFragmentedSceneDetailServiceImpl
                 ? sceneDetailDto.getTrajectoryJson().buildId().toJsonString()
                 : null);
 
-        return this.saveOrUpdate(detail);
+        boolean flag = this.saveOrUpdate(detail);
+        sceneDetailDto.setId(detail.getId());
+
+        return flag;
     }
 
     public synchronized String buildSceneNumber() {
