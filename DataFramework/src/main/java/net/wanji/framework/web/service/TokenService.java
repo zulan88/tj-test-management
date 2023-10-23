@@ -101,15 +101,15 @@ public class TokenService
         {
             try
             {
-                Claims claims = parseToken(token);
-                // 解析对应的权限以及用户信息
-                String uuid = (String) claims.get(Constants.LOGIN_USER_KEY);
-                String userKey = getTokenKey(uuid);
+                String userKey = getTokenKey(token);
                 LoginUser user = redisCache.getCacheObject(userKey);
+                user.setUserId(user.getUser().getUserId());
+                user.setDeptId(user.getUser().getDeptId());
                 return user;
             }
             catch (Exception e)
             {
+                System.out.println(e.getMessage());
             }
         }
         return null;
