@@ -1,6 +1,7 @@
 package net.wanji.business.service;
 
-import net.wanji.business.domain.vo.CaseRealTestVo;
+import net.wanji.business.domain.vo.CaseTestPrepareVo;
+import net.wanji.business.domain.vo.CaseTestStartVo;
 import net.wanji.business.domain.vo.CommunicationDelayVo;
 import net.wanji.business.domain.vo.RealTestResultVo;
 import net.wanji.business.domain.vo.RealVehicleVerificationPageVo;
@@ -15,14 +16,6 @@ import java.io.IOException;
  */
 
 public interface TestingService {
-    /**
-     * 删除
-     *
-     * @param caseId
-     * @return
-     * @throws BusinessException
-     */
-    boolean delete(Integer caseId) throws BusinessException;
 
     /**
      * 获取用例中参与者状态
@@ -38,7 +31,7 @@ public interface TestingService {
      * @param caseId
      * @return
      */
-    CaseRealTestVo prepare(Integer caseId) throws BusinessException;
+    CaseTestPrepareVo prepare(Integer caseId) throws BusinessException;
 
     /**
      * 开始/结束/回放
@@ -47,7 +40,7 @@ public interface TestingService {
      * @param action
      * @return
      */
-    CaseRealTestVo start(Integer recordId, Integer action) throws BusinessException, IOException;
+    CaseTestStartVo start(Integer recordId, Integer action) throws BusinessException, IOException;
 
     void playback(Integer recordId, Integer action) throws BusinessException, IOException;
 

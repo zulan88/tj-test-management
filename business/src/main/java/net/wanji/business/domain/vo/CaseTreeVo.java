@@ -21,9 +21,12 @@ public class CaseTreeVo {
 
     private String name;
 
+    private Integer parentId;
+
     public CaseTreeVo(TjCaseTree caseTree) {
         this.id = caseTree.getId();
         this.type = caseTree.getType();
         this.name = caseTree.getName();
+        this.parentId = caseTree.getParentId();
     }
 }

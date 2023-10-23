@@ -77,7 +77,7 @@ public class TjCasePartConfigServiceImpl extends ServiceImpl<TjCasePartConfigMap
                             item.getParticipantRole()));
                     casePartConfigVo.setBusinessTypeName(dictDataService.selectDictLabel(SysType.PART_TYPE,
                             item.getBusinessType()));
-                    casePartConfigVo.setSelected(YN.Y_INT);
+                    casePartConfigVo.setSelected(Boolean.TRUE);
                     return casePartConfigVo;
                 }).collect(Collectors.groupingBy(TjCasePartConfig::getParticipantRole));
         Map<String, List<CasePartConfigVo>> result = new HashMap<>(partRole.size());

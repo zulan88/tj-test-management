@@ -30,6 +30,7 @@ import net.wanji.business.domain.vo.DeviceDetailVo;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjCasePartConfig;
 import net.wanji.business.entity.TjDeviceDetail;
+import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.entity.TjResourcesDetail;
 import net.wanji.business.exception.BusinessException;
@@ -126,8 +127,11 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     @Override
     public Map<String, List<SimpleSelect>> init() {
         List<SysDictData> caseStatus = dictTypeService.selectDictDataByType(SysType.CASE_STATUS);
-        Map<String, List<SimpleSelect>> result = new HashMap<>(1);
+        List<SysDictData> testType = dictTypeService.selectDictDataByType(SysType.TEST_TYPE);
+        Map<String, List<SimpleSelect>> result = new HashMap<>(2);
         result.put(SysType.CASE_STATUS, CollectionUtils.emptyIfNull(caseStatus).stream()
+                .map(SimpleSelect::new).collect(Collectors.toList()));
+        result.put(SysType.TEST_TYPE, CollectionUtils.emptyIfNull(testType).stream()
                 .map(SimpleSelect::new).collect(Collectors.toList()));
         return result;
     }
@@ -257,7 +261,7 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
                             Map<String, TjCasePartConfig> businessConfigMap = CollectionUtils.emptyIfNull(businessConfigs)
                                     .stream().collect(Collectors.toMap(TjCasePartConfig::getBusinessId, value -> value));
                             BeanUtils.copyBeanProp(part, businessConfigMap.get(config.getBusinessId()));
-                            part.setSelected(YN.Y_INT);
+                            part.setSelected(Boolean.TRUE);
                         } else {
                             BeanUtils.copyBeanProp(part, config);
                         }
@@ -267,7 +271,7 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
                                 DeviceDetailVo detailVo = new DeviceDetailVo();
                                 BeanUtils.copyBeanProp(detailVo, device);
                                 if (detailVo.getDeviceId().equals(part.getDeviceId())) {
-                                    detailVo.setSelected(YN.Y_INT);
+                                    detailVo.setSelected(Boolean.TRUE);
                                 }
                                 return detailVo;
                             }).collect(Collectors.toList());
@@ -383,19 +387,21 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     @Override
     public boolean saveCase(TjCaseDto tjCaseDto) throws BusinessException {
         TjCase tjCase = new TjCase();
-        BeanUtils.copyBeanProp(tjCase, tjCaseDto);
-        tjCase.setUpdatedDate(LocalDateTime.now());
-        tjCase.setUpdatedBy(SecurityUtils.getUsername());
         if (ObjectUtils.isEmpty(tjCaseDto.getId())) {
+            BeanUtils.copyBeanProp(tjCase, tjCaseDto);
             tjCase.setCaseNumber(this.buildCaseNumber());
+            TjFragmentedSceneDetail sceneDetail = sceneDetailService.getById(tjCaseDto.getSceneDetailId());
+            tjCase.setDetailInfo(sceneDetail.getTrajectoryInfo());
             tjCase.setCreatedBy(SecurityUtils.getUsername());
             tjCase.setCreatedDate(LocalDateTime.now());
         } else {
+            tjCase = this.getById(tjCaseDto.getId());
             List<TjCasePartConfig> configs = new ArrayList<>();
             for (PartConfigSelect partConfigSelect : tjCaseDto.getPartConfigSelects()) {
-                CollectionUtils.emptyIfNull(partConfigSelect.getParts()).forEach(part -> {
-                    if (part.getSelected() == YN.N_INT) {
-                        return;
+                for (int i = 0; i < CollectionUtils.emptyIfNull(partConfigSelect.getParts()).size(); i++) {
+                    CasePartConfigVo part = partConfigSelect.getParts().get(i);
+                    if (!part.isSelected()) {
+                        continue;
                     }
                     TjCasePartConfig config = new TjCasePartConfig();
                     BeanUtils.copyBeanProp(config, part);
@@ -404,7 +410,7 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
                     config.setName(part.getName());
                     config.setModel(part.getModel());
                     configs.add(config);
-                });
+                }
             }
             boolean saveConfig = casePartConfigService.removeThenSave(tjCaseDto.getId(), configs);
             if (!saveConfig) {
@@ -414,6 +420,8 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
                 tjCase.setStatus(CaseStatusEnum.WAIT_TEST.getCode());
             }
         }
+        tjCase.setUpdatedDate(LocalDateTime.now());
+        tjCase.setUpdatedBy(SecurityUtils.getUsername());
         return this.saveOrUpdate(tjCase);
     }
 

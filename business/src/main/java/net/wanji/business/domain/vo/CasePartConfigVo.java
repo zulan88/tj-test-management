@@ -32,7 +32,7 @@ public class CasePartConfigVo extends TjCasePartConfig {
     /**
      * 选中状态
      */
-    private int selected;
+    private boolean selected;
     /**
      * 设备列表
      */

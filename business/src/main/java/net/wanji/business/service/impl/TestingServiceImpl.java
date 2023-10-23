@@ -17,16 +17,15 @@ import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.ParamsDto;
-import net.wanji.business.domain.param.CaseRuleControl;
 import net.wanji.business.domain.param.DeviceConnInfo;
 import net.wanji.business.domain.param.DeviceConnRule;
-import net.wanji.business.domain.vo.CaseRealTestVo;
+import net.wanji.business.domain.vo.CaseTestPrepareVo;
+import net.wanji.business.domain.vo.CaseTestStartVo;
 import net.wanji.business.domain.vo.CommunicationDelayVo;
 import net.wanji.business.domain.vo.RealTestResultVo;
 import net.wanji.business.domain.vo.RealVehicleVerificationPageVo;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjCaseRealRecord;
-import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjCaseRealRecordMapper;
@@ -105,22 +104,19 @@ public class TestingServiceImpl implements TestingService {
     private ImitateRedisTrajectoryConsumer imitateRedisTrajectoryConsumer;
 
     @Override
-    public boolean delete(Integer caseId) throws BusinessException {
-        // 删除用例
-        return false;
-    }
-
-    @Override
     public RealVehicleVerificationPageVo getStatus(Integer caseId) throws BusinessException {
         CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
+        if (ObjectUtils.isEmpty(caseInfoBo) || ObjectUtils.isEmpty(caseInfoBo.getRouteFile())) {
+            throw new BusinessException("用例不存在或未配置路线");
+        }
         if (caseInfoBo.getCaseConfigs().stream().allMatch(config -> ObjectUtils.isEmpty(config.getDeviceId()))) {
             throw new BusinessException("用例未进行设备配置");
         }
         // 重复设备过滤
         List<CaseConfigBo> caseConfigs = caseInfoBo.getCaseConfigs().stream().filter(info ->
                 !ObjectUtils.isEmpty(info.getDeviceId())).collect(Collectors.collectingAndThen(
-                        Collectors.toCollection(() ->
-                                new TreeSet<>(Comparator.comparing(CaseConfigBo::getDeviceId))), ArrayList::new));
+                Collectors.toCollection(() ->
+                        new TreeSet<>(Comparator.comparing(CaseConfigBo::getDeviceId))), ArrayList::new));
         Map<String, String> businessIdAndRoleMap = caseInfoBo.getCaseConfigs().stream().collect(Collectors.toMap(
                 CaseConfigBo::getBusinessId,
                 CaseConfigBo::getParticipantRole));
@@ -195,17 +191,16 @@ public class TestingServiceImpl implements TestingService {
 
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public CaseRealTestVo prepare(Integer caseId) throws BusinessException {
+    public CaseTestPrepareVo prepare(Integer caseId) throws BusinessException {
         CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
         if (caseInfoBo.getCaseConfigs().stream().allMatch(config -> ObjectUtils.isEmpty(config.getDeviceId()))) {
             throw new BusinessException("用例未进行设备配置");
         }
-        TjFragmentedSceneDetail sceneDetail = sceneDetailMapper.selectById(caseInfoBo.getSceneDetailId());
-        if (ObjectUtils.isEmpty(sceneDetail) || StringUtils.isEmpty(sceneDetail.getTrajectoryInfo())) {
-            throw new BusinessException("请先配置轨迹信息");
+        if (StringUtils.isEmpty(caseInfoBo.getDetailInfo())) {
+            throw new BusinessException("用例异常：无轨迹信息；请重新创建用例！");
         }
         CaseTrajectoryDetailBo caseTrajectoryDetailBo =
-                JSONObject.parseObject(sceneDetail.getTrajectoryInfo(), CaseTrajectoryDetailBo.class);
+                JSONObject.parseObject(caseInfoBo.getDetailInfo(), CaseTrajectoryDetailBo.class);
         Map<String, List<CaseConfigBo>> partMap = caseInfoBo.getCaseConfigs().stream().collect(
                 Collectors.groupingBy(CaseConfigBo::getSupportRoles));
         int avNum = partMap.containsKey(PartRole.AV) ? partMap.get(PartRole.AV).size() : 0;
@@ -213,7 +208,6 @@ public class TestingServiceImpl implements TestingService {
         int pedestrianNum = partMap.containsKey(PartRole.SP) ? partMap.get(PartRole.SP).size() : 0;
         caseTrajectoryDetailBo.setSceneForm(StringUtils.format(ContentTemplate.SCENE_FORM_TEMPLATE, avNum,
                 simulationNum, pedestrianNum));
-//        caseTrajectoryDetailBo.setSceneDesc(caseInfoBo.getSceneName());
 
         QueryWrapper<TjCaseRealRecord> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq(ColumnName.CASE_ID_COLUMN, caseId);
@@ -225,16 +219,16 @@ public class TestingServiceImpl implements TestingService {
         tjCaseRealRecord.setStatus(TestingStatus.NOT_START);
         caseRealRecordMapper.insert(tjCaseRealRecord);
 
-        CaseRealTestVo caseRealTestVo = new CaseRealTestVo();
-        BeanUtils.copyProperties(tjCaseRealRecord, caseRealTestVo);
-        caseRealTestVo.setChannels(caseInfoBo.getCaseConfigs().stream().map(CaseConfigBo::getDataChannel)
+        CaseTestPrepareVo caseTestPrepareVo = new CaseTestPrepareVo();
+        BeanUtils.copyProperties(tjCaseRealRecord, caseTestPrepareVo);
+        caseTestPrepareVo.setChannels(caseInfoBo.getCaseConfigs().stream().map(CaseConfigBo::getDataChannel).distinct()
                 .collect(Collectors.toList()));
-        return caseRealTestVo;
+        return caseTestPrepareVo;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public CaseRealTestVo start(Integer recordId, Integer action) throws BusinessException, IOException {
+    public CaseTestStartVo start(Integer recordId, Integer action) throws BusinessException, IOException {
         // todo recordId可以换成caseId
         TjCaseRealRecord caseRealRecord = caseRealRecordMapper.selectById(recordId);
         if (ObjectUtils.isEmpty(caseRealRecord) || caseRealRecord.getStatus() > TestingStatus.NOT_START) {
@@ -245,23 +239,22 @@ public class TestingServiceImpl implements TestingService {
         if (caseInfoBo.getCaseConfigs().stream().allMatch(config -> ObjectUtils.isEmpty(config.getDeviceId()))) {
             throw new BusinessException("用例未进行设备配置");
         }
-        if (!restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(), String.valueOf(caseId), action,
-                generateDeviceConnRules(caseInfoBo)))) {
-            throw new BusinessException("主控响应异常");
-        }
+        // 更新测试记录
         TjCaseRealRecord realRecord = caseInfoBo.getCaseRealRecord();
         realRecord.setStatus(TestingStatus.RUNNING);
         realRecord.setStartTime(LocalDateTime.now());
         caseRealRecordMapper.updateById(realRecord);
         // 开始监听所有数据通道
         imitateRedisTrajectoryConsumer.subscribeAndSend(caseInfoBo);
-        // 开启模拟客户端
-//        List<CaseConfigBo> caseConfigs = caseInfoBo.getCaseConfigs().stream().filter(deviceId ->
-//                !ObjectUtils.isEmpty(deviceId)).collect(Collectors.toList());
-//        restService.imitateClientUrl(caseConfigs);
-        CaseRealTestVo caseRealTestVo = new CaseRealTestVo();
-        BeanUtils.copyProperties(realRecord, caseRealTestVo);
-        caseRealTestVo.setStartTime(DateUtils.getTime());
+        // 启动主控
+//        if (!restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(), String.valueOf(caseId), action,
+//                generateDeviceConnRules(caseInfoBo)))) {
+//            throw new BusinessException("主控响应异常");
+//        }
+
+        CaseTestStartVo startVo = new CaseTestStartVo();
+        BeanUtils.copyProperties(realRecord, startVo);
+        startVo.setStartTime(DateUtils.getTime());
         SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(realRecord.getDetailInfo(),
                 SceneTrajectoryBo.class);
         Map<String, List<TrajectoryDetailBo>> mainTrajectoryMap = sceneTrajectoryBo.getParticipantTrajectories()
@@ -269,8 +262,8 @@ public class TestingServiceImpl implements TestingService {
                         ParticipantTrajectoryBo::getId,
                         ParticipantTrajectoryBo::getTrajectory
                 ));
-        caseRealTestVo.setMainTrajectories(mainTrajectoryMap);
-        return caseRealTestVo;
+        startVo.setMainTrajectories(mainTrajectoryMap);
+        return startVo;
     }
 
     @Override

@@ -135,7 +135,6 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
         } catch (InterruptedException e) {
             log.error("查询设备状态异常", e);
         }
-        log.info("等待设备{}状态  {}", deviceId, channel);
         return (Integer) StatusManage.getValue(key);
     }
 
@@ -152,7 +151,6 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
         } catch (InterruptedException e) {
             log.error("查询设备准备状态异常", e);
         }
-        log.info("等待设备 {} 准备状态", deviceId);
         return (Integer) StatusManage.getValue(key);
     }
 }

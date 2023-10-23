@@ -116,7 +116,8 @@ public class ImitateRedisTrajectoryConsumer {
         String key = WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(caseInfoBo.getCaseRealRecord().getId()),
                 WebSocketManage.REAL, null);
         if (this.runningChannel.containsKey(key)) {
-            removeListener(key, false, null);
+            log.info("通道已存在");
+            return;
         }
         MessageListener listener = createListener(key, caseInfoBo);
         List<ChannelTopic> topics = caseInfoBo.getCaseConfigs().stream().map(CaseConfigBo::getDataChannel).map(ChannelTopic::new).collect(Collectors.toList());
@@ -128,9 +129,9 @@ public class ImitateRedisTrajectoryConsumer {
                             configBo.getSupportRoles(), System.currentTimeMillis(), listener);
             listeners.add(channelListener);
         }
-        log.info("addRunningChannel:{}", JSONObject.toJSONString(topics));
         this.runningChannel.put(key, listeners);
         redisMessageListenerContainer.addMessageListener(listener, topics);
+        log.info("添加监听器成功:{}", JSONObject.toJSONString(topics));
     }
 
 
@@ -175,10 +176,10 @@ public class ImitateRedisTrajectoryConsumer {
         PathwayPoints pathwayPoints = new PathwayPoints(avPoints);
         // 读取仿真验证主车轨迹
         TjCase tjCase = caseMapper.selectById(caseRealRecord.getCaseId());
-        List<List<TrajectoryValueDto>> mainSimulations = routeService.readTrajectoryFromRouteFile(tjCase.getRouteFile(),
-                caseConfigBo.getBusinessId());
-        List<TrajectoryValueDto> mainSimuTrajectories = mainSimulations.stream()
-                .map(item -> item.get(0)).collect(Collectors.toList());
+//        List<List<TrajectoryValueDto>> mainSimulations = routeService.readTrajectoryFromRouteFile(tjCase.getRouteFile(),
+//                caseConfigBo.getBusinessId());
+//        List<TrajectoryValueDto> mainSimuTrajectories = mainSimulations.stream()
+//                .map(item -> item.get(0)).collect(Collectors.toList());
         Map<String, Object> realMap = new HashMap<>();
         ObjectMapper objectMapper = new ObjectMapper();
         String methodLog = StringUtils.format("{}实车验证 - ", caseRealRecord.getCaseId());

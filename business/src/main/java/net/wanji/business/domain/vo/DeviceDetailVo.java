@@ -19,5 +19,5 @@ public class DeviceDetailVo extends TjDeviceDetail {
     @Excel(name = "支持角色")
     private String supportRolesName;
 
-    private int selected;
+    private boolean selected;
 }

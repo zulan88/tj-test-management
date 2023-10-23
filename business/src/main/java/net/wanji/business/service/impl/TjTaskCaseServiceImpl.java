@@ -208,7 +208,6 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         BeanUtils.copyProperties(tjTaskCaseRecord, caseRealTestVo);
         caseRealTestVo.setChannels(caseInfoBo.getCaseConfigs().stream().map(TaskCaseConfigBo::getDataChannel)
                 .collect(Collectors.toList()));
-        caseRealTestVo.setSceneName(caseInfoBo.getSceneName());
         return caseRealTestVo;
     }
 

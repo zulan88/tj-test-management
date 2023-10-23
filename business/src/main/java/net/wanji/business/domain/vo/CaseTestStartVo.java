@@ -7,24 +7,16 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @Auther: guanyuduo
- * @Date: 2023/8/30 19:22
- * @Descriptoin:
+ * @author: guanyuduo
+ * @date: 2023/10/20 18:01
+ * @descriptoin:
  */
 @Data
-public class CaseRealTestVo {
-
-    private Integer id;
-
-    private Integer caseId;
-
-    private String testTypeName;
+public class CaseTestStartVo extends CaseTestPrepareVo {
 
     private String startTime;
 
     private String endTime;
-
-    private List<String> channels;
 
     Map<String, List<TrajectoryDetailBo>> mainTrajectories;
 }

@@ -1,5 +1,7 @@
 package net.wanji.business.service;
 
+import com.alibaba.fastjson.JSONObject;
+import lombok.extern.slf4j.Slf4j;
 import net.wanji.business.component.CountDownValueDto;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
@@ -14,6 +16,7 @@ import java.util.concurrent.TimeUnit;
  * @descriptoin:
  */
 @Component
+@Slf4j
 public class StatusManage {
 
     public static Map<String, CountDownValueDto> countDownLatchMap = new HashMap<>();
@@ -21,7 +24,7 @@ public class StatusManage {
     public static void addCountDownLatch(String key) throws InterruptedException {
         CountDownValueDto countDownValueDto = new CountDownValueDto();
         countDownLatchMap.put(key, countDownValueDto);
-        countDownValueDto.getCountDownLatch().await(1000, TimeUnit.MILLISECONDS);
+        boolean await = countDownValueDto.getCountDownLatch().await(200, TimeUnit.MILLISECONDS);
     }
 
     public static void countDown(String key, Object value) {
@@ -35,6 +38,7 @@ public class StatusManage {
     public static Object getValue(String key) {
         try {
             CountDownValueDto countDownValueDto = countDownLatchMap.get(key);
+            log.info("查询状态key：{}，value：{}", key, JSONObject.toJSONString(countDownValueDto));
             if (!ObjectUtils.isEmpty(countDownValueDto)) {
                 return countDownValueDto.getValue();
             }
