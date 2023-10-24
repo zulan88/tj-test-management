@@ -123,4 +123,31 @@ public class LabelsController extends BaseController {
         return AjaxResult.success(data);
     }
 
+    @GetMapping("/singlelist")
+    public AjaxResult singlelist(){
+        List<Label> labelList = labelsService.selectLabelsList(new Label());
+        Map<Long, Label> labelToNodeMap = new HashMap<>();
+        TreeVo treeVo = new TreeVo();
+        treeVo.setTotal(labelList.size());
+        List<Label> roots = new ArrayList<>();
+        for (Label label : labelList) {
+
+            labelToNodeMap.put(label.getId(), label);
+
+            if (label.getParentId()!=null&&label.getParentId().equals(2l)) {
+                roots.add(label);
+            }
+        }
+        for (Label label : labelList) {
+            Label currentNode = labelToNodeMap.get(label.getId());
+            Label parentNode = labelToNodeMap.get(label.getParentId());
+
+            if (parentNode != null) {
+                parentNode.getChildren().add(currentNode);
+            }
+        }
+        treeVo.setTrees(roots);
+        return AjaxResult.success(treeVo);
+    }
+
 }
