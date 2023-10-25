@@ -13,6 +13,7 @@
         <id property="id" column="id" jdbcType="INTEGER"/>
         <result property="treeId" column="tree_id" jdbcType="INTEGER"/>
         <result property="caseNumber" column="case_number" jdbcType="VARCHAR"/>
+        <result property="sceneDetailId" column="scene_detail_id" jdbcType="INTEGER"/>
         <result property="sceneNumber" column="scene_number" jdbcType="VARCHAR"/>
         <result property="imgUrl" column="img_url" jdbcType="VARCHAR"/>
         <result property="testSceneDesc" column="test_scene_desc" jdbcType="VARCHAR"/>
@@ -21,7 +22,7 @@
         <result property="testTarget" column="test_target" jdbcType="VARCHAR"/>
         <result property="status" column="status" jdbcType="VARCHAR"/>
         <result property="updatedDate" column="updated_date" jdbcType="TIMESTAMP"/>
-        <collection property="partConfigs" javaType="java.util.List" resultMap="PartConfigResult" />
+        <collection property="partConfigs" ofType="net.wanji.business.entity.TjCasePartConfig" select="selectCasesConfig" column="id" />
     </resultMap>
 
     <resultMap id="PartConfigResult" type="net.wanji.business.entity.TjCasePartConfig">
@@ -39,24 +40,17 @@
         c.id,
         c.tree_id,
         c.case_number,
+        sd.id as scene_detail_id,
+        c.test_target,
+        c.status,
+        c.updated_date,
         sd.number as scene_number,
         sd.img_url,
         sd.test_scene_desc,
         sd.label,
-        sd.trajectory_info,
-        c.test_target,
-        c.status,
-        c.updated_date,
-        ps.id as config_id,
-        ps.participant_role,
-        ps.business_id,
-        ps.business_type,
-        ps.name,
-        ps.model,
-        ps.device_id
+        sd.trajectory_info
         from tj_case c
         inner join tj_fragmented_scene_detail sd on sd.id = c.scene_detail_id
-        left join tj_case_part_config ps on ps.case_id = c.id
         <where>
 
             <if test="id != null and id > 0 ">
@@ -68,7 +62,7 @@
             <if test="caseNumber != null and caseNumber !='' ">
                 and c.case_number like concat('%',#{caseNumber},'%')
             </if>
-            <if test="status != null">
+            <if test="status != null and status != '' ">
                 and c.status = #{status}
             </if>
             <if test="startTime != null and startTime != ''">
@@ -82,6 +76,20 @@
             </if>
         </where>
         order by c.updated_date desc
+    </select>
+    
+    <select id="selectCasesConfig" resultMap="PartConfigResult">
+        select
+            ps.id as config_id,
+            ps.participant_role,
+            ps.business_id,
+            ps.business_type,
+            ps.name,
+            ps.model,
+            ps.device_id
+        from tj_case_part_config ps
+        where ps.case_id = #{id}
+
     </select>
 
     <select id="selectCountBySceneIds" resultType="java.lang.Integer">

@@ -9,7 +9,6 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 
 /**
@@ -21,10 +20,6 @@ import java.time.LocalDateTime;
 public class MyWebSocketHandle extends TextWebSocketHandler {
 
     private static final Logger log = LoggerFactory.getLogger("business");
-
-    private WebSocketSession session;
-
-    private WebSocketProperties properties;
 
     /**
      * socket 建立成功事件 @OnOpen
@@ -44,10 +39,7 @@ public class MyWebSocketHandle extends TextWebSocketHandler {
             session.close();
             return;
         }
-        // 用户连接成功，放入在线用户缓存
-        this.session = session;
-        this.properties = new WebSocketProperties(userName, token, id, clientType, signId, createTime);
-        WebSocketManage.join(this);
+        WebSocketManage.join(new WebSocketProperties(userName, token, id, clientType, signId, createTime, session));
     }
 
     /**
@@ -75,31 +67,10 @@ public class MyWebSocketHandle extends TextWebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         System.out.println("断开连接 ");
-//        String token = (String) session.getAttributes().get("token");
-        WebSocketManage.remove(properties.getKey());
-    }
-
-    public synchronized void sendMessage(String message) {
-        try {
-            this.session.sendMessage(new TextMessage(message));
-        } catch (IOException e) {
-            log.error("sendMessage失败：{}", e);
-        }
-    }
-
-    public void closeSession() {
-        try {
-            this.session.close();
-        } catch (IOException e) {
-            log.error("closeSession失败：{}", e);
-        }
-    }
-
-    public WebSocketSession getSession() {
-        return session;
-    }
-
-    public WebSocketProperties getProperties() {
-        return properties;
+        String userName = (String) session.getAttributes().get("userName");
+        String id = (String) session.getAttributes().get("id");
+        String clientType = (String) session.getAttributes().get("clientType");
+        String signId = (String) session.getAttributes().get("signId");
+        WebSocketManage.remove(WebSocketManage.buildKey(userName, id, clientType, signId));
     }
 }

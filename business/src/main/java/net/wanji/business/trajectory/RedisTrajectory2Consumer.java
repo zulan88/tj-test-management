@@ -163,6 +163,9 @@ public class RedisTrajectory2Consumer {
                         if (!channelListener.started) {
                             break;
                         }
+                        if (StringUtils.isNotEmpty(sceneDebugDto.getRouteFile())) {
+                            FileUtils.deleteFile(sceneDebugDto.getRouteFile());
+                        }
                         try {
                             String path = FileUtils.writeRoute(getData(channel), WanjiConfig.getRoutePath(), Extension.TXT);
                             log.info("routeFile:{}", path);
@@ -179,9 +182,6 @@ public class RedisTrajectory2Consumer {
                         // 更新数据
                         Optional.ofNullable(end.getEvaluationVerify()).ifPresent(sceneDebugDto.getTrajectoryJson()::setEvaluationVerify);
                         sceneDebugDto.getTrajectoryJson().setDuration(duration);
-                        if (StringUtils.isNotEmpty(sceneDebugDto.getRouteFile())) {
-                            FileUtils.deleteFile(sceneDebugDto.getRouteFile());
-                        }
                         // send ws
                         WebsocketMessage msg = new WebsocketMessage(RedisMessageType.END, null, sceneDebugDto);
                         WebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));

@@ -1,5 +1,10 @@
 package net.wanji.business.socket;
 
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketSession;
+
+import javax.websocket.Session;
 import java.io.IOException;
 
 /**
@@ -7,7 +12,7 @@ import java.io.IOException;
  * @Date: 2023/9/19 14:36
  * @Descriptoin:
  */
-
+@Slf4j
 public class WebSocketProperties {
     private final String userName;
     private final String token;
@@ -16,9 +21,10 @@ public class WebSocketProperties {
     private final String signId;
     private final String key;
     private final long createTime;
+    private final WebSocketSession session;
 
     public WebSocketProperties(String userName, String token, String id, String clientType,
-                               String signId, long createTime) {
+                               String signId, long createTime, WebSocketSession session) {
         this.token = token;
         this.userName = userName;
         this.id = id;
@@ -26,6 +32,22 @@ public class WebSocketProperties {
         this.signId = signId;
         this.key = WebSocketManage.buildKey(userName, id, clientType, signId);
         this.createTime = createTime;
+        this.session = session;
+    }
+    public void closeSession() {
+        try {
+            this.session.close();
+        } catch (IOException e) {
+            log.error("closeSession失败：{}", e);
+        }
+    }
+
+    public synchronized void sendMessage(String message) {
+        try {
+            this.session.sendMessage(new TextMessage(message));
+        } catch (IOException e) {
+            log.error("sendMessage失败：{}", e);
+        }
     }
 
     public String getUserName() {
@@ -54,5 +76,9 @@ public class WebSocketProperties {
 
     public long getCreateTime() {
         return createTime;
+    }
+
+    public WebSocketSession getSession() {
+        return session;
     }
 }

@@ -132,7 +132,7 @@ public class CaseController extends BaseController {
             @ApiImplicitParam(name = "caseIds", value = "用例id", required = true, dataType = "List", paramType = "query", example = "[1,2,3]"),
             @ApiImplicitParam(name = "action", value = "动作（1：启用；2：停用）", required = true, dataType = "Integer", paramType = "query", example = "1")
     })
-    public AjaxResult batchUpdateStatus(List<Integer> caseIds, Integer action)
+    public AjaxResult batchUpdateStatus(@RequestParam("caseIds") List<Integer> caseIds, @RequestParam("action") Integer action)
             throws BusinessException {
         return AjaxResult.success(caseService.batchUpdateStatus(caseIds, action) ? "成功" : "失败");
     }
@@ -149,8 +149,8 @@ public class CaseController extends BaseController {
 
     @ApiOperation(value = "12.批量删除", position = 12)
     @GetMapping("/batchDelete")
-    @ApiImplicitParam(name = "caseIds", value = "用例id", required = true, dataType = "List", paramType = "query", example = "[1,2,3]")
-    public AjaxResult batchDelete(List<Integer> caseIds)
+    @ApiImplicitParam(name = "caseIds", value = "用例id", required = true, dataType = "List", paramType = "query", example = "1,2,3")
+    public AjaxResult batchDelete(@RequestParam("caseIds") List<Integer> caseIds)
             throws BusinessException {
         return AjaxResult.success(caseService.batchDelete(caseIds) ? "成功" : "失败");
     }

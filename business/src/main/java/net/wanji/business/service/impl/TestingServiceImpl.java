@@ -7,6 +7,7 @@ import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.business.common.Constants.PartRole;
 import net.wanji.business.common.Constants.PartType;
 import net.wanji.business.common.Constants.PlaybackAction;
+import net.wanji.business.common.Constants.PointTypeEnum;
 import net.wanji.business.common.Constants.TestingStatus;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.bo.CaseConfigBo;
@@ -17,6 +18,7 @@ import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.ParamsDto;
+import net.wanji.business.domain.param.CaseRuleControl;
 import net.wanji.business.domain.param.DeviceConnInfo;
 import net.wanji.business.domain.param.DeviceConnRule;
 import net.wanji.business.domain.vo.CaseTestPrepareVo;
@@ -112,6 +114,17 @@ public class TestingServiceImpl implements TestingService {
         if (caseInfoBo.getCaseConfigs().stream().allMatch(config -> ObjectUtils.isEmpty(config.getDeviceId()))) {
             throw new BusinessException("用例未进行设备配置");
         }
+
+        CaseTrajectoryDetailBo trajectoryDetail = JSONObject.parseObject(caseInfoBo.getDetailInfo(),
+                CaseTrajectoryDetailBo.class);
+        Map<String, String> partStartMap =
+                CollectionUtils.emptyIfNull(trajectoryDetail.getParticipantTrajectories()).stream().collect(
+                        Collectors.toMap(
+                                ParticipantTrajectoryBo::getId,
+                                item -> CollectionUtils.emptyIfNull(item.getTrajectory()).stream()
+                                        .filter(t -> PointTypeEnum.START.getPointType().equals(t.getType())).findFirst()
+                                        .orElse(new TrajectoryDetailBo()).getPosition()));
+
         // 重复设备过滤
         List<CaseConfigBo> caseConfigs = caseInfoBo.getCaseConfigs().stream().filter(info ->
                 !ObjectUtils.isEmpty(info.getDeviceId())).collect(Collectors.collectingAndThen(
@@ -121,6 +134,18 @@ public class TestingServiceImpl implements TestingService {
                 CaseConfigBo::getBusinessId,
                 CaseConfigBo::getParticipantRole));
         for (CaseConfigBo caseConfigBo : caseConfigs) {
+            String start = partStartMap.get(caseConfigBo.getBusinessId());
+            if (StringUtils.isNotEmpty(start)) {
+                String[] position = start.split(",");
+                caseConfigBo.setStartLongitude(Double.parseDouble(position[0]));
+                caseConfigBo.setStartLatitude(Double.parseDouble(position[1]));
+//                double longitude = (double) map.get("longitude");
+//                double latitude = (double) map.get("latitude");
+//                double courseAngle = (double) map.get("courseAngle");
+//                caseConfigBo.setLongitude(longitude);
+//                caseConfigBo.setLatitude(latitude);
+//                caseConfigBo.setCourseAngle(courseAngle);
+            }
             // 查询设备状态
             Integer status = deviceDetailService.selectDeviceState(caseConfigBo.getDeviceId(), caseConfigBo.getCommandChannel());
             caseConfigBo.setStatus(status);
@@ -176,6 +201,8 @@ public class TestingServiceImpl implements TestingService {
 
                 stateParam.setParams(tessParams);
             }
+
+
             caseConfigBo.setPositionStatus(deviceDetailService.selectDeviceReadyState(caseConfigBo.getDeviceId(), stateParam));
         }
         RealVehicleVerificationPageVo result = new RealVehicleVerificationPageVo();
@@ -247,11 +274,10 @@ public class TestingServiceImpl implements TestingService {
         // 开始监听所有数据通道
         imitateRedisTrajectoryConsumer.subscribeAndSend(caseInfoBo);
         // 启动主控
-//        if (!restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(), String.valueOf(caseId), action,
-//                generateDeviceConnRules(caseInfoBo)))) {
-//            throw new BusinessException("主控响应异常");
-//        }
-
+        if (!restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(), String.valueOf(caseId), action,
+                generateDeviceConnRules(caseInfoBo)))) {
+            throw new BusinessException("主控响应异常");
+        }
         CaseTestStartVo startVo = new CaseTestStartVo();
         BeanUtils.copyProperties(realRecord, startVo);
         startVo.setStartTime(DateUtils.getTime());

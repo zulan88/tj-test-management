@@ -9,9 +9,11 @@ import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.business.common.Constants.ModelEnum;
 import net.wanji.business.common.Constants.PartRole;
+import net.wanji.business.common.Constants.PartType;
 import net.wanji.business.common.Constants.PlaybackAction;
 import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.YN;
+import net.wanji.business.domain.Label;
 import net.wanji.business.domain.PartConfigSelect;
 import net.wanji.business.domain.bo.CaseConfigBo;
 import net.wanji.business.domain.bo.CaseInfoBo;
@@ -27,6 +29,7 @@ import net.wanji.business.domain.vo.CasePartConfigVo;
 import net.wanji.business.domain.vo.CaseVerificationVo;
 import net.wanji.business.domain.vo.CaseVo;
 import net.wanji.business.domain.vo.DeviceDetailVo;
+import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjCasePartConfig;
 import net.wanji.business.entity.TjDeviceDetail;
@@ -38,6 +41,7 @@ import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjResourcesDetailMapper;
 import net.wanji.business.schedule.PlaybackSchedule;
 import net.wanji.business.schedule.SceneLabelMap;
+import net.wanji.business.service.ILabelsService;
 import net.wanji.business.service.RestService;
 import net.wanji.business.service.RouteService;
 import net.wanji.business.service.TjCasePartConfigService;
@@ -111,6 +115,9 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
 
     @Autowired
     private RestService restService;
+
+    @Autowired
+    private ILabelsService labelsService;
 
     @Autowired
     private TjCaseMapper caseMapper;
@@ -214,12 +221,40 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     }
 
     private void handleLabel(CaseDetailVo caseDetailVo) {
-        // todo 标签处理
-        List<String> a = new ArrayList<>();
-        a.add("标签1");
-        a.add("标签2");
-        a.add("标签3");
-        caseDetailVo.setLabelDetail(a);
+        List<String> data = new ArrayList<>();
+        if (!ObjectUtils.isEmpty(caseDetailVo.getSceneDetailId())) {
+            List<Label> labelList = labelsService.selectLabelsList(new Label());
+            Map<Long,String> sceneMap = new HashMap<>();
+            for(Label tlabel : labelList){
+                Long parentId = tlabel.getParentId();
+                String prelabel = null;
+                if(parentId!=null) {
+                    prelabel = sceneMap.getOrDefault(parentId, null);
+                }
+                if(prelabel==null){
+                    sceneMap.put(tlabel.getId(),tlabel.getName());
+                }else {
+                    sceneMap.put(tlabel.getId(),prelabel+"-"+tlabel.getName());
+                }
+            }
+            try {
+                FragmentedScenesDetailVo detailVo = sceneDetailService.getDetailVo(caseDetailVo.getSceneDetailId());
+                List<String> labels = detailVo.getLabelList();
+                for (String str : labels) {
+                    try {
+                        long intValue = Long.parseLong(str);
+                        data.add(sceneMap.get(intValue));
+                    } catch (NumberFormatException e) {
+                        // 处理无效的整数字符串
+                    }
+                }
+            } catch (BusinessException e) {
+                log.error("用例详情场景标签解析异常", e);
+            }
+            
+        }
+        
+        caseDetailVo.setLabelDetail(data);
     }
 
     private void handleCasePartConfig(CaseDetailVo caseDetailVo) {
@@ -257,6 +292,7 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
                         List<String> businessIds = CollectionUtils.emptyIfNull(businessConfigs).stream()
                                 .map(TjCasePartConfig::getBusinessId).collect(Collectors.toList());
                         CasePartConfigVo part = new CasePartConfigVo();
+
                         if (businessIds.contains(config.getBusinessId())) {
                             Map<String, TjCasePartConfig> businessConfigMap = CollectionUtils.emptyIfNull(businessConfigs)
                                     .stream().collect(Collectors.toMap(TjCasePartConfig::getBusinessId, value -> value));
@@ -392,6 +428,7 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
             tjCase.setCaseNumber(this.buildCaseNumber());
             TjFragmentedSceneDetail sceneDetail = sceneDetailService.getById(tjCaseDto.getSceneDetailId());
             tjCase.setDetailInfo(sceneDetail.getTrajectoryInfo());
+            tjCase.setRouteFile(sceneDetail.getRouteFile());
             tjCase.setCreatedBy(SecurityUtils.getUsername());
             tjCase.setCreatedDate(LocalDateTime.now());
         } else {
@@ -400,7 +437,7 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
             for (PartConfigSelect partConfigSelect : tjCaseDto.getPartConfigSelects()) {
                 for (int i = 0; i < CollectionUtils.emptyIfNull(partConfigSelect.getParts()).size(); i++) {
                     CasePartConfigVo part = partConfigSelect.getParts().get(i);
-                    if (!part.isSelected()) {
+                    if (!PartType.MAIN.equals(part.getBusinessType()) && !part.isSelected()) {
                         continue;
                     }
                     TjCasePartConfig config = new TjCasePartConfig();

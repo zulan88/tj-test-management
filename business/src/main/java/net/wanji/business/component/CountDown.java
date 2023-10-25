@@ -67,7 +67,7 @@ public class CountDown {
   }
 
   protected Long timeRemaining(double lengthRemaining, double currentSpeed) {
-    double v = lengthRemaining / currentSpeed;
+    double v = currentSpeed > 0 ? lengthRemaining / currentSpeed : 0;
     return (long) v;
   }
 

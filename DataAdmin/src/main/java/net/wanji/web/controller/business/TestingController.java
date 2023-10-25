@@ -45,12 +45,12 @@ public class TestingController extends BaseController {
     }
 
     @ApiOperation(value = "开始/结束", position = 3)
-    @GetMapping("/action")
+    @GetMapping("/start")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499"),
             @ApiImplicitParam(name = "action", value = "动作（1：开始；2：结束）", required = true, dataType = "Integer", paramType = "query", example = "1")
     })
-    public AjaxResult action(Integer recordId, Integer action) throws BusinessException, IOException {
+    public AjaxResult start(Integer recordId, Integer action) throws BusinessException, IOException {
         return  AjaxResult.success(testingService.start(recordId, action));
     }
 
