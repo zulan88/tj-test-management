@@ -26,13 +26,7 @@ import net.wanji.common.core.page.TableDataInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
@@ -121,6 +115,16 @@ public class SceneBaseController extends BaseController {
         return tjFragmentedScenesService.deleteSceneById(sceneId)
                 ? AjaxResult.success("删除成功")
                 : AjaxResult.error("删除失败");
+    }
+
+    @DeleteMapping("/detail/{ids}")
+    public AjaxResult remove(@PathVariable Integer[] ids) throws BusinessException {
+        return toAjax(tjFragmentedSceneDetailService.deleteSceneByIds(ids));
+    }
+
+    @PutMapping("/detailstatus")
+    public AjaxResult updatestatus(@RequestBody List<TjFragmentedSceneDetail> sceneDetails){
+        return toAjax(tjFragmentedSceneDetailService.updateBatch(sceneDetails));
     }
 
     @ApiOperation("查询场景详情")

@@ -61,4 +61,8 @@ public interface TjFragmentedSceneDetailService extends IService<TjFragmentedSce
 
     List<SceneDetailVo> selectTjFragmentedSceneDetailList(SceneDetailVo sceneDetailVo) throws BusinessException;
 
+    boolean deleteSceneByIds(Integer[] ids) throws BusinessException;
+
+    boolean updateBatch(List<TjFragmentedSceneDetail> sceneDetails);
+
 }
