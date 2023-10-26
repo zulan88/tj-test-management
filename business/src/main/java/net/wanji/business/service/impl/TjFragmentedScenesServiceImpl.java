@@ -39,15 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -288,6 +280,7 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
                 deleteCollector.stream().map(TjFragmentedScenes::getId).collect(Collectors.toList()));
         return this.remove(deleteWrapper);
     }
+
 
     @Override
     public void selectChildrenFromFolder(Integer id, List<TjFragmentedScenes> collector) {

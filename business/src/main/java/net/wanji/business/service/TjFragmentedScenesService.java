@@ -92,6 +92,7 @@ public interface TjFragmentedScenesService extends IService<TjFragmentedScenes> 
      */
     boolean deleteSceneById(Integer id) throws BusinessException;
 
+
     /**
      * 保存场景树
      * @param fragmentedScenesDto

@@ -48,6 +48,7 @@ import org.springframework.util.ObjectUtils;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -307,5 +308,15 @@ public class TjFragmentedSceneDetailServiceImpl
     @Override
     public List<SceneDetailVo> selectTjFragmentedSceneDetailList(SceneDetailVo sceneDetailVo){
         return sceneDetailMapper.selectTjFragmentedSceneDetailList(sceneDetailVo);
+    }
+
+    @Override
+    public boolean deleteSceneByIds(Integer[] ids) throws BusinessException {
+        return this.removeByIds(Arrays.asList(ids));
+    }
+
+    @Override
+    public boolean updateBatch(List<TjFragmentedSceneDetail> sceneDetails){
+        return this.updateBatchById(sceneDetails);
     }
 }
