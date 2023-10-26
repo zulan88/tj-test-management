@@ -144,6 +144,15 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     }
 
     @Override
+    public Map<String, List<SimpleSelect>> initEdit() {
+        List<SysDictData> partRole = dictTypeService.selectDictDataByType(SysType.PART_ROLE);
+        Map<String, List<SimpleSelect>> result = new HashMap<>(1);
+        result.put(SysType.PART_ROLE, CollectionUtils.emptyIfNull(partRole).stream()
+                .map(SimpleSelect::new).collect(Collectors.toList()));
+        return result;
+    }
+
+    @Override
     public List<CasePageVo> pageList(CaseQueryDto caseQueryDto) {
         List<CaseDetailVo> caseVos = caseMapper.selectCases(caseQueryDto);
         return CollectionUtils.emptyIfNull(caseVos).stream().map(t -> {

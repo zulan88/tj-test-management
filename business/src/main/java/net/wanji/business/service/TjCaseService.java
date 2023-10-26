@@ -38,6 +38,13 @@ public interface TjCaseService extends IService<TjCase> {
     Map<String, List<SimpleSelect>> init();
 
     /**
+     * 测试用例编辑页初始化
+     *
+     * @return
+     */
+    Map<String, List<SimpleSelect>> initEdit();
+
+    /**
      * 分页列表
      *
      * @param caseQueryDto

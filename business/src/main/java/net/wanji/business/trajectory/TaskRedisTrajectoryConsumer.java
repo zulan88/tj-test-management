@@ -159,7 +159,7 @@ public class TaskRedisTrajectoryConsumer {
                         SimulationMessage.class);
                 switch (simulationMessage.getType()) {
                     case RedisMessageType.TRAJECTORY:
-                        SimulationTrajectoryDto simulationTrajectory = objectMapper.readValue(simulationMessage.getValue(),
+                        SimulationTrajectoryDto simulationTrajectory = objectMapper.readValue(String.valueOf(simulationMessage.getValue()),
                                 SimulationTrajectoryDto.class);
                         // 实际轨迹消息
                         List<TrajectoryValueDto> data = simulationTrajectory.getValue();
@@ -230,7 +230,7 @@ public class TaskRedisTrajectoryConsumer {
                         break;
                     case RedisMessageType.END:
                         if ("TESSResult".equals(channel)) {
-                            CaseTrajectoryDetailBo end = objectMapper.readValue(simulationMessage.getValue(),
+                            CaseTrajectoryDetailBo end = objectMapper.readValue(String.valueOf(simulationMessage.getValue()),
                                     CaseTrajectoryDetailBo.class);
                             log.info(StringUtils.format("结束接收{}数据：{}", tjCase.getCaseNumber(),
                                     JSONObject.toJSONString(end)));

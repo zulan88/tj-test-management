@@ -142,53 +142,53 @@ public class RedisTrajectoryConsumer {
                         channelListener.start();
                         break;
                     // 轨迹消息
-                    case RedisMessageType.TRAJECTORY:
-                        if (!channelListener.started) {
-                            break;
-                        }
-                        SimulationTrajectoryDto simulationTrajectory = objectMapper.readValue(simulationMessage.getValue(),
-                                SimulationTrajectoryDto.class);
-                        log.info(StringUtils.format("{}第{}帧轨迹：{}", methodLog, getDataSize(channel),
-                                JSONObject.toJSONString(simulationTrajectory)));
-                        if (CollectionUtils.isNotEmpty(simulationTrajectory.getValue())) {
-                            // 实际轨迹消息
-                            List<TrajectoryValueDto> data = simulationTrajectory.getValue();
-                            // 检查轨迹
-                            routeService.checkSimulaitonRoute(caseId, originalTrajectory, data);
-                            // 保存轨迹(本地)
-                            receiveData(channel, simulationTrajectory);
-                            // send ws
-                            WebsocketMessage msg = new WebsocketMessage(
-                                    RedisMessageType.TRAJECTORY,
-                                    duration,
-                                    routeService.filterParticipant(data, participantId));
-                            WebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));
-                        }
-                        break;
-                    // 结束消息
-                    case RedisMessageType.END:
-                        if (!channelListener.started) {
-                            break;
-                        }
-                        // 移除监听器
-                        removeListener(channel, true);
-                        // 解析消息
-                        CaseTrajectoryDetailBo end = objectMapper.readValue(simulationMessage.getValue(),
-                                CaseTrajectoryDetailBo.class);
-                        log.info(StringUtils.format("{}结束：{}", methodLog, JSONObject.toJSONString(end)));
-                        // 更新数据
-                        Optional.ofNullable(end.getEvaluationVerify()).ifPresent(originalTrajectory::setEvaluationVerify);
-                        originalTrajectory.setDuration(duration);
-                        // 修改用例
-                        TjCase param = new TjCase();
-                        param.setId(caseId);
-                        param.setDetailInfo(JSONObject.toJSONString(originalTrajectory));
-                        int endSuccess = caseMapper.updateById(param);
-                        log.info(StringUtils.format("修改用例场景评价:{}", endSuccess > 0 ? "成功" : "失败"));
-                        // send ws
-                        WebsocketMessage msg = new WebsocketMessage(RedisMessageType.END, null, null);
-                        WebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));
-                        break;
+//                    case RedisMessageType.TRAJECTORY:
+//                        if (!channelListener.started) {
+//                            break;
+//                        }
+//                        SimulationTrajectoryDto simulationTrajectory = objectMapper.readValue(String.valueOf(simulationMessage.getValue()),
+//                                SimulationTrajectoryDto.class);
+//                        log.info(StringUtils.format("{}第{}帧轨迹：{}", methodLog, getDataSize(channel),
+//                                JSONObject.toJSONString(simulationTrajectory)));
+//                        if (CollectionUtils.isNotEmpty(simulationTrajectory.getValue())) {
+//                            // 实际轨迹消息
+//                            List<TrajectoryValueDto> data = simulationTrajectory.getValue();
+//                            // 检查轨迹
+//                            routeService.checkSimulaitonRoute(caseId, originalTrajectory, data);
+//                            // 保存轨迹(本地)
+//                            receiveData(channel, simulationTrajectory);
+//                            // send ws
+//                            WebsocketMessage msg = new WebsocketMessage(
+//                                    RedisMessageType.TRAJECTORY,
+//                                    duration,
+//                                    routeService.filterParticipant(data, participantId));
+//                            WebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));
+//                        }
+//                        break;
+//                    // 结束消息
+//                    case RedisMessageType.END:
+//                        if (!channelListener.started) {
+//                            break;
+//                        }
+//                        // 移除监听器
+//                        removeListener(channel, true);
+//                        // 解析消息
+//                        CaseTrajectoryDetailBo end = objectMapper.readValue(String.valueOf(simulationMessage.getValue()),
+//                                CaseTrajectoryDetailBo.class);
+//                        log.info(StringUtils.format("{}结束：{}", methodLog, JSONObject.toJSONString(end)));
+//                        // 更新数据
+//                        Optional.ofNullable(end.getEvaluationVerify()).ifPresent(originalTrajectory::setEvaluationVerify);
+//                        originalTrajectory.setDuration(duration);
+//                        // 修改用例
+//                        TjCase param = new TjCase();
+//                        param.setId(caseId);
+//                        param.setDetailInfo(JSONObject.toJSONString(originalTrajectory));
+//                        int endSuccess = caseMapper.updateById(param);
+//                        log.info(StringUtils.format("修改用例场景评价:{}", endSuccess > 0 ? "成功" : "失败"));
+//                        // send ws
+//                        WebsocketMessage msg = new WebsocketMessage(RedisMessageType.END, null, null);
+//                        WebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));
+//                        break;
                     default:
                         break;
                 }

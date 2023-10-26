@@ -147,7 +147,7 @@ public class TestingServiceImpl implements TestingService {
 //                caseConfigBo.setCourseAngle(courseAngle);
             }
             // 查询设备状态
-            Integer status = deviceDetailService.selectDeviceState(caseConfigBo.getDeviceId(), caseConfigBo.getCommandChannel());
+            Integer status = deviceDetailService.selectDeviceState(caseConfigBo.getDeviceId(), caseConfigBo.getCommandChannel(), false);
             caseConfigBo.setStatus(status);
             if (ObjectUtils.isEmpty(status) || status == 0) {
                 // 不在线无需确认准备状态
@@ -201,9 +201,7 @@ public class TestingServiceImpl implements TestingService {
 
                 stateParam.setParams(tessParams);
             }
-
-
-            caseConfigBo.setPositionStatus(deviceDetailService.selectDeviceReadyState(caseConfigBo.getDeviceId(), stateParam));
+            caseConfigBo.setPositionStatus(deviceDetailService.selectDeviceReadyState(caseConfigBo.getDeviceId(), stateParam, false));
         }
         RealVehicleVerificationPageVo result = new RealVehicleVerificationPageVo();
         result.setCaseId(caseId);
@@ -274,10 +272,10 @@ public class TestingServiceImpl implements TestingService {
         // 开始监听所有数据通道
         imitateRedisTrajectoryConsumer.subscribeAndSend(caseInfoBo);
         // 启动主控
-        if (!restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(), String.valueOf(caseId), action,
-                generateDeviceConnRules(caseInfoBo)))) {
-            throw new BusinessException("主控响应异常");
-        }
+//        if (!restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(), String.valueOf(caseId), action,
+//                generateDeviceConnRules(caseInfoBo)))) {
+//            throw new BusinessException("主控响应异常");
+//        }
         CaseTestStartVo startVo = new CaseTestStartVo();
         BeanUtils.copyProperties(realRecord, startVo);
         startVo.setStartTime(DateUtils.getTime());

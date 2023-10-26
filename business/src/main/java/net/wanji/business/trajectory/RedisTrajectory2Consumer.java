@@ -136,7 +136,7 @@ public class RedisTrajectory2Consumer {
                         if (!channelListener.started) {
                             break;
                         }
-                        SimulationTrajectoryDto simulationTrajectory = objectMapper.readValue(simulationMessage.getValue(),
+                        SimulationTrajectoryDto simulationTrajectory = objectMapper.readValue(String.valueOf(simulationMessage.getValue()),
                                 SimulationTrajectoryDto.class);
                         if (CollectionUtils.isNotEmpty(simulationTrajectory.getValue())) {
                             // 实际轨迹消息
@@ -155,8 +155,8 @@ public class RedisTrajectory2Consumer {
                         }
                         break;
                     case RedisMessageType.OPTIMIZE:
-                        log.info("{}接收到轨迹优化消息：{}", methodLog, simulationMessage.getValue());
-                        handleOptimize(simulationMessage.getValue());
+                        log.info("{}接收到轨迹优化消息：{}", methodLog, String.valueOf(simulationMessage.getValue()));
+                        handleOptimize(String.valueOf(simulationMessage.getValue()));
                         break;
                     // 结束消息
                     case RedisMessageType.END:
@@ -176,7 +176,7 @@ public class RedisTrajectory2Consumer {
                         // 移除监听器
                         removeListener(channel);
                         // 解析消息
-                        CaseTrajectoryDetailBo end = objectMapper.readValue(simulationMessage.getValue(),
+                        CaseTrajectoryDetailBo end = objectMapper.readValue(String.valueOf(simulationMessage.getValue()),
                                 CaseTrajectoryDetailBo.class);
                         log.info(StringUtils.format("{}结束：{}", methodLog, JSONObject.toJSONString(end)));
                         // 更新数据

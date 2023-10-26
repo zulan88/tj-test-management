@@ -63,7 +63,7 @@ public interface TjDeviceDetailService extends IService<TjDeviceDetail> {
      * @param channel  控制通道
      * @return
      */
-    Integer selectDeviceState(Integer deviceId, String channel);
+    Integer selectDeviceState(Integer deviceId, String channel, boolean wait);
 
 
     /**
@@ -73,6 +73,6 @@ public interface TjDeviceDetailService extends IService<TjDeviceDetail> {
      * @param stateParam
      * @return
      */
-    Integer selectDeviceReadyState(Integer deviceId, DeviceReadyStateParam stateParam);
+    Integer selectDeviceReadyState(Integer deviceId, DeviceReadyStateParam stateParam, boolean wait);
 
 }

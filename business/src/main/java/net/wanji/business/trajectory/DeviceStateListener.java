@@ -1,11 +1,8 @@
 package net.wanji.business.trajectory;
 
-import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import net.wanji.business.component.DeviceReportFactory;
-import net.wanji.business.component.DeviceStateToRedis;
-import net.wanji.business.domain.dto.device.DeviceStateDto;
 import net.wanji.business.service.DeviceReportService;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;

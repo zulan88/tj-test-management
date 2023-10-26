@@ -59,7 +59,7 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
     public void initDeviceState() {
         List<TjDeviceDetail> deviceDetails = this.list();
         for (TjDeviceDetail deviceDetail : deviceDetails) {
-            selectDeviceState(deviceDetail.getDeviceId(), deviceDetail.getCommandChannel());
+            selectDeviceState(deviceDetail.getDeviceId(), deviceDetail.getCommandChannel(), false);
         }
     }
 
@@ -118,9 +118,9 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
     }
 
     @Override
-    public Integer selectDeviceState(Integer deviceId, String channel) {
+    public Integer selectDeviceState(Integer deviceId, String channel, boolean wait) {
         Integer state = deviceStateToRedis.query(deviceId, DeviceStateToRedis.DEVICE_STATE_PREFIX);
-        if (!ObjectUtils.isEmpty(state)) {
+        if (!ObjectUtils.isEmpty(state) || !wait) {
             return state;
         }
         DeviceStateDto deviceStateDto = new DeviceStateDto();
@@ -139,9 +139,9 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
     }
 
     @Override
-    public Integer selectDeviceReadyState(Integer deviceId, DeviceReadyStateParam stateParam) {
+    public Integer selectDeviceReadyState(Integer deviceId, DeviceReadyStateParam stateParam, boolean wait) {
         Integer state = deviceStateToRedis.query(deviceId, DeviceStateToRedis.DEVICE_READY_STATE_PREFIX);
-        if (!ObjectUtils.isEmpty(state)) {
+        if (!ObjectUtils.isEmpty(state) || !wait) {
             return state;
         }
         restService.selectDeviceReadyState(stateParam);

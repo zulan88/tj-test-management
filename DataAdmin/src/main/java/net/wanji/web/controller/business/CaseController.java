@@ -169,6 +169,12 @@ public class CaseController extends BaseController {
         return AjaxResult.success(casePartConfigService.saveFromSelected(partConfigSelects));
     }
 
+    @ApiOperation(value = "15.编辑页初始化", position = 15)
+    @GetMapping("/initEdit")
+    public AjaxResult initEdit() {
+        return AjaxResult.success(caseService.initEdit());
+    }
+
     @ApiOperation(value = "克隆用例（废弃）", position = 15)
     @PostMapping("/cloneCase")
     public AjaxResult cloneCase(@Validated(value = DeleteGroup.class) @RequestBody TjCaseDto tjCaseDto) {

@@ -1,8 +1,9 @@
 package net.wanji.business.trajectory;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.lang.Collections;
 import io.netty.util.concurrent.DefaultThreadFactory;
@@ -133,7 +134,7 @@ public class ImitateRedisTrajectoryConsumer {
         }
         this.runningChannel.put(key, listeners);
         redisMessageListenerContainer.addMessageListener(listener, topics);
-        log.info("添加监听器成功:{}", JSONObject.toJSONString(topics));
+        log.info("添加监听器成功:{}", JSON.toJSONString(topics));
     }
 
 
@@ -184,36 +185,26 @@ public class ImitateRedisTrajectoryConsumer {
 //                .map(item -> item.get(0)).collect(Collectors.toList());
         Map<String, Object> realMap = new HashMap<>();
         ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         String methodLog = StringUtils.format("{}实车验证 - ", caseRealRecord.getCaseId());
         return (message, pattern) -> {
             try {
                 String channel = new String(message.getChannel());
-                SimulationMessage simulationMessage = objectMapper.readValue(message.toString(),
+                String s = message.toString();
+                log.info("{}{}:{}", methodLog, channel, s);
+
+                SimulationMessage simulationMessage = objectMapper.readValue(s,
                         SimulationMessage.class);
-//                log.info("{}{}:{}", methodLog, channel, JSONObject.toJSONString(simulationMessage));
+                System.out.println(JSON.toJSONString(simulationMessage));
                 switch (simulationMessage.getType()) {
                     case RedisMessageType.TRAJECTORY:
-//                        SimulationTrajectoryDto simulationTrajectory = objectMapper.readValue(simulationMessage.getValue(),
-//                                SimulationTrajectoryDto.class);
-                        SimulationTrajectoryDto simulationTrajectory = JSONObject.parseObject(simulationMessage.getValue(), SimulationTrajectoryDto.class);
+                        SimulationTrajectoryDto simulationTrajectory = objectMapper.readValue(String.valueOf(simulationMessage.getValue()), SimulationTrajectoryDto.class);
                         // 实际轨迹消息
                         List<TrajectoryValueDto> data = simulationTrajectory.getValue();
                         for (TrajectoryValueDto trajectoryValueDto : CollectionUtils.emptyIfNull(data)) {
                             trajectoryValueDto.setName(DataUtils.convertUnicodeToChinese(trajectoryValueDto.getName()));
                             allChannelAndBusinessIdMap.get(channel).stream().filter(item -> item.getName().equals(trajectoryValueDto.getName())).findFirst().ifPresent(item -> trajectoryValueDto.setId(item.getBusinessId()));
                         }
-//                        if ("TESSResult".equals(channel)) {
-//                            List<TrajectoryValueDto> mv = CollectionUtils.emptyIfNull(data).stream().filter(item ->
-//                                    !item.getName().contains("主车")).collect(Collectors.toList());
-//                            simulationTrajectory.setValue(mv);
-//                            data = mv;
-//                        }
-//                        if ("GKQResult".equals(channel)) {
-//                            List<TrajectoryValueDto> av = CollectionUtils.emptyIfNull(data).stream().filter(item ->
-//                                    !item.getName().contains("从车")).collect(Collectors.toList());
-//                            simulationTrajectory.setValue(av);
-//                            data = av;
-//                        }
                         // 无论是否有轨迹都保存
                         receiveData(key, channel, simulationTrajectory);
                         if (CollectionUtils.isNotEmpty(data)) {
@@ -259,20 +250,20 @@ public class ImitateRedisTrajectoryConsumer {
                                 realMap.put("speed", data.get(0).getSpeed());
                                 RealWebsocketMessage msg = new RealWebsocketMessage(RedisMessageType.TRAJECTORY, realMap, data,
                                         duration);
-                                WebSocketManage.sendInfo(key.concat("_").concat(channel), JSONObject.toJSONString(msg));
+                                WebSocketManage.sendInfo(key.concat("_").concat(channel), JSON.toJSONString(msg));
                             } else {
                                 RealWebsocketMessage msg = new RealWebsocketMessage(RedisMessageType.TRAJECTORY, null, data,
                                         duration);
-                                WebSocketManage.sendInfo(key.concat("_").concat(channel), JSONObject.toJSONString(msg));
+                                WebSocketManage.sendInfo(key.concat("_").concat(channel), JSON.toJSONString(msg));
                             }
                         }
                         break;
                     case RedisMessageType.END:
                         if ("TESSResult".equals(channel)) {
-                            CaseTrajectoryDetailBo end = objectMapper.readValue(simulationMessage.getValue(),
+                            CaseTrajectoryDetailBo end = objectMapper.readValue(String.valueOf(simulationMessage.getValue()),
                                     CaseTrajectoryDetailBo.class);
                             log.info(StringUtils.format("结束接收{}数据：{}", tjCase.getCaseNumber(),
-                                    JSONObject.toJSONString(end)));
+                                    JSON.toJSONString(end)));
                             try {
                                 Optional.ofNullable(end.getEvaluationVerify()).ifPresent(originalTrajectory::setEvaluationVerify);
                             } catch (Exception e) {
@@ -284,24 +275,38 @@ public class ImitateRedisTrajectoryConsumer {
                                     (int) Math.floor((double) (getDataSize(key,
                                             caseConfigBo.getDataChannel())) / 10));
                             originalTrajectory.setDuration(duration);
-                            param.setDetailInfo(JSONObject.toJSONString(originalTrajectory));
+                            param.setDetailInfo(JSON.toJSONString(originalTrajectory));
                             int endSuccess = caseRealRecordMapper.updateById(param);
                             log.info(StringUtils.format("修改用例场景评价:{}", endSuccess));
                             removeListener(key, true, originalTrajectory);
 
                             RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null, null,
                                     duration);
-                            WebSocketManage.sendInfo(key.concat("_").concat(channel), JSONObject.toJSONString(endMsg));
+                            WebSocketManage.sendInfo(key.concat("_").concat(channel), JSON.toJSONString(endMsg));
                         }
                         break;
                     default:
                         break;
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
                 removeListener(key, true, originalTrajectory);
             }
         };
+    }
+
+    public static void main(String[] args) {
+        String a = "{\"type\":\"trajectory\",\"value\":{\"@type\":\"cn.net.wanji.test.entity.SimulationTrajectoryDto\",\"timestamp\":\"1695367640.076469\",\"timestampType\":\"CREATE_TIME\",\"value\":[{\"courseAngle\":46.540797346600435,\"driveType\":2,\"frameId\":15,\"globalTimeStamp\":\"1695367640.076469\",\"height\":131,\"id\":\"3\",\"latitude\":31.29201449226689,\"length\":449,\"longitude\":121.20377710585691,\"name\":\"从车2\",\"originalColor\":3,\"picLicense\":\"china\",\"speed\":18,\"timestamp\":\"2023-09-22 15:27:20.076\",\"vehicleColor\":0,\"vehicleType\":1,\"width\":195},{\"courseAngle\":318.09295514770173,\"driveType\":2,\"frameId\":15,\"globalTimeStamp\":\"1695367640.076469\",\"height\":131,\"id\":\"4\",\"latitude\":31.292516319460496,\"length\":449,\"longitude\":121.20367421145434,\"name\":\"从车3\",\"originalColor\":3,\"picLicense\":\"china\",\"speed\":15,\"timestamp\":\"2023-09-22 15:27:20.076\",\"vehicleColor\":0,\"vehicleType\":1,\"width\":195},{\"courseAngle\":318.7342140623876,\"driveType\":2,\"frameId\":15,\"globalTimeStamp\":\"1695367640.076469\",\"height\":131,\"id\":\"5\",\"latitude\":31.29248696854116,\"length\":449,\"longitude\":121.20365706528142,\"name\":\"从车4\",\"originalColor\":3,\"picLicense\":\"china\",\"speed\":13,\"timestamp\":\"2023-09-22 15:27:20.076\",\"vehicleColor\":0,\"vehicleType\":1,\"width\":195},{\"courseAngle\":318.90803943491755,\"driveType\":2,\"frameId\":15,\"globalTimeStamp\":\"1695367640.076469\",\"height\":131,\"id\":\"6\",\"latitude\":31.292580122260716,\"length\":449,\"longitude\":121.20360856913837,\"name\":\"从车5\",\"originalColor\":3,\"picLicense\":\"china\",\"speed\":0,\"timestamp\":\"2023-09-22 15:27:20.076\",\"vehicleColor\":0,\"vehicleType\":1,\"width\":195},{\"courseAngle\":318.4744418104028,\"driveType\":2,\"frameId\":15,\"globalTimeStamp\":\"1695367640.076469\",\"height\":131,\"id\":\"7\",\"latitude\":31.29258820942558,\"length\":449,\"longitude\":121.20360031952288,\"name\":\"从车6\",\"originalColor\":3,\"picLicense\":\"china\",\"speed\":9,\"timestamp\":\"2023-09-22 15:27:20.076\",\"vehicleColor\":0,\"vehicleType\":1,\"width\":195},{\"courseAngle\":318.02810483610926,\"driveType\":2,\"frameId\":15,\"globalTimeStamp\":\"1695367640.076469\",\"height\":131,\"id\":\"8\",\"latitude\":31.29272186784191,\"length\":449,\"longitude\":121.20346053484445,\"name\":\"从车7\",\"originalColor\":3,\"picLicense\":\"china\",\"speed\":20,\"timestamp\":\"2023-09-22 15:27:20.076\",\"vehicleColor\":0,\"vehicleType\":1,\"width\":195},{\"courseAngle\":318.0648798437499,\"driveType\":2,\"frameId\":15,\"globalTimeStamp\":\"1695367640.076469\",\"height\":131,\"id\":\"9\",\"latitude\":31.292703256865046,\"length\":449,\"longitude\":121.20343295639304,\"name\":\"从车8\",\"originalColor\":3,\"picLicense\":\"china\",\"speed\":9,\"timestamp\":\"2023-09-22 15:27:20.076\",\"vehicleColor\":0,\"vehicleType\":1,\"width\":195}]}}\n";
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        SimulationMessage simulationMessage = null;
+        try {
+            simulationMessage = objectMapper.readValue(a, SimulationMessage.class);
+            System.out.println(JSON.toJSONString(simulationMessage));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     public void receiveData(String key, String channel, SimulationTrajectoryDto data) {
@@ -325,27 +330,6 @@ public class ImitateRedisTrajectoryConsumer {
             }
         }
         return 0;
-    }
-
-    public static void main(String[] args) {
-        String a = "{\"type\":\"trajectory\",\"value\":\"{  \\\"value\\\" :   [   {    \\\"courseAngle\\\" : 0,    \\\"driveType\\\" : 0,    \\\"frameId\\\" : 311,    \\\"globaltimeStamp\\\" : \\\"1698142679430\\\",    \\\"height\\\" : 170,    \\\"id\\\" : \\\"wanji-001\\\",    \\\"latitude\\\" : 0,    \\\"length\\\" : 476,    \\\"longitude\\\" : 0,    \\\"originalColor\\\" : 3,    \\\"picLicense\\\" : \\\"京P 6GF09\\\",    \\\"speed\\\" : 0,    \\\"timestamp\\\" : \\\"2023-10-24 18:17:59.430\\\",    \\\"vehicleColor\\\" : 0,    \\\"vehicleType\\\" : 1,    \\\"width\\\" : 190   }  ] }\"}";
-        SimulationMessage simulationMessage = JSONObject.parseObject(a, SimulationMessage.class);
-
-        System.out.println(JSONObject.toJSONString(a));
-
-        ObjectMapper objectMapper = new ObjectMapper();
-        try {
-            SimulationTrajectoryDto simulationTrajectoryDto = JSONObject.parseObject(simulationMessage.getValue(), SimulationTrajectoryDto.class);
-            System.out.println(JSONObject.toJSONString(simulationTrajectoryDto));
-            SimulationTrajectoryDto simulationTrajectory = objectMapper.readValue(simulationMessage.getValue(),
-                    SimulationTrajectoryDto.class);
-            System.out.println(JSONObject.toJSONString(simulationTrajectory));
-
-
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
-
     }
 
     /**
@@ -415,7 +399,7 @@ public class ImitateRedisTrajectoryConsumer {
         List<ChannelListener<SimulationTrajectoryDto>> channelListeners = runningChannel.get(key);
         List<ChannelTopic> topics = channelListeners.stream().map(ChannelListener::getChannel).map(ChannelTopic::new)
                 .collect(Collectors.toList());
-        log.info("removeMessageListeners:{}", JSONObject.toJSONString(topics));
+        log.info("removeMessageListeners:{}", JSON.toJSONString(topics));
         redisMessageListenerContainer.removeMessageListener(channelListeners.get(0).getListener(), topics);
     }
 
