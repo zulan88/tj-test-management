@@ -193,14 +193,13 @@ public class ImitateRedisTrajectoryConsumer {
                 String channel = new String(message.getChannel());
                 SimulationMessage simulationMessage = objectMapper.readValue(message.toString(), SimulationMessage.class);
                 log.info("{}{}:{}", methodLog, channel, message.toString());
-                LinkedHashMap value = (LinkedHashMap) simulationMessage.getValue();
-                if (!ObjectUtils.isEmpty(value) && value.containsKey("@type")) {
+                if (!ObjectUtils.isEmpty(simulationMessage.getValue()) && simulationMessage.getValue() instanceof LinkedHashMap) {
+                    LinkedHashMap value = (LinkedHashMap) simulationMessage.getValue();
                     value.remove("@type");
                 }
                 switch (simulationMessage.getType()) {
                     case RedisMessageType.TRAJECTORY:
-                        System.out.println(JSON.toJSONString(value));
-                        SimulationTrajectoryDto simulationTrajectory = objectMapper.readValue(JSON.toJSONString(value), SimulationTrajectoryDto.class);
+                        SimulationTrajectoryDto simulationTrajectory = objectMapper.readValue(JSON.toJSONString(simulationMessage.getValue()), SimulationTrajectoryDto.class);
                         // 实际轨迹消息
                         List<TrajectoryValueDto> data = simulationTrajectory.getValue();
                         for (TrajectoryValueDto trajectoryValueDto : CollectionUtils.emptyIfNull(data)) {
@@ -262,7 +261,7 @@ public class ImitateRedisTrajectoryConsumer {
                         break;
                     case RedisMessageType.END:
                         if ("TESSResult".equals(channel)) {
-                            CaseTrajectoryDetailBo end = objectMapper.readValue(JSON.toJSONString(value), CaseTrajectoryDetailBo.class);
+                            CaseTrajectoryDetailBo end = objectMapper.readValue(JSON.toJSONString(simulationMessage.getValue()), CaseTrajectoryDetailBo.class);
                             log.info(StringUtils.format("结束接收{}数据：{}", tjCase.getCaseNumber(),
                                     JSON.toJSONString(end)));
                             try {

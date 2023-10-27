@@ -18,7 +18,6 @@ import net.wanji.business.service.RestService;
 import net.wanji.business.service.StatusManage;
 import net.wanji.business.service.TjDeviceDetailService;
 import net.wanji.common.utils.SecurityUtils;
-import net.wanji.common.utils.StringUtils;
 import net.wanji.system.service.ISysDictDataService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.BeanUtils;

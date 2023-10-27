@@ -16,7 +16,6 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import net.wanji.business.domain.dto.TaskDto;
-import net.wanji.business.domain.dto.CreateTaskDto;
 import net.wanji.business.domain.bo.TaskBo;
 import net.wanji.business.domain.vo.TaskCaseVo;
 import net.wanji.business.domain.vo.TaskListVo;
@@ -132,14 +131,13 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
     }
 
     @Override
-    public TaskVo createTask(CreateTaskDto in)
+    public TaskVo createTask(List<Integer> caseIds)
             throws BusinessException, ExecutionException, InterruptedException {
         TaskVo taskVo = new TaskVo();
-        String[] split = in.getCaseIds().split(",");
-        taskVo.setCaseCount(in.getCaseIds().split(",").length);
+        taskVo.setCaseCount(caseIds.size());
         taskVo.setTaskName("task-" + sf.format(new Date()));
-        taskVo.setCaseIds(in.getCaseIds());
-        taskVo.setDataConfigs(tjCaseService.getTaskConfigDetail(Integer.parseInt(split[0])));
+        taskVo.setCaseIds(StringUtils.join(caseIds, ","));
+        taskVo.setDataConfigs(tjCaseService.getTaskConfigDetail(caseIds.get(0)));
         return taskVo;
     }
 

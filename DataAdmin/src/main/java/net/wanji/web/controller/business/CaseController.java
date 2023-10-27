@@ -185,13 +185,13 @@ public class CaseController extends BaseController {
 
     @ApiOperationSort(16)
     @ApiOperation(value = "预览")
-    @GetMapping("/playback")
+    @GetMapping("/preview")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "id", value = "用例ID", required = true, dataType = "Integer", paramType = "query", example = "280"),
             @ApiImplicitParam(name = "action", value = "动作（1:开始; 2:暂停; 3:继续; 4:结束）", required = true, dataType = "Integer", paramType = "query", example = "1"),
             @ApiImplicitParam(name = "vehicleId", value = "参与者ID", required = false, dataType = "Integer", paramType = "query", example = "1")
     })
-    public AjaxResult playback(@RequestParam(value = "id") Integer id,
+    public AjaxResult preview(@RequestParam(value = "id") Integer id,
                                @RequestParam(value = "action") int action,
                                @RequestParam(value = "vehicleId", required = false) String vehicleId)
             throws BusinessException, IOException {

@@ -2,7 +2,6 @@ package net.wanji.business.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import net.wanji.business.domain.dto.TaskDto;
-import net.wanji.business.domain.dto.CreateTaskDto;
 import net.wanji.business.domain.bo.TaskBo;
 import net.wanji.business.domain.vo.TaskVo;
 import net.wanji.business.entity.TjTask;
@@ -11,6 +10,7 @@ import net.wanji.common.core.page.TableDataInfo;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -35,8 +35,7 @@ public interface TjTaskService extends IService<TjTask> {
      * @throws ExecutionException
      * @throws InterruptedException
      */
-    public TaskVo createTask(CreateTaskDto in)
-        throws BusinessException, ExecutionException, InterruptedException;
+    public TaskVo createTask(List<Integer> caseIds) throws BusinessException, ExecutionException, InterruptedException;
 
     /**
      * 保存创建任务

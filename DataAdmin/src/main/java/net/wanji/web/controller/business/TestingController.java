@@ -59,22 +59,31 @@ public class TestingController extends BaseController {
         return  AjaxResult.success(testingService.start(recordId, action));
     }
 
-    @PreAuthorize("@ss.hasPermi('testing:playback')")
+    @ApiOperationSort(4)
+    @ApiOperation(value = "回放")
     @GetMapping("/playback")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499"),
+            @ApiImplicitParam(name = "action", value = "动作（1：开始；2：结束）", required = true, dataType = "Integer", paramType = "query", example = "1")
+    })
     public AjaxResult playback(@RequestParam("recordId") Integer recordId, @RequestParam("action") Integer action)
             throws BusinessException, IOException {
         testingService.playback(recordId, action);
         return  AjaxResult.success();
     }
 
-    @PreAuthorize("@ss.hasPermi('testing:getResult')")
+    @ApiOperationSort(5)
+    @ApiOperation(value = "测试结果")
     @GetMapping("/getResult")
+    @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499")
     public AjaxResult getResult(@RequestParam("recordId") Integer recordId) throws BusinessException {
         return AjaxResult.success(testingService.getResult(recordId));
     }
 
-    @PreAuthorize("@ss.hasPermi('testing:communicationDelay')")
+    @ApiOperationSort(6)
+    @ApiOperation(value = "图形列表")
     @GetMapping("/communicationDelay")
+    @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499")
     public AjaxResult communicationDelayVo(@RequestParam Integer recordId) {
         return AjaxResult.success(testingService.communicationDelayVo(recordId));
     }
