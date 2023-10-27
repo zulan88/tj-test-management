@@ -4,6 +4,8 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiOperationSort;
+import io.swagger.annotations.ApiOperationSort;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.TestingService;
 import net.wanji.common.core.controller.BaseController;
@@ -22,7 +24,7 @@ import java.io.IOException;
  * @Date: 2023/8/24 9:13
  * @Descriptoin:
  */
-@Api(tags = "测试过程服务")
+@Api(tags = "测试监管")
 @RestController
 @RequestMapping("/testing")
 public class TestingController extends BaseController {
@@ -30,21 +32,24 @@ public class TestingController extends BaseController {
     @Autowired
     private TestingService testingService;
 
-    @ApiOperation(value = "获取状态", position = 1)
+    @ApiOperationSort(1)
+    @ApiOperation(value = "获取状态")
     @GetMapping("/getStatus")
     @ApiImplicitParam(name = "caseId", value = "用例ID", required = true, dataType = "Integer", paramType = "query", example = "278")
     public AjaxResult getStatus(Integer caseId) throws BusinessException {
         return AjaxResult.success(testingService.getStatus(caseId));
     }
 
-    @ApiOperation(value = "准备", position = 2)
+    @ApiOperationSort(2)
+    @ApiOperation(value = "准备")
     @GetMapping("/prepare")
     @ApiImplicitParam(name = "caseId", value = "用例ID", required = true, dataType = "Integer", paramType = "query", example = "278")
     public AjaxResult prepare(Integer caseId) throws BusinessException {
         return AjaxResult.success(testingService.prepare(caseId));
     }
 
-    @ApiOperation(value = "开始/结束", position = 3)
+    @ApiOperationSort(3)
+    @ApiOperation(value = "开始/结束")
     @GetMapping("/start")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499"),

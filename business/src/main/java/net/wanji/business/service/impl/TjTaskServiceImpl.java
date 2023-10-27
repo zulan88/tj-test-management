@@ -2,11 +2,9 @@ package net.wanji.business.service.impl;
 
 import cn.hutool.core.util.ObjectUtil;
 import com.alibaba.excel.EasyExcel;
-import com.alibaba.excel.ExcelReader;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.metadata.Head;
 import com.alibaba.excel.metadata.data.WriteCellData;
-import com.alibaba.excel.read.metadata.ReadSheet;
 import com.alibaba.excel.write.handler.CellWriteHandler;
 import com.alibaba.excel.write.metadata.WriteSheet;
 import com.alibaba.excel.write.metadata.holder.WriteSheetHolder;
@@ -17,9 +15,9 @@ import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import net.wanji.business.domain.bo.TaskBo;
-import net.wanji.business.domain.dto.CreateTaskDto;
 import net.wanji.business.domain.dto.TaskDto;
+import net.wanji.business.domain.dto.CreateTaskDto;
+import net.wanji.business.domain.bo.TaskBo;
 import net.wanji.business.domain.vo.TaskCaseVo;
 import net.wanji.business.domain.vo.TaskListVo;
 import net.wanji.business.domain.vo.TaskReportVo;
@@ -36,10 +34,7 @@ import net.wanji.business.mapper.TjTaskMapper;
 import net.wanji.business.service.TjCaseService;
 import net.wanji.business.service.TjTaskService;
 import net.wanji.business.util.CustomMergeStrategy;
-import net.wanji.business.util.ExcelFillCellMergePrevColUtils;
-import net.wanji.business.util.ExcelFillCellMergeStrategyUtils;
 import net.wanji.common.core.page.TableDataInfo;
-import net.wanji.common.utils.DataUtils;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.bean.BeanUtils;
@@ -94,7 +89,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
     private static final SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss");
 
     @Override
-    public TableDataInfo pageList(TaskBo in) {
+    public TableDataInfo pageList(TaskDto in) {
         TableDataInfo tableDataInfo = new TableDataInfo();
         QueryWrapper<TjTask> wrapper = new QueryWrapper<>();
         if (StringUtils.isNotEmpty(in.getTaskName()))
@@ -150,7 +145,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
 
     @Override
     @Transactional
-    public int saveTask(TaskDto in) {
+    public int saveTask(TaskBo in) {
         String[] cases = in.getCaseIds().split(",");
         TjTask tjTask = new TjTask();
         tjTask.setTaskName(in.getTaskName());

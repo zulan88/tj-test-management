@@ -1,42 +1,26 @@
 package net.wanji.business.domain.bo;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import lombok.Data;
+import java.util.List;
 
-import java.util.Date;
+import lombok.Data;
+import net.wanji.business.entity.TjTaskDataConfig;
+import net.wanji.business.entity.TjTaskDc;
 
 /**
  * @author: guowenhao
- * @date: 2023/8/31 17:58
+ * @date: 2023/8/31 19:46
  * @description:
  */
 @Data
 public class TaskBo {
 
-    /**
-     * 任务名称
-     */
+    private Integer id;
+
     private String taskName;
 
-    /**
-     *开始时间
-     */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
-    private Date startTime;
+    private String caseIds;
 
-    /**
-     *结束时间
-     */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
-    private Date endTime;
+    private List<TjTaskDataConfig> dataConfigs;
 
-    /**
-     * 页码
-     */
-    private Integer pageNum = 1;
-
-    /**
-     * 每页记录数
-     */
-    private Integer pageSize = 3;
+    private List<TjTaskDc> diadynamicCriterias;
 }

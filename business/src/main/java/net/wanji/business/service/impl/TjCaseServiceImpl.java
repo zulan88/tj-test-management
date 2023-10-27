@@ -12,7 +12,6 @@ import net.wanji.business.common.Constants.PartRole;
 import net.wanji.business.common.Constants.PartType;
 import net.wanji.business.common.Constants.PlaybackAction;
 import net.wanji.business.common.Constants.SysType;
-import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.Label;
 import net.wanji.business.domain.PartConfigSelect;
 import net.wanji.business.domain.bo.CaseConfigBo;
@@ -144,11 +143,16 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     }
 
     @Override
-    public Map<String, List<SimpleSelect>> initEdit() {
-        List<SysDictData> partRole = dictTypeService.selectDictDataByType(SysType.PART_ROLE);
-        Map<String, List<SimpleSelect>> result = new HashMap<>(1);
-        result.put(SysType.PART_ROLE, CollectionUtils.emptyIfNull(partRole).stream()
-                .map(SimpleSelect::new).collect(Collectors.toList()));
+    public Map<String, List<PartConfigSelect>> initEdit(Integer caseId) {
+        Map<String, List<PartConfigSelect>> result = new HashMap<>(1);
+        CaseDetailVo caseDetailVo = this.selectCaseDetail(caseId);
+        handleCasePartConfig(caseDetailVo);
+        for (PartConfigSelect partConfigSelect : CollectionUtils.emptyIfNull(caseDetailVo.getPartConfigSelects())) {
+            for (CasePartConfigVo part : CollectionUtils.emptyIfNull(partConfigSelect.getParts())) {
+                part.setSelected(false);
+            }
+        }
+        result.put(SysType.PART_ROLE, caseDetailVo.getPartConfigSelects());
         return result;
     }
 
@@ -233,17 +237,17 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
         List<String> data = new ArrayList<>();
         if (!ObjectUtils.isEmpty(caseDetailVo.getSceneDetailId())) {
             List<Label> labelList = labelsService.selectLabelsList(new Label());
-            Map<Long,String> sceneMap = new HashMap<>();
-            for(Label tlabel : labelList){
+            Map<Long, String> sceneMap = new HashMap<>();
+            for (Label tlabel : labelList) {
                 Long parentId = tlabel.getParentId();
                 String prelabel = null;
-                if(parentId!=null) {
+                if (parentId != null) {
                     prelabel = sceneMap.getOrDefault(parentId, null);
                 }
-                if(prelabel==null){
-                    sceneMap.put(tlabel.getId(),tlabel.getName());
-                }else {
-                    sceneMap.put(tlabel.getId(),prelabel+"-"+tlabel.getName());
+                if (prelabel == null) {
+                    sceneMap.put(tlabel.getId(), tlabel.getName());
+                } else {
+                    sceneMap.put(tlabel.getId(), prelabel + "-" + tlabel.getName());
                 }
             }
             try {
@@ -260,9 +264,9 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
             } catch (BusinessException e) {
                 log.error("用例详情场景标签解析异常", e);
             }
-            
+
         }
-        
+
         caseDetailVo.setLabelDetail(data);
     }
 

@@ -1,26 +1,42 @@
 package net.wanji.business.domain.dto;
 
-import java.util.List;
-
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
-import net.wanji.business.entity.TjTaskDataConfig;
-import net.wanji.business.entity.TjTaskDc;
+
+import java.util.Date;
 
 /**
  * @author: guowenhao
- * @date: 2023/8/31 19:46
+ * @date: 2023/8/31 17:58
  * @description:
  */
 @Data
 public class TaskDto {
 
-    private Integer id;
-
+    /**
+     * 任务名称
+     */
     private String taskName;
 
-    private String caseIds;
+    /**
+     *开始时间
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date startTime;
 
-    private List<TjTaskDataConfig> dataConfigs;
+    /**
+     *结束时间
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date endTime;
 
-    private List<TjTaskDc> diadynamicCriterias;
+    /**
+     * 页码
+     */
+    private Integer pageNum = 1;
+
+    /**
+     * 每页记录数
+     */
+    private Integer pageSize = 3;
 }

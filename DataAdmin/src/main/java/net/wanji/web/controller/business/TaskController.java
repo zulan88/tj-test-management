@@ -1,43 +1,15 @@
 package net.wanji.web.controller.business;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import com.alibaba.excel.EasyExcel;
-import com.alibaba.excel.ExcelWriter;
-import com.alibaba.excel.write.builder.ExcelWriterBuilder;
-import com.alibaba.excel.write.metadata.WriteSheet;
-import net.wanji.business.common.Constants.BatchGroup;
-import net.wanji.business.common.Constants.ContentTemplate;
-import net.wanji.business.domain.dto.TjCaseDto;
-import net.wanji.business.domain.vo.CaseVo;
-import net.wanji.business.domain.vo.DiadynamicDetailVo;
-import net.wanji.business.domain.vo.DiadynamicVo;
-import net.wanji.business.domain.vo.TaskCaseReportVo;
-import net.wanji.business.domain.vo.TaskReportVo;
-import net.wanji.business.entity.TjCase;
-import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.service.TjTaskCaseService;
-import net.wanji.common.utils.DateUtils;
-import net.wanji.common.utils.StringUtils;
-import net.wanji.common.utils.poi.ExcelUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import net.wanji.business.domain.bo.TaskBo;
-import net.wanji.business.domain.dto.CreateTaskDto;
 import net.wanji.business.domain.dto.TaskDto;
+import net.wanji.business.domain.dto.CreateTaskDto;
+import net.wanji.business.domain.bo.TaskBo;
 import net.wanji.business.domain.vo.TaskVo;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.TjTaskService;
@@ -69,7 +41,7 @@ public class TaskController extends BaseController {
      */
     //@PreAuthorize("@ss.hasPermi('task:pageList')")
     @GetMapping("/pageList")
-    public TableDataInfo pageList(TaskBo bo)
+    public TableDataInfo pageList(TaskDto bo)
     {
         TableDataInfo tableDataInfo = tjTaskService.pageList(bo);
         tableDataInfo.setCode(200);
@@ -104,7 +76,7 @@ public class TaskController extends BaseController {
      */
     //@PreAuthorize("@ss.hasPermi('task:save')")
     @PostMapping("/save")
-    public AjaxResult edit(@RequestBody TaskDto dto)
+    public AjaxResult edit(@RequestBody TaskBo dto)
     {
         int i = tjTaskService.saveTask(dto);
         if (i == 1)

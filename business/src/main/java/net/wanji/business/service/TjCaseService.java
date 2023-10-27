@@ -42,7 +42,7 @@ public interface TjCaseService extends IService<TjCase> {
      *
      * @return
      */
-    Map<String, List<SimpleSelect>> initEdit();
+    Map<String, List<PartConfigSelect>> initEdit(Integer caseId);
 
     /**
      * 分页列表

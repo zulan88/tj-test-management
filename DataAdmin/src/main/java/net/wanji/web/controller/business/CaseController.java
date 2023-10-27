@@ -5,6 +5,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiOperationSort;
 import net.wanji.business.common.Constants.DeleteGroup;
 import net.wanji.business.common.Constants.InsertGroup;
 import net.wanji.business.common.Constants.UpdateGroup;
@@ -61,7 +62,8 @@ public class CaseController extends BaseController {
     @Autowired
     private TjCasePartConfigService casePartConfigService;
 
-    @ApiOperation(value = "1.查询测试用例树", position = 1)
+    @ApiOperationSort(1)
+    @ApiOperation(value = "1.查询测试用例树")
     @GetMapping("/selectTree")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "type", value = "类型", required = true, dataType = "String", paramType = "query", example = "virtualRealFusion"),
@@ -71,54 +73,62 @@ public class CaseController extends BaseController {
         return AjaxResult.success(caseTreeService.selectTree(type, name));
     }
 
-    @ApiOperation(value = "2.保存测试用例树", position = 2)
+    @ApiOperationSort(2)
+    @ApiOperation(value = "2.保存测试用例树")
     @PostMapping("/saveTree")
     public AjaxResult saveTree(@Validated @RequestBody CaseTreeDto caseTreeDto) throws BusinessException {
         return AjaxResult.success(caseTreeService.saveTree(caseTreeDto));
     }
 
-    @ApiOperation(value = "3.删除测试用例树", position = 3)
+    @ApiOperationSort(3)
+    @ApiOperation(value = "3.删除测试用例树")
     @GetMapping("/deleteTree")
     @ApiImplicitParam(name = "treeId", value = "树节点ID", required = true, dataType = "Integer", paramType = "query", example = "28")
     public AjaxResult deleteTree(Integer treeId) {
         return AjaxResult.success(caseTreeService.deleteTree(treeId));
     }
 
-    @ApiOperation(value = "4.测试用例列表页初始化", position = 4)
+    @ApiOperationSort(4)
+    @ApiOperation(value = "4.测试用例列表页初始化")
     @GetMapping("/init")
     public AjaxResult init() {
         return AjaxResult.success(caseService.init());
     }
 
-    @ApiOperation(value = "5.测试用例列表页查询", position = 5)
+    @ApiOperationSort(5)
+    @ApiOperation(value = "5.测试用例列表页查询")
     @PostMapping("/pageForCase")
     public TableDataInfo pageForCase(@Validated @RequestBody CaseQueryDto caseQueryDto) {
         PageHelper.startPage(caseQueryDto.getPageNum(), caseQueryDto.getPageSize());
         return getDataTable(caseService.pageList(caseQueryDto));
     }
 
-    @ApiOperation(value = "6.查询用例详情", position = 6)
+    @ApiOperationSort(6)
+    @ApiOperation(value = "6.查询用例详情")
     @GetMapping("/selectDetail")
     @ApiImplicitParam(name = "caseId", value = "用例id", required = true, dataType = "Integer", paramType = "query", example = "276")
     public AjaxResult selectDetail(Integer caseId) {
         return AjaxResult.success(caseService.selectCaseDetail(caseId));
     }
 
-    @ApiOperation(value = "7.创建用例", position = 7)
+    @ApiOperationSort(7)
+    @ApiOperation(value = "7.创建用例")
     @PostMapping("/createCase")
     public AjaxResult createCase(@Validated(value = InsertGroup.class) @RequestBody TjCaseDto tjCaseDto)
             throws BusinessException {
         return AjaxResult.success(caseService.saveCase(tjCaseDto) ? "创建成功" : "创建失败");
     }
 
-    @ApiOperation(value = "8.修改用例", position = 8)
+    @ApiOperationSort(8)
+    @ApiOperation(value = "8.修改用例")
     @PostMapping("/updateCase")
     public AjaxResult updateCase(@Validated(value = UpdateGroup.class) @RequestBody TjCaseDto tjCaseDto)
             throws BusinessException {
         return AjaxResult.success(caseService.saveCase(tjCaseDto) ? "修改成功" : "修改失败");
     }
 
-    @ApiOperation(value = "9.启停", position = 9)
+    @ApiOperationSort(9)
+    @ApiOperation(value = "9.启停")
     @GetMapping("/updateStatus")
     @ApiImplicitParam(name = "caseId", value = "用例id", required = true, dataType = "Integer", paramType = "query", example = "276")
     public AjaxResult updateStatus(Integer caseId)
@@ -126,7 +136,8 @@ public class CaseController extends BaseController {
         return AjaxResult.success(caseService.updateStatus(caseId) ? "成功" : "失败");
     }
 
-    @ApiOperation(value = "10.批量启停", position = 10)
+    @ApiOperationSort(10)
+    @ApiOperation(value = "10.批量启停")
     @GetMapping("/batchUpdateStatus")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "caseIds", value = "用例id", required = true, dataType = "List", paramType = "query", example = "[1,2,3]"),
@@ -137,7 +148,8 @@ public class CaseController extends BaseController {
         return AjaxResult.success(caseService.batchUpdateStatus(caseIds, action) ? "成功" : "失败");
     }
 
-    @ApiOperation(value = "11.删除", position = 11)
+    @ApiOperationSort(11)
+    @ApiOperation(value = "11.删除")
     @GetMapping("/delete")
     @ApiImplicitParam(name = "caseId", value = "用例id", required = true, dataType = "Integer", paramType = "query", example = "276")
     public AjaxResult delete(Integer caseId)
@@ -147,7 +159,8 @@ public class CaseController extends BaseController {
                 : AjaxResult.error("删除失败");
     }
 
-    @ApiOperation(value = "12.批量删除", position = 12)
+    @ApiOperationSort(12)
+    @ApiOperation(value = "12.批量删除")
     @GetMapping("/batchDelete")
     @ApiImplicitParam(name = "caseIds", value = "用例id", required = true, dataType = "List", paramType = "query", example = "1,2,3")
     public AjaxResult batchDelete(@RequestParam("caseIds") List<Integer> caseIds)
@@ -155,7 +168,8 @@ public class CaseController extends BaseController {
         return AjaxResult.success(caseService.batchDelete(caseIds) ? "成功" : "失败");
     }
 
-    @ApiOperation(value = "13.查询用例设备配置", position = 13)
+    @ApiOperationSort(13)
+    @ApiOperation(value = "13.查询用例设备配置")
     @GetMapping("/configDetail")
     @ApiImplicitParam(name = "id", value = "用例id", required = true, dataType = "Integer", paramType = "query", example = "276")
     public AjaxResult configDetail(@RequestParam("id") Integer id) throws BusinessException, InterruptedException,
@@ -163,16 +177,19 @@ public class CaseController extends BaseController {
         return AjaxResult.success(caseService.getConfigDetail(id));
     }
 
-    @ApiOperation(value = "14.保存用例设备配置", position = 14)
+    @ApiOperationSort(14)
+    @ApiOperation(value = "14.保存用例设备配置")
     @PostMapping("/saveCaseDevice")
     public AjaxResult saveCaseDevice(@RequestBody List<PartConfigSelect> partConfigSelects) {
         return AjaxResult.success(casePartConfigService.saveFromSelected(partConfigSelects));
     }
 
-    @ApiOperation(value = "15.编辑页初始化", position = 15)
+    @ApiOperationSort(15)
+    @ApiOperation(value = "15.编辑页初始化")
     @GetMapping("/initEdit")
-    public AjaxResult initEdit() {
-        return AjaxResult.success(caseService.initEdit());
+    @ApiImplicitParam(name = "caseId", value = "用例ID", required = true, dataType = "Integer", paramType = "query", example = "280")
+    public AjaxResult initEdit(Integer caseId) {
+        return AjaxResult.success(caseService.initEdit(caseId));
     }
 
     @ApiOperation(value = "克隆用例（废弃）", position = 15)

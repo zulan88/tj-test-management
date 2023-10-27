@@ -1,9 +1,9 @@
 package net.wanji.business.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import net.wanji.business.domain.bo.TaskBo;
-import net.wanji.business.domain.dto.CreateTaskDto;
 import net.wanji.business.domain.dto.TaskDto;
+import net.wanji.business.domain.dto.CreateTaskDto;
+import net.wanji.business.domain.bo.TaskBo;
 import net.wanji.business.domain.vo.TaskVo;
 import net.wanji.business.entity.TjTask;
 import net.wanji.business.exception.BusinessException;
@@ -11,7 +11,6 @@ import net.wanji.common.core.page.TableDataInfo;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -26,7 +25,7 @@ public interface TjTaskService extends IService<TjTask> {
      * @param in
      * @return
      */
-    public TableDataInfo pageList(TaskBo in);
+    public TableDataInfo pageList(TaskDto in);
 
     /**
      * 创建任务
@@ -44,7 +43,7 @@ public interface TjTaskService extends IService<TjTask> {
      * @param in
      * @return
      */
-    public int saveTask(TaskDto in);
+    public int saveTask(TaskBo in);
 
     /**
      * 导出
