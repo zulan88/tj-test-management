@@ -1,6 +1,5 @@
 package net.wanji.business.service;
 
-import com.alibaba.fastjson.JSONObject;
 import net.wanji.business.domain.dto.device.DeviceStateDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -15,10 +14,10 @@ import org.springframework.stereotype.Service;
 public class DeviceStateSendService {
 
     @Autowired
-    private RedisTemplate<String, String> redisTemplate;
+    private RedisTemplate<String, Object> noClassRedisTemplate;
 
     public void sendData(String channel, DeviceStateDto t) {
-        redisTemplate.convertAndSend(channel, JSONObject.toJSONString(t));
+        noClassRedisTemplate.convertAndSend(channel, t);
     }
 
 }

@@ -151,7 +151,7 @@ public class TestingServiceImpl implements TestingService {
             caseConfigBo.setStatus(status);
             if (ObjectUtils.isEmpty(status) || status == 0) {
                 // 不在线无需确认准备状态
-                continue;
+//                continue;
             }
             // 查询设备准备状态
             DeviceReadyStateParam stateParam = new DeviceReadyStateParam();
@@ -162,11 +162,10 @@ public class TestingServiceImpl implements TestingService {
             stateParam.setTimestamp(System.currentTimeMillis());
             if (PartRole.AV.equals(caseConfigBo.getSupportRoles())) {
                 // av车需要主车全部轨迹
-                List<String> participantTrajectories = null;
+                List<SimulationTrajectoryDto> participantTrajectories = null;
                 try {
-                    List<SimulationTrajectoryDto> mainSimulations = routeService.readOriTrajectoryFromRouteFile(caseInfoBo.getRouteFile(),
+                    participantTrajectories = routeService.readOriTrajectoryFromRouteFile(caseInfoBo.getRouteFile(),
                             caseConfigBo.getBusinessId());
-                    participantTrajectories = mainSimulations.stream().map(JSONObject::toJSONString).collect(Collectors.toList());
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -197,8 +196,7 @@ public class TestingServiceImpl implements TestingService {
                     participantTrajectories.add(map);
                 }
                 param1.put("participantTrajectories", participantTrajectories);
-                tessParams.put("param1", JSONObject.toJSONString(param1));
-
+                tessParams.put("param1", param1);
                 stateParam.setParams(tessParams);
             }
             caseConfigBo.setPositionStatus(deviceDetailService.selectDeviceReadyState(caseConfigBo.getDeviceId(), stateParam, false));
@@ -272,10 +270,10 @@ public class TestingServiceImpl implements TestingService {
         // 开始监听所有数据通道
         imitateRedisTrajectoryConsumer.subscribeAndSend(caseInfoBo);
         // 启动主控
-//        if (!restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(), String.valueOf(caseId), action,
-//                generateDeviceConnRules(caseInfoBo)))) {
-//            throw new BusinessException("主控响应异常");
-//        }
+        if (!restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(), String.valueOf(caseId), action,
+                generateDeviceConnRules(caseInfoBo)))) {
+            throw new BusinessException("主控响应异常");
+        }
         CaseTestStartVo startVo = new CaseTestStartVo();
         BeanUtils.copyProperties(realRecord, startVo);
         startVo.setStartTime(DateUtils.getTime());
@@ -466,43 +464,11 @@ public class TestingServiceImpl implements TestingService {
     private List<DeviceConnRule> generateDeviceConnRules(CaseInfoBo caseInfoBo) {
         List<CaseConfigBo> caseConfigs = caseInfoBo.getCaseConfigs().stream().filter(config ->
                 !ObjectUtils.isEmpty(config.getDeviceId())).collect(Collectors.toList());
-        Map<String, String> businessIdAndRoleMap = caseConfigs.stream().collect(Collectors.toMap(
-                CaseConfigBo::getBusinessId,
-                CaseConfigBo::getParticipantRole));
-
-        SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(caseInfoBo.getDetailInfo(), SceneTrajectoryBo.class);
-
-        Map<String, Object> tessParams = new HashMap<>();
-        Map<String, Object> param1 = new HashMap<>();
-        param1.put("caseId", caseInfoBo.getId());
-        List<Map<String, Object>> participantTrajectories = new ArrayList<>();
-        for (ParticipantTrajectoryBo participantTrajectory : sceneTrajectoryBo.getParticipantTrajectories()) {
-            Map<String, Object> map = new HashMap<>();
-            map.put("id", participantTrajectory.getId());
-            map.put("model", participantTrajectory.getModel());
-            map.put("name", participantTrajectory.getName());
-            map.put("role", businessIdAndRoleMap.get(participantTrajectory.getId()));
-            map.put("trajectory", participantTrajectory.getTrajectory().stream().map(item -> {
-                Map<String, Object> t = new HashMap<>();
-                t.put("type", item.getType());
-                t.put("time", item.getTime());
-                t.put("lane", item.getLane());
-                t.put("speed", item.getSpeed());
-                String[] pos = item.getPosition().split(",");
-                t.put("position", Arrays.asList(pos[0], pos[1]));
-                return t;
-            }).collect(Collectors.toList()));
-            participantTrajectories.add(map);
-        }
-        param1.put("participantTrajectories", participantTrajectories);
-        tessParams.put("param1", JSONObject.toJSONString(param1));
 
         List<Integer> ids = new ArrayList<>();
         List<CaseConfigBo> configs = new ArrayList<>();
         for (CaseConfigBo caseConfig : caseConfigs) {
-            if (ids.contains(caseConfig.getDeviceId())) {
-                continue;
-            } else {
+            if (!ids.contains(caseConfig.getDeviceId())) {
                 ids.add(caseConfig.getDeviceId());
                 configs.add(caseConfig);
             }
@@ -523,7 +489,7 @@ public class TestingServiceImpl implements TestingService {
                 DeviceConnRule rule = new DeviceConnRule();
                 if (PartRole.MV_SIMULATION.equals(sourceDevice.getParticipantRole())
                         && PartRole.AV.equals(targetDevice.getParticipantRole())) {
-                    sourceParams = tessParams;
+//                    sourceParams = tessParams;
                 }
                 rule.setSource(createConnInfo(sourceDevice, sourceParams));
                 rule.setTarget(createConnInfo(targetDevice, targetParams));

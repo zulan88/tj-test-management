@@ -49,6 +49,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -190,15 +191,16 @@ public class ImitateRedisTrajectoryConsumer {
         return (message, pattern) -> {
             try {
                 String channel = new String(message.getChannel());
-                String s = message.toString();
-                log.info("{}{}:{}", methodLog, channel, s);
-
-                SimulationMessage simulationMessage = objectMapper.readValue(s,
-                        SimulationMessage.class);
-                System.out.println(JSON.toJSONString(simulationMessage));
+                SimulationMessage simulationMessage = objectMapper.readValue(message.toString(), SimulationMessage.class);
+                log.info("{}{}:{}", methodLog, channel, message.toString());
+                LinkedHashMap value = (LinkedHashMap) simulationMessage.getValue();
+                if (!ObjectUtils.isEmpty(value) && value.containsKey("@type")) {
+                    value.remove("@type");
+                }
                 switch (simulationMessage.getType()) {
                     case RedisMessageType.TRAJECTORY:
-                        SimulationTrajectoryDto simulationTrajectory = objectMapper.readValue(String.valueOf(simulationMessage.getValue()), SimulationTrajectoryDto.class);
+                        System.out.println(JSON.toJSONString(value));
+                        SimulationTrajectoryDto simulationTrajectory = objectMapper.readValue(JSON.toJSONString(value), SimulationTrajectoryDto.class);
                         // 实际轨迹消息
                         List<TrajectoryValueDto> data = simulationTrajectory.getValue();
                         for (TrajectoryValueDto trajectoryValueDto : CollectionUtils.emptyIfNull(data)) {
@@ -260,8 +262,7 @@ public class ImitateRedisTrajectoryConsumer {
                         break;
                     case RedisMessageType.END:
                         if ("TESSResult".equals(channel)) {
-                            CaseTrajectoryDetailBo end = objectMapper.readValue(String.valueOf(simulationMessage.getValue()),
-                                    CaseTrajectoryDetailBo.class);
+                            CaseTrajectoryDetailBo end = objectMapper.readValue(JSON.toJSONString(value), CaseTrajectoryDetailBo.class);
                             log.info(StringUtils.format("结束接收{}数据：{}", tjCase.getCaseNumber(),
                                     JSON.toJSONString(end)));
                             try {

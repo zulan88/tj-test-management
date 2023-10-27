@@ -1,7 +1,5 @@
 package net.wanji.common.core.domain;
 
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import net.wanji.common.core.domain.entity.SysDictData;
 
 import java.io.Serializable;
@@ -26,8 +24,8 @@ public class SimpleSelect implements Serializable {
     private String dictValue;
 
 
-
-    public SimpleSelect() {}
+    public SimpleSelect() {
+    }
 
     public SimpleSelect(SysDictData dictData) {
         this.dictCode = dictData.getDictCode();

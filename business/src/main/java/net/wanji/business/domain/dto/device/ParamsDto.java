@@ -14,6 +14,6 @@ import java.util.List;
 @Data
 public class ParamsDto {
     private Integer caseId;
-    private List<String> participantTrajectories;
+    private Object participantTrajectories;
 
 }
