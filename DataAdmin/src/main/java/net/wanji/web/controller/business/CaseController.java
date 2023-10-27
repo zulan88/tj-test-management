@@ -17,8 +17,6 @@ import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.TjCasePartConfigService;
 import net.wanji.business.service.TjCaseService;
 import net.wanji.business.service.TjCaseTreeService;
-import net.wanji.business.service.TjFragmentedSceneDetailService;
-import net.wanji.business.service.TjFragmentedScenesService;
 import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
@@ -41,23 +39,16 @@ import java.util.concurrent.ExecutionException;
  * @Date: 2023/6/29 13:23
  * @Descriptoin:
  */
-@Api(tags = "测试用例服务")
+@Api(tags = "测试配置")
 @RestController
 @RequestMapping("/case")
 public class CaseController extends BaseController {
-
 
     @Autowired
     private TjCaseTreeService caseTreeService;
 
     @Autowired
     private TjCaseService caseService;
-
-    @Autowired
-    private TjFragmentedScenesService scenesService;
-
-    @Autowired
-    private TjFragmentedSceneDetailService sceneDetailService;
 
     @Autowired
     private TjCasePartConfigService casePartConfigService;
@@ -192,16 +183,14 @@ public class CaseController extends BaseController {
         return AjaxResult.success(caseService.initEdit(caseId));
     }
 
-    @ApiOperation(value = "克隆用例（废弃）", position = 15)
-    @PostMapping("/cloneCase")
-    public AjaxResult cloneCase(@Validated(value = DeleteGroup.class) @RequestBody TjCaseDto tjCaseDto) {
-        return caseService.cloneCase(tjCaseDto)
-                ? AjaxResult.success("克隆成功")
-                : AjaxResult.error("克隆失败");
-    }
-
-    @ApiOperation(value = "播放（废弃）", position = 16)
+    @ApiOperationSort(16)
+    @ApiOperation(value = "预览")
     @GetMapping("/playback")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "id", value = "用例ID", required = true, dataType = "Integer", paramType = "query", example = "280"),
+            @ApiImplicitParam(name = "action", value = "动作（1:开始; 2:暂停; 3:继续; 4:结束）", required = true, dataType = "Integer", paramType = "query", example = "1"),
+            @ApiImplicitParam(name = "vehicleId", value = "参与者ID", required = false, dataType = "Integer", paramType = "query", example = "1")
+    })
     public AjaxResult playback(@RequestParam(value = "id") Integer id,
                                @RequestParam(value = "action") int action,
                                @RequestParam(value = "vehicleId", required = false) String vehicleId)

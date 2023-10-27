@@ -50,6 +50,8 @@ import net.wanji.business.service.TjFragmentedSceneDetailService;
 import net.wanji.business.service.TjFragmentedScenesService;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.trajectory.RedisTrajectoryConsumer;
+import net.wanji.business.trajectory.TaskRedisTrajectoryConsumer.ChannelListener;
+import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.core.domain.SimpleSelect;
 import net.wanji.common.core.domain.entity.SysDictData;
@@ -72,6 +74,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -228,6 +231,8 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
             CaseDetailVo caseDetailVo = caseVos.get(0);
             handleLabel(caseDetailVo);
             handleCasePartConfig(caseDetailVo);
+            CollectionUtils.emptyIfNull(caseDetailVo.getPartConfigSelects()).removeIf(partConfigSelect ->
+                    CollectionUtils.isEmpty(partConfigSelect.getParts()));
             return caseDetailVo;
         }
         return null;
@@ -494,13 +499,6 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
         CaseInfoBo caseInfoBo = this.getCaseDetail(id);
         String key = WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(id), WebSocketManage.SIMULATION, null);
         switch (action) {
-            case PlaybackAction.CALL:
-                boolean start = restService.start(buildStartParam(caseInfoBo));
-                if (!start) {
-                    throw new BusinessException("仿真程序连接失败");
-                }
-                redisTrajectoryConsumer.subscribeAndSend(caseInfoBo, participantId);
-                break;
             case PlaybackAction.START:
                 if (StringUtils.isEmpty(caseInfoBo.getRouteFile())) {
                     this.playback(id, participantId, PlaybackAction.CALL);

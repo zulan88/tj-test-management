@@ -1,5 +1,6 @@
 package net.wanji;
 
+import com.github.xiaoymin.swaggerbootstrapui.annotations.EnableSwaggerBootstrapUI;
 import net.wanji.web.core.config.SwaggerConfig;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -31,6 +32,7 @@ import java.nio.charset.StandardCharsets;
 @MapperScan("net.wanji.*.mapper")
 @SpringBootApplication(exclude = { DataSourceAutoConfiguration.class })
 @EnableDiscoveryClient
+@EnableSwaggerBootstrapUI
 public class DataApplication
 {
     public static void main(String[] args)
