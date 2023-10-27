@@ -8,6 +8,7 @@ import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
 import net.wanji.business.domain.vo.SceneDetailVo;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.exception.BusinessException;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.io.IOException;
 import java.util.List;
@@ -64,5 +65,11 @@ public interface TjFragmentedSceneDetailService extends IService<TjFragmentedSce
     boolean deleteSceneByIds(Integer[] ids) throws BusinessException;
 
     boolean updateBatch(List<TjFragmentedSceneDetail> sceneDetails);
+
+    void playback(Integer id, String participantId, int action) throws BusinessException, IOException;
+
+    List<String> getalllabel(String id);
+
+    List<SceneDetailVo> selectTjSceneDetailListBylabels(List<List<Integer>> lists);
 
 }

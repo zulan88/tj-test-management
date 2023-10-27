@@ -213,5 +213,8 @@ public class TjFragmentedSceneDetail implements Serializable {
     @TableField("scene_status")
     private Integer sceneStatus;
 
+    @TableField("all_stage_label")
+    private String allStageLabel;
+
 
 }

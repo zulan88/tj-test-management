@@ -7,6 +7,8 @@ import net.wanji.business.domain.vo.SceneDetailVo;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -27,4 +29,9 @@ public interface TjFragmentedSceneDetailMapper extends BaseMapper<TjFragmentedSc
     int deleteBySceneIds(@Param("sceneIds") List<Integer> sceneIds);
 
     List<SceneDetailVo> selectTjFragmentedSceneDetailList(SceneDetailVo sceneDetailVo);
+
+    @Select("select id from tj_labels where FIND_IN_SET(id,get_parent_list(#{id}));")
+    List<String> getalllabel(@RequestParam(value = "id") String id);
+
+    List<SceneDetailVo> selectTjSceneDetailListBylabels(@Param("lists") List<List<Integer>> lists);
 }

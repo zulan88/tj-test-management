@@ -99,9 +99,20 @@
             <if test="finished != null "> and finished = #{finished}</if>
             <if test="sceneStatus != null "> and scene_status = #{sceneStatus}</if>
             <if test="collectStatus != null "> and collect_status = #{collectStatus}</if>
-            <if test="label != null  and label != ''"> and FIND_IN_SET(#{label},label)</if>
+            <if test="label != null  and label != ''"> and FIND_IN_SET(#{label},all_stage_label)</if>
             <if test="startDate != null and startDate != '' and endDate != null"> and created_date between #{startDate} and #{endDate}</if>
             <if test="updatedDate != null "> and updated_date = #{updatedDate}</if>
+        </where>
+    </select>
+
+    <select id="selectTjSceneDetailListBylabels" resultType="net.wanji.business.domain.vo.SceneDetailVo">
+        <include refid="selectTjFragmentedSceneDetailVo"/>
+        <where>
+            <foreach collection="lists" item="items" separator = " and " >
+                <foreach collection="items" item="val" open="(" separator = " or " close=")" >
+                    FIND_IN_SET(#{val},all_stage_label)
+                </foreach>
+            </foreach>
         </where>
     </select>
 
