@@ -7,6 +7,7 @@ import net.wanji.business.common.Constants.InsertGroup;
 import net.wanji.business.common.Constants.OtherGroup;
 import net.wanji.business.common.Constants.UpdateGroup;
 import net.wanji.business.domain.BusinessTreeSelect;
+import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.dto.SceneDebugDto;
 import net.wanji.business.domain.dto.SceneQueryDto;
 import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
@@ -181,6 +182,15 @@ public class SceneBaseController extends BaseController {
         return AjaxResult.success();
     }
 
+    @ApiOperation("场景回放")
+    @GetMapping("/playback")
+    public AjaxResult playback(@RequestParam(value = "id") Integer id,
+                               @RequestParam(value = "vehicleId", required = false) String vehicleId)
+            throws BusinessException, IOException {
+        tjFragmentedSceneDetailService.playback(id, vehicleId, 1);
+        return AjaxResult.success();
+    }
+
     @PostMapping("/scenelist")
     public TableDataInfo scenelist(@RequestBody SceneDetailVo sceneDetailVo) throws BusinessException {
         startPage();
@@ -206,6 +216,12 @@ public class SceneBaseController extends BaseController {
             sceneDetailVo1.setSceneSort(labelshows.toString());
         }
         return getDataTable(list);
+    }
+
+    @PostMapping("/test")
+    public AjaxResult test(@RequestBody List<List<Integer>> lists){
+        List<SceneDetailVo> res = tjFragmentedSceneDetailService.selectTjSceneDetailListBylabels(lists);
+        return AjaxResult.success(res);
     }
 
 }

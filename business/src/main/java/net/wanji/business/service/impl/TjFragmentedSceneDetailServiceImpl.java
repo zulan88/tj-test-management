@@ -10,6 +10,7 @@ import net.wanji.business.common.Constants.PlaybackAction;
 import net.wanji.business.common.Constants.PointTypeEnum;
 import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.YN;
+import net.wanji.business.domain.bo.CaseInfoBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
@@ -27,12 +28,10 @@ import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjFragmentedSceneDetailMapper;
 import net.wanji.business.mapper.TjFragmentedScenesMapper;
 import net.wanji.business.schedule.PlaybackSchedule;
-import net.wanji.business.service.RestService;
-import net.wanji.business.service.TjFragmentedSceneDetailService;
-import net.wanji.business.service.TjFragmentedScenesService;
-import net.wanji.business.service.TjResourcesDetailService;
+import net.wanji.business.service.*;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.trajectory.RedisTrajectory2Consumer;
+import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.utils.CounterUtil;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
@@ -90,6 +89,9 @@ public class TjFragmentedSceneDetailServiceImpl
     @Autowired
     private RedisTrajectory2Consumer redisTrajectoryConsumer;
 
+    @Autowired
+    private RouteService routeService;
+
     @Override
     public FragmentedScenesDetailVo getDetailVo(Integer id) throws BusinessException {
         QueryWrapper<TjFragmentedSceneDetail> queryWrapper = new QueryWrapper();
@@ -109,6 +111,49 @@ public class TjFragmentedSceneDetailServiceImpl
             }
         }
         return detailVo;
+    }
+
+    @Override
+    public void playback(Integer id, String participantId, int action) throws BusinessException, IOException {
+        FragmentedScenesDetailVo caseInfoBo = this.getDetailVo(id);
+        String key = WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(id), WebSocketManage.SIMULATION, null);
+        switch (action) {
+            case PlaybackAction.START:
+                if (StringUtils.isEmpty(caseInfoBo.getRouteFile())) {
+                    this.playback(id, participantId, PlaybackAction.CALL);
+                    break;
+                }
+                List<List<TrajectoryValueDto>> routeList = routeService.readTrajectoryFromRouteFile(
+                        caseInfoBo.getRouteFile(), participantId);
+                if (CollectionUtils.isEmpty(routeList)) {
+                    throw new BusinessException("未查询到轨迹");
+                }
+                PlaybackSchedule.startSendingData(key, routeList);
+                break;
+            case PlaybackAction.SUSPEND:
+                PlaybackSchedule.suspend(key);
+                break;
+            case PlaybackAction.CONTINUE:
+                PlaybackSchedule.goOn(key);
+                break;
+            case PlaybackAction.STOP:
+                PlaybackSchedule.stopSendingData(key);
+                break;
+            default:
+                break;
+
+        }
+
+    }
+
+    @Override
+    public List<String> getalllabel(String id) {
+        return sceneDetailMapper.getalllabel(id);
+    }
+
+    @Override
+    public List<SceneDetailVo> selectTjSceneDetailListBylabels(List<List<Integer>> lists) {
+        return sceneDetailMapper.selectTjSceneDetailListBylabels(lists);
     }
 
     private void detailVoTranslate(FragmentedScenesDetailVo detailVo) {
@@ -151,11 +196,20 @@ public class TjFragmentedSceneDetailServiceImpl
 //        if (StringUtils.isNotEmpty(sceneDetailDto.getRouteFile())) {
 //            detail.setFinished(true);
 //        }
+        List<String> labellist = new ArrayList<>();
+        if(CollectionUtils.isNotEmpty(sceneDetailDto.getLabelList())) {
+            for (String id : sceneDetailDto.getLabelList()) {
+                labellist.addAll(this.getalllabel(id));
+            }
+        }
         if(Integer.valueOf(1).equals(sceneDetailDto.getFinished())){
             detail.setFinished(true);
         }
         detail.setLabel(CollectionUtils.isNotEmpty(sceneDetailDto.getLabelList())
                 ? String.join(",", sceneDetailDto.getLabelList())
+                : null);
+        detail.setAllStageLabel(CollectionUtils.isNotEmpty(labellist)
+                ? labellist.stream().distinct().collect(Collectors.joining(","))
                 : null);
         detail.setTrajectoryInfo(!ObjectUtils.isEmpty(sceneDetailDto.getTrajectoryJson())
                 ? sceneDetailDto.getTrajectoryJson().buildId().toJsonString()
