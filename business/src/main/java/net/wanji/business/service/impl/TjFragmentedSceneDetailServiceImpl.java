@@ -147,6 +147,13 @@ public class TjFragmentedSceneDetailServiceImpl
     }
 
     @Override
+    public List<List<TrajectoryValueDto>> getroutelist(Integer id, String participantId) throws IOException, BusinessException {
+        FragmentedScenesDetailVo caseInfoBo = this.getDetailVo(id);
+        return routeService.readTrajectoryFromRouteFile(
+                caseInfoBo.getRouteFile(), participantId);
+    }
+
+    @Override
     public List<String> getalllabel(String id) {
         return sceneDetailMapper.getalllabel(id);
     }
