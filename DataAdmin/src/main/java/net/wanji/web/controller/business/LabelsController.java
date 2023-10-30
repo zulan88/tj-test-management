@@ -71,6 +71,46 @@ public class LabelsController extends BaseController {
         return AjaxResult.success(treeVo);
     }
 
+    @PostMapping("/tree")
+    public AjaxResult getlabeltree(@RequestBody List<String> labels) throws BusinessException {
+        List<Label> labelList = labelsService.selectLabelsList(new Label());
+        Map<Long, Label> labelToNodeMap = new HashMap<>();
+        TreeVo treeVo = new TreeVo();
+        treeVo.setTotal(labelList.size());
+        List<Label> roots = new ArrayList<>();
+        Set<Long> set = new HashSet<>();
+
+        for (String str : labels) {
+            try {
+                long intValue = Long.parseLong(str);
+                set.add(intValue);
+            } catch (NumberFormatException e) {
+                // 处理无效的整数字符串
+            }
+        }
+
+        for (Label label : labelList) {
+            if(set.contains(label.getId())){
+                label.setStatus(true);
+            }
+            labelToNodeMap.put(label.getId(), label);
+
+            if (label.getParentId() == null) {
+                roots.add(label);
+            }
+        }
+        for (Label label : labelList) {
+            Label currentNode = labelToNodeMap.get(label.getId());
+            Label parentNode = labelToNodeMap.get(label.getParentId());
+
+            if (parentNode != null) {
+                parentNode.getChildren().add(currentNode);
+            }
+        }
+        treeVo.setTrees(roots);
+        return AjaxResult.success(treeVo);
+    }
+
     @PostMapping
     public AjaxResult add(@RequestBody Label label){
         labelsService.insertLabels(label);
