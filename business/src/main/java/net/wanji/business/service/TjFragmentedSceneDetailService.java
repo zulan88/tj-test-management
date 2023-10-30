@@ -8,6 +8,7 @@ import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
 import net.wanji.business.domain.vo.SceneDetailVo;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.exception.BusinessException;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.io.IOException;
@@ -71,5 +72,9 @@ public interface TjFragmentedSceneDetailService extends IService<TjFragmentedSce
     List<String> getalllabel(String id);
 
     List<SceneDetailVo> selectTjSceneDetailListBylabels(List<List<Integer>> lists);
+
+    List<SceneDetailVo> selectTjSceneDetailListAnd(List<Integer> labellist);
+
+    List<SceneDetailVo> selectTjSceneDetailListOr(List<Integer> labellist);
 
 }

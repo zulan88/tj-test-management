@@ -8,6 +8,7 @@ import net.wanji.business.common.Constants.OtherGroup;
 import net.wanji.business.common.Constants.UpdateGroup;
 import net.wanji.business.domain.BusinessTreeSelect;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
+import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.dto.SceneDebugDto;
 import net.wanji.business.domain.dto.SceneQueryDto;
 import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
@@ -15,6 +16,7 @@ import net.wanji.business.domain.dto.TjFragmentedScenesDto;
 import net.wanji.business.domain.dto.TreeTypeDto;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
 import net.wanji.business.domain.vo.SceneDetailVo;
+import net.wanji.business.domain.vo.TagtoSceneVo;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.exception.BusinessException;
@@ -32,6 +34,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @Auther: guanyuduo
@@ -178,6 +181,9 @@ public class SceneBaseController extends BaseController {
     @PostMapping("/debugging")
     public AjaxResult debugging(@Validated(value = OtherGroup.class) @RequestBody SceneDebugDto sceneDebugDto)
             throws BusinessException, IOException {
+        List<ParticipantTrajectoryBo> participantTrajectoryBos = sceneDebugDto.getTrajectoryJson().getParticipantTrajectories();
+        participantTrajectoryBos.stream().filter(item -> item.getIsHide()!=null&&!item.getIsHide());
+//        sceneDebugDto.getTrajectoryJson().setParticipantTrajectories(participantTrajectoryBos);
         tjFragmentedSceneDetailService.debugging(sceneDebugDto);
         return AjaxResult.success();
     }
@@ -218,10 +224,15 @@ public class SceneBaseController extends BaseController {
         return getDataTable(list);
     }
 
-    @PostMapping("/test")
-    public AjaxResult test(@RequestBody List<List<Integer>> lists){
-        List<SceneDetailVo> res = tjFragmentedSceneDetailService.selectTjSceneDetailListBylabels(lists);
-        return AjaxResult.success(res);
+    @PostMapping("/tagtoscene")
+    public AjaxResult test(@RequestBody TagtoSceneVo tagtoSceneVo){
+        if(tagtoSceneVo.getChoice().equals(0)) {
+            List<SceneDetailVo> res = tjFragmentedSceneDetailService.selectTjSceneDetailListOr(tagtoSceneVo.getLabellist());
+            return AjaxResult.success(res);
+        }else {
+            List<SceneDetailVo> res = tjFragmentedSceneDetailService.selectTjSceneDetailListAnd(tagtoSceneVo.getLabellist());
+            return AjaxResult.success(res);
+        }
     }
 
 }

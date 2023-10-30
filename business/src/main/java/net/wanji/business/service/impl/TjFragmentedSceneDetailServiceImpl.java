@@ -156,6 +156,16 @@ public class TjFragmentedSceneDetailServiceImpl
         return sceneDetailMapper.selectTjSceneDetailListBylabels(lists);
     }
 
+    @Override
+    public List<SceneDetailVo> selectTjSceneDetailListAnd(List<Integer> labellist) {
+        return sceneDetailMapper.selectTjSceneDetailListAnd(labellist);
+    }
+
+    @Override
+    public List<SceneDetailVo> selectTjSceneDetailListOr(List<Integer> labellist) {
+        return sceneDetailMapper.selectTjSceneDetailListOr(labellist);
+    }
+
     private void detailVoTranslate(FragmentedScenesDetailVo detailVo) {
         // 地图
         TjResourcesDetail tjResourcesDetail = tjResourcesDetailService.getById(
@@ -373,4 +383,6 @@ public class TjFragmentedSceneDetailServiceImpl
     public boolean updateBatch(List<TjFragmentedSceneDetail> sceneDetails){
         return this.updateBatchById(sceneDetails);
     }
+
+
 }

@@ -46,6 +46,8 @@ public class ParticipantTrajectoryBo implements Serializable {
      */
     List<Map<String, Double>> route;
 
+    Boolean isHide;
+
     public String getDuration() {
         return StringUtils.isEmpty(duration) ? "00:00" : duration;
     }

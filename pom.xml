@@ -260,6 +260,7 @@
         <module>DataCommon</module>
         <module>DataSet</module>
         <module>business</module>
+        <module>DataOpenX</module>
     </modules>
     <packaging>pom</packaging>
 

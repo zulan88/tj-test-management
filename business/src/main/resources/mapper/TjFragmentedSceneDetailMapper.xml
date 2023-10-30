@@ -116,4 +116,22 @@
         </where>
     </select>
 
+    <select id="selectTjSceneDetailListAnd" resultType="net.wanji.business.domain.vo.SceneDetailVo">
+        <include refid="selectTjFragmentedSceneDetailVo"/>
+        <where>
+            <foreach collection="labellist" item="item" separator = " and " >
+                FIND_IN_SET(#{item},all_stage_label)
+            </foreach>
+        </where>
+    </select>
+
+    <select id="selectTjSceneDetailListOr" resultType="net.wanji.business.domain.vo.SceneDetailVo">
+        <include refid="selectTjFragmentedSceneDetailVo"/>
+        <where>
+            <foreach collection="labellist" item="item" separator = " or " >
+                FIND_IN_SET(#{item},all_stage_label)
+            </foreach>
+        </where>
+    </select>
+
 </mapper>
