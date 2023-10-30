@@ -108,7 +108,7 @@ public class ImitateRedisTrajectoryConsumer {
     }
 
     private ChannelListener<SimulationTrajectoryDto> getListener(String key, String channel) {
-        if (runningChannel.contains(key)) {
+        if (runningChannel.containsKey(key)) {
             List<ChannelListener<SimulationTrajectoryDto>> channelListeners = this.runningChannel.get(key);
             Map<String, ChannelListener<SimulationTrajectoryDto>> listenerMap = channelListeners.stream()
                     .collect(Collectors.toMap(ChannelListener::getChannel, value -> value));
@@ -217,7 +217,8 @@ public class ImitateRedisTrajectoryConsumer {
                 }
                 ChannelListener<SimulationTrajectoryDto> channelListener = this.getListener(key, channel);
                 if (ObjectUtils.isEmpty(channelListener)) {
-                    throw new BusinessException(StringUtils.format("查询监听器异常：{} - {}", key, channel));
+                    log.error(StringUtils.format("查询监听器异常：{} - {}", key, channel));
+                    return;
                 }
                 switch (simulationMessage.getType()) {
                     // 开始消息
@@ -244,16 +245,20 @@ public class ImitateRedisTrajectoryConsumer {
                                     (int) Math.floor((double) (getDataSize(key, channel)) / 10));
                             if (!ObjectUtils.isEmpty(avChannelAndBusinessIdMap)
                                     && avChannelAndBusinessIdMap.containsKey(channel)) {
-                                CountDownDto countDownDto = countDown.countDown(data.get(0).getSpeed(),
-                                        new Point2D.Double(data.get(0).getLongitude(), data.get(0).getLatitude()));
-                                if (!ObjectUtils.isEmpty(countDownDto)) {
-                                    double mileage = countDownDto.getFullLength();
-                                    double remainLength = countDownDto.getRemainLength();
-                                    realMap.put("mileage", String.format("%.2f", mileage));
-                                    realMap.put("duration", countDownDto.getTimeRemaining());
-                                    realMap.put("arriveTime", DateUtils.dateToString(countDownDto.getArrivalTime(), DateUtils.HH_MM_SS));
-                                    double percent = mileage > 0 ? 1 - (remainLength / mileage) : 1;
-                                    realMap.put("percent", percent * 100);
+                                try {
+                                    CountDownDto countDownDto = countDown.countDown(data.get(0).getSpeed(),
+                                            new Point2D.Double(data.get(0).getLongitude(), data.get(0).getLatitude()));
+                                    if (!ObjectUtils.isEmpty(countDownDto)) {
+                                        double mileage = countDownDto.getFullLength();
+                                        double remainLength = countDownDto.getRemainLength();
+                                        realMap.put("mileage", String.format("%.2f", mileage));
+                                        realMap.put("duration", countDownDto.getTimeRemaining());
+                                        realMap.put("arriveTime", DateUtils.dateToString(countDownDto.getArrivalTime(), DateUtils.HH_MM_SS));
+                                        double percent = mileage > 0 ? 1 - (remainLength / mileage) : 1;
+                                        realMap.put("percent", percent * 100);
+                                    }
+                                } catch (Exception e) {
+                                    log.error("倒计时计算异常：{}", e.getMessage());
                                 }
                                 PathwayPoints nearestPoint = pathwayPoints.findNearestPoint(data.get(0).getLongitude(), data.get(0).getLatitude());
                                 Map<String, Object> tipsMap = new HashMap<>();
