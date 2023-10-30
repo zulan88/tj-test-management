@@ -178,6 +178,9 @@ public class TestingServiceImpl implements TestingService {
                 param1.put("caseId", caseInfoBo.getId());
                 List<Map<String, Object>> participantTrajectories = new ArrayList<>();
                 for (ParticipantTrajectoryBo participantTrajectory : sceneTrajectoryBo.getParticipantTrajectories()) {
+                    if (PartRole.AV.equals(businessIdAndRoleMap.get(participantTrajectory.getId()))) {
+                        continue;
+                    }
                     Map<String, Object> map = new HashMap<>();
                     map.put("id", participantTrajectory.getId());
                     map.put("model", participantTrajectory.getModel());

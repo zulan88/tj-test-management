@@ -100,10 +100,12 @@ public class TjCasePartConfigServiceImpl extends ServiceImpl<TjCasePartConfigMap
     public boolean saveFromSelected(List<PartConfigSelect> partConfigSelects) {
         List<TjCasePartConfig> saveList = new ArrayList<>();
         for (PartConfigSelect configSelect : CollectionUtils.emptyIfNull(partConfigSelects)) {
-            List<TjCasePartConfig> configs = CollectionUtils.emptyIfNull(configSelect.getParts()).stream().map(part -> {
-                TjCasePartConfig config = new TjCasePartConfig();
-                BeanUtils.copyProperties(part, config);
-                return config;
+            List<TjCasePartConfig> configs = CollectionUtils.emptyIfNull(configSelect.getParts()).stream()
+                    .filter(CasePartConfigVo::isSelected)
+                    .map(part -> {
+                        TjCasePartConfig config = new TjCasePartConfig();
+                        BeanUtils.copyProperties(part, config);
+                        return config;
             }).collect(Collectors.toList());
             saveList.addAll(configs);
         }

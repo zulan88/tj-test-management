@@ -301,8 +301,6 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
                 .map(role -> {
                     // 对应参与者类型的所有需要配置的参与者信息
                     List<CasePartConfigVo> casePartConfigVos = configMap.get(role.getCssClass());
-                    // 对应参与者类型可选择的设备列表
-                    List<TjDeviceDetail> devices = devicesMap.get(role.getDictValue());
                     List<CasePartConfigVo> parts = new ArrayList<>();
                     for (CasePartConfigVo config : CollectionUtils.emptyIfNull(casePartConfigVos)) {
                         // 如果是用例设备配置，那么该参与者类型下若没有对应的配置则跳过
@@ -310,27 +308,36 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
                         List<String> businessIds = CollectionUtils.emptyIfNull(businessConfigs).stream()
                                 .map(TjCasePartConfig::getBusinessId).collect(Collectors.toList());
                         CasePartConfigVo part = new CasePartConfigVo();
-
-                        if (businessIds.contains(config.getBusinessId())) {
+                        if (!businessIds.contains(config.getBusinessId())) {
+                            // 未配置对应角色
+                            if (deviceConfig) {
+                                // 无法配置设备
+                                continue;
+                            } else {
+                                // 初始化角色配置
+                                BeanUtils.copyBeanProp(part, config);
+                            }
+                        } else {
+                            // 使用已有的角色配置
                             Map<String, TjCasePartConfig> businessConfigMap = CollectionUtils.emptyIfNull(businessConfigs)
                                     .stream().collect(Collectors.toMap(TjCasePartConfig::getBusinessId, value -> value));
                             BeanUtils.copyBeanProp(part, businessConfigMap.get(config.getBusinessId()));
                             part.setSelected(Boolean.TRUE);
-                        } else {
-                            BeanUtils.copyBeanProp(part, config);
+                            if (deviceConfig) {
+                                // 对应参与者类型可选择的设备列表
+                                List<TjDeviceDetail> devices = devicesMap.get(role.getDictValue());
+                                List<DeviceDetailVo> deviceVos = CollectionUtils.emptyIfNull(devices).stream().map(device -> {
+                                    DeviceDetailVo detailVo = new DeviceDetailVo();
+                                    BeanUtils.copyBeanProp(detailVo, device);
+                                    if (detailVo.getDeviceId().equals(part.getDeviceId())) {
+                                        detailVo.setSelected(Boolean.TRUE);
+                                    }
+                                    return detailVo;
+                                }).collect(Collectors.toList());
+                                part.setDevices(deviceVos);
+                            }
                         }
                         part.setModelName(ModelEnum.getDescByCode(part.getModel()));
-                        if (deviceConfig) {
-                            List<DeviceDetailVo> deviceVos = CollectionUtils.emptyIfNull(devices).stream().map(device -> {
-                                DeviceDetailVo detailVo = new DeviceDetailVo();
-                                BeanUtils.copyBeanProp(detailVo, device);
-                                if (detailVo.getDeviceId().equals(part.getDeviceId())) {
-                                    detailVo.setSelected(Boolean.TRUE);
-                                }
-                                return detailVo;
-                            }).collect(Collectors.toList());
-                            part.setDevices(deviceVos);
-                        }
                         parts.add(part);
                     }
                     PartConfigSelect partConfigSelect = new PartConfigSelect();

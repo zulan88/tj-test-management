@@ -29,7 +29,7 @@ public class DeviceStateToRedis {
 
   public void save(Integer deviceId, Integer state, String prefix) {
     redisTemplate.opsForValue().set(getKey(deviceId, prefix), state,
-        Duration.of(50, ChronoUnit.SECONDS));
+        Duration.of(2, ChronoUnit.SECONDS));
   }
 
   public void save(Integer deviceId, String prefix) {

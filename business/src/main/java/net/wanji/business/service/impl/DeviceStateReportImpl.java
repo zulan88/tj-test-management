@@ -28,9 +28,8 @@ public class DeviceStateReportImpl
   @Override
   public void dataProcess(JSONObject jsonObject) {
     DeviceStateDto deviceStateDto = JSONObject.parseObject(String.valueOf(jsonObject), DeviceStateDto.class);
-    deviceStateToRedis.save(deviceStateDto.getDeviceId(),
-        DeviceStateToRedis.DEVICE_STATE_PREFIX);
-    String key =  DeviceStateToRedis.DEVICE_STATE_PREFIX + "_" + deviceStateDto.getDeviceId();
-    StatusManage.countDown(key, deviceStateDto.getState());
+    deviceStateToRedis.save(deviceStateDto.getDeviceId(), jsonObject.getInteger("state"), DeviceStateToRedis.DEVICE_STATE_PREFIX);
+//    String key =  DeviceStateToRedis.DEVICE_STATE_PREFIX + "_" + deviceStateDto.getDeviceId();
+//    StatusManage.countDown(key, deviceStateDto.getState());
   }
 }

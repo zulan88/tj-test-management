@@ -10,6 +10,7 @@ import net.wanji.business.domain.param.CaseRuleControl;
 import net.wanji.business.domain.param.TestStartParam;
 import net.wanji.business.entity.TjDevice;
 import net.wanji.business.service.RestService;
+import net.wanji.common.core.redis.RedisCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @Auther: guanyuduo
@@ -51,6 +53,9 @@ public class RestServiceImpl implements RestService {
 
     @Value("${imitate.client}")
     private String imitateClientUrl;
+
+    @Autowired
+    private RedisCache redisCache;
 
     @Override
     public boolean start(TestStartParam startParam) {
@@ -90,13 +95,17 @@ public class RestServiceImpl implements RestService {
 
     @Override
     public boolean selectDeviceReadyState(DeviceReadyStateParam deviceReadyStateParam) {
+        String key = "READY_STATE_" + deviceReadyStateParam.getCaseId() + "_" + deviceReadyStateParam.getDeviceId();
+        if (redisCache.hasKey(key)) {
+            return false;
+        }
         try {
             String resultUrl = queryDeviceReadyStateUrl;
             log.info("============================== queryDeviceReadyStateUrl：{}", queryDeviceReadyStateUrl);
             HttpHeaders httpHeaders = new HttpHeaders();
             httpHeaders.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<DeviceReadyStateDto> resultHttpEntity = new HttpEntity<>(deviceReadyStateParam, httpHeaders);
-            log.info("============================== queryDeviceReadyStateUrl：{}", JSONObject.toJSONString(deviceReadyStateParam));
+            log.info("============================== queryDeviceReadyStateUrl：{}", deviceReadyStateParam.getDeviceId());
             ResponseEntity<String> response =
                     restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);
             if (response.getStatusCodeValue() == 200) {
@@ -104,6 +113,7 @@ public class RestServiceImpl implements RestService {
                     log.error("远程服务调用失败:{}", response.getBody());
                     return false;
                 }
+                redisCache.expire(key, 5, TimeUnit.SECONDS);
                 return true;
             }
         } catch (Exception e) {

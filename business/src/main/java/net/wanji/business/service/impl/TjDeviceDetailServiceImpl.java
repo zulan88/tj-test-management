@@ -22,6 +22,7 @@ import net.wanji.system.service.ISysDictDataService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
@@ -143,10 +144,11 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
     @Override
     public Integer selectDeviceReadyState(Integer deviceId, DeviceReadyStateParam stateParam, boolean wait) {
         Integer state = deviceStateToRedis.query(deviceId, DeviceStateToRedis.DEVICE_READY_STATE_PREFIX);
-        if (!ObjectUtils.isEmpty(state)) {
+        if (ObjectUtils.isEmpty(state) || state == 2) {
+            restService.selectDeviceReadyState(stateParam);
+        } else {
             return state;
         }
-        restService.selectDeviceReadyState(stateParam);
         if (!wait) {
             return deviceStateToRedis.query(deviceId, DeviceStateToRedis.DEVICE_READY_STATE_PREFIX);
         }
