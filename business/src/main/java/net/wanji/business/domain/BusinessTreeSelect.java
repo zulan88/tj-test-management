@@ -5,6 +5,7 @@ import lombok.NoArgsConstructor;
 import net.wanji.business.entity.TjDevice;
 import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.entity.TjResources;
+import net.wanji.business.entity.TjScenelibTree;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.List;
@@ -44,6 +45,22 @@ public class BusinessTreeSelect {
     private List<BusinessTreeSelect> children;
 
     public BusinessTreeSelect(TjFragmentedScenes scenes) {
+        this.id = scenes.getId();
+        this.name = scenes.getName();
+        this.status = scenes.getStatus();
+        this.parentId = scenes.getParentId();
+        this.level = scenes.getLevel();
+        this.isFolder = scenes.getIsFolder();
+        this.attribute1 = scenes.getAttribute1();
+        this.attribute2 = scenes.getAttribute2();
+        this.attribute3 = scenes.getAttribute3();
+        this.attribute4 = scenes.getAttribute4();
+        this.attribute5 = scenes.getAttribute5();
+        this.children = CollectionUtils.emptyIfNull(scenes.getChildren()).stream().map(BusinessTreeSelect::new)
+                .collect(Collectors.toList());
+    }
+
+    public BusinessTreeSelect(TjScenelibTree scenes) {
         this.id = scenes.getId();
         this.name = scenes.getName();
         this.status = scenes.getStatus();

@@ -131,6 +131,8 @@ public interface Constants {
          * 场景树类型
          */
         public static final String SCENE_TREE_TYPE = "scene_tree_type";
+
+        public static final String SCENE_LIB_TREE = "scenedb_tree_type";
         /**
          * 资源类型
          */
