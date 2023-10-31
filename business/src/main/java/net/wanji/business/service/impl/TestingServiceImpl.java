@@ -31,7 +31,6 @@ import net.wanji.business.entity.TjCaseRealRecord;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjCaseRealRecordMapper;
-import net.wanji.business.mapper.TjFragmentedSceneDetailMapper;
 import net.wanji.business.schedule.RealPlaybackSchedule;
 import net.wanji.business.service.RestService;
 import net.wanji.business.service.RouteService;
@@ -46,7 +45,6 @@ import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
-import net.wanji.system.service.ISysDictDataService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -88,13 +86,7 @@ public class TestingServiceImpl implements TestingService {
     private TjCaseService caseService;
 
     @Autowired
-    private ISysDictDataService dictDataService;
-
-    @Autowired
     private TjDeviceDetailService deviceDetailService;
-
-    @Autowired
-    private TjFragmentedSceneDetailMapper sceneDetailMapper;
 
     @Autowired
     private TjCaseMapper caseMapper;
@@ -107,16 +99,14 @@ public class TestingServiceImpl implements TestingService {
 
     @Override
     public RealVehicleVerificationPageVo getStatus(Integer caseId) throws BusinessException {
+        // 1.查询用例详情
         CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
-        if (ObjectUtils.isEmpty(caseInfoBo) || ObjectUtils.isEmpty(caseInfoBo.getRouteFile())) {
-            throw new BusinessException("用例不存在或未配置路线");
-        }
-        if (caseInfoBo.getCaseConfigs().stream().allMatch(config -> ObjectUtils.isEmpty(config.getDeviceId()))) {
-            throw new BusinessException("用例未进行设备配置");
-        }
-
+        // 2.数据校验
+        validConfig(caseInfoBo);
+        // 3.轨迹详情
         CaseTrajectoryDetailBo trajectoryDetail = JSONObject.parseObject(caseInfoBo.getDetailInfo(),
                 CaseTrajectoryDetailBo.class);
+        // 4.参与者开始点位
         Map<String, String> partStartMap =
                 CollectionUtils.emptyIfNull(trajectoryDetail.getParticipantTrajectories()).stream().collect(
                         Collectors.toMap(
@@ -124,15 +114,16 @@ public class TestingServiceImpl implements TestingService {
                                 item -> CollectionUtils.emptyIfNull(item.getTrajectory()).stream()
                                         .filter(t -> PointTypeEnum.START.getPointType().equals(t.getType())).findFirst()
                                         .orElse(new TrajectoryDetailBo()).getPosition()));
-
-        // 重复设备过滤
+        // 5.重复设备过滤
         List<CaseConfigBo> caseConfigs = caseInfoBo.getCaseConfigs().stream().filter(info ->
                 !ObjectUtils.isEmpty(info.getDeviceId())).collect(Collectors.collectingAndThen(
                 Collectors.toCollection(() ->
                         new TreeSet<>(Comparator.comparing(CaseConfigBo::getDeviceId))), ArrayList::new));
+        // 6.参与者ID和参与者名称匹配map
         Map<String, String> businessIdAndRoleMap = caseInfoBo.getCaseConfigs().stream().collect(Collectors.toMap(
                 CaseConfigBo::getBusinessId,
                 CaseConfigBo::getParticipantRole));
+        // 7.状态查询
         for (CaseConfigBo caseConfigBo : caseConfigs) {
             String start = partStartMap.get(caseConfigBo.getBusinessId());
             if (StringUtils.isNotEmpty(start)) {
@@ -151,7 +142,7 @@ public class TestingServiceImpl implements TestingService {
             caseConfigBo.setStatus(status);
             if (ObjectUtils.isEmpty(status) || status == 0) {
                 // 不在线无需确认准备状态
-//                continue;
+                continue;
             }
             // 查询设备准备状态
             DeviceReadyStateParam stateParam = new DeviceReadyStateParam();
@@ -218,23 +209,23 @@ public class TestingServiceImpl implements TestingService {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public CaseTestPrepareVo prepare(Integer caseId) throws BusinessException {
+        // 1.用例详情
         CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
-        if (caseInfoBo.getCaseConfigs().stream().allMatch(config -> ObjectUtils.isEmpty(config.getDeviceId()))) {
-            throw new BusinessException("用例未进行设备配置");
-        }
-        if (StringUtils.isEmpty(caseInfoBo.getDetailInfo())) {
-            throw new BusinessException("用例异常：无轨迹信息；请重新创建用例！");
-        }
+        // 2.校验数据
+        validConfig(caseInfoBo);
+        // 3.轨迹详情
         CaseTrajectoryDetailBo caseTrajectoryDetailBo =
                 JSONObject.parseObject(caseInfoBo.getDetailInfo(), CaseTrajectoryDetailBo.class);
+        // 4.角色配置信息
         Map<String, List<CaseConfigBo>> partMap = caseInfoBo.getCaseConfigs().stream().collect(
                 Collectors.groupingBy(CaseConfigBo::getSupportRoles));
+        // 5.各角色数量
         int avNum = partMap.containsKey(PartRole.AV) ? partMap.get(PartRole.AV).size() : 0;
         int simulationNum = partMap.containsKey(PartRole.MV_SIMULATION) ? partMap.get(PartRole.MV_SIMULATION).size() : 0;
         int pedestrianNum = partMap.containsKey(PartRole.SP) ? partMap.get(PartRole.SP).size() : 0;
         caseTrajectoryDetailBo.setSceneForm(StringUtils.format(ContentTemplate.SCENE_FORM_TEMPLATE, avNum,
                 simulationNum, pedestrianNum));
-
+        // 6.删除后新增实车测试记录
         QueryWrapper<TjCaseRealRecord> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq(ColumnName.CASE_ID_COLUMN, caseId);
         caseRealRecordMapper.delete(queryWrapper);
@@ -244,7 +235,7 @@ public class TestingServiceImpl implements TestingService {
         tjCaseRealRecord.setDetailInfo(JSONObject.toJSONString(caseTrajectoryDetailBo));
         tjCaseRealRecord.setStatus(TestingStatus.NOT_START);
         caseRealRecordMapper.insert(tjCaseRealRecord);
-
+        // 7.前端结果集
         CaseTestPrepareVo caseTestPrepareVo = new CaseTestPrepareVo();
         BeanUtils.copyProperties(tjCaseRealRecord, caseTestPrepareVo);
         caseTestPrepareVo.setChannels(caseInfoBo.getCaseConfigs().stream().map(CaseConfigBo::getDataChannel).distinct()
@@ -255,28 +246,28 @@ public class TestingServiceImpl implements TestingService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public CaseTestStartVo start(Integer recordId, Integer action) throws BusinessException, IOException {
-        // todo recordId可以换成caseId
+        // 1.实车测试记录详情
         TjCaseRealRecord caseRealRecord = caseRealRecordMapper.selectById(recordId);
         if (ObjectUtils.isEmpty(caseRealRecord) || caseRealRecord.getStatus() > TestingStatus.NOT_START) {
             throw new BusinessException("未就绪");
         }
-        Integer caseId = caseRealRecord.getCaseId();
-        CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
-        if (caseInfoBo.getCaseConfigs().stream().allMatch(config -> ObjectUtils.isEmpty(config.getDeviceId()))) {
-            throw new BusinessException("用例未进行设备配置");
-        }
-        // 更新测试记录
+        // 2.用例详情
+        CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseRealRecord.getCaseId());
+        // 3.校验数据
+        validConfig(caseInfoBo);
+        // 4.更新业务数据
         TjCaseRealRecord realRecord = caseInfoBo.getCaseRealRecord();
         realRecord.setStatus(TestingStatus.RUNNING);
         realRecord.setStartTime(LocalDateTime.now());
         caseRealRecordMapper.updateById(realRecord);
-        // 开始监听所有数据通道
+        // 5.开始监听所有数据通道
         imitateRedisTrajectoryConsumer.subscribeAndSend(caseInfoBo);
-        // 启动主控
-        if (!restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(), String.valueOf(caseId), action,
-                generateDeviceConnRules(caseInfoBo)))) {
+        // 6.向主控发送开始请求
+        if (!restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(),
+                String.valueOf(caseRealRecord.getCaseId()), action, generateDeviceConnRules(caseInfoBo)))) {
             throw new BusinessException("主控响应异常");
         }
+        // 7.前端结果集
         CaseTestStartVo startVo = new CaseTestStartVo();
         BeanUtils.copyProperties(realRecord, startVo);
         startVo.setStartTime(DateUtils.getTime());
@@ -293,16 +284,19 @@ public class TestingServiceImpl implements TestingService {
 
     @Override
     public void playback(Integer recordId, Integer action) throws BusinessException, IOException {
+        // 1.实车测试记录
         TjCaseRealRecord caseRealRecord = caseRealRecordMapper.selectById(recordId);
+        // 2.数据校验
         if (ObjectUtils.isEmpty(caseRealRecord)) {
-            throw new BusinessException("未查询到实车验证记录");
+            throw new BusinessException("未查询到试验记录");
         }
         if (TestingStatus.FINISHED > caseRealRecord.getStatus() || StringUtils.isEmpty(caseRealRecord.getRouteFile())) {
-            throw new BusinessException("实车验证未完成");
+            throw new BusinessException("无完整试验记录");
         }
         CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseRealRecord.getCaseId());
-        if (caseInfoBo.getCaseConfigs().stream().allMatch(config -> ObjectUtils.isEmpty(config.getDeviceId()))) {
-            throw new BusinessException("用例未进行设备配置");
+        if (ObjectUtils.isEmpty(caseInfoBo) || CollectionUtils.isEmpty(caseInfoBo.getCaseConfigs())
+                || caseInfoBo.getCaseConfigs().stream().allMatch(config -> ObjectUtils.isEmpty(config.getDeviceId()))) {
+            throw new BusinessException("未进行设备配置");
         }
         // 点位
         CaseTrajectoryDetailBo originalTrajectory = JSONObject.parseObject(caseRealRecord.getDetailInfo(),
@@ -366,7 +360,7 @@ public class TestingServiceImpl implements TestingService {
     public RealTestResultVo getResult(Integer recordId) throws BusinessException {
         TjCaseRealRecord caseRealRecord = caseRealRecordMapper.selectById(recordId);
         if (ObjectUtils.isEmpty(caseRealRecord) || ObjectUtils.isEmpty(caseRealRecord.getDetailInfo())) {
-            throw new BusinessException("未进行实车验证");
+            throw new BusinessException("待试验");
         }
         if (TestingStatus.FINISHED > caseRealRecord.getStatus()) {
             return null;
@@ -382,8 +376,6 @@ public class TestingServiceImpl implements TestingService {
         realTestResultVo.setId(caseRealRecord.getId());
         realTestResultVo.setStartTime(caseRealRecord.getStartTime());
         realTestResultVo.setEndTime(caseRealRecord.getEndTime());
-
-        TjCase tjCase = caseMapper.selectById(caseRealRecord.getCaseId());
         return realTestResultVo;
     }
 
@@ -451,16 +443,19 @@ public class TestingServiceImpl implements TestingService {
      */
     private void validConfig(CaseInfoBo caseInfoBo) throws BusinessException {
         if (ObjectUtils.isEmpty(caseInfoBo)) {
-            throw new BusinessException("用例查询异常");
+            throw new BusinessException("用例异常：查询用例失败");
         }
-        List<CaseConfigBo> casePartConfigs = caseInfoBo.getCaseConfigs();
-        if (CollectionUtils.isEmpty(casePartConfigs)) {
-            throw new BusinessException("用例未进行角色配置");
+        if (CollectionUtils.isEmpty(caseInfoBo.getCaseConfigs())) {
+            throw new BusinessException("用例异常：用例未进行角色配置");
         }
-        List<CaseConfigBo> configs = caseInfoBo.getCaseConfigs().stream().filter(config ->
-                !ObjectUtils.isEmpty(config.getDeviceId())).collect(Collectors.toList());
-        if (CollectionUtils.isEmpty(configs)) {
-            throw new BusinessException("用例未进行设备配置");
+        if (caseInfoBo.getCaseConfigs().stream().allMatch(config -> ObjectUtils.isEmpty(config.getDeviceId()))) {
+            throw new BusinessException("用例异常：用例未进行设备配置");
+        }
+        if (StringUtils.isEmpty(caseInfoBo.getDetailInfo())) {
+            throw new BusinessException("用例异常：无路径配置信息");
+        }
+        if (StringUtils.isEmpty(caseInfoBo.getRouteFile())) {
+            throw new BusinessException("场景异常：场景未验证");
         }
     }
 

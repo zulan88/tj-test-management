@@ -28,7 +28,6 @@ import net.wanji.business.domain.vo.CasePartConfigVo;
 import net.wanji.business.domain.vo.CaseVerificationVo;
 import net.wanji.business.domain.vo.CaseVo;
 import net.wanji.business.domain.vo.DeviceDetailVo;
-import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjCasePartConfig;
 import net.wanji.business.entity.TjDeviceDetail;
@@ -41,7 +40,6 @@ import net.wanji.business.mapper.TjResourcesDetailMapper;
 import net.wanji.business.schedule.PlaybackSchedule;
 import net.wanji.business.schedule.SceneLabelMap;
 import net.wanji.business.service.ILabelsService;
-import net.wanji.business.service.RestService;
 import net.wanji.business.service.RouteService;
 import net.wanji.business.service.TjCasePartConfigService;
 import net.wanji.business.service.TjCaseService;
@@ -49,9 +47,6 @@ import net.wanji.business.service.TjDeviceDetailService;
 import net.wanji.business.service.TjFragmentedSceneDetailService;
 import net.wanji.business.service.TjFragmentedScenesService;
 import net.wanji.business.socket.WebSocketManage;
-import net.wanji.business.trajectory.RedisTrajectoryConsumer;
-import net.wanji.business.trajectory.TaskRedisTrajectoryConsumer.ChannelListener;
-import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.core.domain.SimpleSelect;
 import net.wanji.common.core.domain.entity.SysDictData;
@@ -73,8 +68,8 @@ import org.springframework.util.ObjectUtils;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -116,9 +111,6 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     private RouteService routeService;
 
     @Autowired
-    private RestService restService;
-
-    @Autowired
     private ILabelsService labelsService;
 
     @Autowired
@@ -126,9 +118,6 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
 
     @Autowired
     private TjResourcesDetailMapper resourcesDetailMapper;
-
-    @Autowired
-    private RedisTrajectoryConsumer redisTrajectoryConsumer;
 
     @Autowired
     private SceneLabelMap sceneLabelMap;
@@ -162,8 +151,11 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     @Override
     public List<CasePageVo> pageList(CaseQueryDto caseQueryDto) {
         List<CaseDetailVo> caseVos = caseMapper.selectCases(caseQueryDto);
+        handleLabels(caseVos);
+        List<TjDeviceDetail> deviceDetails = deviceDetailService.list();
+        Map<Integer, TjDeviceDetail> deviceMap = CollectionUtils.emptyIfNull(deviceDetails).stream()
+                .collect(Collectors.toMap(TjDeviceDetail::getDeviceId, value -> value));
         return CollectionUtils.emptyIfNull(caseVos).stream().map(t -> {
-            handleLabel(t);
             CasePageVo casePageVo = new CasePageVo();
             BeanUtils.copyBeanProp(casePageVo, t);
             // 状态名称
@@ -189,30 +181,27 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
                 casePageVo.setSceneSort(labelSort.toString());
             }
             if (CollectionUtils.isNotEmpty(casePageVo.getPartConfigs())) {
-
                 TreeMap<String, List<String>> roleConfigDetail = new TreeMap<>();
                 StringBuilder roleConfigSort = new StringBuilder();
-                TreeMap<String, List<TjCasePartConfig>> roleGroup = casePageVo.getPartConfigs().stream()
+                TreeMap<String, List<TjCasePartConfig>> roleGroupMap = casePageVo.getPartConfigs().stream()
                         .collect(Collectors.groupingBy(TjCasePartConfig::getParticipantRole, TreeMap::new,
                                 Collectors.toList()));
-                for (Entry<String, List<TjCasePartConfig>> entry : roleGroup.entrySet()) {
-                    String roleName = dictDataService.selectDictLabel(SysType.PART_ROLE, entry.getKey());
+                for (Entry<String, List<TjCasePartConfig>> roleItem : roleGroupMap.entrySet()) {
+                    String roleName = dictDataService.selectDictLabel(SysType.PART_ROLE, roleItem.getKey());
                     // 角色配置详情
-                    roleConfigDetail.put(roleName, entry.getValue().stream().map(TjCasePartConfig::getName).collect(Collectors.toList()));
-
+                    roleConfigDetail.put(roleName, roleItem.getValue().stream().map(TjCasePartConfig::getName).collect(Collectors.toList()));
                     // 角色配置简述
-                    if (entry.getValue().stream().anyMatch(item -> !ObjectUtils.isEmpty(item.getDeviceId()))) {
-                        Map<Integer, List<TjCasePartConfig>> deviceGroup = entry.getValue().stream().collect(Collectors.groupingBy(TjCasePartConfig::getDeviceId));
+                    if (roleItem.getValue().stream().anyMatch(item -> !ObjectUtils.isEmpty(item.getDeviceId()))) {
+                        Map<Integer, List<TjCasePartConfig>> deviceGroup = roleItem.getValue().stream().collect(Collectors.groupingBy(TjCasePartConfig::getDeviceId));
                         for (Entry<Integer, List<TjCasePartConfig>> deviceEntry : deviceGroup.entrySet()) {
-                            TjDeviceDetail deviceDetail = deviceDetailService.getById(deviceEntry.getKey());
-                            if (ObjectUtils.isEmpty(deviceDetail)) {
-                                roleConfigSort.append(StringUtils.format(ContentTemplate.CASE_ROLE_TEMPLATE, roleName, deviceEntry.getValue().size()));
+                            if (!ObjectUtils.isEmpty(deviceEntry.getKey()) && deviceMap.containsKey(deviceEntry.getKey())) {
+                                roleConfigSort.append(StringUtils.format(ContentTemplate.CASE_ROLE_DEVICE_TEMPLATE, deviceMap.get(deviceEntry.getKey()).getDeviceName(), roleName, deviceEntry.getValue().size()));
                             } else {
-                                roleConfigSort.append(StringUtils.format(ContentTemplate.CASE_ROLE_DEVICE_TEMPLATE, deviceDetail.getDeviceName(), roleName, deviceEntry.getValue().size()));
+                                roleConfigSort.append(StringUtils.format(ContentTemplate.CASE_ROLE_TEMPLATE, roleName, deviceEntry.getValue().size()));
                             }
                         }
                     } else {
-                        roleConfigSort.append(StringUtils.format(ContentTemplate.CASE_ROLE_TEMPLATE, roleName, entry.getValue().size()));
+                        roleConfigSort.append(StringUtils.format(ContentTemplate.CASE_ROLE_TEMPLATE, roleName, roleItem.getValue().size()));
                     }
                 }
                 casePageVo.setRoleConfigDetail(roleConfigDetail);
@@ -228,8 +217,8 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
         caseQueryDto.setId(caseId);
         List<CaseDetailVo> caseVos = caseMapper.selectCases(caseQueryDto);
         if (CollectionUtils.isNotEmpty(caseVos)) {
+            handleLabels(caseVos);
             CaseDetailVo caseDetailVo = caseVos.get(0);
-            handleLabel(caseDetailVo);
             handleCasePartConfig(caseDetailVo);
             CollectionUtils.emptyIfNull(caseDetailVo.getPartConfigSelects()).removeIf(partConfigSelect ->
                     CollectionUtils.isEmpty(partConfigSelect.getParts()));
@@ -238,40 +227,39 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
         return null;
     }
 
-    private void handleLabel(CaseDetailVo caseDetailVo) {
-        List<String> data = new ArrayList<>();
-        if (!ObjectUtils.isEmpty(caseDetailVo.getSceneDetailId())) {
-            List<Label> labelList = labelsService.selectLabelsList(new Label());
-            Map<Long, String> sceneMap = new HashMap<>();
-            for (Label tlabel : labelList) {
-                Long parentId = tlabel.getParentId();
-                String prelabel = null;
-                if (parentId != null) {
-                    prelabel = sceneMap.getOrDefault(parentId, null);
-                }
-                if (prelabel == null) {
-                    sceneMap.put(tlabel.getId(), tlabel.getName());
-                } else {
-                    sceneMap.put(tlabel.getId(), prelabel + "-" + tlabel.getName());
-                }
+    private void handleLabels(List<CaseDetailVo> caseDetails) {
+        List<Label> labelList = labelsService.selectLabelsList(new Label());
+        Map<Long, String> sceneMap = new HashMap<>();
+        for (Label tlabel : labelList) {
+            Long parentId = tlabel.getParentId();
+            String prelabel = null;
+            if (parentId != null) {
+                prelabel = sceneMap.getOrDefault(parentId, null);
             }
-            try {
-                FragmentedScenesDetailVo detailVo = sceneDetailService.getDetailVo(caseDetailVo.getSceneDetailId());
-                List<String> labels = detailVo.getLabelList();
-                for (String str : labels) {
-                    try {
-                        long intValue = Long.parseLong(str);
-                        data.add(sceneMap.get(intValue));
-                    } catch (NumberFormatException e) {
-                        // 处理无效的整数字符串
-                    }
-                }
-            } catch (BusinessException e) {
-                log.error("用例详情场景标签解析异常", e);
+            if (prelabel == null) {
+                sceneMap.put(tlabel.getId(), tlabel.getName());
+            } else {
+                sceneMap.put(tlabel.getId(), prelabel + "-" + tlabel.getName());
             }
-
         }
+        for (CaseDetailVo caseDetailVo : CollectionUtils.emptyIfNull(caseDetails)) {
+            handleLabel(caseDetailVo, sceneMap);
+        }
+    }
 
+    private void handleLabel(CaseDetailVo caseDetailVo, Map<Long, String> sceneMap) {
+        List<String> data = new ArrayList<>();
+        if (StringUtils.isNotEmpty(caseDetailVo.getLabel())) {
+            List<String> labels = Arrays.stream(caseDetailVo.getLabel().split(",")).collect(Collectors.toList());
+            for (String str : labels) {
+                try {
+                    long intValue = Long.parseLong(str);
+                    data.add(sceneMap.get(intValue));
+                } catch (NumberFormatException e) {
+                    // 处理无效的整数字符串
+                }
+            }
+        }
         caseDetailVo.setLabelDetail(data);
     }
 
@@ -452,7 +440,18 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
             BeanUtils.copyBeanProp(tjCase, tjCaseDto);
             tjCase.setCaseNumber(this.buildCaseNumber());
             TjFragmentedSceneDetail sceneDetail = sceneDetailService.getById(tjCaseDto.getSceneDetailId());
+            if (ObjectUtils.isEmpty(sceneDetail)) {
+                throw new BusinessException("创建失败：场景不存在");
+            }
+
+            if (StringUtils.isEmpty(sceneDetail.getTrajectoryInfo())) {
+                throw new BusinessException("创建失败：未获取到场景轨迹");
+            }
             tjCase.setDetailInfo(sceneDetail.getTrajectoryInfo());
+
+            if (StringUtils.isEmpty(sceneDetail.getTrajectoryInfo())) {
+                throw new BusinessException("创建失败：场景未进行仿真验证");
+            }
             tjCase.setRouteFile(sceneDetail.getRouteFile());
             tjCase.setCreatedBy(SecurityUtils.getUsername());
             tjCase.setCreatedDate(LocalDateTime.now());

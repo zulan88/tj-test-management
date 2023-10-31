@@ -21,6 +21,7 @@ import net.wanji.business.domain.vo.TaskCaseVo;
 import net.wanji.business.domain.vo.TaskListVo;
 import net.wanji.business.domain.vo.TaskReportVo;
 import net.wanji.business.domain.vo.TaskVo;
+import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjTask;
 import net.wanji.business.entity.TjTaskCase;
 import net.wanji.business.entity.TjTaskDataConfig;
@@ -133,6 +134,13 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
     @Override
     public TaskVo createTask(List<Integer> caseIds)
             throws BusinessException, ExecutionException, InterruptedException {
+        List<TjCase> cases = tjCaseService.listByIds(caseIds);
+        if (CollectionUtils.isEmpty(cases) || cases.size() != caseIds.size()) {
+            throw new BusinessException("创建任务失败：未查询到用例信息");
+        }
+        if (cases.stream().anyMatch(t -> StringUtils.isEmpty(t.getDetailInfo()) || StringUtils.isEmpty(t.getRouteFile()))) {
+            throw new BusinessException("创建任务失败：用例缺失轨迹信息");
+        }
         TaskVo taskVo = new TaskVo();
         taskVo.setCaseCount(caseIds.size());
         taskVo.setTaskName("task-" + sf.format(new Date()));

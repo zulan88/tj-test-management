@@ -48,7 +48,7 @@ public class TjTaskDataConfig implements Serializable {
      * 绑定设备id
      */
     @TableField(value = "device_id")
-    private String deviceId;
+    private Integer deviceId;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;

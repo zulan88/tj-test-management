@@ -96,9 +96,10 @@ public class RestServiceImpl implements RestService {
     @Override
     public boolean selectDeviceReadyState(DeviceReadyStateParam deviceReadyStateParam) {
         String key = "READY_STATE_" + deviceReadyStateParam.getCaseId() + "_" + deviceReadyStateParam.getDeviceId();
-        if (redisCache.lock(key, key, 5)) {
+        if (redisCache.hasKey(key)) {
             return false;
         }
+        redisCache.setCacheObject(key, key, 5, TimeUnit.SECONDS);
         try {
             String resultUrl = queryDeviceReadyStateUrl;
             log.info("============================== queryDeviceReadyStateUrl：{}", queryDeviceReadyStateUrl);
@@ -113,7 +114,6 @@ public class RestServiceImpl implements RestService {
                     log.error("远程服务调用失败:{}", response.getBody());
                     return false;
                 }
-                redisCache.setCacheObject(key, 1,5, TimeUnit.SECONDS);
                 return true;
             }
         } catch (Exception e) {
