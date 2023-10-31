@@ -120,13 +120,12 @@ public class TjFragmentedSceneDetailServiceImpl
         switch (action) {
             case PlaybackAction.START:
                 if (StringUtils.isEmpty(caseInfoBo.getRouteFile())) {
-                    this.playback(id, participantId, PlaybackAction.CALL);
-                    break;
+                    throw new BusinessException("未进行仿真验证");
                 }
                 List<List<TrajectoryValueDto>> routeList = routeService.readTrajectoryFromRouteFile(
                         caseInfoBo.getRouteFile(), participantId);
                 if (CollectionUtils.isEmpty(routeList)) {
-                    throw new BusinessException("未查询到轨迹");
+                    throw new BusinessException("轨迹文件读取异常");
                 }
                 PlaybackSchedule.startSendingData(key, routeList);
                 break;
@@ -383,6 +382,10 @@ public class TjFragmentedSceneDetailServiceImpl
 
     @Override
     public boolean deleteSceneByIds(Integer[] ids) throws BusinessException {
+        int count = caseMapper.selectCountBySceneDetailIds(Arrays.asList(ids));
+        if (count > 0) {
+            throw new BusinessException("当前子场景下存在测试用例");
+        }
         return this.removeByIds(Arrays.asList(ids));
     }
 

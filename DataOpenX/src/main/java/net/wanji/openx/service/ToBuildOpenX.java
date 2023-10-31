@@ -160,7 +160,7 @@ public class ToBuildOpenX {
 
     private CoordinateReferenceSystem createCRS(String crsSpec) {
         CoordinateReferenceSystem crs = null;
-        if (crsSpec.indexOf("+") >= 0 || crsSpec.indexOf("=") >= 0) {
+        if (crsSpec.contains("+") || crsSpec.contains("=")) {
             crs = crsFactory.createFromParameters("Anon", crsSpec);
         } else {
             crs = crsFactory.createFromName(crsSpec);
