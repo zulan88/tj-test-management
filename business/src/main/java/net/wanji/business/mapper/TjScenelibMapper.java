@@ -66,4 +66,7 @@ public interface TjScenelibMapper extends BaseMapper<TjScenelib>
     public List<ScenelibVo>selectScenelibVoList(ScenelibVo scenelibVo);
 
     public int deleteTjScenelibByTreeId(@Param("sceneIds") List<Integer> sceneIds);
+
+    List<TjScenelib> selectTjSceneDetailListAnd(@Param("labellist") List<Integer> labellist);
+    List<TjScenelib> selectTjSceneDetailListOr(@Param("labellist") List<Integer> labellist);
 }

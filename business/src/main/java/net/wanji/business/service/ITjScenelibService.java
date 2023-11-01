@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import net.wanji.business.domain.vo.ScenelibVo;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.entity.TjScenelib;
+import org.apache.ibatis.annotations.Param;
 
 /**
  * scenelibService接口
@@ -39,6 +40,8 @@ public interface ITjScenelibService extends IService<TjScenelib>
      */
     public int insertTjScenelib(TjScenelib tjScenelib);
 
+    public boolean insertTjScenelibBatch(List<TjScenelib> tjScenelibs);
+
     /**
      * 修改scenelib
      * 
@@ -66,4 +69,7 @@ public interface ITjScenelibService extends IService<TjScenelib>
     public List<ScenelibVo>selectScenelibVoList(ScenelibVo scenelibVo);
 
     boolean updateBatch(List<TjScenelib> sceneDetails);
+
+    List<TjScenelib> selectTjSceneDetailListAnd(@Param("labellist") List<Integer> labellist);
+    List<TjScenelib> selectTjSceneDetailListOr(@Param("labellist") List<Integer> labellist);
 }

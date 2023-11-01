@@ -9,6 +9,7 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.client.ClientHttpRequestFactory;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -55,10 +56,14 @@ public class DataApplication
     }
 
     @Bean
-    public ClientHttpRequestFactory simpleClientHttpRequestFactory() {
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setReadTimeout(60000);// 单位为ms
-        factory.setConnectTimeout(600000);// 单位为ms
-        return factory;
+    public ClientHttpRequestFactory httpComponentsClientHttpRequestFactory() {
+//        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+//        factory.setReadTimeout(60000);// 单位为ms
+//        factory.setConnectTimeout(600000);// 单位为ms
+        HttpComponentsClientHttpRequestFactory httpRequestFactory = new HttpComponentsClientHttpRequestFactory();
+        httpRequestFactory.setConnectionRequestTimeout(60000);
+        httpRequestFactory.setConnectTimeout(60000);
+        httpRequestFactory.setReadTimeout(60000);
+        return httpRequestFactory;
     }
 }

@@ -4,7 +4,7 @@
 
     <select id="selectByCondition" resultType="net.wanji.business.entity.TjScenelibTree">
         select *
-        from tj_fragmented_scenes
+        from tj_scenelib_tree
         <where>
             and status=0
             <if test="type != null and type != ''">

@@ -1,15 +1,17 @@
 package net.wanji.web.controller.business;
 
 import com.alibaba.fastjson2.JSON;
-import io.swagger.annotations.Api;
 import net.wanji.business.domain.BusinessTreeSelect;
+import net.wanji.business.domain.Label;
 import net.wanji.business.domain.dto.TjFragmentedScenesDto;
 import net.wanji.business.domain.dto.TreeTypeDto;
 import net.wanji.business.domain.vo.ScenelibVo;
+import net.wanji.business.domain.vo.TagtoSceneVo;
 import net.wanji.business.entity.TjScenelib;
 import net.wanji.business.entity.TjScenelibTree;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.schedule.SceneLabelMap;
+import net.wanji.business.service.ILabelsService;
 import net.wanji.business.service.ITjScenelibService;
 import net.wanji.business.service.TjScenelibTreeService;
 import net.wanji.common.core.controller.BaseController;
@@ -27,9 +29,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-@Api(tags = "场景库")
 @RestController
 @RequestMapping("/scenelib")
 public class ScenelibController extends BaseController {
@@ -42,6 +46,9 @@ public class ScenelibController extends BaseController {
 
     @Autowired
     TjScenelibTreeService scenelibTreeService;
+
+    @Autowired
+    private ILabelsService labelsService;
 
     @PostMapping("/list")
     public TableDataInfo scenelist(@RequestBody ScenelibVo scenelibVo) throws BusinessException {
@@ -71,12 +78,17 @@ public class ScenelibController extends BaseController {
     }
 
     @PostMapping("/libadd")
-    public AjaxResult add(TjScenelib tjScenelib) throws BusinessException{
+    public AjaxResult add(@RequestBody TjScenelib tjScenelib) throws BusinessException{
         return toAjax(scenelibService.insertTjScenelib(tjScenelib));
     }
 
+    @PostMapping("/libaddBatch")
+    public AjaxResult addBatch(@RequestBody List<TjScenelib> tjScenelibs) throws BusinessException{
+        return toAjax(scenelibService.insertTjScenelibBatch(tjScenelibs));
+    }
+
     @PutMapping("/libedit")
-    public AjaxResult edit(TjScenelib tjScenelib) throws BusinessException{
+    public AjaxResult edit(@RequestBody TjScenelib tjScenelib) throws BusinessException{
         return toAjax(scenelibService.updateTjScenelib(tjScenelib));
     }
 
@@ -140,6 +152,55 @@ public class ScenelibController extends BaseController {
         return scenelibTreeService.deleteSceneById(sceneId)
                 ? AjaxResult.success("删除成功")
                 : AjaxResult.error("删除失败");
+    }
+
+    @GetMapping("/getlabel")
+    public AjaxResult getlabel(Long id) throws BusinessException {
+        List<Label> labelList = labelsService.selectLabelsList(new Label());
+        Map<Long,String> sceneMap = new HashMap<>();
+        for(Label tlabel : labelList){
+            Long parentId = tlabel.getParentId();
+            String prelabel = null;
+            if(parentId!=null) {
+                prelabel = sceneMap.getOrDefault(parentId, null);
+            }else {
+                continue;
+            }
+            if(tlabel.getId().equals(2L)){
+                continue;
+            }
+            if(prelabel==null){
+                sceneMap.put(tlabel.getId(),tlabel.getName());
+            }else {
+                sceneMap.put(tlabel.getId(),prelabel+"-"+tlabel.getName());
+            }
+        }
+        List<String> data = new ArrayList<>();
+        if(id!=null) {
+            TjScenelib tjScenelib = scenelibService.selectTjScenelibById(id);
+            String[] labels = tjScenelib.getLabels().split(",");
+            for (String str : labels) {
+                try {
+                    long intValue = Long.parseLong(str);
+                    data.add(sceneMap.get(intValue));
+                } catch (NumberFormatException e) {
+                    // 处理无效的整数字符串
+                }
+            }
+        }
+        return AjaxResult.success(data);
+    }
+
+    @PostMapping("/tagtoscene")
+    public TableDataInfo test(@RequestBody TagtoSceneVo tagtoSceneVo){
+        startPage();
+        if(tagtoSceneVo.getChoice().equals(0)) {
+            List<TjScenelib> res = scenelibService.selectTjSceneDetailListOr(tagtoSceneVo.getLabellist());
+            return getDataTable(res);
+        }else {
+            List<TjScenelib> res = scenelibService.selectTjSceneDetailListAnd(tagtoSceneVo.getLabellist());
+            return getDataTable(res);
+        }
     }
 
 }
