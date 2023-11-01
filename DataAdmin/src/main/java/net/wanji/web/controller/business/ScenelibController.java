@@ -6,7 +6,9 @@ import net.wanji.business.domain.Label;
 import net.wanji.business.domain.dto.TjFragmentedScenesDto;
 import net.wanji.business.domain.dto.TreeTypeDto;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
+import net.wanji.business.domain.vo.SceneDetailVo;
 import net.wanji.business.domain.vo.ScenelibVo;
+import net.wanji.business.domain.vo.TagtoSceneVo;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.entity.TjScenelib;
@@ -175,6 +177,18 @@ public class ScenelibController extends BaseController {
             }
         }
         return AjaxResult.success(data);
+    }
+
+    @PostMapping("/tagtoscene")
+    public TableDataInfo test(@RequestBody TagtoSceneVo tagtoSceneVo){
+        startPage();
+        if(tagtoSceneVo.getChoice().equals(0)) {
+            List<TjScenelib> res = scenelibService.selectTjSceneDetailListOr(tagtoSceneVo.getLabellist());
+            return getDataTable(res);
+        }else {
+            List<TjScenelib> res = scenelibService.selectTjSceneDetailListAnd(tagtoSceneVo.getLabellist());
+            return getDataTable(res);
+        }
     }
 
 }

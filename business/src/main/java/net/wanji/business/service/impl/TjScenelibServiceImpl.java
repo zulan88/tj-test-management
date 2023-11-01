@@ -129,4 +129,14 @@ public class TjScenelibServiceImpl extends ServiceImpl<TjScenelibMapper,TjScenel
     public boolean updateBatch(List<TjScenelib> scenelibs) {
         return this.updateBatchById(scenelibs);
     }
+
+    @Override
+    public List<TjScenelib> selectTjSceneDetailListAnd(List<Integer> labellist) {
+        return tjScenelibMapper.selectTjSceneDetailListAnd(labellist);
+    }
+
+    @Override
+    public List<TjScenelib> selectTjSceneDetailListOr(List<Integer> labellist) {
+        return tjScenelibMapper.selectTjSceneDetailListOr(labellist);
+    }
 }

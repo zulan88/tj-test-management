@@ -231,13 +231,14 @@ public class SceneBaseController extends BaseController {
     }
 
     @PostMapping("/tagtoscene")
-    public AjaxResult test(@RequestBody TagtoSceneVo tagtoSceneVo){
+    public TableDataInfo test(@RequestBody TagtoSceneVo tagtoSceneVo){
+        startPage();
         if(tagtoSceneVo.getChoice().equals(0)) {
             List<SceneDetailVo> res = tjFragmentedSceneDetailService.selectTjSceneDetailListOr(tagtoSceneVo.getLabellist());
-            return AjaxResult.success(res);
+            return getDataTable(res);
         }else {
             List<SceneDetailVo> res = tjFragmentedSceneDetailService.selectTjSceneDetailListAnd(tagtoSceneVo.getLabellist());
-            return AjaxResult.success(res);
+            return getDataTable(res);
         }
     }
 

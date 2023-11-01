@@ -26,6 +26,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -98,7 +99,7 @@ public class CommonController {
 
     @ApiOperation("上传")
     @PostMapping("/uploadZips")
-    public AjaxResult uploadZipFile(List<MultipartFile> files) throws Exception {
+    public AjaxResult uploadZipFile(@RequestParam("files") List<MultipartFile> files, @RequestParam("character") String character) throws Exception {
         try {
             // 上传文件路径
             String filePath = WanjiConfig.getUploadPath();
@@ -110,13 +111,17 @@ public class CommonController {
                 String absfile = res.split(",")[0];
                 String outputFolder = WanjiConfig.getScenelibPath();
                 File folder = new File(outputFolder);
-                ZipFile zipFile = new ZipFile(absfile);
+                if (!folder.exists()) {
+                    folder.mkdirs();
+                }
+                Charset charset = Charset.forName(character);
+                ZipFile zipFile = new ZipFile(absfile,charset);
                 Enumeration<? extends ZipEntry> entries = zipFile.entries();
                 String xodrFile = "";
                 String xoscFile = "";
                 while (entries.hasMoreElements()) {
                     ZipEntry entry = entries.nextElement();
-                    String entryName = entry.getName();
+                    String entryName = (int) (System.currentTimeMillis() % 1000)+"_"+entry.getName();
                     File entryFile = new File(outputFolder, entryName);
 
                     if (entry.isDirectory()) {
@@ -154,7 +159,7 @@ public class CommonController {
             }
             return AjaxResult.success(data);
         } catch (Exception e) {
-            return AjaxResult.error(e.getMessage());
+            return AjaxResult.error("编码异常，请进行编码修改");
         }
     }
 
