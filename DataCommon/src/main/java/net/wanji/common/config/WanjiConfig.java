@@ -148,4 +148,9 @@ public class WanjiConfig
     {
         return getProfile() + "/scene";
     }
+
+    public static String getScenelibPath()
+    {
+        return getProfile() + "/scenelib";
+    }
 }

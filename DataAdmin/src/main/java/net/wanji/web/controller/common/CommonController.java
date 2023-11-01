@@ -23,14 +23,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 /**
@@ -97,6 +95,69 @@ public class CommonController {
             return AjaxResult.error(e.getMessage());
         }
     }
+
+    @ApiOperation("上传")
+    @PostMapping("/uploadZips")
+    public AjaxResult uploadZipFile(List<MultipartFile> files) throws Exception {
+        try {
+            // 上传文件路径
+            String filePath = WanjiConfig.getUploadPath();
+            List<Map<String,String>>data = new ArrayList<>();
+            // 上传并返回新文件名称
+            for(MultipartFile file: files) {
+                String res = FileUploadUtils.uploadzip(filePath, file);
+                String fileName = res.split(",")[1];
+                String absfile = res.split(",")[0];
+                String outputFolder = WanjiConfig.getScenelibPath();
+                File folder = new File(outputFolder);
+                ZipFile zipFile = new ZipFile(absfile);
+                Enumeration<? extends ZipEntry> entries = zipFile.entries();
+                String xodrFile = "";
+                String xoscFile = "";
+                while (entries.hasMoreElements()) {
+                    ZipEntry entry = entries.nextElement();
+                    String entryName = entry.getName();
+                    File entryFile = new File(outputFolder, entryName);
+
+                    if (entry.isDirectory()) {
+                        entryFile.mkdirs();
+                    } else {
+                        InputStream inputStream = zipFile.getInputStream(entry);
+                        FileOutputStream outputStream = new FileOutputStream(entryFile);
+
+                        byte[] buffer = new byte[1024];
+                        int length;
+                        while ((length = inputStream.read(buffer)) > 0) {
+                            outputStream.write(buffer, 0, length);
+                        }
+
+                        inputStream.close();
+                        outputStream.close();
+                    }
+                    String filepath = entryFile.getAbsolutePath();
+                    if (filepath.endsWith("xodr")) {
+                        xodrFile = filepath;
+                    }
+                    if (filepath.endsWith("xosc")) {
+                        xoscFile = filepath;
+                    }
+                }
+                String url = serverConfig.getUrl() + fileName;
+                Map<String,String> ajax=new HashMap<>();
+                ajax.put("url", url);
+                ajax.put("fileName", fileName);
+                ajax.put("newFileName", FileUtils.getName(fileName));
+                ajax.put("originalFilename", file.getOriginalFilename());
+                ajax.put("xodrFile", xodrFile);
+                ajax.put("xoscFile", xoscFile);
+                data.add(ajax);
+            }
+            return AjaxResult.success(data);
+        } catch (Exception e) {
+            return AjaxResult.error(e.getMessage());
+        }
+    }
+
     /**
      * 通用上传请求（单个）
      */

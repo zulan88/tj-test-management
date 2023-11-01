@@ -146,6 +146,26 @@ public class FileUploadUtils
         return getPathFileName(baseDir, fileName);
     }
 
+    public static final String uploadzip(String baseDir, MultipartFile file)
+            throws FileSizeLimitExceededException, IOException, FileNameLengthLimitExceededException,
+            InvalidExtensionException
+    {
+        int fileNamelength = Objects.requireNonNull(file.getOriginalFilename()).length();
+        if (fileNamelength > FileUploadUtils.DEFAULT_FILE_NAME_LENGTH)
+        {
+            throw new FileNameLengthLimitExceededException(FileUploadUtils.DEFAULT_FILE_NAME_LENGTH);
+        }
+
+        assertAllowed(file, new String[]{"zip"});
+
+        String fileName = extractFilename(file);
+
+        String absPath = getAbsoluteFile(baseDir, fileName).getAbsolutePath();
+        log.info("upload path:{}", absPath);
+        file.transferTo(Paths.get(absPath));
+        return absPath+","+getPathFileName(baseDir, fileName);
+    }
+
     public static final Map<String, String> uploadScenario(String baseDir, MultipartFile file, String[] allowedExtension)
             throws FileSizeLimitExceededException, IOException, FileNameLengthLimitExceededException,
             InvalidExtensionException

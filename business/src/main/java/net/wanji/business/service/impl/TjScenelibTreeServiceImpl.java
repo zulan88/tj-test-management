@@ -67,7 +67,7 @@ public class TjScenelibTreeServiceImpl extends ServiceImpl<TjScenelibTreeMapper,
     public Map<String, Object> init() {
         List<SysDictData> sceneTreeType = dictTypeService.selectDictDataByType(SysType.SCENE_LIB_TREE);
         Map<String, Object> result = new HashMap<>(8);
-        result.put(SysType.SCENE_TREE_TYPE, CollectionUtils.emptyIfNull(sceneTreeType).stream()
+        result.put(SysType.SCENE_LIB_TREE, CollectionUtils.emptyIfNull(sceneTreeType).stream()
                 .map(SimpleSelect::new).collect(Collectors.toList()));
         result.put("number", buildSceneNumber());
         return result;
@@ -83,7 +83,7 @@ public class TjScenelibTreeServiceImpl extends ServiceImpl<TjScenelibTreeMapper,
 
     @Override
     public boolean saveSceneTreeType(TreeTypeDto treeTypeDto) throws BusinessException {
-        List<SysDictData> sysDictData = dictTypeService.selectDictDataByType(SysType.SCENE_TREE_TYPE);
+        List<SysDictData> sysDictData = dictTypeService.selectDictDataByType(SysType.SCENE_LIB_TREE);
         SysDictData dictData = null;
         if (ObjectUtils.isEmpty(treeTypeDto.getDictCode())) {
             // 添加
@@ -98,7 +98,7 @@ public class TjScenelibTreeServiceImpl extends ServiceImpl<TjScenelibTreeMapper,
                     .orElse(0) + 1;
             dictData.setDictSort(value);
             dictData.setDictValue(String.valueOf(value));
-            dictData.setDictType(SysType.SCENE_TREE_TYPE);
+            dictData.setDictType(SysType.SCENE_LIB_TREE);
             dictData.setIsDefault(YN.N);
             dictData.setStatus(String.valueOf(UsingStatus.ENABLE));
             dictData.setCreateBy(SecurityUtils.getUsername());
