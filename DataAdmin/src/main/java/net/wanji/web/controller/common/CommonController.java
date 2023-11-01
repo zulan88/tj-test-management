@@ -1,5 +1,6 @@
 package net.wanji.web.controller.common;
 
+import cn.hutool.core.io.FileUtil;
 import io.swagger.annotations.ApiOperation;
 import net.wanji.business.common.Constants.DefaultLabel;
 import net.wanji.common.config.WanjiConfig;
@@ -13,12 +14,10 @@ import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
@@ -27,6 +26,10 @@ import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -247,6 +250,35 @@ public class CommonController {
         }
     }
 
+    @PostMapping("/batchDownload/resource")
+    public void  batchDownload(@RequestBody List<String> resourcePaths, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String downloads = WanjiConfig.getDownloadPath();
+        File downloadpath = new File(downloads);
+        if(!downloadpath.exists()){
+            downloadpath.mkdirs();
+        }
+        File zipFile = new File(downloadpath, "batchdownload.zip");
+        try (ZipOutputStream zipOut = new ZipOutputStream(Files.newOutputStream(zipFile.toPath()))) {
+            for (String resourcePath : resourcePaths) {
+                String localPath = WanjiConfig.getProfile();
+                String downloadPath = localPath + StringUtils.substringAfter(resourcePath, Constants.RESOURCE_PREFIX);
+                File sourceFile = new File(downloadPath);
+
+                // 添加资源到ZIP文件
+                zipOut.putNextEntry(new ZipEntry(sourceFile.getName()));
+                Files.copy(sourceFile.toPath(), zipOut);
+                zipOut.closeEntry();
+            }
+            FileUtils.setAttachmentResponseHeader(response, "batchdownload.zip");
+            FileUtils.writeBytes(zipFile.getPath(), response.getOutputStream());
+            FileUtils.deleteFile(downloadpath.getPath());
+        }catch (Exception e){
+            log.error("下载文件失败", e);
+        }
+
+
+    }
+
     @GetMapping ("/getDefaultSign")
     public AjaxResult getDefaultSign() {
        return AjaxResult.success(DefaultLabel.getDefaultLabel());
@@ -353,6 +385,26 @@ public class CommonController {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    @GetMapping("/xmlview")
+    public ResponseEntity<String> APDownload(String AP) throws Exception {
+        Path filePath = Paths.get(AP); // 替换为你要读取的文件的路径
+
+        try {
+            String fileContent = new String(Files.readAllBytes(filePath));
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE); // 设置Content-Type为适当的值，例如PDF
+
+            return ResponseEntity
+                    .ok()
+                    .headers(headers)
+                    .body(fileContent);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity
+                .internalServerError().body("未找到文件");
     }
 
 }

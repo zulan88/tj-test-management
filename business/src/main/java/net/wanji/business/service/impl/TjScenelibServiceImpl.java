@@ -77,6 +77,17 @@ public class TjScenelibServiceImpl extends ServiceImpl<TjScenelibMapper,TjScenel
 
     @Override
     public boolean insertTjScenelibBatch(List<TjScenelib> tjScenelibs) {
+        for (TjScenelib tjScenelib:tjScenelibs){
+            List<String> labellist = new ArrayList<>();
+            if(tjScenelib.getLabels().split(",").length>0) {
+                for (String id : tjScenelib.getLabels().split(",")) {
+                    labellist.addAll(sceneDetailMapper.getalllabel(id));
+                }
+            }
+            tjScenelib.setAllStageLabels(CollectionUtils.isNotEmpty(labellist)
+                    ? labellist.stream().distinct().collect(Collectors.joining(","))
+                    : null);
+        }
         return this.saveBatch(tjScenelibs);
     }
 
