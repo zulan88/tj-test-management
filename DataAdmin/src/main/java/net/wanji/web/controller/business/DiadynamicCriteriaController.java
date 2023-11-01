@@ -12,12 +12,14 @@ import net.wanji.business.service.TjDiadynamicCriteriaService;
 import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
+import springfox.documentation.annotations.ApiIgnore;
 
 /**
  * @author: guowenhao
  * @date: 2023/8/30 16:10
  * @description: 诊断指标控制器
  */
+@ApiIgnore
 @RestController
 @RequestMapping("/diadynamicCriteria")
 public class DiadynamicCriteriaController  extends BaseController {

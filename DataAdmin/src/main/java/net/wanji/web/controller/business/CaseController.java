@@ -13,13 +13,16 @@ import net.wanji.business.domain.PartConfigSelect;
 import net.wanji.business.domain.dto.CaseQueryDto;
 import net.wanji.business.domain.dto.CaseTreeDto;
 import net.wanji.business.domain.dto.TjCaseDto;
+import net.wanji.business.domain.vo.SceneDetailVo;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.TjCasePartConfigService;
 import net.wanji.business.service.TjCaseService;
 import net.wanji.business.service.TjCaseTreeService;
+import net.wanji.business.service.TjFragmentedSceneDetailService;
 import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,13 +36,14 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 /**
  * @Auther: guanyuduo
  * @Date: 2023/6/29 13:23
  * @Descriptoin:
  */
-@Api(tags = "测试配置")
+@Api(tags = "特色测试服务-测试配置")
 @RestController
 @RequestMapping("/case")
 public class CaseController extends BaseController {
@@ -52,6 +56,9 @@ public class CaseController extends BaseController {
 
     @Autowired
     private TjCasePartConfigService casePartConfigService;
+
+    @Autowired
+    private TjFragmentedSceneDetailService sceneDetailService;
 
     @ApiOperationSort(1)
     @ApiOperation(value = "1.查询测试用例树")
@@ -90,6 +97,12 @@ public class CaseController extends BaseController {
     @ApiOperation(value = "5.测试用例列表页查询")
     @PostMapping("/pageForCase")
     public TableDataInfo pageForCase(@Validated @RequestBody CaseQueryDto caseQueryDto) {
+        if (CollectionUtils.isNotEmpty(caseQueryDto.getLabelList())) {
+            List<SceneDetailVo> sceneDetails = sceneDetailService.selectTjSceneDetailListOr(caseQueryDto.getLabelList());
+            List<Integer> sceneDetailIds = CollectionUtils.emptyIfNull(sceneDetails).stream().map(SceneDetailVo::getId)
+                    .collect(Collectors.toList());
+            caseQueryDto.setSceneDetailIds(sceneDetailIds);
+        }
         PageHelper.startPage(caseQueryDto.getPageNum(), caseQueryDto.getPageSize());
         return getDataTable(caseService.pageList(caseQueryDto));
     }

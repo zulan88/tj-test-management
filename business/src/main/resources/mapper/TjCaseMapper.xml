@@ -52,7 +52,6 @@
         from tj_case c
         inner join tj_fragmented_scene_detail sd on sd.id = c.scene_detail_id
         <where>
-
             <if test="id != null and id > 0 ">
                 and c.id = #{id}
             </if>
@@ -73,6 +72,12 @@
             </if>
             <if test="label != null and label != ''">
                 and find_in_set(#{label}, sd.label) > 0
+            </if>
+            <if test="sceneDetailIds != null and sceneDetailIds.size() > 0">
+                and c.scene_detail_id in
+                <foreach collection="sceneDetailIds" item="sceneDetailId" open="(" separator="," close=")">
+                    #{sceneDetailId}
+                </foreach>
             </if>
         </where>
         order by c.updated_date desc

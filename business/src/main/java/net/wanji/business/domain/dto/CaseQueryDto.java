@@ -6,6 +6,7 @@ import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import java.util.List;
 
 /**
  * @author: guanyuduo
@@ -45,4 +46,9 @@ public class CaseQueryDto {
 
     @ApiModelProperty(value = "场景分类", example = "40")
     private Integer label;
+
+    @ApiModelProperty(value = "标签", example = "[1,2,3]")
+    private List<Integer> labelList;
+
+    private List<Integer> sceneDetailIds;
 }

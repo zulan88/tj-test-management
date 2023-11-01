@@ -26,6 +26,7 @@ import net.wanji.business.service.TjFragmentedScenesService;
 import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
+import net.wanji.common.core.redis.RedisCache;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -49,7 +50,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/sceneBase")
-@Api("场景库控制器")
+@Api(tags = "场景创建-场景管理")
 public class SceneBaseController extends BaseController {
 
     @Autowired
@@ -61,6 +62,8 @@ public class SceneBaseController extends BaseController {
     @Autowired
     private SceneLabelMap sceneLabelMap;
 
+    @Autowired
+    private RedisCache redisCache;
 
     @PostConstruct
     public void initClass(){
@@ -187,10 +190,15 @@ public class SceneBaseController extends BaseController {
     @PostMapping("/debugging")
     public AjaxResult debugging(@Validated(value = OtherGroup.class) @RequestBody SceneDebugDto sceneDebugDto)
             throws BusinessException, IOException {
+        String key = "DEBUGGING_" + sceneDebugDto.getNumber();
+        if (!redisCache.lock(key, key, 10)) {
+            return AjaxResult.error("正在连接仿真软件，请稍后再试");
+        }
         List<ParticipantTrajectoryBo> participantTrajectoryBos = sceneDebugDto.getTrajectoryJson().getParticipantTrajectories();
         participantTrajectoryBos.stream().filter(item -> item.getIsHide()!=null&&!item.getIsHide());
 //        sceneDebugDto.getTrajectoryJson().setParticipantTrajectories(participantTrajectoryBos);
         tjFragmentedSceneDetailService.debugging(sceneDebugDto);
+        redisCache.unlock2(key, key);
         return AjaxResult.success();
     }
 

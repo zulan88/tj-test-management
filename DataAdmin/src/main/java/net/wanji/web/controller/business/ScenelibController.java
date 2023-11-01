@@ -1,12 +1,11 @@
 package net.wanji.web.controller.business;
 
 import com.alibaba.fastjson2.JSON;
+import io.swagger.annotations.Api;
 import net.wanji.business.domain.BusinessTreeSelect;
 import net.wanji.business.domain.dto.TjFragmentedScenesDto;
 import net.wanji.business.domain.dto.TreeTypeDto;
 import net.wanji.business.domain.vo.ScenelibVo;
-import net.wanji.business.entity.TjFragmentedSceneDetail;
-import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.entity.TjScenelib;
 import net.wanji.business.entity.TjScenelibTree;
 import net.wanji.business.exception.BusinessException;
@@ -18,10 +17,19 @@ import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@Api(tags = "场景库")
 @RestController
 @RequestMapping("/scenelib")
 public class ScenelibController extends BaseController {

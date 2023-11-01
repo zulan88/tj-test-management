@@ -29,7 +29,7 @@ import javax.servlet.http.HttpServletResponse;
  * @date: 2023/8/30 16:10
  * @description: 测试任务控制器
  */
-@Api(tags = "测试任务")
+@Api(tags = "特色测试服务-测试任务")
 @RestController
 @RequestMapping("/task")
 public class TaskController extends BaseController {

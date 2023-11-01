@@ -1,5 +1,6 @@
 package net.wanji.web.controller.business;
 
+import io.swagger.annotations.Api;
 import net.wanji.business.common.Constants.InsertGroup;
 import net.wanji.business.common.Constants.OtherGroup;
 import net.wanji.business.common.Constants.UpdateGroup;
@@ -30,6 +31,7 @@ import java.util.List;
  * @Date: 2023/6/27 16:25
  * @Descriptoin: 场景库控制器
  */
+@Api(tags = "场景库-资源管理")
 @RestController
 @RequestMapping("/resource")
 public class ResourcesController extends BaseController {

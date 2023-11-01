@@ -57,7 +57,6 @@ public interface Constants {
         public static final String SCENE_FORM_TEMPLATE = "该场景包含 AV车数量：{}；仿真车数量：{}；行人数量：{}；仿真频率：10HZ；";
         public static final String CASE_ROLE_TEMPLATE = "{}*{} ";
         public static final String CASE_ROLE_DEVICE_TEMPLATE = "{}-{}*{} ";
-
     }
 
     class FileExtension {

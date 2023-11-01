@@ -36,6 +36,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import springfox.documentation.annotations.ApiIgnore;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
@@ -45,6 +46,7 @@ import java.util.List;
  * @Date: 2023/6/29 13:23
  * @Descriptoin:
  */
+@ApiIgnore
 @RestController
 @RequestMapping("/devices")
 public class DeviceController extends BaseController {

@@ -1,5 +1,6 @@
 package net.wanji.web.controller.business;
 
+import io.swagger.annotations.Api;
 import net.wanji.business.domain.Label;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
 import net.wanji.business.domain.vo.TreeVo;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
+@Api(tags = "场景创建-标签管理")
 @RestController
 @RequestMapping("/labels")
 public class LabelsController extends BaseController {

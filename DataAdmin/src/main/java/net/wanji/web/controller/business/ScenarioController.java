@@ -1,5 +1,6 @@
 package net.wanji.web.controller.business;
 
+import io.swagger.annotations.Api;
 import net.wanji.business.service.ScenarioService;
 import net.wanji.common.config.WanjiConfig;
 import net.wanji.common.core.domain.AjaxResult;
@@ -19,6 +20,7 @@ import java.util.Map;
  * @Date: 2023/9/11 13:48
  * @Descriptoin:
  */
+@Api(tags = "OpenScenario")
 @RestController
 @RequestMapping("/scenario")
 public class ScenarioController {

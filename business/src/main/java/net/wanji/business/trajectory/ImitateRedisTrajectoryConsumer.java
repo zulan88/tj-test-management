@@ -210,7 +210,7 @@ public class ImitateRedisTrajectoryConsumer {
             try {
                 String channel = new String(message.getChannel());
                 SimulationMessage simulationMessage = objectMapper.readValue(message.toString(), SimulationMessage.class);
-                log.info("{}{}:{}", methodLog, channel, message.toString());
+//                log.info("{}{}:{}", methodLog, channel, message.toString());
                 if (!ObjectUtils.isEmpty(simulationMessage.getValue()) && simulationMessage.getValue() instanceof LinkedHashMap) {
                     LinkedHashMap value = (LinkedHashMap) simulationMessage.getValue();
                     value.remove("@type");
