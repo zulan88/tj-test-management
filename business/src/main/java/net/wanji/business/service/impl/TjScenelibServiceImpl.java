@@ -75,6 +75,11 @@ public class TjScenelibServiceImpl extends ServiceImpl<TjScenelibMapper,TjScenel
         return tjScenelibMapper.insertTjScenelib(tjScenelib);
     }
 
+    @Override
+    public boolean insertTjScenelibBatch(List<TjScenelib> tjScenelibs) {
+        return this.saveBatch(tjScenelibs);
+    }
+
     /**
      * 修改scenelib
      * 

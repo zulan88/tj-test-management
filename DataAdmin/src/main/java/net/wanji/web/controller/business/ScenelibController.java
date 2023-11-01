@@ -75,6 +75,11 @@ public class ScenelibController extends BaseController {
         return toAjax(scenelibService.insertTjScenelib(tjScenelib));
     }
 
+    @PostMapping("/libaddBatch")
+    public AjaxResult addBatch(@RequestBody List<TjScenelib> tjScenelibs) throws BusinessException{
+        return toAjax(scenelibService.insertTjScenelibBatch(tjScenelibs));
+    }
+
     @PutMapping("/libedit")
     public AjaxResult edit(@RequestBody TjScenelib tjScenelib) throws BusinessException{
         return toAjax(scenelibService.updateTjScenelib(tjScenelib));

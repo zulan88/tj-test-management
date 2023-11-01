@@ -40,6 +40,8 @@ public interface ITjScenelibService extends IService<TjScenelib>
      */
     public int insertTjScenelib(TjScenelib tjScenelib);
 
+    public boolean insertTjScenelibBatch(List<TjScenelib> tjScenelibs);
+
     /**
      * 修改scenelib
      * 
