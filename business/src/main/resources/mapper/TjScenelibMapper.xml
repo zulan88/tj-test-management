@@ -29,6 +29,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <select id="selectScenelibVoList" parameterType="net.wanji.business.domain.vo.ScenelibVo" resultType="net.wanji.business.domain.vo.ScenelibVo">
+        <include refid="selectTjScenelibVo"/>
         <where>
             <if test="treeId != null "> and tree_id = #{treeId}</if>
             <if test="number != null  and number != ''"> and number = #{number}</if>

@@ -63,12 +63,12 @@ public class ScenelibController extends BaseController {
     }
 
     @PostMapping("/libadd")
-    public AjaxResult add(TjScenelib tjScenelib) throws BusinessException{
+    public AjaxResult add(@RequestBody TjScenelib tjScenelib) throws BusinessException{
         return toAjax(scenelibService.insertTjScenelib(tjScenelib));
     }
 
     @PutMapping("/libedit")
-    public AjaxResult edit(TjScenelib tjScenelib) throws BusinessException{
+    public AjaxResult edit(@RequestBody TjScenelib tjScenelib) throws BusinessException{
         return toAjax(scenelibService.updateTjScenelib(tjScenelib));
     }
 

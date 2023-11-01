@@ -1,10 +1,14 @@
 package net.wanji.business.service.impl;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import net.wanji.business.domain.vo.ScenelibVo;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
+import net.wanji.business.mapper.TjFragmentedSceneDetailMapper;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import net.wanji.business.mapper.TjScenelibMapper;
@@ -22,6 +26,9 @@ public class TjScenelibServiceImpl extends ServiceImpl<TjScenelibMapper,TjScenel
 {
     @Autowired
     private TjScenelibMapper tjScenelibMapper;
+
+    @Autowired
+    private TjFragmentedSceneDetailMapper sceneDetailMapper;
 
     /**
      * 查询scenelib
@@ -56,6 +63,15 @@ public class TjScenelibServiceImpl extends ServiceImpl<TjScenelibMapper,TjScenel
     @Override
     public int insertTjScenelib(TjScenelib tjScenelib)
     {
+        List<String> labellist = new ArrayList<>();
+        if(tjScenelib.getLabels().split(",").length>0) {
+            for (String id : tjScenelib.getLabels().split(",")) {
+                labellist.addAll(sceneDetailMapper.getalllabel(id));
+            }
+        }
+        tjScenelib.setAllStageLabels(CollectionUtils.isNotEmpty(labellist)
+                ? labellist.stream().distinct().collect(Collectors.joining(","))
+                : null);
         return tjScenelibMapper.insertTjScenelib(tjScenelib);
     }
 
@@ -68,6 +84,15 @@ public class TjScenelibServiceImpl extends ServiceImpl<TjScenelibMapper,TjScenel
     @Override
     public int updateTjScenelib(TjScenelib tjScenelib)
     {
+        List<String> labellist = new ArrayList<>();
+        if(tjScenelib.getLabels()!=null&&tjScenelib.getLabels().split(",").length>0) {
+            for (String id : tjScenelib.getLabels().split(",")) {
+                labellist.addAll(sceneDetailMapper.getalllabel(id));
+            }
+        }
+        tjScenelib.setAllStageLabels(CollectionUtils.isNotEmpty(labellist)
+                ? labellist.stream().distinct().collect(Collectors.joining(","))
+                : null);
         return tjScenelibMapper.updateTjScenelib(tjScenelib);
     }
 
