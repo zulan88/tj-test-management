@@ -5,18 +5,22 @@ import net.wanji.business.domain.BusinessTreeSelect;
 import net.wanji.business.domain.Label;
 import net.wanji.business.domain.dto.TjFragmentedScenesDto;
 import net.wanji.business.domain.dto.TreeTypeDto;
+import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
 import net.wanji.business.domain.vo.ScenelibVo;
 import net.wanji.business.domain.vo.TagtoSceneVo;
+import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.entity.TjScenelib;
 import net.wanji.business.entity.TjScenelibTree;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.schedule.SceneLabelMap;
 import net.wanji.business.service.ILabelsService;
 import net.wanji.business.service.ITjScenelibService;
+import net.wanji.business.service.TjFragmentedSceneDetailService;
 import net.wanji.business.service.TjScenelibTreeService;
 import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
+import net.wanji.openx.service.ToBuildOpenX;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -46,6 +50,12 @@ public class ScenelibController extends BaseController {
 
     @Autowired
     TjScenelibTreeService scenelibTreeService;
+
+    @Autowired
+    ToBuildOpenX toBuildOpenX;
+
+    @Autowired
+    private TjFragmentedSceneDetailService tjFragmentedSceneDetailService;
 
     @Autowired
     private ILabelsService labelsService;
@@ -79,7 +89,10 @@ public class ScenelibController extends BaseController {
 
     @PostMapping("/libadd")
     public AjaxResult add(@RequestBody TjScenelib tjScenelib) throws BusinessException{
-        return toAjax(scenelibService.insertTjScenelib(tjScenelib));
+        int res = scenelibService.insertTjScenelib(tjScenelib);
+        FragmentedScenesDetailVo detailVo = tjFragmentedSceneDetailService.getDetailVo(tjScenelib.getSceneDetailId());
+        toBuildOpenX.scenetoOpenX(detailVo, tjScenelib.getId());
+        return toAjax(res);
     }
 
     @PostMapping("/libaddBatch")

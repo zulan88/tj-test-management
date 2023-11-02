@@ -248,6 +248,12 @@
                 <version>${data.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>net.wanji</groupId>
+                <artifactId>DataOpenX</artifactId>
+                <version>${data.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 

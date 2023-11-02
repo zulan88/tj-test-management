@@ -2,11 +2,15 @@ package net.wanji.openx.service;
 
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
+import net.wanji.business.entity.TjScenelib;
 import net.wanji.business.exception.BusinessException;
+import net.wanji.business.service.ITjScenelibService;
 import net.wanji.business.service.TjFragmentedSceneDetailService;
 import net.wanji.common.common.TrajectoryValueDto;
+import net.wanji.common.config.WanjiConfig;
 import net.wanji.openx.generated.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.locationtech.proj4j.*;
 
@@ -28,15 +32,26 @@ public class ToBuildOpenX {
     @Autowired
     private TjFragmentedSceneDetailService tjFragmentedSceneDetailService;
 
+    @Autowired
+    ITjScenelibService scenelibService;
+
     private static final CoordinateTransformFactory ctFactory = new CoordinateTransformFactory();
     private static final CRSFactory crsFactory = new CRSFactory();
 
-    public void scenetoOpenX(FragmentedScenesDetailVo fragmentedScenesDetailVo) {
+    @Async
+    public void scenetoOpenX(FragmentedScenesDetailVo fragmentedScenesDetailVo, Long id) {
         try {
             //入参
             String c1 = "同济大学_openDrive_v0.4_20230506_修复环路.xodr";
             String proj="+proj=tmerc +lon_0=121.20585769414902 +lat_0=31.290823210868965 +ellps=WGS84";
 
+            String outputFolder = WanjiConfig.getScenelibPath();
+            java.io.File folder = new java.io.File(outputFolder);
+            if (!folder.exists()) {
+                folder.mkdirs();
+            }
+
+            java.io.File xodrfile = new java.io.File(outputFolder,c1);
 
             OpenScenario openScenario = new OpenScenario();
             FileHeader fileHeader = new FileHeader();
@@ -143,11 +158,17 @@ public class ToBuildOpenX {
             JAXBContext jaxbContext = JAXBContext.newInstance(OpenScenario.class);
             Marshaller marshaller = jaxbContext.createMarshaller();
 
-            marshaller.marshal(openScenario, System.out);
+//            marshaller.marshal(openScenario, System.out);
 
-            java.io.File file = new java.io.File("output.xml");
+            java.io.File file = new java.io.File(outputFolder,fragmentedScenesDetailVo.getNumber()+".xosc");
             OutputStream outputStream = Files.newOutputStream(file.toPath());
             marshaller.marshal(openScenario, outputStream);
+            TjScenelib tjScenelib = new TjScenelib();
+            tjScenelib.setId(id);
+            tjScenelib.setXodrPath(xodrfile.getPath());
+            tjScenelib.setXoscPath(file.getPath());
+
+
         } catch (JAXBException e) {
             e.printStackTrace();
         } catch (BusinessException e) {

@@ -125,6 +125,11 @@
             <artifactId>business</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>net.wanji</groupId>
+            <artifactId>DataOpenX</artifactId>
+        </dependency>
+
         <!-- Apache Http Begin -->
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>

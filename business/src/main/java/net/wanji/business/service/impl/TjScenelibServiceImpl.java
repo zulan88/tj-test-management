@@ -6,9 +6,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import net.wanji.business.common.Constants;
 import net.wanji.business.domain.vo.ScenelibVo;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.mapper.TjFragmentedSceneDetailMapper;
+import net.wanji.common.utils.CounterUtil;
+import net.wanji.common.utils.DateUtils;
+import net.wanji.common.utils.StringUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -94,6 +98,8 @@ public class TjScenelibServiceImpl extends ServiceImpl<TjScenelibMapper,TjScenel
                     : null);
             tjScenelib.setCreateBy("admin");
             tjScenelib.setCreateDatetime(LocalDateTime.now());
+            tjScenelib.setNumber(StringUtils.format(Constants.ContentTemplate.SCENE_NUMBER_TEMPLATE, DateUtils.getNowDayString(),
+                    CounterUtil.getRandomChar()));
         }
         return this.saveBatch(tjScenelibs);
     }
