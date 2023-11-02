@@ -6,6 +6,7 @@ import net.wanji.business.common.Constants.DefaultLabel;
 import net.wanji.common.config.WanjiConfig;
 import net.wanji.common.constant.Constants;
 import net.wanji.common.core.domain.AjaxResult;
+import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.file.FileUploadUtils;
 import net.wanji.common.utils.file.FileUtils;
@@ -112,7 +113,7 @@ public class CommonController {
                 String res = FileUploadUtils.uploadzip(filePath, file);
                 String fileName = res.split(",")[1];
                 String absfile = res.split(",")[0];
-                String outputFolder = WanjiConfig.getScenelibPath();
+                String outputFolder = WanjiConfig.getScenelibPath() + File.separator + DateUtils.datePath();
                 File folder = new File(outputFolder);
                 if (!folder.exists()) {
                     folder.mkdirs();

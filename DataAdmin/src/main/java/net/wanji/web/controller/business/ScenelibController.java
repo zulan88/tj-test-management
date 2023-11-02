@@ -91,7 +91,7 @@ public class ScenelibController extends BaseController {
     public AjaxResult add(@RequestBody TjScenelib tjScenelib) throws BusinessException{
         int res = scenelibService.insertTjScenelib(tjScenelib);
         FragmentedScenesDetailVo detailVo = tjFragmentedSceneDetailService.getDetailVo(tjScenelib.getSceneDetailId());
-//        toBuildOpenX.scenetoOpenX(detailVo, tjScenelib.getId());
+        toBuildOpenX.scenetoOpenX(detailVo, tjScenelib.getId());
         return toAjax(res);
     }
 

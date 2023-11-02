@@ -8,7 +8,10 @@ import net.wanji.business.service.ITjScenelibService;
 import net.wanji.business.service.TjFragmentedSceneDetailService;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.config.WanjiConfig;
+import net.wanji.common.utils.DateUtils;
+import net.wanji.common.utils.file.FileUploadUtils;
 import net.wanji.openx.generated.*;
+import net.wanji.openx.generated.File;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -17,14 +20,15 @@ import org.locationtech.proj4j.*;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.StringReader;
+import java.io.*;
 import java.nio.file.Files;
+import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import javax.xml.bind.Unmarshaller;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Component
 public class ToBuildOpenX {
@@ -42,16 +46,16 @@ public class ToBuildOpenX {
     public void scenetoOpenX(FragmentedScenesDetailVo fragmentedScenesDetailVo, Long id) {
         try {
             //入参
-            String c1 = "同济大学_openDrive_v0.4_20230506_修复环路.xodr";
+            String c1 = "同济大学环路.xodr";
             String proj="+proj=tmerc +lon_0=121.20585769414902 +lat_0=31.290823210868965 +ellps=WGS84";
 
-            String outputFolder = WanjiConfig.getScenelibPath();
+            String outputFolder = WanjiConfig.getScenelibPath() + java.io.File.separator + DateUtils.datePath();;
             java.io.File folder = new java.io.File(outputFolder);
             if (!folder.exists()) {
                 folder.mkdirs();
             }
 
-            java.io.File xodrfile = new java.io.File(outputFolder,c1);
+            java.io.File xodrfile = new java.io.File(WanjiConfig.getScenelibPath(),c1);
 
             OpenScenario openScenario = new OpenScenario();
             FileHeader fileHeader = new FileHeader();
@@ -128,15 +132,24 @@ public class ToBuildOpenX {
                 trajectory.setClosed("false");
                 Shape shape =new Shape();
                 Polyline polyline =new Polyline();
-                List<TrajectoryValueDto> routelist = tjFragmentedSceneDetailService.getroutelist(fragmentedScenesDetailVo.getId(),participantTrajectoryBo.getId()).get(0);
-                for(TrajectoryValueDto trajectoryValueDto:routelist){
-                    Vertex vertex =new Vertex();
-                    vertex.setTime(trajectoryValueDto.getTimestamp());
-                    Position position = new Position();
-                    WorldPosition worldPosition =totrans(trajectoryValueDto.getLongitude(), trajectoryValueDto.getLatitude(), proj, trajectoryValueDto.getCourseAngle());
-                    position.setWorldPosition(worldPosition);
-                    vertex.setPosition(position);
-                    polyline.getVertex().add(vertex);
+                Double base = null;
+                List<List<TrajectoryValueDto>>routelist = tjFragmentedSceneDetailService.getroutelist(fragmentedScenesDetailVo.getId(),participantTrajectoryBo.getId());
+                for(List<TrajectoryValueDto> trajectoryValueDtos:routelist){
+                    if(trajectoryValueDtos.size()>0) {
+                        TrajectoryValueDto trajectoryValueDto = trajectoryValueDtos.get(0);
+                        if (base == null) {
+                            base = Double.valueOf(trajectoryValueDto.getGlobalTimeStamp());
+                        }
+                        Vertex vertex = new Vertex();
+                        Double time = Double.valueOf(trajectoryValueDto.getGlobalTimeStamp());
+                        DecimalFormat df = new DecimalFormat("0.00");
+                        vertex.setTime(df.format(time - base));
+                        Position position = new Position();
+                        WorldPosition worldPosition = totrans(trajectoryValueDto.getLongitude(), trajectoryValueDto.getLatitude(), proj, trajectoryValueDto.getCourseAngle());
+                        position.setWorldPosition(worldPosition);
+                        vertex.setPosition(position);
+                        polyline.getVertex().add(vertex);
+                    }
                 }
                 shape.setPolyline(polyline);
                 trajectory.setShape(shape);
@@ -158,15 +171,27 @@ public class ToBuildOpenX {
             JAXBContext jaxbContext = JAXBContext.newInstance(OpenScenario.class);
             Marshaller marshaller = jaxbContext.createMarshaller();
 
-//            marshaller.marshal(openScenario, System.out);
+            marshaller.marshal(openScenario, System.out);
 
-            java.io.File file = new java.io.File(outputFolder,fragmentedScenesDetailVo.getNumber()+".xosc");
+            java.io.File file = new java.io.File(outputFolder,fragmentedScenesDetailVo.getNumber()+(int) (System.currentTimeMillis() % 1000)+".xosc");
             OutputStream outputStream = Files.newOutputStream(file.toPath());
             marshaller.marshal(openScenario, outputStream);
             TjScenelib tjScenelib = new TjScenelib();
             tjScenelib.setId(id);
             tjScenelib.setXodrPath(xodrfile.getPath());
             tjScenelib.setXoscPath(file.getPath());
+
+            java.io.File zipfile = new java.io.File(outputFolder,fragmentedScenesDetailVo.getNumber()+(int) (System.currentTimeMillis() % 1000)+".zip");
+
+            FileOutputStream fos = new FileOutputStream(zipfile);
+            ZipOutputStream zos = new ZipOutputStream(fos);
+            zipfile(xodrfile,zos);
+            zipfile(file,zos);
+            zos.close();
+            fos.close();
+
+            tjScenelib.setZipPath(FileUploadUtils.getPathFileName(outputFolder,zipfile.getName()));
+            scenelibService.updateTjScenelib(tjScenelib);
 
 
         } catch (JAXBException e) {
@@ -176,6 +201,20 @@ public class ToBuildOpenX {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void zipfile(java.io.File file, ZipOutputStream zos) throws IOException {
+        FileInputStream fis = new FileInputStream(file);
+        ZipEntry zipEntry = new ZipEntry(file.getName());
+        zos.putNextEntry(zipEntry);
+
+        byte[] buffer = new byte[1024];
+        int length;
+        while ((length = fis.read(buffer)) > 0) {
+            zos.write(buffer, 0, length);
+        }
+
+        fis.close();
     }
 
 
@@ -199,5 +238,6 @@ public class ToBuildOpenX {
         trans.transform(p, pout);
         return new WorldPosition(String.format("%.16e", pout.x),String.format("%.16e", pout.y),String.format("%.16e", angle));
     }
+
 
 }

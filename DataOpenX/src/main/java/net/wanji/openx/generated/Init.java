@@ -8,10 +8,7 @@
 
 package net.wanji.openx.generated;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.*;
 
 
 /**
@@ -37,6 +34,7 @@ import javax.xml.bind.annotation.XmlType;
 @XmlType(name = "Init", propOrder = {
     "actions"
 })
+@XmlRootElement(name="Init")
 public class Init {
 
     @XmlElement(name = "Actions", required = true)
