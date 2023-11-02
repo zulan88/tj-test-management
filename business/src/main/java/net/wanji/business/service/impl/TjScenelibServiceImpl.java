@@ -1,5 +1,6 @@
 package net.wanji.business.service.impl;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -72,6 +73,10 @@ public class TjScenelibServiceImpl extends ServiceImpl<TjScenelibMapper,TjScenel
         tjScenelib.setAllStageLabels(CollectionUtils.isNotEmpty(labellist)
                 ? labellist.stream().distinct().collect(Collectors.joining(","))
                 : null);
+        tjScenelib.setCreateBy("admin");
+        tjScenelib.setCreateDatetime(LocalDateTime.now());
+        tjScenelib.setSceneSource(0);
+        tjScenelib.setSceneStatus(1);
         return tjScenelibMapper.insertTjScenelib(tjScenelib);
     }
 
@@ -87,6 +92,8 @@ public class TjScenelibServiceImpl extends ServiceImpl<TjScenelibMapper,TjScenel
             tjScenelib.setAllStageLabels(CollectionUtils.isNotEmpty(labellist)
                     ? labellist.stream().distinct().collect(Collectors.joining(","))
                     : null);
+            tjScenelib.setCreateBy("admin");
+            tjScenelib.setCreateDatetime(LocalDateTime.now());
         }
         return this.saveBatch(tjScenelibs);
     }
@@ -109,6 +116,8 @@ public class TjScenelibServiceImpl extends ServiceImpl<TjScenelibMapper,TjScenel
         tjScenelib.setAllStageLabels(CollectionUtils.isNotEmpty(labellist)
                 ? labellist.stream().distinct().collect(Collectors.joining(","))
                 : null);
+        tjScenelib.setUpdateBy("admin");
+        tjScenelib.setUpdateDatetime(LocalDateTime.now());
         return tjScenelibMapper.updateTjScenelib(tjScenelib);
     }
 
