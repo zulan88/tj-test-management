@@ -107,6 +107,9 @@ public class CaseController extends BaseController {
             }
             List<Integer> sceneDetailIds = CollectionUtils.emptyIfNull(sceneDetails).stream().map(SceneDetailVo::getId)
                     .collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(sceneDetailIds)) {
+                return getDataTable(sceneDetailIds);
+            }
             caseQueryDto.setSceneDetailIds(sceneDetailIds);
         }
         PageHelper.startPage(caseQueryDto.getPageNum(), caseQueryDto.getPageSize());
