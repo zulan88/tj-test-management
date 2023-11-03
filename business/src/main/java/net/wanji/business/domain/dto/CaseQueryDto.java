@@ -50,5 +50,8 @@ public class CaseQueryDto {
     @ApiModelProperty(value = "标签", example = "[1,2,3]")
     private List<Integer> labelList;
 
+    @ApiModelProperty(value = "标签查询模式:0是满足其一，1是满足全部", example = "0")
+    private Integer choice;
+
     private List<Integer> sceneDetailIds;
 }

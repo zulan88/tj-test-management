@@ -24,6 +24,7 @@ import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.ObjectUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -98,7 +99,12 @@ public class CaseController extends BaseController {
     @PostMapping("/pageForCase")
     public TableDataInfo pageForCase(@Validated @RequestBody CaseQueryDto caseQueryDto) {
         if (CollectionUtils.isNotEmpty(caseQueryDto.getLabelList())) {
-            List<SceneDetailVo> sceneDetails = sceneDetailService.selectTjSceneDetailListOr(caseQueryDto.getLabelList());
+            List<SceneDetailVo> sceneDetails = null;
+            if (ObjectUtils.isEmpty(caseQueryDto) || 0 == caseQueryDto.getChoice()) {
+                sceneDetails = sceneDetailService.selectTjSceneDetailListOr(caseQueryDto.getLabelList());
+            } else {
+                sceneDetails = sceneDetailService.selectTjSceneDetailListAnd(caseQueryDto.getLabelList());
+            }
             List<Integer> sceneDetailIds = CollectionUtils.emptyIfNull(sceneDetails).stream().map(SceneDetailVo::getId)
                     .collect(Collectors.toList());
             caseQueryDto.setSceneDetailIds(sceneDetailIds);
