@@ -159,19 +159,41 @@ public class ToBuildOpenX {
                 timing.setDomainAbsoluteRelative("absolute");
                 timing.setScale("1.0");
                 timing.setOffset("0.0");
+                timeReference.setTiming(timing);
+                followTrajectoryAction.setTimeReference(timeReference);
+                TrajectoryFollowingMode trajectoryFollowingMode =new TrajectoryFollowingMode();
+                trajectoryFollowingMode.setFollowingMode("follow");
+                followTrajectoryAction.setTrajectoryFollowingMode(trajectoryFollowingMode);
                 routingAction.setFollowTrajectoryAction(followTrajectoryAction);
                 privateAction.setRoutingAction(routingAction);
                 action.setPrivateAction(privateAction);
+                Trigger startTrigger =new Trigger();
+                ConditionGroup conditionGroup =new ConditionGroup();
+                Condition condition =new Condition("none","0.03");
+                conditionGroup.getCondition().add(condition);
+                startTrigger.getConditionGroup().add(conditionGroup);
                 event.getAction().add(action);
+                event.setStartTrigger(startTrigger);
                 maneuver.getEvent().add(event);
                 maneuverGroup.setActors(actors);
                 maneuverGroup.getManeuver().add(maneuver);
                 act.getManeuverGroup().add(maneuverGroup);
-
+                Trigger actstartTrigger =new Trigger();
+                ConditionGroup actconditionGroup =new ConditionGroup();
+                Condition actcondition =new Condition("rising","0");
+                actconditionGroup.getCondition().add(actcondition);
+                actstartTrigger.getConditionGroup().add(actconditionGroup);
+                act.setStartTrigger(actstartTrigger);
                 story.getAct().add(act);
             }
             storyboard.setInit(init);
             storyboard.getStory().add(story);
+            Trigger endTrigger =new Trigger();
+            ConditionGroup endconditionGroup =new ConditionGroup();
+            Condition endcondition =new Condition("rising","0");
+            endconditionGroup.getCondition().add(endcondition);
+            endTrigger.getConditionGroup().add(endconditionGroup);
+            storyboard.setStopTrigger(endTrigger);
             openScenario.setStoryboard(storyboard);
 
             JAXBContext jaxbContext = JAXBContext.newInstance(OpenScenario.class);

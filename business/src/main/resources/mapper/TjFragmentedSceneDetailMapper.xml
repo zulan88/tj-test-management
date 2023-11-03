@@ -99,7 +99,7 @@
             <if test="finished != null "> and finished = #{finished}</if>
             <if test="sceneStatus != null "> and scene_status = #{sceneStatus}</if>
             <if test="collectStatus != null "> and collect_status = #{collectStatus}</if>
-            <if test="label != null  and label != ''"> and FIND_IN_SET(#{label},all_stage_label)</if>
+            <if test="labels != null  and labels != ''"> and FIND_IN_SET(#{labels},all_stage_label)</if>
             <if test="startDate != null and startDate != '' and endDate != null"> and created_date between #{startDate} and #{endDate}</if>
             <if test="updatedDate != null "> and updated_date = #{updatedDate}</if>
         </where>
