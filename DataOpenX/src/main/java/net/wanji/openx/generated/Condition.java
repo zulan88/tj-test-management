@@ -45,6 +45,19 @@ import javax.xml.bind.annotation.XmlType;
 })
 public class Condition {
 
+    public Condition(){}
+
+    public Condition(String conditionEdge, String simulationTime){
+        this.name = "";
+        this.delay = "0";
+        this.conditionEdge=conditionEdge;
+        this.byValueCondition = new ByValueCondition();
+        SimulationTimeCondition simulationTimeCondition =new SimulationTimeCondition();
+        simulationTimeCondition.setValue(simulationTime);
+        simulationTimeCondition.setRule("greaterThan");
+        this.byValueCondition.setSimulationTimeCondition(simulationTimeCondition);
+    }
+
     @XmlElement(name = "ByEntityCondition")
     protected ByEntityCondition byEntityCondition;
     @XmlElement(name = "ByValueCondition")

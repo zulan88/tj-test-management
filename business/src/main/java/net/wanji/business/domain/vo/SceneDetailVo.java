@@ -12,4 +12,6 @@ public class SceneDetailVo extends TjFragmentedSceneDetail {
 
     private String endDate;
 
+    private String labels;
+
 }
