@@ -154,6 +154,11 @@ public class ToBuildOpenX {
                 shape.setPolyline(polyline);
                 trajectory.setShape(shape);
                 followTrajectoryAction.setTrajectory(trajectory);
+                TimeReference timeReference =new TimeReference();
+                Timing timing =new Timing();
+                timing.setDomainAbsoluteRelative("absolute");
+                timing.setScale("1.0");
+                timing.setOffset("0.0");
                 routingAction.setFollowTrajectoryAction(followTrajectoryAction);
                 privateAction.setRoutingAction(routingAction);
                 action.setPrivateAction(privateAction);
@@ -162,6 +167,7 @@ public class ToBuildOpenX {
                 maneuverGroup.setActors(actors);
                 maneuverGroup.getManeuver().add(maneuver);
                 act.getManeuverGroup().add(maneuverGroup);
+
                 story.getAct().add(act);
             }
             storyboard.setInit(init);
@@ -170,8 +176,9 @@ public class ToBuildOpenX {
 
             JAXBContext jaxbContext = JAXBContext.newInstance(OpenScenario.class);
             Marshaller marshaller = jaxbContext.createMarshaller();
+            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, false);
 
-            marshaller.marshal(openScenario, System.out);
+//            marshaller.marshal(openScenario, System.out);
 
             java.io.File file = new java.io.File(outputFolder,fragmentedScenesDetailVo.getNumber()+(int) (System.currentTimeMillis() % 1000)+".xosc");
             OutputStream outputStream = Files.newOutputStream(file.toPath());

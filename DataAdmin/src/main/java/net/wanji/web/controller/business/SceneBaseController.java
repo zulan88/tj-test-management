@@ -217,6 +217,9 @@ public class SceneBaseController extends BaseController {
         List<SceneDetailVo> list = tjFragmentedSceneDetailService.selectTjFragmentedSceneDetailList(sceneDetailVo);
         for(SceneDetailVo sceneDetailVo1 : list){
             String labels = sceneDetailVo1.getLabel();
+            if(labels==null){
+                continue;
+            }
             StringBuilder labelshows = new StringBuilder();
             for (String str : labels.split(",")) {
                 try {
