@@ -81,6 +81,8 @@ public class TjScenelibServiceImpl extends ServiceImpl<TjScenelibMapper,TjScenel
         tjScenelib.setCreateDatetime(LocalDateTime.now());
         tjScenelib.setSceneSource(0);
         tjScenelib.setSceneStatus(1);
+        tjScenelib.setNumber(StringUtils.format(Constants.ContentTemplate.SCENE_NUMBER_TEMPLATE, DateUtils.getNowDayString(),
+                CounterUtil.getRandomChar()));
         return tjScenelibMapper.insertTjScenelib(tjScenelib);
     }
 

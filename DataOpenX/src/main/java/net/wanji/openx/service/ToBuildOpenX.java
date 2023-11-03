@@ -30,6 +30,7 @@ import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -211,9 +212,18 @@ public class ToBuildOpenX {
             java.io.File file = new java.io.File(outputFolder,fragmentedScenesDetailVo.getNumber()+(int) (System.currentTimeMillis() % 1000)+".xosc");
             OutputStream outputStream = Files.newOutputStream(file.toPath());
 
-            StreamResult streamResult = new StreamResult(outputStream);
+            StringWriter stringWriter = new StringWriter();
 
-            marshaller.marshal(openScenario, streamResult);
+            marshaller.marshal(openScenario, stringWriter);
+            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+
+            transformer.transform(new StreamSource(new StringReader(stringWriter.toString()))
+                    ,new StreamResult(outputStream));
+
+
+
             TjScenelib tjScenelib = new TjScenelib();
             tjScenelib.setId(id);
             tjScenelib.setXodrPath(xodrfile.getPath());
@@ -235,6 +245,10 @@ public class ToBuildOpenX {
         } catch (JAXBException e) {
             e.printStackTrace();
         } catch (BusinessException | IOException e) {
+            throw new RuntimeException(e);
+        } catch (TransformerConfigurationException e) {
+            throw new RuntimeException(e);
+        } catch (TransformerException e) {
             throw new RuntimeException(e);
         }
     }

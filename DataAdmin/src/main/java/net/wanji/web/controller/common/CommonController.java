@@ -118,8 +118,8 @@ public class CommonController {
                 if (!folder.exists()) {
                     folder.mkdirs();
                 }
-                Charset charset = Charset.forName(character);
-                ZipFile zipFile = new ZipFile(absfile,charset);
+//                Charset charset = Charset.forName(character);
+                ZipFile zipFile = new ZipFile(absfile);
                 Enumeration<? extends ZipEntry> entries = zipFile.entries();
                 String xodrFile = "";
                 String xoscFile = "";
@@ -163,7 +163,7 @@ public class CommonController {
             }
             return AjaxResult.success(data);
         } catch (Exception e) {
-            return AjaxResult.error("编码异常，请进行编码修改");
+            return AjaxResult.error("编码异常，请剔除中文，并修改为UTF-8");
         }
     }
 

@@ -23,7 +23,7 @@ spring:
     name: DataAdmin
   profiles:
     # 环境配置
-    active: qa
+    active: dev
   main:
     allow-bean-definition-overriding: true
   cloud:
