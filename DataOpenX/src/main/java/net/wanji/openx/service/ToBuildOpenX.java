@@ -26,6 +26,10 @@ import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import javax.xml.bind.Unmarshaller;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.DOMResult;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -43,10 +47,10 @@ public class ToBuildOpenX {
     private static final CRSFactory crsFactory = new CRSFactory();
 
     @Async
-    public void scenetoOpenX(FragmentedScenesDetailVo fragmentedScenesDetailVo, Long id) {
+    public void scenetoOpenX(FragmentedScenesDetailVo fragmentedScenesDetailVo, Long id) throws RuntimeException {
         try {
             //入参
-            String c1 = "同济大学环路.xodr";
+            String c1 = "tjtest.xodr";
             String proj="+proj=tmerc +lon_0=121.20585769414902 +lat_0=31.290823210868965 +ellps=WGS84";
 
             String outputFolder = WanjiConfig.getScenelibPath() + java.io.File.separator + DateUtils.datePath();;
@@ -77,7 +81,7 @@ public class ToBuildOpenX {
             List<ScenarioObject> scenarioObjectList =entities.getScenarioObject();
             for(ParticipantTrajectoryBo participantTrajectoryBo:fragmentedScenesDetailVo.getTrajectoryJson().getParticipantTrajectories()){
                 ScenarioObject scenarioObject = new ScenarioObject();
-                scenarioObject.setName(participantTrajectoryBo.getName());
+                scenarioObject.setName(participantTrajectoryBo.getId());
                 Vehicle vehicle = new Vehicle("default",participantTrajectoryBo.getType());
                 scenarioObject.setVehicle(vehicle);
                 scenarioObjectList.add(scenarioObject);
@@ -107,15 +111,17 @@ public class ToBuildOpenX {
             init.getActions().getGlobalAction().get(0).getEnvironmentAction().getEnvironment().getTimeOfDay().setDateTime(formattedDateTime);
             Story story =new Story();
             story.setName("mystore");
+            Double maxTime = 0D;
+            DecimalFormat df = new DecimalFormat("0.00");
             for(ParticipantTrajectoryBo participantTrajectoryBo:fragmentedScenesDetailVo.getTrajectoryJson().getParticipantTrajectories()){
                 Act act = new Act();
-                act.setName("Act_"+participantTrajectoryBo.getName());
+                act.setName("Act_"+participantTrajectoryBo.getId());
                 ManeuverGroup maneuverGroup = new ManeuverGroup();
-                maneuverGroup.setName("Squence_"+participantTrajectoryBo.getName());
+                maneuverGroup.setName("Squence_"+participantTrajectoryBo.getId());
                 Actors actors = new Actors();
                 actors.setSelectTriggeringEntities("false");
                 EntityRef entityRef = new EntityRef();
-                entityRef.setEntityRef(participantTrajectoryBo.getName());
+                entityRef.setEntityRef(participantTrajectoryBo.getId());
                 actors.getEntityRef().add(entityRef);
                 Maneuver maneuver = new Maneuver();
                 maneuver.setName("Maneuver1");
@@ -128,7 +134,7 @@ public class ToBuildOpenX {
                 RoutingAction routingAction =new RoutingAction();
                 FollowTrajectoryAction followTrajectoryAction =new FollowTrajectoryAction();
                 Trajectory trajectory =new Trajectory();
-                trajectory.setName("Trajectory_"+participantTrajectoryBo.getName());
+                trajectory.setName("Trajectory_"+participantTrajectoryBo.getId());
                 trajectory.setClosed("false");
                 Shape shape =new Shape();
                 Polyline polyline =new Polyline();
@@ -142,11 +148,12 @@ public class ToBuildOpenX {
                         }
                         Vertex vertex = new Vertex();
                         Double time = Double.valueOf(trajectoryValueDto.getGlobalTimeStamp());
-                        DecimalFormat df = new DecimalFormat("0.00");
                         vertex.setTime(df.format(time - base));
+                        if((time-base)>maxTime){
+                            maxTime = (time-base);
+                        }
                         Position position = new Position();
-                        WorldPosition worldPosition = totrans(trajectoryValueDto.getLongitude(), trajectoryValueDto.getLatitude(), proj, trajectoryValueDto.getCourseAngle());
-                        position.setWorldPosition(worldPosition);
+                        position.setWorldPosition(totrans(trajectoryValueDto.getLongitude(), trajectoryValueDto.getLatitude(), proj, trajectoryValueDto.getCourseAngle()));
                         vertex.setPosition(position);
                         polyline.getVertex().add(vertex);
                     }
@@ -190,7 +197,7 @@ public class ToBuildOpenX {
             storyboard.getStory().add(story);
             Trigger endTrigger =new Trigger();
             ConditionGroup endconditionGroup =new ConditionGroup();
-            Condition endcondition =new Condition("rising","0");
+            Condition endcondition =new Condition("rising",df.format(maxTime+0.08));
             endconditionGroup.getCondition().add(endcondition);
             endTrigger.getConditionGroup().add(endconditionGroup);
             storyboard.setStopTrigger(endTrigger);
@@ -198,13 +205,15 @@ public class ToBuildOpenX {
 
             JAXBContext jaxbContext = JAXBContext.newInstance(OpenScenario.class);
             Marshaller marshaller = jaxbContext.createMarshaller();
-            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, false);
+            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
 
 //            marshaller.marshal(openScenario, System.out);
-
             java.io.File file = new java.io.File(outputFolder,fragmentedScenesDetailVo.getNumber()+(int) (System.currentTimeMillis() % 1000)+".xosc");
             OutputStream outputStream = Files.newOutputStream(file.toPath());
-            marshaller.marshal(openScenario, outputStream);
+
+            StreamResult streamResult = new StreamResult(outputStream);
+
+            marshaller.marshal(openScenario, streamResult);
             TjScenelib tjScenelib = new TjScenelib();
             tjScenelib.setId(id);
             tjScenelib.setXodrPath(xodrfile.getPath());
@@ -225,9 +234,7 @@ public class ToBuildOpenX {
 
         } catch (JAXBException e) {
             e.printStackTrace();
-        } catch (BusinessException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
+        } catch (BusinessException | IOException e) {
             throw new RuntimeException(e);
         }
     }

@@ -41,7 +41,7 @@ import javax.xml.bind.annotation.*;
     "storyboard",
     "catalog"
 })
-@XmlRootElement
+@XmlRootElement(name = "OpenScenario")
 public class OpenScenario {
 
     @XmlElement(name = "FileHeader", required = true)
