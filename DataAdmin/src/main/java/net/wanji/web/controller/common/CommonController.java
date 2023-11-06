@@ -31,6 +31,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -258,7 +260,9 @@ public class CommonController {
         if(!downloadpath.exists()){
             downloadpath.mkdirs();
         }
-        File zipFile = new File(downloadpath, "batchdownload.zip");
+        String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        String fileName = "batchdownload"+time+".zip";
+        File zipFile = new File(downloadpath, fileName);
         try (ZipOutputStream zipOut = new ZipOutputStream(Files.newOutputStream(zipFile.toPath()))) {
             for (String resourcePath : resourcePaths) {
                 String localPath = WanjiConfig.getProfile();
@@ -270,7 +274,7 @@ public class CommonController {
                 Files.copy(sourceFile.toPath(), zipOut);
                 zipOut.closeEntry();
             }
-            FileUtils.setAttachmentResponseHeader(response, "batchdownload.zip");
+            FileUtils.setAttachmentResponseHeader(response, fileName);
             FileUtils.writeBytes(zipFile.getPath(), response.getOutputStream());
             FileUtils.deleteFile(downloadpath.getPath());
         }catch (Exception e){
