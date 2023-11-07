@@ -24,7 +24,7 @@ import java.io.IOException;
  * @Date: 2023/8/24 9:13
  * @Descriptoin:
  */
-@Api(tags = "测试监管")
+@Api(tags = "测试流程")
 @RestController
 @RequestMapping("/testing")
 public class TestingController extends BaseController {

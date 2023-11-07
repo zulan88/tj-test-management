@@ -28,10 +28,10 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
 
     /**
      * 准备（开始倒计时）
-     * @param caseId
+     * @param taskCaseId
      * @return
      */
-    CaseRealTestVo prepare(Integer caseId) throws BusinessException;
+    CaseRealTestVo prepare(Integer taskCaseId) throws BusinessException;
 
     /**
      * 开始/结束/回放

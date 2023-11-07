@@ -165,8 +165,7 @@ public class ImitateRedisTrajectoryConsumer {
      * @return
      */
     public MessageListener createListener(String key, TjCaseRealRecord caseRealRecord, List<CaseConfigBo> configBos) throws IOException {
-        CaseTrajectoryDetailBo originalTrajectory = JSONObject.parseObject(caseRealRecord.getDetailInfo(),
-                CaseTrajectoryDetailBo.class);
+
         // 所有通道和业务车辆ID映射
         Map<String, List<CaseConfigBo>> allChannelAndBusinessIdMap = configBos.stream().collect(Collectors.groupingBy(CaseConfigBo::getDataChannel));
         // av配置
@@ -177,13 +176,17 @@ public class ImitateRedisTrajectoryConsumer {
         // av类型通道和业务车辆名称映射
         Map<String, String> avChannelAndNameMap = configBos.stream().filter(item -> PartRole.AV.equals(item.getSupportRoles()))
                 .collect(Collectors.toMap(CaseConfigBo::getDataChannel, CaseConfigBo::getName));
-        CaseConfigBo caseConfigBo = avConfigs.get(0);
+
+        CaseTrajectoryDetailBo originalTrajectory = JSONObject.parseObject(caseRealRecord.getDetailInfo(),
+                CaseTrajectoryDetailBo.class);
         Map<String, List<TrajectoryDetailBo>> avBusinessIdPointsMap = originalTrajectory.getParticipantTrajectories()
                 .stream().filter(item ->
                         avChannelAndBusinessIdMap.containsValue(item.getId())).collect(Collectors.toMap(
                         ParticipantTrajectoryBo::getId,
                         ParticipantTrajectoryBo::getTrajectory
                 ));
+
+        CaseConfigBo caseConfigBo = avConfigs.get(0);
         // 主车全部点位
         List<TrajectoryDetailBo> avPoints = avBusinessIdPointsMap.get(caseConfigBo.getBusinessId());
         // 主车全程、剩余时间、到达时间

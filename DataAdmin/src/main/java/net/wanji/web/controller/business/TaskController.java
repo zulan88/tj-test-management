@@ -80,17 +80,17 @@ public class TaskController extends BaseController {
     @ApiOperationSort(4)
     @ApiOperation(value = "获取状态")
     @GetMapping("/getStatus")
-    @ApiImplicitParam(name = "caseId", value = "用例ID", required = true, dataType = "Integer", paramType = "query", example = "278")
-    public AjaxResult getStatus(@RequestParam("caseId") Integer caseId) throws BusinessException {
-        return AjaxResult.success(taskCaseService.getStatus(caseId));
+    @ApiImplicitParam(name = "taskCaseId", value = "任务用例ID", required = true, dataType = "Integer", paramType = "query", example = "278")
+    public AjaxResult getStatus(@RequestParam("taskCaseId") Integer taskCaseId) throws BusinessException {
+        return AjaxResult.success(taskCaseService.getStatus(taskCaseId));
     }
 
     @ApiOperationSort(5)
     @ApiOperation(value = "准备")
     @GetMapping("/prepare")
-    @ApiImplicitParam(name = "caseId", value = "用例ID", required = true, dataType = "Integer", paramType = "query", example = "278")
-    public AjaxResult prepare(@RequestParam("caseId") Integer caseId) throws BusinessException {
-        return AjaxResult.success(taskCaseService.prepare(caseId));
+    @ApiImplicitParam(name = "taskCaseId", value = "任务用例ID", required = true, dataType = "Integer", paramType = "query", example = "278")
+    public AjaxResult prepare(@RequestParam("taskCaseId") Integer taskCaseId) throws BusinessException {
+        return AjaxResult.success(taskCaseService.prepare(taskCaseId));
     }
 
     @ApiOperationSort(6)
