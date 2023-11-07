@@ -92,6 +92,10 @@ public class ScenelibController extends BaseController {
         int res = scenelibService.insertTjScenelib(tjScenelib);
         FragmentedScenesDetailVo detailVo = tjFragmentedSceneDetailService.getDetailVo(tjScenelib.getSceneDetailId());
         toBuildOpenX.scenetoOpenX(detailVo, tjScenelib.getId());
+        TjFragmentedSceneDetail fragmentedSceneDetail = new FragmentedScenesDetailVo();
+        fragmentedSceneDetail.setId(tjScenelib.getSceneDetailId());
+        fragmentedSceneDetail.setSceneStatus(1);
+        tjFragmentedSceneDetailService.updateOne(fragmentedSceneDetail);
         return toAjax(res);
     }
 

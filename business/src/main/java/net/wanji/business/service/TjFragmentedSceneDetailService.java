@@ -66,7 +66,7 @@ public interface TjFragmentedSceneDetailService extends IService<TjFragmentedSce
 
     boolean deleteSceneByIds(Integer[] ids) throws BusinessException;
 
-    boolean updateBatch(List<TjFragmentedSceneDetail> sceneDetails);
+    boolean updateOne(TjFragmentedSceneDetail sceneDetail);
 
     void playback(Integer id, String participantId, int action) throws BusinessException, IOException;
 

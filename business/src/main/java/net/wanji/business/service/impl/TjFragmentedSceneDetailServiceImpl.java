@@ -390,8 +390,8 @@ public class TjFragmentedSceneDetailServiceImpl
     }
 
     @Override
-    public boolean updateBatch(List<TjFragmentedSceneDetail> sceneDetails){
-        return this.updateBatchById(sceneDetails);
+    public boolean updateBatch(TjFragmentedSceneDetail sceneDetail){
+        return this.update().update(sceneDetail);
     }
 
 

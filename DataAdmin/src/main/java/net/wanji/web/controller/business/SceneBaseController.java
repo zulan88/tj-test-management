@@ -135,10 +135,10 @@ public class SceneBaseController extends BaseController {
         return toAjax(tjFragmentedSceneDetailService.deleteSceneByIds(ids));
     }
 
-    @PutMapping("/detailstatus")
-    public AjaxResult updatestatus(@RequestBody List<TjFragmentedSceneDetail> sceneDetails){
-        return toAjax(tjFragmentedSceneDetailService.updateBatch(sceneDetails));
-    }
+//    @PutMapping("/detailstatus")
+//    public AjaxResult updatestatus(@RequestBody List<TjFragmentedSceneDetail> sceneDetails){
+//        return toAjax(tjFragmentedSceneDetailService.updateBatch(sceneDetails));
+//    }
 
     @ApiOperation("查询场景详情")
     //@PreAuthorize("@ss.hasPermi('sceneBase:getDetailVo')")
