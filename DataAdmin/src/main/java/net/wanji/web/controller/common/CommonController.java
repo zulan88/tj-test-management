@@ -260,8 +260,8 @@ public class CommonController {
         if(!downloadpath.exists()){
             downloadpath.mkdirs();
         }
-        String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        String fileName = "batchdownload"+time+".zip";
+//        String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH:mm:ss"));
+        String fileName = "batchdownload"+System.currentTimeMillis()+".zip";
         File zipFile = new File(downloadpath, fileName);
         try (ZipOutputStream zipOut = new ZipOutputStream(Files.newOutputStream(zipFile.toPath()))) {
             for (String resourcePath : resourcePaths) {
@@ -274,6 +274,7 @@ public class CommonController {
                 Files.copy(sourceFile.toPath(), zipOut);
                 zipOut.closeEntry();
             }
+            zipOut.close();
             FileUtils.setAttachmentResponseHeader(response, fileName);
             FileUtils.writeBytes(zipFile.getPath(), response.getOutputStream());
             FileUtils.deleteFile(downloadpath.getPath());
