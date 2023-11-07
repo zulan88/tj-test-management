@@ -239,6 +239,7 @@ public class ToBuildOpenX {
             fos.close();
 
             tjScenelib.setZipPath(FileUploadUtils.getPathFileName(outputFolder,zipfile.getName()));
+            tjScenelib.setImgPath(fragmentedScenesDetailVo.getImgUrl());
             scenelibService.updateTjScenelib(tjScenelib);
 
 
