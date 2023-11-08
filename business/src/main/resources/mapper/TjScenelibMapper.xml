@@ -38,6 +38,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="sceneStatus != null "> and scene_status = #{sceneStatus}</if>
             <if test="startDate != null and startDate != '' and endDate != null"> and create_datetime between #{startDate} and #{endDate}</if>
         </where>
+        order by create_datetime desc
     </select>
     
     <select id="selectTjScenelibById" parameterType="Long" resultType="net.wanji.business.domain.vo.ScenelibVo">

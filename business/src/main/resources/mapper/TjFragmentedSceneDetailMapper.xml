@@ -103,6 +103,7 @@
             <if test="startDate != null and startDate != '' and endDate != null"> and created_date between #{startDate} and #{endDate}</if>
             <if test="updatedDate != null "> and updated_date = #{updatedDate}</if>
         </where>
+        order by created_date desc
     </select>
 
     <select id="selectTjSceneDetailListBylabels" resultType="net.wanji.business.domain.vo.SceneDetailVo">
