@@ -18,6 +18,9 @@
             <if test="deviceType != null and deviceType != '' ">
                 AND d.device_type = #{deviceType}
             </if>
+            <if test="supportRoles != null and supportRoles != '' ">
+                AND d.support_roles = #{supportRoles}
+            </if>
             <if test="status != null">
                 AND d.status = #{status}
             </if>

@@ -449,7 +449,7 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
             }
             tjCase.setDetailInfo(sceneDetail.getTrajectoryInfo());
 
-            if (StringUtils.isEmpty(sceneDetail.getTrajectoryInfo())) {
+            if (StringUtils.isEmpty(sceneDetail.getRouteFile())) {
                 throw new BusinessException("创建失败：场景未进行仿真验证");
             }
             tjCase.setRouteFile(sceneDetail.getRouteFile());

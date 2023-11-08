@@ -75,6 +75,8 @@ public class TjTaskCase implements Serializable {
     @TableField(value = "test_total_time")
     private String testTotalTime;
 
+    private String connectInfo;
+
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 }

@@ -17,4 +17,14 @@
         id,task_id,type,
         participator_id,participator_name,device_id
     </sql>
+    <select id="selectByCondition" resultType="net.wanji.business.entity.TjTaskDataConfig">
+        select
+        <include refid="Base_Column_List" />
+        from tj_task_data_config
+        <where>
+            <if test="taskId != null and taskId > 0">
+                AND task_id = #{taskId}
+            </if>
+        </where>
+    </select>
 </mapper>

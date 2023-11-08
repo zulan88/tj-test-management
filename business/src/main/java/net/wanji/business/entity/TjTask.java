@@ -25,10 +25,28 @@ public class TjTask implements Serializable {
     private Integer id;
 
     /**
-     * 测试任务名称
+     * 委托单位
      */
-    @TableField(value = "task_name")
-    private String taskName;
+    @TableField(value = "client")
+    private String client;
+
+    /**
+     * 委托人
+     */
+    @TableField(value = "consigner")
+    private String consigner;
+
+    /**
+     * 测试类型（字典：test_type）
+     */
+    @TableField(value = "test_type")
+    private String testType;
+
+    /**
+     * 任务编号
+     */
+    @TableField(value = "task_code")
+    private String taskCode;
 
     /**
      * 创建时间
@@ -68,6 +86,11 @@ public class TjTask implements Serializable {
      */
     @TableField(value = "test_total_time")
     private String testTotalTime;
+
+    /**
+     * 流程节点（1：创建任务信息；2：选择测试用例；3：测试连续性配置；4：查看评价方案；5.待试验；6.已完成）
+     */
+    private Integer processNode;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;

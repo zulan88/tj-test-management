@@ -13,10 +13,7 @@ import java.util.Date;
 @Data
 public class TaskDto {
 
-    /**
-     * 任务名称
-     */
-    private String taskName;
+
 
     /**
      *开始时间

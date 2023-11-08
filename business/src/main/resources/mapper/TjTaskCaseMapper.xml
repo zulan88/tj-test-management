@@ -22,23 +22,32 @@
     <sql id="Base_Column_List">
         id,task_id,case_id,
         create_time,status,passing_rate,
-        start_time,end_time,test_total_time
+        start_time,end_time,test_total_time,connect_info
     </sql>
-    <select id="gstList"
+    <select id="selectByCondition"
             resultType="net.wanji.business.domain.vo.TaskCaseVo">
         select a.id,
-               a.task_id taskId,
-               a.case_id caseId,
-               a.create_time createTime,
-               a.status status,
-               a.passing_rate passingRate,
-               a.start_time startTime,
-               a.end_time endTime,
-               a.test_total_time testTotalTime,
-               b.case_number caseName
+               a.task_id ,
+               a.case_id,
+               a.create_time,
+               a.status,
+               a.passing_rate,
+               a.start_time,
+               a.end_time,
+               a.test_total_time ,
+               a.test_total_time,
+               a.connect_info,
+               b.case_number
         from tj_task_case a
                  left join tj_case b on a.case_id = b.id
-        where a.task_id = #{taskId}
+        <where>
+            <if test="taskId != null and taskId != ''">
+                and a.task_id = #{taskId}
+            </if>
+            <if test="caseId != null and caseId != ''">
+                and a.case_id = #{caseId}
+            </if>
+        </where>
     </select>
 
 
@@ -46,7 +55,6 @@
         <id property="id" column="case_id"/>
         <id property="taskCaseId" column="task_case_id"/>
         <id property="taskId" column="task_id"/>
-        <result property="testType" column="test_type"/>
         <result property="sceneName" column="scene_name"/>
         <result property="trajectoryInfo" column="trajectory_info"/>
         <result property="caseNumber" column="case_number"/>

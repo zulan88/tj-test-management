@@ -315,6 +315,15 @@ public interface Constants {
         public static final int STOP = 4;
     }
 
+    class TaskProcessNode {
+        public static final int TASK_INFO = 1;
+        public static final int SELECT_CASE = 2;
+        public static final int CONFIG = 3;
+        public static final int VIEW_PLAN = 4;
+        public static final int WAIT_TEST = 5;
+        public static final int FINISHED = 6;
+    }
+
     /**
      * 场景车道方向
      */

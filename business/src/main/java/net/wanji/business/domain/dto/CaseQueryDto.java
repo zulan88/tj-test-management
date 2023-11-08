@@ -54,4 +54,7 @@ public class CaseQueryDto {
     private Integer choice;
 
     private List<Integer> sceneDetailIds;
+
+    @ApiModelProperty(value = "已选中用例ID", example = "[1,2,3]")
+    private List<Integer> selectedIds;
 }

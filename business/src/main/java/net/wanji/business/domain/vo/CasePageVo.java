@@ -23,4 +23,6 @@ public class CasePageVo extends CaseDetailVo {
 
     @ApiModelProperty("角色配置详情")
     private Object roleConfigDetail;
+
+    private boolean selected;
 }

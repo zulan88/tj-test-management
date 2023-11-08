@@ -3,6 +3,7 @@ package net.wanji.business.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import net.wanji.business.domain.dto.TaskDto;
 import net.wanji.business.domain.bo.TaskBo;
+import net.wanji.business.domain.dto.device.TaskSaveDto;
 import net.wanji.business.domain.vo.TaskVo;
 import net.wanji.business.entity.TjTask;
 import net.wanji.business.exception.BusinessException;
@@ -19,6 +20,19 @@ import java.util.concurrent.ExecutionException;
 * @createDate 2023-08-31 17:39:16
 */
 public interface TjTaskService extends IService<TjTask> {
+
+    /**
+     * 节点数据初始化
+     * @return
+     */
+    Object initProcessed(Integer processNode);
+
+    /**
+     * 任务节点信息
+     * @param taskSaveDto
+     * @return
+     */
+    Object processedInfo(TaskSaveDto taskSaveDto) throws BusinessException;
 
     /**
      * 页面列表
@@ -42,7 +56,7 @@ public interface TjTaskService extends IService<TjTask> {
      * @param in
      * @return
      */
-    public int saveTask(TaskBo in);
+    public int saveTask(TaskBo in) throws BusinessException ;
 
     /**
      * 导出

@@ -21,6 +21,7 @@
         <result property="trajectoryInfo" column="trajectory_info" jdbcType="VARCHAR"/>
         <result property="testTarget" column="test_target" jdbcType="VARCHAR"/>
         <result property="status" column="status" jdbcType="VARCHAR"/>
+        <result property="remark" column="remark" jdbcType="VARCHAR"/>
         <result property="updatedDate" column="updated_date" jdbcType="TIMESTAMP"/>
         <collection property="partConfigs" ofType="net.wanji.business.entity.TjCasePartConfig" select="selectCasesConfig" column="id" />
     </resultMap>
@@ -43,6 +44,7 @@
         sd.id as scene_detail_id,
         c.test_target,
         c.status,
+        c.remark,
         c.updated_date,
         sd.number as scene_number,
         sd.img_url,
@@ -77,6 +79,12 @@
                 and c.scene_detail_id in
                 <foreach collection="sceneDetailIds" item="sceneDetailId" open="(" separator="," close=")">
                     #{sceneDetailId}
+                </foreach>
+            </if>
+            <if test="selectedIds != null and selectedIds.size() > 0">
+                and c.id in
+                <foreach collection="selectedIds" item="selectedId" open="(" separator="," close=")">
+                    #{selectedId}
                 </foreach>
             </if>
         </where>

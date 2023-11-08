@@ -111,5 +111,10 @@ public class TjCase implements Serializable {
     @JsonFormat(shape= JsonFormat.Shape.STRING, pattern="yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updatedDate;
 
-
+    /**
+     * 备注
+     */
+    @TableField("remark")
+    @Excel(name = "备注")
+    private String remark;
 }

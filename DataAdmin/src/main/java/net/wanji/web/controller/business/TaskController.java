@@ -9,8 +9,10 @@ import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiOperationSort;
+import net.wanji.business.domain.dto.device.TaskSaveDto;
 import net.wanji.business.service.TjTaskCaseService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import net.wanji.business.domain.dto.TaskDto;
@@ -41,11 +43,36 @@ public class TaskController extends BaseController {
     private TjTaskCaseService taskCaseService;
 
     @ApiOperationSort(1)
+    @ApiOperation(value = "节点初始化")
+    @GetMapping("/initProcessed")
+    @ApiImplicitParam(name = "processNode", value = "节点", required = true, dataType = "Integer", paramType = "query", example = "1")
+    public AjaxResult initProcessed(Integer processNode) {
+        return AjaxResult.success(tjTaskService.initProcessed(processNode));
+    }
+
+    @ApiOperationSort(2)
+    @ApiOperation(value = "节点信息")
+    @PostMapping("/processedInfo")
+    public AjaxResult processedInfo(@RequestBody TaskSaveDto taskSaveDto) throws BusinessException {
+        return AjaxResult.success(tjTaskService.processedInfo(taskSaveDto));
+    }
+
+    @ApiOperationSort(3)
+    @ApiOperation(value = "保存")
+    @PostMapping("/save")
+    public AjaxResult save(@Validated @RequestBody TaskBo dto) throws BusinessException {
+        int id = tjTaskService.saveTask(dto);
+        if (id == 0) {
+            return AjaxResult.error("保存失败");
+        }
+        return AjaxResult.success(id);
+    }
+
+    @ApiOperationSort(1)
     @ApiOperation(value = "创建任务")
     @PostMapping("/create")
     @ApiImplicitParam(name = "caseIds", value = "用例ID集合", required = true, dataType = "List", paramType = "query", example = "[1,2,3]")
-    public AjaxResult create(@RequestParam("caseIds") List<Integer> caseIds)
-    {
+    public AjaxResult create(@RequestParam("caseIds") List<Integer> caseIds) {
         TaskVo taskVo = null;
         try {
             taskVo = tjTaskService.createTask(caseIds);
@@ -58,24 +85,13 @@ public class TaskController extends BaseController {
     @ApiOperationSort(2)
     @ApiOperation(value = "任务列表")
     @GetMapping("/pageList")
-    public TableDataInfo pageList(TaskDto bo)
-    {
+    public TableDataInfo pageList(TaskDto bo) {
         TableDataInfo tableDataInfo = tjTaskService.pageList(bo);
         tableDataInfo.setCode(200);
         tableDataInfo.setMsg("操作成功");
         return tableDataInfo;
     }
 
-    @ApiOperationSort(3)
-    @ApiOperation(value = "保存")
-    @PostMapping("/save")
-    public AjaxResult edit(@RequestBody TaskBo dto)
-    {
-        int i = tjTaskService.saveTask(dto);
-        if (i == 1)
-            return AjaxResult.success();
-        return AjaxResult.error();
-    }
 
     @ApiOperationSort(4)
     @ApiOperation(value = "获取状态")
@@ -102,7 +118,7 @@ public class TaskController extends BaseController {
     })
     public AjaxResult start(@RequestParam("recordId") Integer recordId,
                             @RequestParam("action") Integer action) throws BusinessException, IOException {
-        return  AjaxResult.success(taskCaseService.start(recordId, action));
+        return AjaxResult.success(taskCaseService.start(recordId, action));
     }
 
     @ApiOperationSort(7)
@@ -115,7 +131,7 @@ public class TaskController extends BaseController {
     public AjaxResult playback(@RequestParam("recordId") Integer recordId, @RequestParam("action") Integer action)
             throws BusinessException, IOException {
         taskCaseService.playback(recordId, action);
-        return  AjaxResult.success();
+        return AjaxResult.success();
     }
 
     @ApiOperationSort(8)
