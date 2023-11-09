@@ -44,7 +44,7 @@
         sd.id as scene_detail_id,
         c.test_target,
         c.status,
-        c.remark,
+<!--        c.remark,-->
         c.updated_date,
         sd.number as scene_number,
         sd.img_url,
