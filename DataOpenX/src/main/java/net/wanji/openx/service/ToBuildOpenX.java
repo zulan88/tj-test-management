@@ -31,6 +31,7 @@ import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -80,15 +81,6 @@ public class ToBuildOpenX {
             openScenario.setRoadNetwork(roadNetwork);
             Entities entities = new Entities();
             List<ScenarioObject> scenarioObjectList =entities.getScenarioObject();
-            for(ParticipantTrajectoryBo participantTrajectoryBo:fragmentedScenesDetailVo.getTrajectoryJson().getParticipantTrajectories()){
-                ScenarioObject scenarioObject = new ScenarioObject();
-                scenarioObject.setName(participantTrajectoryBo.getId());
-                Vehicle vehicle = new Vehicle("default",participantTrajectoryBo.getType());
-                scenarioObject.setVehicle(vehicle);
-                scenarioObjectList.add(scenarioObject);
-            }
-            openScenario.setEntities(entities);
-            Storyboard storyboard = new Storyboard();
             String xmlInit = "<Init>\n" +
                     "    <Actions>\n" +
                     "        <GlobalAction>\n" +
@@ -110,6 +102,18 @@ public class ToBuildOpenX {
             Unmarshaller unmarshaller = context.createUnmarshaller();
             Init init = (Init) unmarshaller.unmarshal(new StringReader(xmlInit));
             init.getActions().getGlobalAction().get(0).getEnvironmentAction().getEnvironment().getTimeOfDay().setDateTime(formattedDateTime);
+            for(ParticipantTrajectoryBo participantTrajectoryBo:fragmentedScenesDetailVo.getTrajectoryJson().getParticipantTrajectories()){
+                ScenarioObject scenarioObject = new ScenarioObject();
+                scenarioObject.setName(participantTrajectoryBo.getId());
+                Vehicle vehicle = new Vehicle("default",participantTrajectoryBo.getType());
+                scenarioObject.setVehicle(vehicle);
+                scenarioObjectList.add(scenarioObject);
+                Private privateone = new Private();
+                privateone.setEntityRef(scenarioObject.getName());
+                init.getActions().getPrivate().add(privateone);
+            }
+            openScenario.setEntities(entities);
+            Storyboard storyboard = new Storyboard();
             Story story =new Story();
             story.setName("mystore");
             Double maxTime = 0D;
