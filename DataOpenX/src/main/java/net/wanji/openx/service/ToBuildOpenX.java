@@ -291,7 +291,9 @@ public class ToBuildOpenX {
         ProjCoordinate pout = new ProjCoordinate();
         ProjCoordinate p = new ProjCoordinate(lon, lat);
         trans.transform(p, pout);
-        return new WorldPosition(String.format("%.16e", pout.x),String.format("%.16e", pout.y),String.format("%.16e", angle));
+        double angleInRadians = Math.toRadians(angle);
+        angleInRadians = (angleInRadians + Math.PI) % (2 * Math.PI);
+        return new WorldPosition(String.format("%.16e", pout.x),String.format("%.16e", pout.y),String.format("%.16e", angleInRadians));
     }
 
 
