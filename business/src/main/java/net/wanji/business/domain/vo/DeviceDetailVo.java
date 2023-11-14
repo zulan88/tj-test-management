@@ -12,8 +12,6 @@ import net.wanji.common.annotation.Excel;
 @Data
 public class DeviceDetailVo extends TjDeviceDetail {
 
-    @Excel(name = "设备类型")
-    private String typeName;
     @Excel(name = "状态名称")
     private String statusName;
     @Excel(name = "支持角色")

@@ -26,6 +26,13 @@ public class TjTaskDataConfig implements Serializable {
     @TableField(value = "task_id")
     private Integer taskId;
 
+
+    /**
+     * 测试用例id
+     */
+    @TableField(value = "case_id")
+    private Integer caseId;
+
     /**
      * 类型：av,mvReal,mvSimulation,sp
      */

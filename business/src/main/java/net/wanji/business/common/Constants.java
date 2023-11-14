@@ -1,7 +1,9 @@
 package net.wanji.business.common;
 
+import net.wanji.common.core.domain.SimpleSelect;
 import org.springframework.util.ObjectUtils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -51,6 +53,7 @@ public interface Constants {
         public static final String EXPORT_NAME_TEMPLATE = "{}_{}";
         public static final String SCENE_NUMBER_TEMPLATE = "SC{}{}";
         public static final String CASE_NUMBER_TEMPLATE = "CASE{}{}";
+        public static final String TASK_NUMBER_TEMPLATE = "TA{}{}";
         public static final String SCENE_NAME_TEMPLATE = "{}_{}";
         public static final String DEVICE_OFFLINE_TEMPLATE = "设备{}离线；";
         public static final String DEVICE_POS_ERROR_TEMPLATE = "{}未达到规定位置；";
@@ -292,16 +295,6 @@ public interface Constants {
         public static final Integer FINISHED = 2;
     }
 
-    class MasterControl {
-        /**
-         * 开始
-         */
-        public static final Integer START = 1;
-        /**
-         * 结束
-         */
-        public static final Integer END = 0;
-    }
 
     class Extension {
         public static final String TXT = "txt";
@@ -322,6 +315,100 @@ public interface Constants {
         public static final int VIEW_PLAN = 4;
         public static final int WAIT_TEST = 5;
         public static final int FINISHED = 6;
+    }
+
+
+    /**
+     * 任务状态
+     */
+    enum TaskStatusEnum {
+        NO_SUBMIT("save", "待提交"),
+        WAITING("waiting", "待测试"),
+        RUNNING("running", "进行中"),
+        FINISHED("finished", "已完成"),
+        PAST_DUE("past_due", "已逾期");
+
+        private String code;
+
+        private String value;
+
+        TaskStatusEnum(String code, String value) {
+            this.code = code;
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public String getCode() {
+            return code;
+        }
+
+        public static String getValueByCode(String code) {
+            for (TaskStatusEnum taskStatusEnum : values()) {
+                if (taskStatusEnum.getCode().equals(code)) {
+                    return taskStatusEnum.getValue();
+                }
+            }
+            return "-";
+        }
+
+        public static List<SimpleSelect> getSelectList() {
+            List<SimpleSelect> list = new ArrayList<>();
+            for (TaskStatusEnum taskStatusEnum : values()) {
+                if (taskStatusEnum.getCode().equals(TaskStatusEnum.NO_SUBMIT.getCode())) {
+                    continue;
+                }
+                SimpleSelect simpleSelect = new SimpleSelect();
+                simpleSelect.setDictValue(taskStatusEnum.getCode());
+                simpleSelect.setDictLabel(taskStatusEnum.getValue());
+                list.add(simpleSelect);
+            }
+            return list;
+        }
+
+        public static List<String> getPageCountList() {
+            List<String> result = new ArrayList<>();
+            result.add(TaskStatusEnum.WAITING.getCode());
+            result.add(TaskStatusEnum.RUNNING.getCode());
+            result.add(TaskStatusEnum.PAST_DUE.getCode());
+            return result;
+        }
+    }
+
+    /**
+     * 任务状态
+     */
+    enum TaskCaseStatusEnum {
+        PASS("pass", "通过"),
+        NO_PASS("no_pass", "未通过");
+
+        private String code;
+
+        private String value;
+
+        TaskCaseStatusEnum(String code, String value) {
+            this.code = code;
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public String getCode() {
+            return code;
+        }
+
+        public static String getValueByCode(String code) {
+            for (TaskCaseStatusEnum taskCaseStatusEnum : values()) {
+                if (taskCaseStatusEnum.getCode().equals(code)) {
+                    return taskCaseStatusEnum.getValue();
+                }
+            }
+            return "-";
+        }
     }
 
     /**

@@ -19,6 +19,7 @@
         <result property="testSceneDesc" column="test_scene_desc" jdbcType="VARCHAR"/>
         <result property="label" column="label" jdbcType="VARCHAR"/>
         <result property="trajectoryInfo" column="trajectory_info" jdbcType="VARCHAR"/>
+        <result property="routeFile" column="route_file" jdbcType="VARCHAR"/>
         <result property="testTarget" column="test_target" jdbcType="VARCHAR"/>
         <result property="status" column="status" jdbcType="VARCHAR"/>
         <result property="remark" column="remark" jdbcType="VARCHAR"/>
@@ -44,13 +45,14 @@
         sd.id as scene_detail_id,
         c.test_target,
         c.status,
-<!--        c.remark,-->
+        c.remark,
         c.updated_date,
         sd.number as scene_number,
         sd.img_url,
         sd.test_scene_desc,
         sd.label,
-        sd.trajectory_info
+        sd.trajectory_info,
+        sd.route_file
         from tj_case c
         inner join tj_fragmented_scene_detail sd on sd.id = c.scene_detail_id
         <where>
@@ -149,6 +151,7 @@
         <id property="id" column="id"/>
         <result property="caseNumber" column="case_number"/>
         <result property="label" column="label"/>
+        <result property="allStageLabel" column="all_stage_label"/>
         <result property="sceneDetailId" column="scene_detail_id"/>
         <result property="testTarget" column="test_target"/>
         <result property="detailInfo" column="detail_info"/>
@@ -197,6 +200,7 @@
                sd.img_url,
                sd.test_scene_desc,
                sd.label,
+               sd.all_stage_label,
                pc.id AS config_id,
                pc.case_id,
                pc.participant_role,

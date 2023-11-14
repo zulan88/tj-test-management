@@ -29,6 +29,7 @@
         select a.id,
                a.task_id ,
                a.case_id,
+               a.sort,
                a.create_time,
                a.status,
                a.passing_rate,

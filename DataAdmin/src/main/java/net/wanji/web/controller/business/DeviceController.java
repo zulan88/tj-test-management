@@ -145,7 +145,7 @@ public class DeviceController extends BaseController {
     public void export(HttpServletResponse response,
                        @Validated(value = BatchGroup.class) @RequestBody TjDeviceDetailDto tjCaseDto) {
         List<DeviceDetailVo> devices = deviceDetailService.getAllDevices(tjCaseDto);
-        String fileName = StringUtils.format(ContentTemplate.EXPORT_NAME_TEMPLATE, devices.get(0).getTypeName(),
+        String fileName = StringUtils.format(ContentTemplate.EXPORT_NAME_TEMPLATE, devices.get(0).getDeviceName(),
                 DateUtils.getNowSecondString());
         ExcelUtil<DeviceDetailVo> util = new ExcelUtil<>(DeviceDetailVo.class);
         util.exportExcel(response, devices, fileName);

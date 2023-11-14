@@ -10,6 +10,7 @@ import net.wanji.business.common.Constants.PlaybackAction;
 import net.wanji.business.common.Constants.PointTypeEnum;
 import net.wanji.business.common.Constants.TestingStatus;
 import net.wanji.business.common.Constants.YN;
+import net.wanji.business.domain.Label;
 import net.wanji.business.domain.bo.CaseConfigBo;
 import net.wanji.business.domain.bo.CaseInfoBo;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
@@ -32,6 +33,7 @@ import net.wanji.business.exception.BusinessException;
 import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjCaseRealRecordMapper;
 import net.wanji.business.schedule.RealPlaybackSchedule;
+import net.wanji.business.service.ILabelsService;
 import net.wanji.business.service.RestService;
 import net.wanji.business.service.RouteService;
 import net.wanji.business.service.TestingService;
@@ -89,6 +91,9 @@ public class TestingServiceImpl implements TestingService {
     private TjDeviceDetailService deviceDetailService;
 
     @Autowired
+    private ILabelsService labelsService;
+
+    @Autowired
     private TjCaseMapper caseMapper;
 
     @Autowired
@@ -123,6 +128,14 @@ public class TestingServiceImpl implements TestingService {
         Map<String, String> businessIdAndRoleMap = caseInfoBo.getCaseConfigs().stream().collect(Collectors.toMap(
                 CaseConfigBo::getBusinessId,
                 CaseConfigBo::getParticipantRole));
+        // 7.主车轨迹
+        // av车需要主车全部轨迹
+        List<SimulationTrajectoryDto> participantTrajectories = null;
+        try {
+            participantTrajectories = routeService.readOriRouteFile(caseInfoBo.getRouteFile());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         // 7.状态查询
         for (CaseConfigBo caseConfigBo : caseConfigs) {
             String start = partStartMap.get(caseConfigBo.getBusinessId());
@@ -152,22 +165,31 @@ public class TestingServiceImpl implements TestingService {
             stateParam.setType(1);
             stateParam.setTimestamp(System.currentTimeMillis());
             if (PartRole.AV.equals(caseConfigBo.getSupportRoles())) {
-                // av车需要主车全部轨迹
-                List<SimulationTrajectoryDto> participantTrajectories = null;
-                try {
-                    participantTrajectories = routeService.readOriTrajectoryFromRouteFile(caseInfoBo.getRouteFile(),
-                            caseConfigBo.getBusinessId());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                stateParam.setParams(new ParamsDto(caseId, participantTrajectories));
+                stateParam.setParams(new ParamsDto(caseId, routeService.readOriTrajectoryFromData(participantTrajectories, caseConfigBo.getBusinessId())));
             }
             if (PartRole.MV_SIMULATION.equals(caseConfigBo.getSupportRoles())) {
                 SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(caseInfoBo.getDetailInfo(), SceneTrajectoryBo.class);
                 Map<String, Object> tessParams = new HashMap<>();
                 Map<String, Object> param1 = new HashMap<>();
                 param1.put("caseId", caseInfoBo.getId());
-                List<Map<String, Object>> participantTrajectories = new ArrayList<>();
+                param1.put("avPassTime", CollectionUtils.emptyIfNull(participantTrajectories).size());
+
+                Label label = new Label();
+                label.setParentId(2L);
+                List<Label> sceneTypeLabelList = labelsService.selectLabelsList(label);
+                List<String> sceneTypes = new ArrayList<>();
+                if (StringUtils.isNotEmpty(caseInfoBo.getAllStageLabel())) {
+                    String[] labels = caseInfoBo.getAllStageLabel().split(",");
+                    for (String labelId : labels) {
+                        for (Label sceneTypeLabel : sceneTypeLabelList) {
+                            if (sceneTypeLabel.getId() == Long.parseLong(labelId)) {
+                                sceneTypes.add(sceneTypeLabel.getName());
+                            }
+                        }
+                    }
+                }
+                param1.put("type", sceneTypes.stream().collect(Collectors.joining(",")));
+                List<Map<String, Object>> simulationTrajectories = new ArrayList<>();
                 for (ParticipantTrajectoryBo participantTrajectory : sceneTrajectoryBo.getParticipantTrajectories()) {
                     if (PartRole.AV.equals(businessIdAndRoleMap.get(participantTrajectory.getId()))) {
                         continue;
@@ -187,9 +209,9 @@ public class TestingServiceImpl implements TestingService {
                         t.put("position", Arrays.asList(pos[0], pos[1]));
                         return t;
                     }).collect(Collectors.toList()));
-                    participantTrajectories.add(map);
+                    simulationTrajectories.add(map);
                 }
-                param1.put("participantTrajectories", participantTrajectories);
+                param1.put("participantTrajectories", simulationTrajectories);
                 tessParams.put("param1", param1);
                 stateParam.setParams(tessParams);
             }

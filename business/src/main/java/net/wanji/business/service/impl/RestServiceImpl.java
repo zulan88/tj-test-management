@@ -8,6 +8,7 @@ import net.wanji.business.domain.dto.device.DeviceReadyStateDto;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.param.CaseRuleControl;
 import net.wanji.business.domain.param.TestStartParam;
+import net.wanji.business.domain.vo.CaseContinuousVo;
 import net.wanji.business.entity.TjDevice;
 import net.wanji.business.service.RestService;
 import net.wanji.common.core.redis.RedisCache;
@@ -45,6 +46,9 @@ public class RestServiceImpl implements RestService {
     @Value("${tess.start}")
     private String tessStartUrl;
 
+    @Value("${tess.routingPlan}")
+    private String routingPlanUrl;
+
     @Value("${masterControl.queryDeviceReadyState}")
     private String queryDeviceReadyStateUrl;
 
@@ -71,6 +75,32 @@ public class RestServiceImpl implements RestService {
             if (response.getStatusCodeValue() == 200) {
                 JSONObject result = JSONObject.parseObject(response.getBody(), JSONObject.class);
                 log.info("============================== tess start result:{}", JSONObject.toJSONString(result));
+                if (Objects.isNull(result) || !"success".equals(result.get("status"))) {
+                    log.error("远程服务调用失败:{}", result.get("msg"));
+                    return false;
+                }
+                return true;
+            }
+        } catch (Exception e) {
+            log.error("远程服务调用失败:{}", e);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean startRoutingPlan(List<CaseContinuousVo> caseContinuousVos) {
+        try {
+            String resultUrl = routingPlanUrl;
+            log.info("============================== tess routing plan ：{}", routingPlanUrl);
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<List<CaseContinuousVo>> resultHttpEntity = new HttpEntity<>(caseContinuousVos, httpHeaders);
+            log.info("============================== tess routing plan param：{}", JSONObject.toJSONString(caseContinuousVos));
+            ResponseEntity<String> response =
+                    restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);
+            if (response.getStatusCodeValue() == 200) {
+                JSONObject result = JSONObject.parseObject(response.getBody(), JSONObject.class);
+                log.info("============================== tess routing plan result:{}", JSONObject.toJSONString(result));
                 if (Objects.isNull(result) || !"success".equals(result.get("status"))) {
                     log.error("远程服务调用失败:{}", result.get("msg"));
                     return false;

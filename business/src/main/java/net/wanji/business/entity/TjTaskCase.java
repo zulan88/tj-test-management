@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 /**
@@ -36,6 +37,13 @@ public class TjTaskCase implements Serializable {
     @TableField(value = "case_id")
     private Integer caseId;
 
+
+    /**
+     * 顺序
+     */
+    @TableField(value = "sort")
+    private Integer sort;
+
     /**
      * 创建时间
      */
@@ -52,12 +60,14 @@ public class TjTaskCase implements Serializable {
     /**
      * 通过率
      */
+    @ApiModelProperty(value = "通过率", required = true, dataType = "String", example = "100%")
     @TableField(value = "passing_rate")
     private String passingRate;
 
     /**
      * 开始时间
      */
+    @ApiModelProperty(value = "开始时间", required = true, dataType = "String", example = "2021-05-25 18:30")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     @TableField(value = "start_time")
     private Date startTime;
@@ -65,6 +75,7 @@ public class TjTaskCase implements Serializable {
     /**
      * 结束时间
      */
+    @ApiModelProperty(value = "结束时间", required = true, dataType = "String", example = "2021-05-25 18:30")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     @TableField(value = "end_time")
     private Date endTime;

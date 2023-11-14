@@ -5,9 +5,8 @@
 <mapper namespace="net.wanji.business.mapper.TjDeviceDetailMapper">
 
     <select id="selectByCondition" resultType="net.wanji.business.domain.vo.DeviceDetailVo">
-        SELECT d.*, vi.name as type_name
+        SELECT d.*
         FROM tj_device_detail d
-        LEFT JOIN tj_device vi ON vi.id = d.device_type
         <where>
             <if test="deviceId != null and deviceId > 0">
                 AND d.device_id = #{deviceId}

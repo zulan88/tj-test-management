@@ -39,10 +39,10 @@ public class TjDeviceDetail implements Serializable {
     private String deviceName;
 
     /**
-     * 设备类型节点
+     * 设备类型
      */
     @TableField("device_type")
-    private Integer deviceType;
+    private String deviceType;
 
     /**
      * 支持角色

@@ -235,6 +235,11 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
             String prelabel = null;
             if (parentId != null) {
                 prelabel = sceneMap.getOrDefault(parentId, null);
+            } else {
+                continue;
+            }
+            if (tlabel.getId().equals(2L)) {
+                continue;
             }
             if (prelabel == null) {
                 sceneMap.put(tlabel.getId(), tlabel.getName());

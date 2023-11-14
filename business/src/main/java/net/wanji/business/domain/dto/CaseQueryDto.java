@@ -57,4 +57,7 @@ public class CaseQueryDto {
 
     @ApiModelProperty(value = "已选中用例ID", example = "[1,2,3]")
     private List<Integer> selectedIds;
+
+    @ApiModelProperty(value = "用例显示方式:null：初始化；0：显示全部；1：显示已选中", example = "0")
+    private Integer showType;
 }

@@ -33,4 +33,6 @@ public class CaseSceneVo {
     @JsonIgnore
     private String trajectoryInfo;
 
+    private String routeFile;
+
 }

@@ -21,7 +21,7 @@ public class CaseConfigBo extends TjCasePartConfig {
     /**
      * 设备类型节点
      */
-    private Integer deviceType;
+    private String deviceType;
 
     /**
      * 支持角色

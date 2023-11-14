@@ -16,6 +16,8 @@ public class CaseInfoBo extends TjCase {
 
     private String label;
 
+    private String allStageLabel;
+
     private String filePath;
 
     private String geoJsonPath;

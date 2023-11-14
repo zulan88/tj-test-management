@@ -6,6 +6,7 @@ import net.wanji.business.entity.TjDeviceDetail;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 import java.util.List;
+import java.util.Map;
 
 /**
 * @author guanyuduo

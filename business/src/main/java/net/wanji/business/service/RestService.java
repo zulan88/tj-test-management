@@ -6,6 +6,7 @@ import net.wanji.business.domain.dto.device.DeviceReadyStateDto;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.param.CaseRuleControl;
 import net.wanji.business.domain.param.TestStartParam;
+import net.wanji.business.domain.vo.CaseContinuousVo;
 import org.springframework.http.HttpMethod;
 
 import java.util.List;
@@ -23,6 +24,11 @@ public interface RestService {
      * 开始仿真
      */
     boolean start(TestStartParam startParam);
+
+    /**
+     * 多场景路径规划
+     */
+    boolean startRoutingPlan(List<CaseContinuousVo> caseContinuousVos);
 
     /**
      * 查询设备信息
