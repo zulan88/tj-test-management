@@ -20,27 +20,28 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,task_id,case_id,
+        id
+        ,task_id,case_id,
         create_time,status,passing_rate,
         start_time,end_time,test_total_time,connect_info
     </sql>
     <select id="selectByCondition"
             resultType="net.wanji.business.domain.vo.TaskCaseVo">
         select a.id,
-               a.task_id ,
-               a.case_id,
-               a.sort,
-               a.create_time,
-               a.status,
-               a.passing_rate,
-               a.start_time,
-               a.end_time,
-               a.test_total_time ,
-               a.test_total_time,
-               a.connect_info,
-               b.case_number
+        a.task_id ,
+        a.case_id,
+        a.sort,
+        a.create_time,
+        a.status,
+        a.passing_rate,
+        a.start_time,
+        a.end_time,
+        a.test_total_time ,
+        a.test_total_time,
+        a.connect_info,
+        b.case_number
         from tj_task_case a
-                 left join tj_case b on a.case_id = b.id
+        left join tj_case b on a.case_id = b.id
         <where>
             <if test="taskId != null and taskId != ''">
                 and a.task_id = #{taskId}
@@ -92,40 +93,52 @@
     </resultMap>
 
     <select id="selectTaskCaseInfo" resultMap="TaskCaseInfoResult">
-        SELECT
-            ttc.id as task_case_id,
-            ttc.case_id,
-            ttc.task_id,
-            sd.NAME AS scene_name,
-            sd.trajectory_info,
-            tc.scene_detail_id,
-            tc.resources_detail_id,
-            tc.detail_info,
-            tc.route_file,
-            tc.`status`,
-            dc.id AS config_id,
-            dc.type,
-            dc.participator_id,
-            dc.participator_name,
-            dc.device_id,
-            dd.device_name,
-            dd.device_type,
-            dd.support_roles,
-            dd.ip,
-            dd.service_address,
-            dd.data_channel,
-            dd.command_channel,
-            dd.`status` AS device_status,
-            dd.last_online_date,
-            rd.file_path,
-            rd.attribute4
-        FROM
-            tj_task_case ttc
-                LEFT JOIN tj_case tc ON tc.id = ttc.case_id
-                LEFT JOIN ( SELECT fsd.id, fs.NAME, fsd.trajectory_info FROM tj_fragmented_scene_detail fsd LEFT JOIN tj_fragmented_scenes fs ON fsd.fragmented_scene_id = fs.id ) sd ON sd.id = tc.scene_detail_id
-                LEFT JOIN tj_task_data_config dc ON dc.task_id = ttc.task_id
-                LEFT JOIN tj_resources_detail rd ON rd.id = tc.resources_detail_id
-                LEFT JOIN tj_device_detail dd ON dd.device_id = dc.device_id
-        WHERE ttc.id=#{taskCaseId}
+        SELECT ttc.id      as task_case_id,
+               ttc.case_id,
+               ttc.task_id,
+               sd.NAME     AS scene_name,
+               sd.trajectory_info,
+               tc.scene_detail_id,
+               tc.resources_detail_id,
+               tc.detail_info,
+               tc.route_file,
+               tc.`status`,
+               dc.id       AS config_id,
+               dc.type,
+               dc.participator_id,
+               dc.participator_name,
+               dc.device_id,
+               dd.device_name,
+               dd.device_type,
+               dd.support_roles,
+               dd.ip,
+               dd.service_address,
+               dd.data_channel,
+               dd.command_channel,
+               dd.`status` AS device_status,
+               dd.last_online_date,
+               rd.file_path,
+               rd.attribute4
+        FROM tj_task_case ttc
+                 LEFT JOIN tj_case tc ON tc.id = ttc.case_id
+                 LEFT JOIN (SELECT fsd.id, fs.NAME, fsd.trajectory_info
+                            FROM tj_fragmented_scene_detail fsd
+                                     LEFT JOIN tj_fragmented_scenes fs ON fsd.fragmented_scene_id = fs.id) sd
+                           ON sd.id = tc.scene_detail_id
+                 LEFT JOIN tj_task_data_config dc ON dc.task_id = ttc.task_id
+                 LEFT JOIN tj_resources_detail rd ON rd.id = tc.resources_detail_id
+                 LEFT JOIN tj_device_detail dd ON dd.device_id = dc.device_id
+        WHERE ttc.id = #{taskCaseId}
     </select>
+
+    <update id="update">
+        update tj_task_case
+        set status          = #{status},
+            passing_rate    = #{passingRate},
+            start_time      = #{startTime},
+            end_time        = #{endTime},
+            test_total_time = #{testTotalTime},
+            connect_info    = #{connectInfo}
+        where id = #{id}
+    </update>
 </mapper>

@@ -381,6 +381,7 @@ public interface Constants {
      * 任务状态
      */
     enum TaskCaseStatusEnum {
+        WAITING("waiting", "待测试"),
         PASS("pass", "通过"),
         NO_PASS("no_pass", "未通过");
 
