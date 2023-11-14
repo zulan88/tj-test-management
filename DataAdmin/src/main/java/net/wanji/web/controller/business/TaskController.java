@@ -10,6 +10,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiOperationSort;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.bo.TaskBo;
+import net.wanji.business.domain.dto.RoutingPlanDto;
 import net.wanji.business.domain.dto.TaskDto;
 import net.wanji.business.domain.dto.device.TaskSaveDto;
 import net.wanji.business.domain.vo.CaseContinuousVo;
@@ -78,13 +79,10 @@ public class TaskController extends BaseController {
 
     @ApiOperationSort(4)
     @ApiOperation(value = "4.路径优化")
-    @GetMapping("/routingPlan")
-    @ApiImplicitParam(name = "taskId", value = "任务ID", required = true, dataType = "Integer", paramType = "query", example = "1")
-    public AjaxResult routingPlan(List<CaseContinuousVo> caseContinuousVos) throws BusinessException {
-        if (tjTaskService.routingPlan(caseContinuousVos)) {
-            return AjaxResult.success();
-        }
-        return AjaxResult.error("路径规划失败");
+    @PostMapping("/routingPlan")
+    public AjaxResult routingPlan(@Validated @RequestBody RoutingPlanDto routingPlanDto) throws BusinessException {
+        tjTaskService.routingPlan(routingPlanDto);
+        return AjaxResult.success("开始进行路径优规划");
     }
 
     @ApiOperationSort(5)

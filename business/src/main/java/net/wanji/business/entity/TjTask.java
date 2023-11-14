@@ -118,6 +118,11 @@ public class TjTask implements Serializable {
     private Integer processNode;
 
     /**
+     * 是否连续性测试
+     */
+    private boolean continuous;
+
+    /**
      * 主车完整轨迹文件
      */
     private String routeFile;

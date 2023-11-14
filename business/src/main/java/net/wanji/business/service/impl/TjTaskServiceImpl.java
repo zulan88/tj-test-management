@@ -28,6 +28,7 @@ import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.bo.TaskBo;
 import net.wanji.business.domain.dto.CaseQueryDto;
+import net.wanji.business.domain.dto.RoutingPlanDto;
 import net.wanji.business.domain.dto.TaskDto;
 import net.wanji.business.domain.dto.TjDeviceDetailDto;
 import net.wanji.business.domain.dto.device.TaskSaveDto;
@@ -57,6 +58,7 @@ import net.wanji.business.service.TjCaseService;
 import net.wanji.business.service.TjTaskCaseService;
 import net.wanji.business.service.TjTaskDataConfigService;
 import net.wanji.business.service.TjTaskService;
+import net.wanji.business.trajectory.RoutingPlanConsumer;
 import net.wanji.business.util.CustomMergeStrategy;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.core.domain.SimpleSelect;
@@ -141,15 +143,15 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
     @Autowired
     private TjTaskDataConfigMapper tjTaskDataConfigMapper;
 
-    @Autowired
-    private TjTaskDcMapper tjTaskDcMapper;
-
 
     @Autowired
     private TjDeviceDetailMapper deviceDetailMapper;
 
     @Autowired
     private SceneLabelMap sceneLabelMap;
+
+    @Autowired
+    private RoutingPlanConsumer routingPlanConsumer;
 
     private static final SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss");
 
@@ -472,21 +474,32 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int saveTask(TaskBo in) throws BusinessException {
+        TjTask tjTask = new TjTask();
+        if (ObjectUtil.isNotEmpty(in.getId())) {
+            tjTask = this.getById(in.getId());
+            if (!TaskStatusEnum.NO_SUBMIT.getCode().equals(tjTask.getStatus())) {
+                throw new BusinessException("任务已提交，不可修改");
+            }
+        }
         switch (in.getProcessNode()) {
             case TaskProcessNode.TASK_INFO:
                 if (CollectionUtils.isEmpty(in.getAvDeviceIds())) {
                     throw new BusinessException("请选择主车被测设备");
                 }
-                TjTask tjTask = new TjTask();
                 if (ObjectUtil.isNotEmpty(in.getId())) {
-                    BeanUtils.copyBeanProp(tjTask, in);
+                    tjTask.setClient(in.getClient());
+                    tjTask.setConsigner(in.getConsigner());
+                    tjTask.setContract(in.getContract());
+                    tjTask.setStartTime(in.getStartTime());
+                    tjTask.setEndTime(in.getEndTime());
                     this.updateById(tjTask);
                     tjTaskDataConfigService.remove(new QueryWrapper<TjTaskDataConfig>().eq(ColumnName.TASK_ID, tjTask.getId()));
                 } else {
                     BeanUtils.copyBeanProp(tjTask, in);
                     tjTask.setTaskCode("task-" + sf.format(new Date()));
+                    tjTask.setProcessNode(TaskProcessNode.SELECT_CASE);
                     // todo 排期日期
                     tjTask.setPlanDate(new Date());
                     tjTask.setCreateTime(new Date());
@@ -495,7 +508,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 }
                 List<TjTaskDataConfig> dataConfigs = in.getAvDeviceIds().stream().map(deviceId -> {
                     TjTaskDataConfig config = new TjTaskDataConfig();
-                    config.setTaskId(tjTask.getId());
+                    config.setTaskId(in.getId());
                     config.setType(PartRole.AV);
                     config.setParticipatorId("1");
                     config.setParticipatorName("主车1");
@@ -553,7 +566,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 tjTaskDataConfigService.saveBatch(dataConfigList);
                 TjTask task = new TjTask();
                 task.setId(in.getId());
-                task.setProcessNode(TaskProcessNode.SELECT_CASE);
+                task.setProcessNode(TaskProcessNode.CONFIG);
                 task.setCaseCount(in.getCaseIds().size());
                 updateById(task);
                 return in.getId();
@@ -568,25 +581,32 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                         && ObjectUtil.isEmpty(in.getCases().get(in.getCases().size() - 1).getConnectInfo())) {
                     throw new BusinessException("请完善用例连接信息");
                 }
+                // 修改任务用例信息
                 List<TjTaskCase> tjTaskCases = tjTaskCaseService.listByIds(in.getCases().stream()
                         .map(CaseContinuousVo::getId).collect(Collectors.toList()));
 
+                Map<Integer, Object> map = in.getCases().stream().collect(Collectors.toMap(CaseContinuousVo::getId,
+                        CaseContinuousVo::getConnectInfo));
                 for (int i = 0; i < tjTaskCases.size(); i++) {
-
+                    TjTaskCase taskCase = tjTaskCases.get(i);
+                    taskCase.setSort(i + 1);
+                    Object obj = map.get(taskCase.getId());
+                    taskCase.setConnectInfo(ObjectUtil.isEmpty(obj) ? null : JSONObject.toJSONString(obj));
+                    tjTaskCaseMapper.update(taskCase);
                 }
-                for (TjTaskCase ori : tjTaskCases) {
-//                    ori.setSort(i + 1);
-//                    ori.setConnectInfo(JSONObject.toJSONString(caseContinuousVo.getConnectInfo()));
-//                    tjTaskCaseMapper.update(taskCase);
-                }
-
-                for (int i = 0; i < tjTaskCases.size(); i++) {
-                    CaseContinuousVo caseContinuousVo = in.getCases().get(i);
-                    TjTaskCase taskCase = new TjTaskCase();
-
-                }
-
+                // 修改连续式场景任务完整轨迹信息
+                TjTask param = new TjTask();
+                param.setId(in.getId());
+                param.setProcessNode(TaskProcessNode.VIEW_PLAN);
+                param.setContinuous(Boolean.TRUE);
+                param.setRouteFile(in.getRouteFile());
+                updateById(param);
                 return in.getId();
+            case TaskProcessNode.VIEW_PLAN:
+                tjTask.setProcessNode(TaskProcessNode.WAIT_TEST);
+                tjTask.setStatus(TaskStatusEnum.WAITING.getCode());
+                updateById(tjTask);
+                break;
             default:
                 break;
         }
@@ -594,9 +614,60 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
     }
 
     @Override
-    public boolean routingPlan(List<CaseContinuousVo> caseContinuousVos) throws BusinessException {
+    public boolean routingPlan(RoutingPlanDto routingPlanDto) throws BusinessException {
+        CaseQueryDto param = new CaseQueryDto();
+        param.setSelectedIds(CollectionUtils.emptyIfNull(routingPlanDto.getCases()).stream().map(CaseContinuousVo::getCaseId).collect(Collectors.toList()));
 
-        return restService.startRoutingPlan(caseContinuousVos);
+        List<CaseDetailVo> caseDetails = caseMapper.selectCases(param);
+        Map<Integer, CaseDetailVo> caseDetailMap = CollectionUtils.emptyIfNull(caseDetails).stream().collect(Collectors.toMap(CaseDetailVo::getId, Function.identity()));
+
+        TjTask task = getById(routingPlanDto.getTaskId());
+        routingPlanConsumer.subscribeAndSend(task.getId(), task.getTaskCode());
+        List<CaseContinuousVo> caseContinuousInfo = routingPlanDto.getCases();
+        for (int i = 0; i < caseContinuousInfo.size(); i++) {
+            CaseContinuousVo caseContinuousVo = caseContinuousInfo.get(i);
+            caseContinuousVo.setTaskId(routingPlanDto.getTaskId());
+            caseContinuousVo.setSort(i + 1);
+            CaseDetailVo caseDetail = caseDetailMap.get(caseContinuousVo.getCaseId());
+            // 主车轨迹
+            try {
+                List<List<TrajectoryValueDto>> mainSimulations = routeService.readTrajectoryFromRouteFile(caseDetail.getRouteFile(), "1");
+//                List<Map<String, Object>> mainSimuTrajectories = mainSimulations.stream()
+//                        .map(item -> item.get(0)).map(n -> {
+//                            Map<String, Object> map = new HashMap<>();
+//                            map.put("id", n.getId());
+//                            map.put("name", n.getName());
+//                            map.put("globalTimeStamp", n.getGlobalTimeStamp());
+//                            map.put("frameId", n.getFrameId());
+//                            map.put("longitude", n.getLongitude());
+//                            map.put("latitude", n.getLatitude());
+//                            map.put("courseAngle", n.getCourseAngle());
+//                            return map;
+//                        }).collect(Collectors.toList());
+//                Map<String, Object> startPoint = updateMap(mainSimuTrajectories.get(0));
+//                Map<String, Object> endPoint = updateMap(mainSimuTrajectories.get(mainSimuTrajectories.size() - 1));
+//                caseContinuousVo.setMainTrajectory(mainSimuTrajectories);
+//                caseContinuousVo.setStartPoint(startPoint);
+//                caseContinuousVo.setEndPoint(endPoint);
+                List<TrajectoryValueDto> valueDtos = mainSimulations.stream()
+                        .map(item -> item.get(0)).collect(Collectors.toList());
+                caseContinuousVo.setMainTrajectory(valueDtos);
+                caseContinuousVo.setStartPoint(valueDtos.get(0));
+                caseContinuousVo.setEndPoint(valueDtos.get(valueDtos.size() - 1));
+            } catch (IOException e) {
+                log.error(StringUtils.format("读取{}路线文件失败:{}", caseContinuousVo.getCaseNumber(), e));
+            } catch (IndexOutOfBoundsException e1) {
+                log.error(StringUtils.format("{}主车轨迹信息异常，请检查{}", caseContinuousVo.getCaseNumber(),
+                        caseDetail.getRouteFile()));
+            }
+        }
+        return restService.startRoutingPlan(caseContinuousInfo);
+    }
+
+    private Map<String, Object> updateMap(Map<String, Object> ori) {
+        Map<String, Object> startPoint = new HashMap<>();
+        startPoint.putAll(ori);
+        return startPoint;
     }
 
     @Override
@@ -609,7 +680,6 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
 
     @Override
     public void export(HttpServletResponse response, Integer taskId) throws IOException {
-        TjTask task = this.getById(taskId);
         List<TaskReportVo> exportList = tjTaskMapper.getExportList(taskId);
         System.out.println(JSONObject.toJSONString(exportList));
         double score = 100;

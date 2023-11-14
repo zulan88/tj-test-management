@@ -94,8 +94,10 @@ public class RestServiceImpl implements RestService {
             log.info("============================== tess routing plan ：{}", routingPlanUrl);
             HttpHeaders httpHeaders = new HttpHeaders();
             httpHeaders.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<List<CaseContinuousVo>> resultHttpEntity = new HttpEntity<>(caseContinuousVos, httpHeaders);
-            log.info("============================== tess routing plan param：{}", JSONObject.toJSONString(caseContinuousVos));
+            Map<String, Object> param = new HashMap<>();
+            param.put("params", caseContinuousVos);
+            HttpEntity<Map<String, Object>> resultHttpEntity = new HttpEntity<>(param, httpHeaders);
+            log.info("============================== tess routing plan param：{}", JSONObject.toJSONString(param));
             ResponseEntity<String> response =
                     restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);
             if (response.getStatusCodeValue() == 200) {

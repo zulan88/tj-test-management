@@ -7,12 +7,11 @@ import net.wanji.business.common.Constants.Extension;
 import net.wanji.business.common.Constants.RedisMessageType;
 import net.wanji.business.domain.WebsocketMessage;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
-import net.wanji.business.domain.dto.SceneDebugDto;
-import net.wanji.business.domain.vo.ParticipantTrajectoryVo;
+import net.wanji.business.entity.TjTask;
+import net.wanji.business.mapper.TjTaskMapper;
 import net.wanji.business.service.RouteService;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.common.common.SimulationMessage;
-import net.wanji.common.common.SimulationOptimizeDto;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.config.WanjiConfig;
@@ -33,16 +32,15 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * @Auther: guanyuduo
@@ -50,7 +48,7 @@ import java.util.stream.Collectors;
  * @Descriptoin:
  */
 @Component
-public class RedisTrajectory2Consumer {
+public class RoutingPlanConsumer {
 
     private static final Logger log = LoggerFactory.getLogger("business");
 
@@ -58,29 +56,35 @@ public class RedisTrajectory2Consumer {
 
     private final RedisMessageListenerContainer redisMessageListenerContainer;
 
-    public RedisTrajectory2Consumer(RedisMessageListenerContainer redisMessageListenerContainer) {
+    public static String ROUTING_CHANNEL = "ROUTINGResult";
+
+    public RoutingPlanConsumer(RedisMessageListenerContainer redisMessageListenerContainer) {
         this.redisMessageListenerContainer = redisMessageListenerContainer;
     }
 
     @Autowired
     private RouteService routeService;
 
+    @Autowired
+    private TjTaskMapper taskMapper;
+
     @PostConstruct
     public void validChannel() {
         ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1,
-                new DefaultThreadFactory("RedisTrajectory2Consumer-removeListeners"));
+                new DefaultThreadFactory("RoutingPlanConsumer-removeListeners"));
         scheduledExecutorService.scheduleAtFixedRate(
                 this::removeListeners, 0, 20, TimeUnit.SECONDS);
     }
 
     /**
-     * 在线调试
+     * 路线优化
      *
-     * @param sceneDebugDto
+     * @param taskId
+     * @param taskCode
      */
-    public void subscribeAndSend(SceneDebugDto sceneDebugDto) {
+    public void subscribeAndSend(Integer taskId, String taskCode) {
         // 添加监听器
-        this.addRunningChannel(sceneDebugDto);
+        this.addRunningChannel(taskId, taskCode);
     }
 
 
@@ -89,17 +93,17 @@ public class RedisTrajectory2Consumer {
      *
      * @param sceneDebugDto
      */
-    public void addRunningChannel(SceneDebugDto sceneDebugDto) {
-        String channel = WebSocketManage.buildKey(SecurityUtils.getUsername(), sceneDebugDto.getNumber(),
-                WebSocketManage.SIMULATION, null);
+    public void addRunningChannel(Integer taskId, String taskCode) {
+        String channel = WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(taskId),
+                WebSocketManage.PLAN, null);
         if (this.runningChannel.containsKey(channel)) {
             log.info("通道已存在");
             return;
         }
-        MessageListener listener = createListener(channel, sceneDebugDto);
-        this.runningChannel.put(channel, new ChannelListener(sceneDebugDto.getNumber(), channel, SecurityUtils.getUsername(),
+        MessageListener listener = createListener(channel, taskId, taskCode);
+        this.runningChannel.put(channel, new ChannelListener(channel, SecurityUtils.getUsername(),
                 System.currentTimeMillis(), listener));
-        redisMessageListenerContainer.addMessageListener(listener, new ChannelTopic(channel));
+        redisMessageListenerContainer.addMessageListener(listener, new ChannelTopic(ROUTING_CHANNEL));
         log.info("添加监听器成功:{}", channel);
     }
 
@@ -107,13 +111,15 @@ public class RedisTrajectory2Consumer {
     /**
      * 创建监听器
      *
-     * @param channel       通道名称
-     * @param sceneDebugDto 调试参数
+     * @param channel  通道名称
+     * @param taskId   调试参数
+     * @param taskCode 调试参数
      * @return
      */
-    public MessageListener createListener(String channel, SceneDebugDto sceneDebugDto) {
+    public MessageListener createListener(String channel, Integer taskId, String taskCode) {
         ObjectMapper objectMapper = new ObjectMapper();
-        String methodLog = StringUtils.format("{}仿真验证 - ", sceneDebugDto.getNumber());
+        String methodLog = StringUtils.format("{}多场景路径优化 - ", taskCode);
+        TjTask task = taskMapper.selectById(taskId);
         return (message, pattern) -> {
             try {
                 // 解析消息
@@ -141,8 +147,6 @@ public class RedisTrajectory2Consumer {
                         if (CollectionUtils.isNotEmpty(simulationTrajectory.getValue())) {
                             // 实际轨迹消息
                             List<TrajectoryValueDto> data = simulationTrajectory.getValue();
-                            // 检查轨迹
-                            List<ParticipantTrajectoryVo> res = routeService.checkSimulaitonRoute2(sceneDebugDto.getTrajectoryJson(), data);
                             // 保存轨迹(本地)
                             receiveData(channel, simulationTrajectory);
                             // send ws
@@ -150,40 +154,36 @@ public class RedisTrajectory2Consumer {
                                     RedisMessageType.TRAJECTORY,
                                     duration,
                                     data);
-                            msg.setObjlist(res);
                             WebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));
                         }
-                        break;
-                    case RedisMessageType.OPTIMIZE:
-                        log.info("{}接收到轨迹优化消息：{}", methodLog, String.valueOf(simulationMessage.getValue()));
-                        handleOptimize(String.valueOf(simulationMessage.getValue()));
                         break;
                     // 结束消息
                     case RedisMessageType.END:
                         if (!channelListener.started) {
                             break;
                         }
-                        if (StringUtils.isNotEmpty(sceneDebugDto.getRouteFile())) {
-                            FileUtils.deleteFile(sceneDebugDto.getRouteFile());
+                        if (StringUtils.isNotEmpty(task.getRouteFile())) {
+                            FileUtils.deleteFile(task.getRouteFile());
                         }
+                        Map<String, Object> result = new HashMap<>();
                         try {
                             String path = FileUtils.writeRoute(getData(channel), WanjiConfig.getRoutePath(), Extension.TXT);
                             log.info("routeFile:{}", path);
-                            sceneDebugDto.setRouteFile(path);
+                            result.put("routeFile", path);
                         } catch (Exception e) {
                             log.error("保存轨迹文件失败：{}", e);
                         }
                         // 移除监听器
-                        removeListener(channel);
+                        removeListener(ROUTING_CHANNEL);
                         // 解析消息
                         CaseTrajectoryDetailBo end = objectMapper.readValue(String.valueOf(simulationMessage.getValue()),
                                 CaseTrajectoryDetailBo.class);
                         log.info(StringUtils.format("{}结束：{}", methodLog, JSONObject.toJSONString(end)));
-                        // 更新数据
-                        Optional.ofNullable(end.getEvaluationVerify()).ifPresent(sceneDebugDto.getTrajectoryJson()::setEvaluationVerify);
-                        sceneDebugDto.getTrajectoryJson().setDuration(duration);
+                        // todo 连接线异常提示
+                        result.put("success", true);
+                        result.put("message", "无异常");
                         // send ws
-                        WebsocketMessage msg = new WebsocketMessage(RedisMessageType.END, null, sceneDebugDto);
+                        WebsocketMessage msg = new WebsocketMessage(RedisMessageType.END, null, result);
                         WebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));
                         break;
                     default:
@@ -191,23 +191,9 @@ public class RedisTrajectory2Consumer {
                 }
             } catch (IOException e) {
                 log.error("解析消息失败：{}", e);
-                removeListener(channel);
+                removeListener(ROUTING_CHANNEL);
             }
         };
-    }
-
-    public void handleOptimize(String optimizeInfo) {
-        JSONObject jsonObject = JSONObject.parseObject(optimizeInfo);
-        List<SimulationOptimizeDto> list = new ArrayList<>();
-        for (Entry<String, Object> entry : jsonObject.entrySet()) {
-            JSONObject points = JSONObject.parseObject((String) entry.getValue());
-            for (Entry<String, Object> detail : points.entrySet()) {
-                list.add(new SimulationOptimizeDto(entry.getKey(), detail.getKey(), detail.getValue()));
-            }
-        }
-        Map<String, List<SimulationOptimizeDto>> result = list.stream()
-                .collect(Collectors.groupingBy(SimulationOptimizeDto::getId));
-        log.info("优化结果：{}", JSONObject.toJSONString(result));
     }
 
     /**
@@ -265,14 +251,14 @@ public class RedisTrajectory2Consumer {
      */
     public void removeListeners() {
         try {
-            Iterator<Map.Entry<String, ChannelListener<SimulationTrajectoryDto>>> iterator =
+            Iterator<Entry<String, ChannelListener<SimulationTrajectoryDto>>> iterator =
                     this.runningChannel.entrySet().iterator();
             while (iterator.hasNext()) {
-                Map.Entry<String, ChannelListener<SimulationTrajectoryDto>> entry = iterator.next();
+                Entry<String, ChannelListener<SimulationTrajectoryDto>> entry = iterator.next();
                 ChannelListener<SimulationTrajectoryDto> channelListener = entry.getValue();
                 if (channelListener.isExpire()) {
                     redisMessageListenerContainer.removeMessageListener(channelListener.getListener(),
-                            new ChannelTopic(channelListener.getChannel()));
+                            new ChannelTopic(ROUTING_CHANNEL));
                     iterator.remove();  // Removes the current element from the map
                 }
             }
@@ -287,7 +273,6 @@ public class RedisTrajectory2Consumer {
      * @param <T>
      */
     public static class ChannelListener<T> implements MessageListener {
-        private final String sceneNumber;
         private final String channel;
         private boolean started;
         private final String userName;
@@ -295,9 +280,8 @@ public class RedisTrajectory2Consumer {
         private final MessageListener listener;
         private final List<T> data;
 
-        public ChannelListener(String sceneNumber, String channel, String userName, Long timestamp,
+        public ChannelListener(String channel, String userName, Long timestamp,
                                MessageListener listener) {
-            this.sceneNumber = sceneNumber;
             this.channel = channel;
             this.started = false;
             this.userName = userName;
@@ -317,10 +301,6 @@ public class RedisTrajectory2Consumer {
 
         public int getCurrentSize() {
             return this.data.size();
-        }
-
-        public String getNumber() {
-            return sceneNumber;
         }
 
         public String getChannel() {

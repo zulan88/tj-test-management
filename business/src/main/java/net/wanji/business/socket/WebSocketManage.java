@@ -31,6 +31,7 @@ public class WebSocketManage {
 
     public static final String SIMULATION = "2";
     public static final String REAL = "3";
+    public static final String PLAN = "4";
     public static final String TASK = "5";
 
     public static Map<String, String> CLIENT_TYPE = new HashMap<>();
@@ -38,6 +39,7 @@ public class WebSocketManage {
     static {
         CLIENT_TYPE.put(SIMULATION, "仿真验证");
         CLIENT_TYPE.put(REAL, "实车验证");
+        CLIENT_TYPE.put(PLAN, "路径规划");
         CLIENT_TYPE.put(TASK, "任务测试");
     }
 

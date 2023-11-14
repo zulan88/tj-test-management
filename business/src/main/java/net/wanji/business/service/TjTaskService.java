@@ -2,6 +2,7 @@ package net.wanji.business.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
+import net.wanji.business.domain.dto.RoutingPlanDto;
 import net.wanji.business.domain.dto.TaskDto;
 import net.wanji.business.domain.bo.TaskBo;
 import net.wanji.business.domain.dto.device.TaskSaveDto;
@@ -72,7 +73,7 @@ public interface TjTaskService extends IService<TjTask> {
      * @return
      * @throws BusinessException
      */
-    boolean routingPlan(List<CaseContinuousVo> caseContinuousVos) throws BusinessException;
+    boolean routingPlan(RoutingPlanDto routingPlanDto) throws BusinessException;
 
     int hasUnSubmitTask();
 
