@@ -1,6 +1,8 @@
 package net.wanji.business.service;
 
 import net.wanji.business.domain.bo.CaseConfigBo;
+import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
+import net.wanji.business.domain.bo.SaveTaskSchemeBo;
 import net.wanji.business.domain.bo.TaskCaseConfigBo;
 import net.wanji.business.domain.dto.device.DeviceReadyStateDto;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
@@ -92,4 +94,23 @@ public interface RestService {
      * @date 2023-11-14
      */
     List<IndexCustomWeightVo> getValuationIndexCustomWeight();
+
+    /**
+     * 创建任务和方案关联
+     * @param saveTaskSchemeBo
+     * @return {@link boolean}
+     * @author liruitao
+     * @date 2023-11-15
+     */
+    boolean saveTaskScheme(SaveTaskSchemeBo saveTaskSchemeBo);
+
+    /**
+     * 自定义-场景权重创建
+     * @param saveCustomScenarioWeightBo
+     * @return {@link boolean}
+     * @author liruitao
+     * @date 2023-11-15
+     */
+    boolean saveCustomScenarioWeight(SaveCustomScenarioWeightBo saveCustomScenarioWeightBo);
+    
 }

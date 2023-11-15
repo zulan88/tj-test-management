@@ -4,6 +4,8 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.bo.CaseConfigBo;
+import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
+import net.wanji.business.domain.bo.SaveTaskSchemeBo;
 import net.wanji.business.domain.bo.TaskCaseConfigBo;
 import net.wanji.business.domain.dto.device.DeviceReadyStateDto;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
@@ -67,6 +69,12 @@ public class RestServiceImpl implements RestService {
 
     @Value("${tess.indexCustomWeight}")
     private String indexCustomWeightUrl;
+
+    @Value("${tess.saveTaskScheme}")
+    private String saveTaskSchemeUrl;
+
+    @Value("${tess.saveCustomScenarioWeight}")
+    private String saveCustomScenarioWeightUrl;
 
     @Autowired
     private RedisCache redisCache;
@@ -417,7 +425,6 @@ public class RestServiceImpl implements RestService {
         return indexCustomWeightVos;
     }
 
-
     public List<IndexCustomWeightVo.IndexWeightDetails> getIndexWeightDetails(String code) {
         List<IndexCustomWeightVo.IndexWeightDetails> indexWeightDetailsVos = new ArrayList<>();
         try {
@@ -453,6 +460,58 @@ public class RestServiceImpl implements RestService {
             log.error("远程服务调用失败:{}", e);
         }
         return indexWeightDetailsVos;
+    }
+
+    @Override
+    public boolean saveTaskScheme(SaveTaskSchemeBo saveTaskSchemeBo) {
+        try {
+            String resultUrl = saveTaskSchemeUrl;
+            log.info("============================== saveTaskSchemeUrl：{}", saveTaskSchemeUrl);
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<SaveTaskSchemeBo> resultHttpEntity = new HttpEntity<>(saveTaskSchemeBo, httpHeaders);
+            log.info("============================== saveTaskScheme：{}", JSONObject.toJSONString(saveTaskSchemeBo));
+            ResponseEntity<String> response =
+                    restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);
+            if (response.getStatusCodeValue() == 200) {
+                JSONObject result = JSONObject.parseObject(response.getBody(), JSONObject.class);
+                log.info("============================== saveTaskScheme  result:{}", JSONObject.toJSONString(result));
+                if (Objects.isNull(result) || !"0".equals(result.get("status").toString())) {
+                    log.error("远程服务调用失败:{}", result.get("msg"));
+                    return false;
+                }
+                return true;
+            }
+        } catch (Exception e) {
+            log.error("远程服务调用失败:{}", e);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean saveCustomScenarioWeight(SaveCustomScenarioWeightBo saveCustomScenarioWeightBo) {
+        try {
+            String resultUrl = saveCustomScenarioWeightUrl;
+            log.info("============================== saveCustomScenarioWeightUrl：{}", saveCustomScenarioWeightUrl);
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<SaveCustomScenarioWeightBo> resultHttpEntity = new HttpEntity<>(saveCustomScenarioWeightBo, httpHeaders);
+            log.info("============================== saveCustomScenarioWeight：{}", JSONObject.toJSONString(saveCustomScenarioWeightBo));
+            ResponseEntity<String> response =
+                    restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);
+            if (response.getStatusCodeValue() == 200) {
+                JSONObject result = JSONObject.parseObject(response.getBody(), JSONObject.class);
+                log.info("============================== saveCustomScenarioWeight  result:{}", JSONObject.toJSONString(result));
+                if (Objects.isNull(result) || !"0".equals(result.get("status").toString())) {
+                    log.error("远程服务调用失败:{}", result.get("msg"));
+                    return false;
+                }
+                return true;
+            }
+        } catch (Exception e) {
+            log.error("远程服务调用失败:{}", e);
+        }
+        return false;
     }
 
 }

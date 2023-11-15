@@ -8,6 +8,8 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiOperationSort;
+import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
+import net.wanji.business.domain.bo.SaveTaskSchemeBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.bo.TaskBo;
 import net.wanji.business.domain.dto.RoutingPlanDto;
@@ -149,15 +151,35 @@ public class TaskController extends BaseController {
         return AjaxResult.success(restService.getValuationIndexCustomWeight());
     }
 
+    @ApiOperationSort(9)
+    @ApiOperation(value = "9.创建任务和方案关联")
+    @PostMapping("/saveTaskScheme")
+    public AjaxResult saveTaskScheme(@RequestBody SaveTaskSchemeBo saveTaskSchemeBo) throws BusinessException {
+        return AjaxResult.success(restService.saveTaskScheme(saveTaskSchemeBo));
+    }
+
     @ApiOperationSort(10)
-    @ApiOperation(value = "10.测试任务用例列表")
+    @ApiOperation(value = "10.自定义-场景权重创建")
+    @PostMapping("/saveCustomScenarioWeight")
+    public AjaxResult saveCustomScenarioWeight(@RequestBody SaveCustomScenarioWeightBo saveCustomScenarioWeightBo) throws BusinessException {
+        tjTaskService.saveCustomScenarioWeight(saveCustomScenarioWeightBo);
+        return AjaxResult.success(restService.saveCustomScenarioWeight(saveCustomScenarioWeightBo));
+    }
+
+    @ApiOperationSort(11)
+    @ApiOperation(value = "11.自定义-指标权重创建")
+    @PostMapping("/saveCustomIndexWeight")
+    public AjaxResult saveCustomIndexWeight(@RequestBody SaveCustomScenarioWeightBo saveCustomScenarioWeightBo) throws BusinessException {
+//        tjTaskService.saveCustomIndexWeight(saveCustomScenarioWeightBo);
+        return AjaxResult.success(restService.saveCustomScenarioWeight(saveCustomScenarioWeightBo));
+    }
+    @ApiOperationSort(12)
+    @ApiOperation(value = "12.测试任务用例列表")
     @GetMapping("/getTaskCaseList")
     @ApiImplicitParam(name = "taskId", value = "任务id", required = true, dataType = "Integer", paramType = "query", example = "1")
     public AjaxResult getTaskCaseList(@RequestParam("taskId") Integer taskId) throws BusinessException {
         return AjaxResult.success(tjTaskService.getTaskCaseList(taskId));
     }
-
-
 
 
 //    @ApiOperationSort(1)

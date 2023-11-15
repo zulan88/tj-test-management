@@ -27,6 +27,8 @@ public interface TjTaskMapper extends BaseMapper<TjTask> {
     List<TaskListVo> getPageList(TaskDto taskDto);
 
     List<TaskReportVo> getExportList(Integer taskId);
+
+    void saveCustomScenarioWeight(@Param("taskId") String task_id, @Param("weights") String weights);
 }
 
 

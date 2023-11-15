@@ -11,6 +11,7 @@ import com.alibaba.excel.write.metadata.holder.WriteSheetHolder;
 import com.alibaba.excel.write.metadata.holder.WriteTableHolder;
 import com.alibaba.excel.write.metadata.style.WriteCellStyle;
 import com.alibaba.excel.write.style.HorizontalCellStyleStrategy;
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -25,6 +26,7 @@ import net.wanji.business.common.Constants.TaskCaseStatusEnum;
 import net.wanji.business.common.Constants.TaskProcessNode;
 import net.wanji.business.common.Constants.TaskStatusEnum;
 import net.wanji.business.common.Constants.YN;
+import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.bo.TaskBo;
 import net.wanji.business.domain.dto.CaseQueryDto;
@@ -732,6 +734,12 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         // 关闭流
         excelWriter.finish();
 
+    }
+
+    @Override
+    public void saveCustomScenarioWeight(SaveCustomScenarioWeightBo saveCustomScenarioWeightBo) {
+        String weights = JSON.toJSONString(saveCustomScenarioWeightBo.getWeights());
+        tjTaskMapper.saveCustomScenarioWeight(saveCustomScenarioWeightBo.getTask_id(), weights);
     }
 
     public class ExcelMergeCustomerCellHandler implements CellWriteHandler {

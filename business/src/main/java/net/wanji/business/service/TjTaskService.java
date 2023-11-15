@@ -1,6 +1,7 @@
 package net.wanji.business.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.dto.RoutingPlanDto;
 import net.wanji.business.domain.dto.TaskDto;
@@ -92,5 +93,14 @@ public interface TjTaskService extends IService<TjTask> {
      * @param taskIds
      */
     void export(HttpServletResponse response, Integer taskId) throws IOException;
+
+    /**
+     * 新增自定义场景权重信息
+     * @param saveCustomScenarioWeightBo
+     * @return
+     * @author liruitao
+     * @date 2023-11-15
+     */
+    void saveCustomScenarioWeight(SaveCustomScenarioWeightBo saveCustomScenarioWeightBo);
 
 }
