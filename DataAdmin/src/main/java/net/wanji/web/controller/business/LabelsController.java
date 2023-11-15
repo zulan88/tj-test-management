@@ -3,6 +3,7 @@ package net.wanji.web.controller.business;
 import io.swagger.annotations.Api;
 import net.wanji.business.domain.Label;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
+import net.wanji.business.domain.vo.SceneDetailVo;
 import net.wanji.business.domain.vo.TreeVo;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.schedule.SceneLabelMap;
@@ -128,8 +129,15 @@ public class LabelsController extends BaseController {
     }
 
     @DeleteMapping("/{ids}")
-    public AjaxResult remove(@PathVariable Long[] ids)
-    {
+    public AjaxResult remove(@PathVariable Long[] ids) throws BusinessException {
+        for (Long id:ids){
+            SceneDetailVo sceneDetailVo = new SceneDetailVo();
+            sceneDetailVo.setLabel(String.valueOf(id));
+            List<SceneDetailVo> list = tjFragmentedSceneDetailService.selectTjFragmentedSceneDetailList(sceneDetailVo);
+            if(list.size()>0){
+                AjaxResult.error("该标签被场景或用例选中，请删除场景和用例后再试");
+            }
+        }
         return toAjax(labelsService.deleteLabelsByIds(ids));
     }
 

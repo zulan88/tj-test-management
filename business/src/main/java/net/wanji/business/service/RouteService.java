@@ -41,6 +41,8 @@ import org.springframework.util.ObjectUtils;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
@@ -123,9 +125,9 @@ public class RouteService {
             String path = FileUtils.writeRoute(data, WanjiConfig.getRoutePath(), Extension.TXT);
             for (ParticipantTrajectoryBo participantTrajectory : originalTrajectory.getParticipantTrajectories()) {
                 for (TrajectoryDetailBo trajectoryDetailBo : participantTrajectory.getTrajectory()) {
-                    pointNum ++;
+                    pointNum++;
                     if (trajectoryDetailBo.isPass()) {
-                        passNum ++;
+                        passNum++;
                         continue;
                     }
                 }
@@ -153,7 +155,7 @@ public class RouteService {
                 tjTask.setId(taskId);
                 tjTask.setEndTime(new Date());
                 tjTask.setTestTotalTime(DateUtils.secondsToDuration(tjTaskCases.stream().mapToInt(caseObj ->
-                                Integer.parseInt(caseObj.getTestTotalTime())).sum()));
+                        Integer.parseInt(caseObj.getTestTotalTime())).sum()));
                 taskMapper.updateById(tjTask);
 
             }
@@ -182,6 +184,7 @@ public class RouteService {
 
     /**
      * 仿真轨迹点位检查
+     *
      * @param caseId
      * @param oldDetail
      * @param data
@@ -202,21 +205,27 @@ public class RouteService {
 
     /**
      * 仿真轨迹点位检查
+     *
      * @param oldDetail
      * @param data
      */
-    public List<ParticipantTrajectoryVo> checkSimulaitonRoute2(CaseTrajectoryDetailBo oldDetail, List<TrajectoryValueDto> data) {
+    public List<ParticipantTrajectoryVo> checkSimulaitonRoute2(CaseTrajectoryDetailBo oldDetail, List<TrajectoryValueDto> data, Long time) throws ParseException {
         if (CollectionUtils.isEmpty(data) || ObjectUtils.isEmpty(oldDetail)
                 || CollectionUtils.isEmpty(oldDetail.getParticipantTrajectories())) {
             return null;
         }
         List<ParticipantTrajectoryVo> res = new ArrayList<>();
         check(oldDetail, data);
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
         for (ParticipantTrajectoryBo trajectoryBo : oldDetail.getParticipantTrajectories()) {
             ParticipantTrajectoryVo participantTrajectoryVo = new ParticipantTrajectoryVo();
             participantTrajectoryVo.setId(trajectoryBo.getId());
             for (TrajectoryDetailBo trajectoryDetailBo : trajectoryBo.getTrajectory()) {
-                TrajectoryDetailVo trajectoryDetailVo = new TrajectoryDetailVo(trajectoryDetailBo.getFrameId(),trajectoryDetailBo.isPass(),trajectoryDetailBo.getSpeed(),trajectoryDetailBo.getTime());
+                Long restime = 0l;
+                if(!trajectoryDetailBo.getTime().equals("0")) {
+                    restime = (dateFormat.parse(trajectoryDetailBo.getTime()).getTime() - time) / 1000;
+                }
+                TrajectoryDetailVo trajectoryDetailVo = new TrajectoryDetailVo(trajectoryDetailBo.getFrameId(), trajectoryDetailBo.isPass(), trajectoryDetailBo.getSpeed(), String.valueOf(restime));
                 participantTrajectoryVo.addtrajectory(trajectoryDetailVo);
             }
             res.add(participantTrajectoryVo);
@@ -270,6 +279,8 @@ public class RouteService {
                     if (instance <= 3) {
                         trajectoryDetailBo.setPass(true);
                         trajectoryDetailBo.setReason("已校验完成");
+                        trajectoryDetailBo.setTime(trajectory.getTimestamp());
+                        trajectoryDetailBo.setSpeed(Double.valueOf(trajectory.getSpeed()));
                     } else {
                         trajectoryDetailBo.setReason("未经过该点位3米范围区域");
                     }
@@ -320,6 +331,7 @@ public class RouteService {
 
     /**
      * 读取仿真验证轨迹文件
+     *
      * @param fileName
      * @param participantId
      * @return
@@ -343,12 +355,13 @@ public class RouteService {
     public List<TrajectoryValueDto> filterParticipant(List<TrajectoryValueDto> data, String participantId) {
         return StringUtils.isNotEmpty(participantId)
                 ? CollectionUtils.emptyIfNull(data).stream().filter(route ->
-                    participantId.equals(route.getId())).collect(Collectors.toList())
+                participantId.equals(route.getId())).collect(Collectors.toList())
                 : data;
     }
 
     /**
      * 读取仿真验证轨迹原始文件
+     *
      * @param fileName
      * @param participantId
      * @return
@@ -374,11 +387,12 @@ public class RouteService {
 
     /**
      * 读取实车验证轨迹文件
+     *
      * @param fileName
      * @return
      * @throws IOException
      */
-    public  List<RealTestTrajectoryDto> readRealTrajectoryFromRouteFile(String fileName) {
+    public List<RealTestTrajectoryDto> readRealTrajectoryFromRouteFile(String fileName) {
         return readRealRouteFile(fileName);
     }
 
@@ -386,6 +400,4 @@ public class RouteService {
         String routeFile = FileUploadUtils.getAbsolutePathFileName(fileName);
         return FileUtils.readRealRouteFile(routeFile);
     }
-
-
 }

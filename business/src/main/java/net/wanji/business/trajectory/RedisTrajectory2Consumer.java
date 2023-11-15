@@ -32,6 +32,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -114,6 +115,7 @@ public class RedisTrajectory2Consumer {
     public MessageListener createListener(String channel, SceneDebugDto sceneDebugDto) {
         ObjectMapper objectMapper = new ObjectMapper();
         String methodLog = StringUtils.format("{}仿真验证 - ", sceneDebugDto.getNumber());
+        Long nowtime = System.currentTimeMillis();
         return (message, pattern) -> {
             try {
                 // 解析消息
@@ -142,7 +144,7 @@ public class RedisTrajectory2Consumer {
                             // 实际轨迹消息
                             List<TrajectoryValueDto> data = simulationTrajectory.getValue();
                             // 检查轨迹
-                            List<ParticipantTrajectoryVo> res = routeService.checkSimulaitonRoute2(sceneDebugDto.getTrajectoryJson(), data);
+                            List<ParticipantTrajectoryVo> res = routeService.checkSimulaitonRoute2(sceneDebugDto.getTrajectoryJson(), data, nowtime);
                             // 保存轨迹(本地)
                             receiveData(channel, simulationTrajectory);
                             // send ws
@@ -192,6 +194,8 @@ public class RedisTrajectory2Consumer {
             } catch (IOException e) {
                 log.error("解析消息失败：{}", e);
                 removeListener(channel);
+            } catch (ParseException e) {
+                throw new RuntimeException(e);
             }
         };
     }
