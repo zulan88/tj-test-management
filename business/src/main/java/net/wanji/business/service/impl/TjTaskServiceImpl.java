@@ -32,14 +32,7 @@ import net.wanji.business.domain.dto.RoutingPlanDto;
 import net.wanji.business.domain.dto.TaskDto;
 import net.wanji.business.domain.dto.TjDeviceDetailDto;
 import net.wanji.business.domain.dto.device.TaskSaveDto;
-import net.wanji.business.domain.vo.CaseContinuousVo;
-import net.wanji.business.domain.vo.CaseDetailVo;
-import net.wanji.business.domain.vo.CasePageVo;
-import net.wanji.business.domain.vo.DeviceDetailVo;
-import net.wanji.business.domain.vo.TaskCaseVo;
-import net.wanji.business.domain.vo.TaskListVo;
-import net.wanji.business.domain.vo.TaskReportVo;
-import net.wanji.business.domain.vo.TaskTargetVehicleVo;
+import net.wanji.business.domain.vo.*;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjTask;
 import net.wanji.business.entity.TjTaskCase;
@@ -401,8 +394,8 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 result.put("cases", getCaseContinuousInfo(taskSaveDto.getId()));
                 break;
             case TaskProcessNode.VIEW_PLAN:
-                result.put("weight", null);
-                result.put("norm", null);
+                List<SceneIndexSchemeVo> sceneIndexSchemeVos = restService.getSceneIndexSchemeList(taskSaveDto);
+                result.put("data", sceneIndexSchemeVos);
                 break;
             default:
                 break;

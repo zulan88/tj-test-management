@@ -4,9 +4,10 @@ import net.wanji.business.domain.bo.CaseConfigBo;
 import net.wanji.business.domain.bo.TaskCaseConfigBo;
 import net.wanji.business.domain.dto.device.DeviceReadyStateDto;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
+import net.wanji.business.domain.dto.device.TaskSaveDto;
 import net.wanji.business.domain.param.CaseRuleControl;
 import net.wanji.business.domain.param.TestStartParam;
-import net.wanji.business.domain.vo.CaseContinuousVo;
+import net.wanji.business.domain.vo.*;
 import org.springframework.http.HttpMethod;
 
 import java.util.List;
@@ -55,4 +56,40 @@ public interface RestService {
     Object imitateClientUrl(List<CaseConfigBo> param);
 
     Object taskClientUrl(List<TaskCaseConfigBo> param);
+
+    /**
+     * 获取济达场景&指标方案列表
+     * @param taskSaveDto
+     * @return {@link java.util.List<net.wanji.business.domain.vo.SceneIndexSchemeVo>}
+     * @author liruitao
+     * @date 2023-11-14
+     */
+    List<SceneIndexSchemeVo> getSceneIndexSchemeList(TaskSaveDto taskSaveDto);
+
+    /**
+     * 获取场景权重详情
+     * @param id
+     * @return {@link java.lang.String}
+     * @author liruitao
+     * @date 2023-11-14
+     */
+    List<SceneWeightDetailsVo> getSceneWeightDetailsById(String id);
+
+    /**
+     * 获取指标权重详情
+     * @param id
+     * @return {@link String}
+     * @author liruitao
+     * @date 2023-11-14
+     */
+    List<IndexWeightDetailsVo> getIndexWeightDetailsById(String id);
+
+    /**
+     * 获取自定义指标权重详情
+     * @param
+     * @return {@link List<IndexCustomWeightVo>}
+     * @author liruitao
+     * @date 2023-11-14
+     */
+    List<IndexCustomWeightVo> getValuationIndexCustomWeight();
 }

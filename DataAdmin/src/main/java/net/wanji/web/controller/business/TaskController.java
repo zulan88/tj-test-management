@@ -16,12 +16,14 @@ import net.wanji.business.domain.dto.device.TaskSaveDto;
 import net.wanji.business.domain.vo.CaseContinuousVo;
 import net.wanji.business.domain.vo.TaskListVo;
 import net.wanji.business.exception.BusinessException;
+import net.wanji.business.service.RestService;
 import net.wanji.business.service.TjTaskCaseService;
 import net.wanji.business.service.TjTaskService;
 import net.wanji.common.constant.HttpStatus;
 import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
+import net.wanji.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -47,6 +49,9 @@ public class TaskController extends BaseController {
 
     @Autowired
     private TjTaskService tjTaskService;
+
+    @Autowired
+    private RestService restService;
 
     @Autowired
     private TjTaskCaseService taskCaseService;
@@ -123,6 +128,33 @@ public class TaskController extends BaseController {
 
         System.out.println(JSON.toJSONString(a));
     }
+
+    @ApiOperationSort(8)
+    @ApiOperation(value = "8.根据场景权重选择权重详情")
+    @GetMapping("/getWeightDetailsById")
+    public AjaxResult getWeightDetailsById(String id, Integer type) throws BusinessException {
+        if(StringUtils.isEmpty(id)){
+            return AjaxResult.error("场景权重id为空!");
+        }
+        if(type == null){
+            return AjaxResult.error("指标或指标类型为空!");
+        }
+        //0 场景分类方案 1 指标方案
+        if(type == 0){
+            return AjaxResult.success(restService.getSceneWeightDetailsById(id));
+        }else if(type == 1){
+            return AjaxResult.success(restService.getIndexWeightDetailsById(id));
+        }
+        return AjaxResult.success();
+    }
+
+    @ApiOperationSort(8)
+    @ApiOperation(value = "8.评价指标自定义评价权重")
+    @GetMapping("/getValuationIndexCustomWeight")
+    public AjaxResult getValuationIndexCustomWeight() throws BusinessException {
+        return AjaxResult.success(restService.getValuationIndexCustomWeight());
+    }
+
 
 //    @ApiOperationSort(1)
 //    @ApiOperation(value = "创建任务")

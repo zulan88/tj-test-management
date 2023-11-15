@@ -22,4 +22,9 @@ public class TaskSaveDto {
 
     @ApiModelProperty(value = "用例查询请求体(节点=2，必传)")
     private CaseQueryDto caseQueryDto;
+
+    @ApiModelProperty(value = "场景、指标方案类型(sence-场景分类方案 index-指标方案)")
+    private String type;
+
+
 }
