@@ -31,7 +31,6 @@ import net.wanji.business.entity.TjTask;
 import net.wanji.business.entity.TjTaskCase;
 import net.wanji.business.entity.TjTaskCaseRecord;
 import net.wanji.business.exception.BusinessException;
-import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjTaskCaseMapper;
 import net.wanji.business.mapper.TjTaskCaseRecordMapper;
 import net.wanji.business.mapper.TjTaskMapper;
@@ -93,9 +92,6 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
     private TjTaskMapper taskMapper;
 
     @Autowired
-    private TjCaseMapper caseMapper;
-
-    @Autowired
     private TjTaskCaseMapper taskCaseMapper;
 
     @Autowired
@@ -103,6 +99,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
     @Autowired
     private TaskRedisTrajectoryConsumer taskRedisTrajectoryConsumer;
+
 
     @Override
     public TaskCaseVerificationPageVo getStatus(Integer taskCaseId) throws BusinessException {

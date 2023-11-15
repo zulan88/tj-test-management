@@ -30,12 +30,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * @author: guowenhao
@@ -123,12 +123,6 @@ public class TaskController extends BaseController {
         return AjaxResult.success(tjTaskService.hasUnSubmitTask());
     }
 
-    public static void main(String[] args) {
-        String a = "[{\"latitude\":\"31.291317348001133\",\"longitude\":\"121.20177044909862\"},{\"latitude\":\"31.291426346998925\",\"longitude\":\"121.20192271008506\"},{\"latitude\":\"31.291544968845898\",\"longitude\":\"121.20207388346185\"},{\"latitude\":\"31.291595159998042\",\"longitude\":\"121.2021781919333\"},{\"latitude\":\"31.291592241003322\",\"longitude\":\"121.20223324403736\"},{\"latitude\":\"31.29160603799389\",\"longitude\":\"121.20230376101958\"},{\"latitude\":\"31.29158416899701\",\"longitude\":\"121.20234568806515\"},{\"latitude\":\"31.29136515999998\",\"longitude\":\"121.20255562197296\"},{\"latitude\":\"31.291350074681237\",\"longitude\":\"121.20261943133603\"},{\"latitude\":\"31.291400301001538\",\"longitude\":\"121.2026167470535\"},{\"latitude\":\"31.291632041993555\",\"longitude\":\"121.20240607693178\"},{\"latitude\":\"31.291672736826516\",\"longitude\":\"121.202398167056\"},{\"latitude\":\"31.291765908007974\",\"longitude\":\"121.20238939005648\"},{\"latitude\":\"31.291907268992738\",\"longitude\":\"121.20253326196028\"},{\"latitude\":\"31.292439300961398\",\"longitude\":\"121.2032275279761\"}]";
-
-        System.out.println(JSON.toJSONString(a));
-    }
-
     @ApiOperationSort(8)
     @ApiOperation(value = "8.根据场景权重选择权重详情")
     @GetMapping("/getWeightDetailsById")
@@ -154,6 +148,16 @@ public class TaskController extends BaseController {
     public AjaxResult getValuationIndexCustomWeight() throws BusinessException {
         return AjaxResult.success(restService.getValuationIndexCustomWeight());
     }
+
+    @ApiOperationSort(10)
+    @ApiOperation(value = "10.测试任务用例列表")
+    @GetMapping("/getTaskCaseList")
+    @ApiImplicitParam(name = "taskId", value = "任务id", required = true, dataType = "Integer", paramType = "query", example = "1")
+    public AjaxResult getTaskCaseList(@RequestParam("taskId") Integer taskId) throws BusinessException {
+        return AjaxResult.success(tjTaskService.getTaskCaseList(taskId));
+    }
+
+
 
 
 //    @ApiOperationSort(1)
@@ -181,13 +185,13 @@ public class TaskController extends BaseController {
 //    }
 //
 //
-//    @ApiOperationSort(4)
-//    @ApiOperation(value = "获取状态")
-//    @GetMapping("/getStatus")
-//    @ApiImplicitParam(name = "taskCaseId", value = "任务用例ID", required = true, dataType = "Integer", paramType = "query", example = "278")
-//    public AjaxResult getStatus(@RequestParam("taskCaseId") Integer taskCaseId) throws BusinessException {
-//        return AjaxResult.success(taskCaseService.getStatus(taskCaseId));
-//    }
+    @ApiOperationSort(4)
+    @ApiOperation(value = "获取状态")
+    @GetMapping("/getStatus")
+    @ApiImplicitParam(name = "taskCaseId", value = "任务用例ID", required = true, dataType = "Integer", paramType = "query", example = "278")
+    public AjaxResult getStatus(@RequestParam("taskCaseId") Integer taskCaseId) throws BusinessException {
+        return AjaxResult.success(taskCaseService.getStatus(taskCaseId));
+    }
 //
 //    @ApiOperationSort(5)
 //    @ApiOperation(value = "准备")

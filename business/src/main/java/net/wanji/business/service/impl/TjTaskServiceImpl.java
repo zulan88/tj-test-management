@@ -255,6 +255,14 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
     }
 
     @Override
+    public List<TaskCaseVo> getTaskCaseList(Integer taskId) {
+        TaskDto param = new TaskDto();
+        param.setId(taskId);
+        List<TaskListVo> taskListVos = pageList(param);
+        return CollectionUtils.isEmpty(taskListVos) ? null : taskListVos.get(0).getTaskCaseVos();
+    }
+
+    @Override
     public Object initProcessed(Integer processNode) {
         Map<String, Object> result = new HashMap<>();
         switch (processNode) {
@@ -570,6 +578,9 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 if (CollectionUtils.isEmpty(in.getCases())) {
                     return in.getId();
                 }
+                if (CollectionUtils.isNotEmpty(in.getCases()) && StringUtils.isEmpty(in.getRouteFile())) {
+                    throw new BusinessException("连续性配置后需要进行路径规划");
+                }
                 if (in.getCases().stream().limit(in.getCases().size() - 1).allMatch(t -> ObjectUtil.isNotEmpty(t.getConnectInfo()))
                         && ObjectUtil.isEmpty(in.getCases().get(in.getCases().size() - 1).getConnectInfo())) {
                     throw new BusinessException("请完善用例连接信息");
@@ -625,23 +636,6 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
             // 主车轨迹
             try {
                 List<List<TrajectoryValueDto>> mainSimulations = routeService.readTrajectoryFromRouteFile(caseDetail.getRouteFile(), "1");
-//                List<Map<String, Object>> mainSimuTrajectories = mainSimulations.stream()
-//                        .map(item -> item.get(0)).map(n -> {
-//                            Map<String, Object> map = new HashMap<>();
-//                            map.put("id", n.getId());
-//                            map.put("name", n.getName());
-//                            map.put("globalTimeStamp", n.getGlobalTimeStamp());
-//                            map.put("frameId", n.getFrameId());
-//                            map.put("longitude", n.getLongitude());
-//                            map.put("latitude", n.getLatitude());
-//                            map.put("courseAngle", n.getCourseAngle());
-//                            return map;
-//                        }).collect(Collectors.toList());
-//                Map<String, Object> startPoint = updateMap(mainSimuTrajectories.get(0));
-//                Map<String, Object> endPoint = updateMap(mainSimuTrajectories.get(mainSimuTrajectories.size() - 1));
-//                caseContinuousVo.setMainTrajectory(mainSimuTrajectories);
-//                caseContinuousVo.setStartPoint(startPoint);
-//                caseContinuousVo.setEndPoint(endPoint);
                 List<TrajectoryValueDto> valueDtos = mainSimulations.stream()
                         .map(item -> item.get(0)).collect(Collectors.toList());
                 caseContinuousVo.setMainTrajectory(valueDtos);

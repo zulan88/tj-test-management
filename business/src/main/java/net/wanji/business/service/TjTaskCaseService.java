@@ -5,6 +5,7 @@ import net.wanji.business.domain.vo.CaseRealTestVo;
 import net.wanji.business.domain.vo.CommunicationDelayVo;
 import net.wanji.business.domain.vo.RealTestResultVo;
 import net.wanji.business.domain.vo.TaskCaseVerificationPageVo;
+import net.wanji.business.domain.vo.TaskCaseVo;
 import net.wanji.business.domain.vo.TaskReportVo;
 import net.wanji.business.entity.TjTaskCase;
 import net.wanji.business.exception.BusinessException;
@@ -18,6 +19,8 @@ import java.util.List;
 * @createDate 2023-08-31 17:39:16
 */
 public interface TjTaskCaseService extends IService<TjTaskCase> {
+
+
 
     /**
      * 获取任务用例中参与者状态

@@ -170,6 +170,9 @@
             <if test="status != null and status != ''">
                 AND tt.status = #{status}
             </if>
+            <if test="id != null and id != ''">
+                AND tt.id = #{id}
+            </if>
         </where>
         order by tt.plan_date desc, tt.create_time desc
     </select>

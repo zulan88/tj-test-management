@@ -62,5 +62,6 @@ public class TaskDto {
     @ApiModelProperty(value = "任务状态", dataType = "String", example = "任务状态", position = 13)
     private String status;
 
-
+    @ApiModelProperty(value = "主键ID", dataType = "Integer", example = "1", position = 14)
+    private Integer id;
 }
