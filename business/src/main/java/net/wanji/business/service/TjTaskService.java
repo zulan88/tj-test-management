@@ -7,6 +7,7 @@ import net.wanji.business.domain.dto.TaskDto;
 import net.wanji.business.domain.bo.TaskBo;
 import net.wanji.business.domain.dto.device.TaskSaveDto;
 import net.wanji.business.domain.vo.CaseContinuousVo;
+import net.wanji.business.domain.vo.CasePageVo;
 import net.wanji.business.domain.vo.TaskCaseVo;
 import net.wanji.business.domain.vo.TaskListVo;
 import net.wanji.business.domain.vo.TaskVo;
@@ -52,7 +53,7 @@ public interface TjTaskService extends IService<TjTask> {
      * @param taskId
      * @return
      */
-    List<TaskCaseVo> getTaskCaseList(Integer taskId);
+    List<CasePageVo> getTaskCaseList(Integer taskId);
 
     /**
      * 节点数据初始化

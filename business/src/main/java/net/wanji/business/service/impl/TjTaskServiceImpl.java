@@ -255,11 +255,16 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
     }
 
     @Override
-    public List<TaskCaseVo> getTaskCaseList(Integer taskId) {
-        TaskDto param = new TaskDto();
-        param.setId(taskId);
-        List<TaskListVo> taskListVos = pageList(param);
-        return CollectionUtils.isEmpty(taskListVos) ? null : taskListVos.get(0).getTaskCaseVos();
+    public List<CasePageVo> getTaskCaseList(Integer taskId) {
+        TjTaskCase taskCase = new TjTaskCase();
+        taskCase.setTaskId(taskId);
+        List<TaskCaseVo> taskCaseVos = tjTaskCaseMapper.selectByCondition(taskCase);
+        if (CollectionUtils.isEmpty(taskCaseVos)) {
+            return null;
+        }
+        CaseQueryDto param = new CaseQueryDto();
+        param.setSelectedIds(taskCaseVos.stream().map(TaskCaseVo::getCaseId).collect(Collectors.toList()));
+        return tjCaseService.pageList(param);
     }
 
     @Override
