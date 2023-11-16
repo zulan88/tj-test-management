@@ -299,6 +299,7 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
     @Override
     public boolean saveSceneTree(TjFragmentedScenesDto fragmentedScenesDto) {
         TjFragmentedScenes tjFragmentedScenes;
+        fragmentedScenesDto.setIsFolder(0);
         if (ObjectUtils.isEmpty(fragmentedScenesDto.getId())) {
             tjFragmentedScenes = new TjFragmentedScenes();
             BeanUtils.copyBeanProp(tjFragmentedScenes, fragmentedScenesDto);

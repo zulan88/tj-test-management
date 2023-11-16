@@ -264,6 +264,7 @@ public class TjScenelibTreeServiceImpl extends ServiceImpl<TjScenelibTreeMapper,
     @Override
     public boolean saveSceneTree(TjFragmentedScenesDto fragmentedScenesDto) {
         TjScenelibTree tjFragmentedScenes;
+        boolean flag = false;
         if (ObjectUtils.isEmpty(fragmentedScenesDto.getId())) {
             tjFragmentedScenes = new TjScenelibTree();
             BeanUtils.copyBeanProp(tjFragmentedScenes, fragmentedScenesDto);
@@ -276,7 +277,12 @@ public class TjScenelibTreeServiceImpl extends ServiceImpl<TjScenelibTreeMapper,
             tjFragmentedScenes.setUpdatedBy(SecurityUtils.getUsername());
             tjFragmentedScenes.setUpdatedDate(LocalDateTime.now());
         }
-        return saveOrUpdate(tjFragmentedScenes);
+        try {
+            flag = saveOrUpdate(tjFragmentedScenes);
+        }catch(Exception e) {
+
+        }
+        return flag;
     }
 
     @Transactional(rollbackFor = Exception.class)
