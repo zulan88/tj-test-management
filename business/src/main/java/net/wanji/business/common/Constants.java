@@ -112,6 +112,7 @@ public interface Constants {
         public static final String DEVICE_TYPE_COLUMN = "device_type";
         public static final String CREATED_DATE_COLUMN = "created_date";
         public static final String TASK_ID = "task_id";
+        public static final String SORT_COLUMN = "sort";
     }
 
     class ResourceType {

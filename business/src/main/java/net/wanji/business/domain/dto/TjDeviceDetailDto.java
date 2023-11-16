@@ -34,8 +34,8 @@ public class TjDeviceDetailDto {
     @NotBlank(message = "请填写设备名称", groups = {InsertGroup.class, UpdateGroup.class})
     private String deviceName;
 
-    @NotNull(message = "请选择所属文件夹", groups = {QueryGroup.class, InsertGroup.class, UpdateGroup.class})
-    private Integer deviceType;
+//    @NotNull(message = "请选择所属文件夹", groups = {QueryGroup.class, InsertGroup.class, UpdateGroup.class})
+    private String deviceType;
 
     @NotBlank(message = "请选择设备可支持的测试角色", groups = {InsertGroup.class, UpdateGroup.class})
     private String supportRoles;

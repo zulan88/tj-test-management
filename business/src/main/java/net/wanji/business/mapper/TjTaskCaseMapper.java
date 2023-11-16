@@ -20,6 +20,8 @@ public interface TjTaskCaseMapper extends BaseMapper<TjTaskCase> {
     List<TaskCaseVo> selectByCondition(TjTaskCase taskCase);
 
     TaskCaseInfoBo selectTaskCaseInfo(Integer taskCaseId);
+
+    List<TaskCaseInfoBo> selectTaskCaseByCondition(TjTaskCase taskCase);
 }
 
 

@@ -7,14 +7,14 @@ import net.wanji.business.domain.bo.CaseConfigBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.bo.SaveTaskSchemeBo;
 import net.wanji.business.domain.bo.TaskCaseConfigBo;
-import net.wanji.business.domain.dto.CaseSSInfo;
+import net.wanji.business.domain.param.CaseSSInfo;
 import net.wanji.business.domain.dto.device.DeviceReadyStateDto;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.TaskSaveDto;
 import net.wanji.business.domain.param.CaseRuleControl;
+import net.wanji.business.domain.param.CaseTrajectoryParam;
 import net.wanji.business.domain.param.TestStartParam;
 import net.wanji.business.domain.vo.*;
-import net.wanji.business.entity.TjDevice;
 import net.wanji.business.service.RestService;
 import net.wanji.common.core.redis.RedisCache;
 import org.slf4j.Logger;
@@ -201,16 +201,13 @@ public class RestServiceImpl implements RestService {
     }
 
     @Override
-    public boolean sendCaseTrajectoryInfo(Integer taskId, List<CaseSSInfo> caseSSInfos) {
+    public boolean sendCaseTrajectoryInfo(CaseTrajectoryParam param) {
         try {
             String resultUrl = sendCaseTrajectoryInfoUrl;
             log.info("============================== sendCaseTrajectoryInfoUrl：{}", sendCaseTrajectoryInfoUrl);
-            Map<String, Object> param = new HashMap<>();
-            param.put("taskId", taskId);
-            param.put("caseTrajectorySSList", caseSSInfos);
             HttpHeaders httpHeaders = new HttpHeaders();
             httpHeaders.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<Map<String, Object>> resultHttpEntity = new HttpEntity<>(param, httpHeaders);
+            HttpEntity<CaseTrajectoryParam> resultHttpEntity = new HttpEntity<>(param, httpHeaders);
             log.info("============================== sendCaseTrajectoryInfo：{}", JSONObject.toJSONString(param));
             ResponseEntity<String> response =
                     restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);

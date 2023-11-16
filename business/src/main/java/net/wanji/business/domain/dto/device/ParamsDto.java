@@ -13,7 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 @Data
 public class ParamsDto {
-    private Integer caseId;
+
     private Object participantTrajectories;
 
 }

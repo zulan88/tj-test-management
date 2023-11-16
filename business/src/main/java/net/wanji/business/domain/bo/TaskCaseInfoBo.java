@@ -22,6 +22,8 @@ public class TaskCaseInfoBo extends TjCase {
 
     private String trajectoryInfo;
 
+    private String allStageLabel;
+
     private String filePath;
 
     private String geoJsonPath;

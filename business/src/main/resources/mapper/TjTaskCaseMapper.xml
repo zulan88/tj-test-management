@@ -59,6 +59,7 @@
         <id property="taskId" column="task_id"/>
         <result property="sceneName" column="scene_name"/>
         <result property="trajectoryInfo" column="trajectory_info"/>
+        <result property="allStageLabel" column="all_stage_label"/>
         <result property="caseNumber" column="case_number"/>
         <result property="sceneDetailId" column="scene_detail_id"/>
         <result property="resourcesDetailId" column="resources_detail_id"/>
@@ -70,7 +71,8 @@
         <result property="status" column="status"/>
         <result property="filePath" column="file_path"/>
         <result property="geoJsonPath" column="attribute4"/>
-        <collection property="caseConfigs" javaType="java.util.List" resultMap="TaskCaseConfigResult"/>
+        <collection property="caseConfigs" ofType="net.wanji.business.domain.bo.TaskCaseConfigBo"
+                    select="selectTaskCaseConfigInfo" column="{taskId= task_id,caseId= case_id}"/>
     </resultMap>
 
     <resultMap id="TaskCaseConfigResult" type="net.wanji.business.domain.bo.TaskCaseConfigBo">
@@ -92,18 +94,11 @@
         <result property="lastOnlineDate" column="last_online_date"/>
     </resultMap>
 
-    <select id="selectTaskCaseInfo" resultMap="TaskCaseInfoResult">
-        SELECT ttc.id      as task_case_id,
-               ttc.case_id,
-               ttc.task_id,
-               sd.NAME     AS scene_name,
-               sd.trajectory_info,
-               tc.scene_detail_id,
-               tc.resources_detail_id,
-               tc.detail_info,
-               tc.route_file,
-               tc.`status`,
-               dc.id       AS config_id,
+    <select id="selectTaskCaseConfigInfo" resultMap="TaskCaseConfigResult">
+
+        SELECT dc.id       AS config_id,
+               dc.task_id,
+               dc.case_id,
                dc.type,
                dc.participator_id,
                dc.participator_name,
@@ -116,7 +111,23 @@
                dd.data_channel,
                dd.command_channel,
                dd.`status` AS device_status,
-               dd.last_online_date,
+               dd.last_online_date
+        from tj_task_data_config dc
+                 LEFT JOIN tj_device_detail dd ON dd.device_id = dc.device_id
+        where dc.task_id = #{taskId} and dc.case_id = #{caseId}
+    </select>
+
+    <select id="selectTaskCaseInfo" resultMap="TaskCaseInfoResult">
+        SELECT ttc.id  as task_case_id,
+               ttc.case_id,
+               ttc.task_id,
+               sd.NAME AS scene_name,
+               sd.trajectory_info,
+               tc.scene_detail_id,
+               tc.resources_detail_id,
+               tc.detail_info,
+               tc.route_file,
+               tc.`status`,
                rd.file_path,
                rd.attribute4
         FROM tj_task_case ttc
@@ -127,8 +138,37 @@
                            ON sd.id = tc.scene_detail_id
                  LEFT JOIN tj_task_data_config dc ON dc.task_id = ttc.task_id
                  LEFT JOIN tj_resources_detail rd ON rd.id = tc.resources_detail_id
-                 LEFT JOIN tj_device_detail dd ON dd.device_id = dc.device_id
+
         WHERE ttc.id = #{taskCaseId}
+    </select>
+
+    <select id="selectTaskCaseByCondition" resultMap="TaskCaseInfoResult">
+        SELECT ttc.id as task_case_id,
+        ttc.case_id,
+        ttc.task_id,
+        sd.NAME AS scene_name,
+        sd.trajectory_info,
+        tc.scene_detail_id,
+        tc.resources_detail_id,
+        tc.detail_info,
+        tc.route_file,
+        tc.`status`,
+        rd.file_path,
+        rd.attribute4
+        FROM tj_task_case ttc
+        LEFT JOIN tj_case tc ON tc.id = ttc.case_id
+        LEFT JOIN (SELECT fsd.id, fs.NAME, fsd.trajectory_info
+        FROM tj_fragmented_scene_detail fsd
+        LEFT JOIN tj_fragmented_scenes fs ON fsd.fragmented_scene_id = fs.id) sd ON sd.id = tc.scene_detail_id
+        LEFT JOIN tj_resources_detail rd ON rd.id = tc.resources_detail_id
+        <where>
+            <if test="taskId != null and taskId > 0">
+                and ttc.task_id = #{taskId}
+            </if>
+            <if test="id != null and id > 0 ">
+                and ttc.id = #{id}
+            </if>
+        </where>
     </select>
 
     <update id="update">

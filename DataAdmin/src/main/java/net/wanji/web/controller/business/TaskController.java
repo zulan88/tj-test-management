@@ -20,6 +20,7 @@ import net.wanji.business.domain.dto.device.TaskSaveDto;
 import net.wanji.business.domain.vo.CaseContinuousVo;
 import net.wanji.business.domain.vo.TaskListVo;
 import net.wanji.business.entity.TjTask;
+import net.wanji.business.entity.TjTaskCase;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.RestService;
 import net.wanji.business.service.TjTaskCaseService;
@@ -218,30 +219,26 @@ public class TaskController extends BaseController {
 //
     @ApiOperationSort(4)
     @ApiOperation(value = "获取状态")
-    @GetMapping("/getStatus")
-    @ApiImplicitParam(name = "taskCaseId", value = "任务用例ID", required = true, dataType = "Integer", paramType = "query", example = "278")
-    public AjaxResult getStatus(@RequestParam("taskCaseId") Integer taskCaseId) throws BusinessException {
-        return AjaxResult.success(taskCaseService.getStatus(taskCaseId));
+    @PostMapping("/getStatus")
+    public AjaxResult getStatus(@RequestBody TjTaskCase param) throws BusinessException {
+        return AjaxResult.success(taskCaseService.getStatus(param));
     }
 //
-//    @ApiOperationSort(5)
-//    @ApiOperation(value = "准备")
-//    @GetMapping("/prepare")
-//    @ApiImplicitParam(name = "taskCaseId", value = "任务用例ID", required = true, dataType = "Integer", paramType = "query", example = "278")
-//    public AjaxResult prepare(@RequestParam("taskCaseId") Integer taskCaseId) throws BusinessException {
-//        return AjaxResult.success(taskCaseService.prepare(taskCaseId));
-//    }
+    @ApiOperationSort(5)
+    @ApiOperation(value = "准备")
+    @PostMapping("/prepare")
+    public AjaxResult prepare(@RequestBody TjTaskCase param) throws BusinessException {
+        return AjaxResult.success(taskCaseService.prepare(param));
+    }
 //
     @ApiOperationSort(6)
     @ApiOperation(value = "开始")
     @GetMapping("/start")
     @ApiImplicitParams({
-            @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499"),
-            @ApiImplicitParam(name = "action", value = "动作（1：开始；2：结束）", required = true, dataType = "Integer", paramType = "query", example = "1")
+            @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499")
     })
-    public AjaxResult start(@RequestParam("recordId") Integer recordId,
-                            @RequestParam("action") Integer action) throws BusinessException, IOException {
-        return AjaxResult.success(taskCaseService.start(recordId, action));
+    public AjaxResult start(@RequestParam("recordId") Integer recordId) throws BusinessException, IOException {
+        return AjaxResult.success(taskCaseService.controlTask(recordId));
     }
 //
 //    @ApiOperationSort(7)

@@ -15,6 +15,8 @@ import java.util.Set;
 @Data
 public class TaskCaseVerificationPageVo {
 
+    private Integer taskId;
+
     private Integer caseId;
 
     private String filePath;

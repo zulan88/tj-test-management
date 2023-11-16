@@ -27,14 +27,22 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
      * @param taskCaseId
      * @return
      */
-    TaskCaseVerificationPageVo getStatus(Integer taskCaseId) throws BusinessException;
+    TaskCaseVerificationPageVo getStatus(TjTaskCase param) throws BusinessException;
 
     /**
      * 准备（开始倒计时）
-     * @param taskCaseId
+     * @param taskId
      * @return
      */
-    CaseRealTestVo prepare(Integer taskCaseId) throws BusinessException;
+    CaseRealTestVo prepare(TjTaskCase param) throws BusinessException;
+
+
+    /**
+     * 开始/结束
+     * @param recordId
+     * @return
+     */
+    CaseRealTestVo controlTask(Integer recordId) throws BusinessException, IOException;
 
     /**
      * 开始/结束/回放

@@ -133,6 +133,8 @@ public class TestingServiceImpl implements TestingService {
         List<SimulationTrajectoryDto> participantTrajectories = null;
         try {
             participantTrajectories = routeService.readOriRouteFile(caseInfoBo.getRouteFile());
+            participantTrajectories = participantTrajectories.stream().filter(
+                    item -> !ObjectUtils.isEmpty(item.getValue())).collect(Collectors.toList());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -165,7 +167,7 @@ public class TestingServiceImpl implements TestingService {
             stateParam.setType(1);
             stateParam.setTimestamp(System.currentTimeMillis());
             if (PartRole.AV.equals(caseConfigBo.getSupportRoles())) {
-                stateParam.setParams(new ParamsDto(caseId, routeService.readOriTrajectoryFromData(participantTrajectories, caseConfigBo.getBusinessId())));
+                stateParam.setParams(new ParamsDto(routeService.readOriTrajectoryFromData(participantTrajectories, caseConfigBo.getBusinessId())));
             }
             if (PartRole.MV_SIMULATION.equals(caseConfigBo.getSupportRoles())) {
                 SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(caseInfoBo.getDetailInfo(), SceneTrajectoryBo.class);

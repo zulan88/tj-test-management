@@ -1,4 +1,4 @@
-package net.wanji.business.domain.dto;
+package net.wanji.business.domain.param;
 
 import lombok.Data;
 

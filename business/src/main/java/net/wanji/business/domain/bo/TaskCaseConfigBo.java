@@ -14,10 +14,6 @@ import java.time.LocalDateTime;
 @Data
 public class TaskCaseConfigBo extends TjTaskDataConfig {
     /**
-     * 用例ID
-     */
-    private Integer caseId;
-    /**
      * 设备名称
      */
     private String deviceName;
@@ -25,7 +21,7 @@ public class TaskCaseConfigBo extends TjTaskDataConfig {
     /**
      * 设备类型节点
      */
-    private Integer deviceType;
+    private String deviceType;
 
     /**
      * 支持角色
