@@ -222,7 +222,7 @@ public class RouteService {
             participantTrajectoryVo.setId(trajectoryBo.getId());
             for (TrajectoryDetailBo trajectoryDetailBo : trajectoryBo.getTrajectory()) {
                 Long restime = 0l;
-                if(!trajectoryDetailBo.getTime().equals("0")) {
+                if(trajectoryDetailBo.getTime().length()>3) {
                     restime = (dateFormat.parse(trajectoryDetailBo.getTime()).getTime() - time) / 1000;
                 }
                 TrajectoryDetailVo trajectoryDetailVo = new TrajectoryDetailVo(trajectoryDetailBo.getFrameId(), trajectoryDetailBo.isPass(), trajectoryDetailBo.getSpeed(), String.valueOf(restime));

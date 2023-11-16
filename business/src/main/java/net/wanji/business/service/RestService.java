@@ -1,16 +1,20 @@
 package net.wanji.business.service;
 
 import net.wanji.business.domain.bo.CaseConfigBo;
+import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.bo.SaveTaskSchemeBo;
 import net.wanji.business.domain.bo.TaskCaseConfigBo;
-import net.wanji.business.domain.param.CaseSSInfo;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.TaskSaveDto;
 import net.wanji.business.domain.param.CaseRuleControl;
 import net.wanji.business.domain.param.CaseTrajectoryParam;
 import net.wanji.business.domain.param.TestStartParam;
-import net.wanji.business.domain.vo.*;
+import net.wanji.business.domain.vo.CaseContinuousVo;
+import net.wanji.business.domain.vo.IndexCustomWeightVo;
+import net.wanji.business.domain.vo.IndexWeightDetailsVo;
+import net.wanji.business.domain.vo.SceneIndexSchemeVo;
+import net.wanji.business.domain.vo.SceneWeightDetailsVo;
 import org.springframework.http.HttpMethod;
 
 import java.util.List;
@@ -115,5 +119,14 @@ public interface RestService {
      * @date 2023-11-15
      */
     boolean saveCustomScenarioWeight(SaveCustomScenarioWeightBo saveCustomScenarioWeightBo);
-    
+
+    /**
+     * 自定义-指标权重创建
+     * @param saveCustomIndexWeightBo
+     * @return {@link String}
+     * @author liruitao
+     * @date 2023-11-16
+     */
+    boolean saveCustomIndexWeight(SaveCustomIndexWeightBo saveCustomIndexWeightBo);
+
 }

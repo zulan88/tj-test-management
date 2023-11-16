@@ -7,12 +7,14 @@
     <insert id="saveCustomScenarioWeight">
         INSERT INTO tj_task_custom_scenario_weights (
             `task_id`,
-            `weights`
+            `weights`,
+            `weights_type`
         )
         VALUES
         (
             #{taskId},
-            #{weights}
+            #{weights},
+            #{weightsType}
         );
     </insert>
 

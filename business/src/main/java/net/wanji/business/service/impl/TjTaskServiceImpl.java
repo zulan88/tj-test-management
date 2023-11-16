@@ -26,6 +26,7 @@ import net.wanji.business.common.Constants.TaskCaseStatusEnum;
 import net.wanji.business.common.Constants.TaskProcessNode;
 import net.wanji.business.common.Constants.TaskStatusEnum;
 import net.wanji.business.common.Constants.YN;
+import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.bo.TaskBo;
@@ -738,7 +739,13 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
     @Override
     public void saveCustomScenarioWeight(SaveCustomScenarioWeightBo saveCustomScenarioWeightBo) {
         String weights = JSON.toJSONString(saveCustomScenarioWeightBo.getWeights());
-        tjTaskMapper.saveCustomScenarioWeight(saveCustomScenarioWeightBo.getTask_id(), weights);
+        tjTaskMapper.saveCustomScenarioWeight(saveCustomScenarioWeightBo.getTask_id(), weights, "0");
+    }
+
+    @Override
+    public void saveCustomIndexWeight(SaveCustomIndexWeightBo saveCustomIndexWeightBo) {
+        String weights = JSON.toJSONString(saveCustomIndexWeightBo.getList());
+        tjTaskMapper.saveCustomScenarioWeight(saveCustomIndexWeightBo.getTask_id(), weights, "1");
     }
 
     public class ExcelMergeCustomerCellHandler implements CellWriteHandler {

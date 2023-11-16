@@ -10,10 +10,7 @@ import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiOperationSort;
 import net.wanji.business.common.Constants.TaskProcessNode;
-import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
-import net.wanji.business.domain.bo.SaveTaskSchemeBo;
-import net.wanji.business.domain.bo.SceneTrajectoryBo;
-import net.wanji.business.domain.bo.TaskBo;
+import net.wanji.business.domain.bo.*;
 import net.wanji.business.domain.dto.RoutingPlanDto;
 import net.wanji.business.domain.dto.TaskDto;
 import net.wanji.business.domain.dto.device.TaskSaveDto;
@@ -179,9 +176,9 @@ public class TaskController extends BaseController {
     @ApiOperationSort(11)
     @ApiOperation(value = "11.自定义-指标权重创建")
     @PostMapping("/saveCustomIndexWeight")
-    public AjaxResult saveCustomIndexWeight(@RequestBody SaveCustomScenarioWeightBo saveCustomScenarioWeightBo) throws BusinessException {
-//        tjTaskService.saveCustomIndexWeight(saveCustomScenarioWeightBo);
-        return AjaxResult.success(restService.saveCustomScenarioWeight(saveCustomScenarioWeightBo));
+    public AjaxResult saveCustomIndexWeight(@RequestBody SaveCustomIndexWeightBo saveCustomIndexWeightBo) throws BusinessException {
+        tjTaskService.saveCustomIndexWeight(saveCustomIndexWeightBo);
+        return AjaxResult.success(restService.saveCustomIndexWeight(saveCustomIndexWeightBo));
     }
     @ApiOperationSort(12)
     @ApiOperation(value = "12.测试任务用例列表")

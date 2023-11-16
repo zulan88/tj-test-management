@@ -1,6 +1,7 @@
 package net.wanji.business.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.dto.RoutingPlanDto;
@@ -102,5 +103,14 @@ public interface TjTaskService extends IService<TjTask> {
      * @date 2023-11-15
      */
     void saveCustomScenarioWeight(SaveCustomScenarioWeightBo saveCustomScenarioWeightBo);
+
+    /**
+     * 新增自定义指标权重信息
+     * @param saveCustomIndexWeightBo
+     * @return
+     * @author liruitao
+     * @date 2023-11-16
+     */
+    void saveCustomIndexWeight(SaveCustomIndexWeightBo saveCustomIndexWeightBo);
 
 }

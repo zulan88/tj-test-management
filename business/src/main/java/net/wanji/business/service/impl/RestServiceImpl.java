@@ -4,17 +4,21 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.bo.CaseConfigBo;
+import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.bo.SaveTaskSchemeBo;
 import net.wanji.business.domain.bo.TaskCaseConfigBo;
-import net.wanji.business.domain.param.CaseSSInfo;
 import net.wanji.business.domain.dto.device.DeviceReadyStateDto;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.TaskSaveDto;
 import net.wanji.business.domain.param.CaseRuleControl;
 import net.wanji.business.domain.param.CaseTrajectoryParam;
 import net.wanji.business.domain.param.TestStartParam;
-import net.wanji.business.domain.vo.*;
+import net.wanji.business.domain.vo.CaseContinuousVo;
+import net.wanji.business.domain.vo.IndexCustomWeightVo;
+import net.wanji.business.domain.vo.IndexWeightDetailsVo;
+import net.wanji.business.domain.vo.SceneIndexSchemeVo;
+import net.wanji.business.domain.vo.SceneWeightDetailsVo;
 import net.wanji.business.service.RestService;
 import net.wanji.common.core.redis.RedisCache;
 import org.slf4j.Logger;
@@ -30,7 +34,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -79,6 +87,9 @@ public class RestServiceImpl implements RestService {
 
     @Value("${tess.saveCustomScenarioWeight}")
     private String saveCustomScenarioWeightUrl;
+
+    @Value("${tess.saveCustomIndexWeight}")
+    private String saveCustomIndexWeightUrl;
 
     @Autowired
     private RedisCache redisCache;
@@ -530,6 +541,32 @@ public class RestServiceImpl implements RestService {
             if (response.getStatusCodeValue() == 200) {
                 JSONObject result = JSONObject.parseObject(response.getBody(), JSONObject.class);
                 log.info("============================== saveCustomScenarioWeight  result:{}", JSONObject.toJSONString(result));
+                if (Objects.isNull(result) || !"0".equals(result.get("status").toString())) {
+                    log.error("远程服务调用失败:{}", result.get("msg"));
+                    return false;
+                }
+                return true;
+            }
+        } catch (Exception e) {
+            log.error("远程服务调用失败:{}", e);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean saveCustomIndexWeight(SaveCustomIndexWeightBo saveCustomIndexWeightBo) {
+        try {
+            String resultUrl = saveCustomIndexWeightUrl;
+            log.info("============================== saveCustomIndexWeightUrl：{}", saveCustomIndexWeightUrl);
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<SaveCustomIndexWeightBo> resultHttpEntity = new HttpEntity<>(saveCustomIndexWeightBo, httpHeaders);
+            log.info("============================== saveCustomIndexWeight：{}", JSONObject.toJSONString(saveCustomIndexWeightBo));
+            ResponseEntity<String> response =
+                    restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);
+            if (response.getStatusCodeValue() == 200) {
+                JSONObject result = JSONObject.parseObject(response.getBody(), JSONObject.class);
+                log.info("============================== saveCustomIndexWeight  result:{}", JSONObject.toJSONString(result));
                 if (Objects.isNull(result) || !"0".equals(result.get("status").toString())) {
                     log.error("远程服务调用失败:{}", result.get("msg"));
                     return false;
