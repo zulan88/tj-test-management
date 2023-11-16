@@ -502,7 +502,10 @@ public class RestServiceImpl implements RestService {
     }
 
     @Override
-    public boolean saveTaskScheme(SaveTaskSchemeBo saveTaskSchemeBo) {
+    public Map<String, String> saveTaskScheme(SaveTaskSchemeBo saveTaskSchemeBo) {
+        Map<String, String> resultMap = new HashMap<>();
+        resultMap.put("code", "200");
+        resultMap.put("msg", "创建任务和方案关联成功!");
         try {
             String resultUrl = saveTaskSchemeUrl;
             log.info("============================== saveTaskSchemeUrl：{}", saveTaskSchemeUrl);
@@ -517,18 +520,25 @@ public class RestServiceImpl implements RestService {
                 log.info("============================== saveTaskScheme  result:{}", JSONObject.toJSONString(result));
                 if (Objects.isNull(result) || !"0".equals(result.get("status").toString())) {
                     log.error("远程服务调用失败:{}", result.get("msg"));
-                    return false;
+                    resultMap.put("code", "500");
+                    resultMap.put("msg", result.get("msg").toString());
+                    return resultMap;
                 }
-                return true;
+                return resultMap;
             }
         } catch (Exception e) {
             log.error("远程服务调用失败:{}", e);
+            resultMap.put("code", "500");
+            resultMap.put("msg", "济达创建任务和方案关联接口异常!");
         }
-        return false;
+        return resultMap;
     }
 
     @Override
-    public boolean saveCustomScenarioWeight(SaveCustomScenarioWeightBo saveCustomScenarioWeightBo) {
+    public Map<String, String> saveCustomScenarioWeight(SaveCustomScenarioWeightBo saveCustomScenarioWeightBo) {
+        Map<String, String> resultMap = new HashMap<>();
+        resultMap.put("code", "200");
+        resultMap.put("msg", "自定义场景权重保存成功!");
         try {
             String resultUrl = saveCustomScenarioWeightUrl;
             log.info("============================== saveCustomScenarioWeightUrl：{}", saveCustomScenarioWeightUrl);
@@ -543,18 +553,25 @@ public class RestServiceImpl implements RestService {
                 log.info("============================== saveCustomScenarioWeight  result:{}", JSONObject.toJSONString(result));
                 if (Objects.isNull(result) || !"0".equals(result.get("status").toString())) {
                     log.error("远程服务调用失败:{}", result.get("msg"));
-                    return false;
+                    resultMap.put("code", "500");
+                    resultMap.put("msg", result.get("msg").toString());
+                    return resultMap;
                 }
-                return true;
+                return resultMap;
             }
         } catch (Exception e) {
             log.error("远程服务调用失败:{}", e);
+            resultMap.put("code", "500");
+            resultMap.put("msg", "济达自定义-场景权重创建接口异常!");
         }
-        return false;
+        return resultMap;
     }
 
     @Override
-    public boolean saveCustomIndexWeight(SaveCustomIndexWeightBo saveCustomIndexWeightBo) {
+    public Map<String, String> saveCustomIndexWeight(SaveCustomIndexWeightBo saveCustomIndexWeightBo) {
+        Map<String, String> resultMap = new HashMap<>();
+        resultMap.put("code", "200");
+        resultMap.put("msg", "自定义指标权重保存成功!");
         try {
             String resultUrl = saveCustomIndexWeightUrl;
             log.info("============================== saveCustomIndexWeightUrl：{}", saveCustomIndexWeightUrl);
@@ -569,14 +586,18 @@ public class RestServiceImpl implements RestService {
                 log.info("============================== saveCustomIndexWeight  result:{}", JSONObject.toJSONString(result));
                 if (Objects.isNull(result) || !"0".equals(result.get("status").toString())) {
                     log.error("远程服务调用失败:{}", result.get("msg"));
-                    return false;
+                    resultMap.put("code", "500");
+                    resultMap.put("msg", result.get("msg").toString());
+                    return resultMap;
                 }
-                return true;
+                return resultMap;
             }
         } catch (Exception e) {
             log.error("远程服务调用失败:{}", e);
+            resultMap.put("code", "500");
+            resultMap.put("msg", "济达场景方案&指标方案创建接口异常!");
         }
-        return false;
+        return resultMap;
     }
 
 }
