@@ -3,10 +3,7 @@ package net.wanji.business.service.impl;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import net.wanji.business.common.Constants.YN;
-import net.wanji.business.domain.bo.CaseConfigBo;
-import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
-import net.wanji.business.domain.bo.SaveTaskSchemeBo;
-import net.wanji.business.domain.bo.TaskCaseConfigBo;
+import net.wanji.business.domain.bo.*;
 import net.wanji.business.domain.dto.CaseSSInfo;
 import net.wanji.business.domain.dto.device.DeviceReadyStateDto;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
@@ -79,6 +76,9 @@ public class RestServiceImpl implements RestService {
 
     @Value("${tess.saveCustomScenarioWeight}")
     private String saveCustomScenarioWeightUrl;
+
+    @Value("${tess.saveCustomIndexWeight}")
+    private String saveCustomIndexWeightUrl;
 
     @Autowired
     private RedisCache redisCache;
@@ -533,6 +533,32 @@ public class RestServiceImpl implements RestService {
             if (response.getStatusCodeValue() == 200) {
                 JSONObject result = JSONObject.parseObject(response.getBody(), JSONObject.class);
                 log.info("============================== saveCustomScenarioWeight  result:{}", JSONObject.toJSONString(result));
+                if (Objects.isNull(result) || !"0".equals(result.get("status").toString())) {
+                    log.error("远程服务调用失败:{}", result.get("msg"));
+                    return false;
+                }
+                return true;
+            }
+        } catch (Exception e) {
+            log.error("远程服务调用失败:{}", e);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean saveCustomIndexWeight(SaveCustomIndexWeightBo saveCustomIndexWeightBo) {
+        try {
+            String resultUrl = saveCustomIndexWeightUrl;
+            log.info("============================== saveCustomIndexWeightUrl：{}", saveCustomIndexWeightUrl);
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<SaveCustomIndexWeightBo> resultHttpEntity = new HttpEntity<>(saveCustomIndexWeightBo, httpHeaders);
+            log.info("============================== saveCustomIndexWeight：{}", JSONObject.toJSONString(saveCustomIndexWeightBo));
+            ResponseEntity<String> response =
+                    restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);
+            if (response.getStatusCodeValue() == 200) {
+                JSONObject result = JSONObject.parseObject(response.getBody(), JSONObject.class);
+                log.info("============================== saveCustomIndexWeight  result:{}", JSONObject.toJSONString(result));
                 if (Objects.isNull(result) || !"0".equals(result.get("status").toString())) {
                     log.error("远程服务调用失败:{}", result.get("msg"));
                     return false;

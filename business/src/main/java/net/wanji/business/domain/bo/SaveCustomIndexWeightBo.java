@@ -32,12 +32,12 @@ public class SaveCustomIndexWeightBo {
     /**
      * 方案名称
      */
-    private String name;
+//    private String name;
 
     /**
      * 入参：index 指标 或 sence 场景方案
      */
-    private String description;
+//    private String description;
 
     /**
      * 权重集合

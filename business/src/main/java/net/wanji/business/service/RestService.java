@@ -1,9 +1,6 @@
 package net.wanji.business.service;
 
-import net.wanji.business.domain.bo.CaseConfigBo;
-import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
-import net.wanji.business.domain.bo.SaveTaskSchemeBo;
-import net.wanji.business.domain.bo.TaskCaseConfigBo;
+import net.wanji.business.domain.bo.*;
 import net.wanji.business.domain.dto.CaseSSInfo;
 import net.wanji.business.domain.dto.device.DeviceReadyStateDto;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
@@ -115,5 +112,14 @@ public interface RestService {
      * @date 2023-11-15
      */
     boolean saveCustomScenarioWeight(SaveCustomScenarioWeightBo saveCustomScenarioWeightBo);
-    
+
+    /**
+     * 自定义-指标权重创建
+     * @param saveCustomIndexWeightBo
+     * @return {@link String}
+     * @author liruitao
+     * @date 2023-11-16
+     */
+    boolean saveCustomIndexWeight(SaveCustomIndexWeightBo saveCustomIndexWeightBo);
+
 }
