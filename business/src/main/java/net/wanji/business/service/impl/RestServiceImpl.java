@@ -7,6 +7,7 @@ import net.wanji.business.domain.bo.CaseConfigBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.bo.SaveTaskSchemeBo;
 import net.wanji.business.domain.bo.TaskCaseConfigBo;
+import net.wanji.business.domain.dto.CaseSSInfo;
 import net.wanji.business.domain.dto.device.DeviceReadyStateDto;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.TaskSaveDto;
@@ -57,6 +58,9 @@ public class RestServiceImpl implements RestService {
 
     @Value("${masterControl.sendRule}")
     private String sendRuleUrl;
+
+    @Value("${masterControl.sendCaseTrajectoryInfo}")
+    private String sendCaseTrajectoryInfoUrl;
 
     @Value("${imitate.client}")
     private String imitateClientUrl;
@@ -181,6 +185,33 @@ public class RestServiceImpl implements RestService {
             httpHeaders.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<CaseRuleControl> resultHttpEntity = new HttpEntity<>(caseRuleControl, httpHeaders);
             log.info("============================== connectMasterControl：{}", JSONObject.toJSONString(caseRuleControl));
+            ResponseEntity<String> response =
+                    restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);
+            if (response.getStatusCodeValue() == 200) {
+                if (!"success".equals(response.getBody())) {
+                    log.error("远程服务调用失败");
+                    return false;
+                }
+                return true;
+            }
+        } catch (Exception e) {
+            log.error("远程服务调用失败:{}", e);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean sendCaseTrajectoryInfo(Integer taskId, List<CaseSSInfo> caseSSInfos) {
+        try {
+            String resultUrl = sendCaseTrajectoryInfoUrl;
+            log.info("============================== sendCaseTrajectoryInfoUrl：{}", sendCaseTrajectoryInfoUrl);
+            Map<String, Object> param = new HashMap<>();
+            param.put("taskId", taskId);
+            param.put("caseTrajectorySSList", caseSSInfos);
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, Object>> resultHttpEntity = new HttpEntity<>(param, httpHeaders);
+            log.info("============================== sendCaseTrajectoryInfo：{}", JSONObject.toJSONString(param));
             ResponseEntity<String> response =
                     restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);
             if (response.getStatusCodeValue() == 200) {

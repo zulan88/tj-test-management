@@ -588,8 +588,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 if (CollectionUtils.isNotEmpty(in.getCases()) && StringUtils.isEmpty(in.getRouteFile())) {
                     throw new BusinessException("连续性配置后需要进行路径规划");
                 }
-                if (in.getCases().stream().limit(in.getCases().size() - 1).allMatch(t -> ObjectUtil.isNotEmpty(t.getConnectInfo()))
-                        && ObjectUtil.isEmpty(in.getCases().get(in.getCases().size() - 1).getConnectInfo())) {
+                if (in.getCases().subList(0, in.getCases().size() - 1).stream().anyMatch(t -> CollectionUtils.isEmpty((List) t.getConnectInfo()))) {
                     throw new BusinessException("请完善用例连接信息");
                 }
                 // 修改任务用例信息

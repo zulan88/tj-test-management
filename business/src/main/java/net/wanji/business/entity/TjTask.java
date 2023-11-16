@@ -115,16 +115,19 @@ public class TjTask implements Serializable {
     /**
      * 流程节点（1：创建任务信息；2：选择测试用例；3：测试连续性配置；4：查看评价方案；5.待试验；6.已完成）
      */
+    @TableField(value = "process_node")
     private Integer processNode;
 
     /**
      * 是否连续性测试
      */
+    @TableField(value = "continuous")
     private boolean continuous;
 
     /**
      * 主车完整轨迹文件
      */
+    @TableField(value = "route_file")
     private String routeFile;
 
     @TableField(exist = false)

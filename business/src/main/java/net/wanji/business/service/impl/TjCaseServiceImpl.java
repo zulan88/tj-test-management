@@ -450,7 +450,7 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
             }
 
             if (StringUtils.isEmpty(sceneDetail.getTrajectoryInfo())) {
-                throw new BusinessException("创建失败：未获取到场景轨迹");
+                throw new BusinessException("创建失败：未获取到场景点位配置");
             }
             tjCase.setDetailInfo(sceneDetail.getTrajectoryInfo());
 

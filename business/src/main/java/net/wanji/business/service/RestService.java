@@ -4,6 +4,7 @@ import net.wanji.business.domain.bo.CaseConfigBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.bo.SaveTaskSchemeBo;
 import net.wanji.business.domain.bo.TaskCaseConfigBo;
+import net.wanji.business.domain.dto.CaseSSInfo;
 import net.wanji.business.domain.dto.device.DeviceReadyStateDto;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.TaskSaveDto;
@@ -54,6 +55,8 @@ public interface RestService {
      * @return
      */
     boolean sendRuleUrl(CaseRuleControl caseRuleControl);
+
+    boolean sendCaseTrajectoryInfo(Integer taskId, List<CaseSSInfo> caseSSInfos);
 
     Object imitateClientUrl(List<CaseConfigBo> param);
 

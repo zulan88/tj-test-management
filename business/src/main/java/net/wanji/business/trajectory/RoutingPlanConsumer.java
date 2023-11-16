@@ -73,7 +73,7 @@ public class RoutingPlanConsumer {
         ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1,
                 new DefaultThreadFactory("RoutingPlanConsumer-removeListeners"));
         scheduledExecutorService.scheduleAtFixedRate(
-                this::removeListeners, 0, 20, TimeUnit.SECONDS);
+                this::removeListeners, 0, 60, TimeUnit.SECONDS);
     }
 
     /**

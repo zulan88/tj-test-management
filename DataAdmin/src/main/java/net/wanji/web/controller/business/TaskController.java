@@ -6,8 +6,10 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiOperationSort;
+import net.wanji.business.common.Constants.TaskProcessNode;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.bo.SaveTaskSchemeBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
@@ -17,6 +19,7 @@ import net.wanji.business.domain.dto.TaskDto;
 import net.wanji.business.domain.dto.device.TaskSaveDto;
 import net.wanji.business.domain.vo.CaseContinuousVo;
 import net.wanji.business.domain.vo.TaskListVo;
+import net.wanji.business.entity.TjTask;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.RestService;
 import net.wanji.business.service.TjTaskCaseService;
@@ -35,6 +38,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -155,7 +159,12 @@ public class TaskController extends BaseController {
     @ApiOperation(value = "9.创建任务和方案关联")
     @PostMapping("/saveTaskScheme")
     public AjaxResult saveTaskScheme(@RequestBody SaveTaskSchemeBo saveTaskSchemeBo) throws BusinessException {
-        return AjaxResult.success(restService.saveTaskScheme(saveTaskSchemeBo));
+        restService.saveTaskScheme(saveTaskSchemeBo);
+        TaskBo taskBo = new TaskBo();
+        taskBo.setId(Integer.valueOf(saveTaskSchemeBo.getTask_id()));
+        taskBo.setProcessNode(TaskProcessNode.VIEW_PLAN);
+        tjTaskService.saveTask(taskBo);
+        return AjaxResult.success("成功");
     }
 
     @ApiOperationSort(10)
@@ -223,17 +232,17 @@ public class TaskController extends BaseController {
 //        return AjaxResult.success(taskCaseService.prepare(taskCaseId));
 //    }
 //
-//    @ApiOperationSort(6)
-//    @ApiOperation(value = "开始")
-//    @GetMapping("/start")
-//    @ApiImplicitParams({
-//            @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499"),
-//            @ApiImplicitParam(name = "action", value = "动作（1：开始；2：结束）", required = true, dataType = "Integer", paramType = "query", example = "1")
-//    })
-//    public AjaxResult start(@RequestParam("recordId") Integer recordId,
-//                            @RequestParam("action") Integer action) throws BusinessException, IOException {
-//        return AjaxResult.success(taskCaseService.start(recordId, action));
-//    }
+    @ApiOperationSort(6)
+    @ApiOperation(value = "开始")
+    @GetMapping("/start")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499"),
+            @ApiImplicitParam(name = "action", value = "动作（1：开始；2：结束）", required = true, dataType = "Integer", paramType = "query", example = "1")
+    })
+    public AjaxResult start(@RequestParam("recordId") Integer recordId,
+                            @RequestParam("action") Integer action) throws BusinessException, IOException {
+        return AjaxResult.success(taskCaseService.start(recordId, action));
+    }
 //
 //    @ApiOperationSort(7)
 //    @ApiOperation(value = "回放")
