@@ -29,12 +29,7 @@ import net.wanji.common.core.page.TableDataInfo;
 import net.wanji.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -274,4 +269,12 @@ public class TaskController extends BaseController {
 //    public void report(HttpServletResponse response, @RequestParam("taskId") Integer taskId) throws IOException {
 //        tjTaskService.export(response, taskId);
 //    }
+
+    @DeleteMapping("/{id}")
+    public AjaxResult remove(@PathVariable Long id){
+        return tjTaskService.removeById(id)
+                ? AjaxResult.success("删除成功")
+                : AjaxResult.error("删除失败");
+    }
+
 }
