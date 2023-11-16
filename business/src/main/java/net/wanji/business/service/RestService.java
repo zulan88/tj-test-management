@@ -109,7 +109,7 @@ public interface RestService {
      * @author liruitao
      * @date 2023-11-15
      */
-    boolean saveTaskScheme(SaveTaskSchemeBo saveTaskSchemeBo);
+    Map<String, String> saveTaskScheme(SaveTaskSchemeBo saveTaskSchemeBo);
 
     /**
      * 自定义-场景权重创建
@@ -118,7 +118,7 @@ public interface RestService {
      * @author liruitao
      * @date 2023-11-15
      */
-    boolean saveCustomScenarioWeight(SaveCustomScenarioWeightBo saveCustomScenarioWeightBo);
+    Map<String, String> saveCustomScenarioWeight(SaveCustomScenarioWeightBo saveCustomScenarioWeightBo);
 
     /**
      * 自定义-指标权重创建
@@ -127,6 +127,6 @@ public interface RestService {
      * @author liruitao
      * @date 2023-11-16
      */
-    boolean saveCustomIndexWeight(SaveCustomIndexWeightBo saveCustomIndexWeightBo);
+    Map<String, String> saveCustomIndexWeight(SaveCustomIndexWeightBo saveCustomIndexWeightBo);
 
 }

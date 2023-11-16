@@ -152,7 +152,10 @@ public class TaskController extends BaseController {
     @ApiOperation(value = "9.创建任务和方案关联")
     @PostMapping("/saveTaskScheme")
     public AjaxResult saveTaskScheme(@RequestBody SaveTaskSchemeBo saveTaskSchemeBo) throws BusinessException {
-        restService.saveTaskScheme(saveTaskSchemeBo);
+        Map<String, String> map = restService.saveTaskScheme(saveTaskSchemeBo);
+        if ("500".equals(map.get("code"))){
+            return AjaxResult.error(map.get("msg"));
+        }
         TaskBo taskBo = new TaskBo();
         taskBo.setId(Integer.valueOf(saveTaskSchemeBo.getTask_id()));
         taskBo.setProcessNode(TaskProcessNode.VIEW_PLAN);
@@ -164,16 +167,24 @@ public class TaskController extends BaseController {
     @ApiOperation(value = "10.自定义-场景权重创建")
     @PostMapping("/saveCustomScenarioWeight")
     public AjaxResult saveCustomScenarioWeight(@RequestBody SaveCustomScenarioWeightBo saveCustomScenarioWeightBo) throws BusinessException {
+        Map<String, String> map = restService.saveCustomScenarioWeight(saveCustomScenarioWeightBo);
+        if ("500".equals(map.get("code"))){
+           return AjaxResult.error(map.get("msg"));
+        }
         tjTaskService.saveCustomScenarioWeight(saveCustomScenarioWeightBo);
-        return AjaxResult.success(restService.saveCustomScenarioWeight(saveCustomScenarioWeightBo));
+        return AjaxResult.success();
     }
 
     @ApiOperationSort(11)
     @ApiOperation(value = "11.自定义-指标权重创建")
     @PostMapping("/saveCustomIndexWeight")
     public AjaxResult saveCustomIndexWeight(@RequestBody SaveCustomIndexWeightBo saveCustomIndexWeightBo) throws BusinessException {
+        Map<String, String> map = restService.saveCustomIndexWeight(saveCustomIndexWeightBo);
+        if ("500".equals(map.get("code"))){
+            return AjaxResult.error(map.get("msg"));
+        }
         tjTaskService.saveCustomIndexWeight(saveCustomIndexWeightBo);
-        return AjaxResult.success(restService.saveCustomIndexWeight(saveCustomIndexWeightBo));
+        return AjaxResult.success();
     }
     @ApiOperationSort(12)
     @ApiOperation(value = "12.测试任务用例列表")
