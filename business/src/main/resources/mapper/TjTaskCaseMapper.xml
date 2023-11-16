@@ -114,7 +114,7 @@
                dd.last_online_date
         from tj_task_data_config dc
                  LEFT JOIN tj_device_detail dd ON dd.device_id = dc.device_id
-        where dc.task_id = #{taskId} and dc.case_id = #{caseId}
+        where dc.task_id = #{taskId} and (dc.case_id = #{caseId} or dc.case_id = 0)
     </select>
 
     <select id="selectTaskCaseInfo" resultMap="TaskCaseInfoResult">
@@ -148,6 +148,7 @@
         ttc.task_id,
         sd.NAME AS scene_name,
         sd.trajectory_info,
+        sd.all_stage_label,
         tc.scene_detail_id,
         tc.resources_detail_id,
         tc.detail_info,
@@ -157,7 +158,7 @@
         rd.attribute4
         FROM tj_task_case ttc
         LEFT JOIN tj_case tc ON tc.id = ttc.case_id
-        LEFT JOIN (SELECT fsd.id, fs.NAME, fsd.trajectory_info
+        LEFT JOIN (SELECT fsd.id, fs.NAME, fsd.trajectory_info, fsd.all_stage_label
         FROM tj_fragmented_scene_detail fsd
         LEFT JOIN tj_fragmented_scenes fs ON fsd.fragmented_scene_id = fs.id) sd ON sd.id = tc.scene_detail_id
         LEFT JOIN tj_resources_detail rd ON rd.id = tc.resources_detail_id

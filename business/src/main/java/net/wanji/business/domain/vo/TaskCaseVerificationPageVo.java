@@ -17,7 +17,7 @@ public class TaskCaseVerificationPageVo {
 
     private Integer taskId;
 
-    private Integer caseId;
+    private Integer taskCaseId;
 
     private String filePath;
 

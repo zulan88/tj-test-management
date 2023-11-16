@@ -160,7 +160,7 @@ public class RestServiceImpl implements RestService {
 
     @Override
     public boolean selectDeviceReadyState(DeviceReadyStateParam deviceReadyStateParam) {
-        String key = "READY_STATE_" + deviceReadyStateParam.getCaseId() + "_" + deviceReadyStateParam.getDeviceId();
+        String key = "READY_STATE_" + "_" + deviceReadyStateParam.getDeviceId();
         if (redisCache.hasKey(key)) {
             return false;
         }

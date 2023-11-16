@@ -161,7 +161,6 @@ public class TestingServiceImpl implements TestingService {
             }
             // 查询设备准备状态
             DeviceReadyStateParam stateParam = new DeviceReadyStateParam();
-            stateParam.setCaseId(caseId);
             stateParam.setDeviceId(caseConfigBo.getDeviceId());
             stateParam.setControlChannel(caseConfigBo.getCommandChannel());
             stateParam.setType(1);

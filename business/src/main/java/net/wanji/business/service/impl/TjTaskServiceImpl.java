@@ -515,15 +515,16 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                     tjTask.setStatus(TaskStatusEnum.NO_SUBMIT.getCode());
                     this.save(tjTask);
                 }
-                List<TjTaskDataConfig> dataConfigs = in.getAvDeviceIds().stream().map(deviceId -> {
+                List<TjTaskDataConfig> dataConfigs = new ArrayList<>();
+                for (Integer avDeviceId : in.getAvDeviceIds()) {
                     TjTaskDataConfig config = new TjTaskDataConfig();
-                    config.setTaskId(in.getId());
+                    config.setTaskId(tjTask.getId());
                     config.setType(PartRole.AV);
                     config.setParticipatorId("1");
                     config.setParticipatorName("主车1");
-                    config.setDeviceId(deviceId);
-                    return config;
-                }).collect(Collectors.toList());
+                    config.setDeviceId(avDeviceId);
+                    dataConfigs.add(config);
+                }
                 tjTaskDataConfigService.saveBatch(dataConfigs);
                 return tjTask.getId();
             case TaskProcessNode.SELECT_CASE:

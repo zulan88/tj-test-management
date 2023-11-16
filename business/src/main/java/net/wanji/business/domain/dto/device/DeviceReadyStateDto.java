@@ -13,8 +13,4 @@ import lombok.Data;
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class DeviceReadyStateDto extends DeviceStateDto{
-  /**
-   * 用例ID
-   */
-  private Integer caseId;
 }

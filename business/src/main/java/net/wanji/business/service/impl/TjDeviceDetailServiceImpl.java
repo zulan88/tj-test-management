@@ -149,7 +149,8 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
             return state;
         }
         if (!wait) {
-            return deviceStateToRedis.query(deviceId, DeviceStateToRedis.DEVICE_READY_STATE_PREFIX);
+            Integer readyState = deviceStateToRedis.query(deviceId, DeviceStateToRedis.DEVICE_READY_STATE_PREFIX);
+            return ObjectUtils.isEmpty(readyState) ? 0 : readyState;
         }
         String key =  DeviceStateToRedis.DEVICE_READY_STATE_PREFIX + "_" + deviceId;
         try {

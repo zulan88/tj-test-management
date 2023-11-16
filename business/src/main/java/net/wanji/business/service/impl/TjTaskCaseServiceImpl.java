@@ -134,26 +134,27 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         if (CollectionUtils.isEmpty(taskCaseInfos)) {
             throw new BusinessException("查询失败，请检查用例是否存在");
         }
-
+        Map<Integer, TaskCaseInfoBo> caseInfoMap = taskCaseInfos.stream().collect(Collectors.toMap(TaskCaseInfoBo::getId, Function.identity()));
         List<TaskCaseConfigBo> taskCaseConfigs = new ArrayList<>();
-        Map<Integer, Map<String, String>> caseSSMap = new HashMap<>();
         Map<Integer, Map<String, String>> caseBusinessIdAndRoleMap = new HashMap<>();
         Map<Integer, Integer> caseMainSize = new HashMap<>();
+        Map<String, String> startMap = new HashMap<>();
         for (TaskCaseInfoBo taskCaseInfoBo : taskCaseInfos) {
             // 2.数据校验
             validConfig(taskCaseInfoBo);
             // 3.轨迹详情
             CaseTrajectoryDetailBo trajectoryDetail = JSONObject.parseObject(taskCaseInfoBo.getDetailInfo(),
                     CaseTrajectoryDetailBo.class);
-            // 4.参与者开始点位
-            Map<String, String> partStartMap =
-                    CollectionUtils.emptyIfNull(trajectoryDetail.getParticipantTrajectories()).stream().collect(
-                            Collectors.toMap(
-                                    ParticipantTrajectoryBo::getId,
-                                    item -> CollectionUtils.emptyIfNull(item.getTrajectory()).stream()
-                                            .filter(t -> PointTypeEnum.START.getPointType().equals(t.getType())).findFirst()
-                                            .orElse(new TrajectoryDetailBo()).getPosition()));
-            caseSSMap.put(taskCaseInfoBo.getId(), partStartMap);
+            if (startMap.size() < 1) {
+                // 4.参与者开始点位
+                startMap = CollectionUtils.emptyIfNull(trajectoryDetail.getParticipantTrajectories()).stream().collect(
+                                Collectors.toMap(
+                                        ParticipantTrajectoryBo::getId,
+                                        item -> CollectionUtils.emptyIfNull(item.getTrajectory()).stream()
+                                                .filter(t -> PointTypeEnum.START.getPointType().equals(t.getType())).findFirst()
+                                                .orElse(new TrajectoryDetailBo()).getPosition()));
+            }
+
             // 5.用例配置
             if (CollectionUtils.isNotEmpty(taskCaseInfoBo.getCaseConfigs())) {
                 taskCaseConfigs.addAll(taskCaseInfoBo.getCaseConfigs());
@@ -161,7 +162,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             // 6.参与者ID和参与者名称匹配map
             Map<String, String> businessIdAndRoleMap = taskCaseInfoBo.getCaseConfigs().stream().collect(Collectors.toMap(
                     TaskCaseConfigBo::getParticipatorId,
-                    TaskCaseConfigBo::getParticipatorName));
+                    TaskCaseConfigBo::getType));
             caseBusinessIdAndRoleMap.put(taskCaseInfoBo.getId(), businessIdAndRoleMap);
             // 7.用例对应主车轨迹长度
             try {
@@ -187,12 +188,12 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         Map<Integer, TaskCaseInfoBo> taskCaseInfoMap = taskCaseInfos.stream().collect(Collectors.toMap(TaskCaseInfoBo::getId, Function.identity()));
         // 7.状态查询
         for (TaskCaseConfigBo taskCaseConfigBo : taskCaseConfigs) {
-//            String start = partStartMap.get(taskCaseConfigBo.getParticipatorId());
-//            if (StringUtils.isNotEmpty(start)) {
-//                String[] position = start.split(",");
-//                taskCaseConfigBo.setStartLongitude(Double.parseDouble(position[0]));
-//                taskCaseConfigBo.setStartLatitude(Double.parseDouble(position[1]));
-//            }
+            if (PartRole.AV.equals(taskCaseConfigBo.getType()) && !ObjectUtils.isEmpty(startMap)) {
+
+                String[] position = startMap.get(taskCaseConfigBo.getParticipatorId()).split(",");
+                taskCaseConfigBo.setStartLongitude(Double.parseDouble(position[0]));
+                taskCaseConfigBo.setStartLatitude(Double.parseDouble(position[1]));
+            }
             // 查询设备状态
             Integer status = deviceDetailService.selectDeviceState(taskCaseConfigBo.getDeviceId(), taskCaseConfigBo.getCommandChannel(), false);
             taskCaseConfigBo.setStatus(status);
@@ -214,13 +215,13 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 Map<String, Object> tessParams = new HashMap<>();
 
                 List<Map<String, Object>> param1 = new ArrayList<>();
-                for (Entry<Integer, Map<String, String>> caseSSItem : caseSSMap.entrySet()) {
-                    TaskCaseInfoBo taskCaseInfoBo = taskCaseInfoMap.get(caseSSItem.getKey());
-                    Map<String, String> businessIdAndRoleMap = caseBusinessIdAndRoleMap.get(caseSSItem.getKey());
+                for (Entry<Integer, TaskCaseInfoBo> caseInfoEntry : caseInfoMap.entrySet()) {
+                    TaskCaseInfoBo taskCaseInfoBo = taskCaseInfoMap.get(caseInfoEntry.getKey());
+                    Map<String, String> businessIdAndRoleMap = caseBusinessIdAndRoleMap.get(caseInfoEntry.getKey());
 
                     Map<String, Object> caseParam = new HashMap<>();
-                    caseParam.put("caseId", caseSSItem.getKey());
-                    caseParam.put("avPassTime", caseMainSize.get(caseSSItem.getKey()));
+                    caseParam.put("caseId", caseInfoEntry.getKey());
+                    caseParam.put("avPassTime", caseMainSize.get(caseInfoEntry.getKey()));
                     Label label = new Label();
                     label.setParentId(2L);
                     List<Label> sceneTypeLabelList = labelsService.selectLabelsList(label);
@@ -271,7 +272,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 Collectors.groupingBy(TaskCaseConfigBo::getType));
         TaskCaseVerificationPageVo result = new TaskCaseVerificationPageVo();
         result.setTaskId(param.getTaskId());
-        result.setCaseId(param.getCaseId());
+        result.setTaskCaseId(param.getId());
 //        result.setFilePath(taskCaseInfoBo.getFilePath());
 //        result.setGeoJsonPath(taskCaseInfoBo.getGeoJsonPath());
         result.setStatusMap(statusMap);
@@ -302,47 +303,47 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             }
         }
         return participantTrajectories;
-
     }
 
     @Transactional(rollbackFor = Exception.class)
     @Override
     public CaseRealTestVo prepare(TjTaskCase param) throws BusinessException {
-        return null;
-//        // 1.用例详情
-//        List<TaskCaseInfoBo> taskCaseInfos = taskCaseMapper.selectTaskCaseByCondition(param);
-//        // 2.校验数据
-//        validConfig(taskCaseInfoBo);
-//        // 3.轨迹详情
-//        CaseTrajectoryDetailBo caseTrajectoryDetailBo =
-//                JSONObject.parseObject(taskCaseInfoBo.getTrajectoryInfo(), CaseTrajectoryDetailBo.class);
-//        // 4.角色配置信息
-//        Map<String, List<TaskCaseConfigBo>> partMap = taskCaseInfoBo.getCaseConfigs().stream().collect(
-//                Collectors.groupingBy(TaskCaseConfigBo::getSupportRoles));
-//        // 5.各角色数量
-//        int avNum = partMap.containsKey(PartRole.AV) ? partMap.get(PartRole.AV).size() : 0;
-//        int simulationNum = partMap.containsKey(PartRole.MV_SIMULATION) ? partMap.get(PartRole.MV_SIMULATION).size() : 0;
-//        int pedestrianNum = partMap.containsKey(PartRole.SP) ? partMap.get(PartRole.SP).size() : 0;
-//        caseTrajectoryDetailBo.setSceneForm(StringUtils.format(ContentTemplate.SCENE_FORM_TEMPLATE, avNum,
-//                simulationNum, pedestrianNum));
-//        caseTrajectoryDetailBo.setSceneDesc(taskCaseInfoBo.getSceneName());
-//        // 7.删除后新增任务用例测试记录
-//        QueryWrapper<TjTaskCaseRecord> queryWrapper = new QueryWrapper<>();
-//        queryWrapper.eq(ColumnName.CASE_ID_COLUMN, taskCaseInfoBo.getId());
-//        taskCaseRecordMapper.delete(queryWrapper);
-//
-//        TjTaskCaseRecord tjTaskCaseRecord = new TjTaskCaseRecord();
-//        tjTaskCaseRecord.setTaskId(taskCaseInfoBo.getTaskId());
-//        tjTaskCaseRecord.setCaseId(taskCaseInfoBo.getId());
-//        tjTaskCaseRecord.setDetailInfo(JSONObject.toJSONString(caseTrajectoryDetailBo));
-//        tjTaskCaseRecord.setStatus(TestingStatus.NOT_START);
-//        taskCaseRecordMapper.insert(tjTaskCaseRecord);
-//        // 7.前端结果集
-//        CaseRealTestVo caseRealTestVo = new CaseRealTestVo();
+        // 1.用例详情
+        List<TaskCaseInfoBo> taskCaseInfos = taskCaseMapper.selectTaskCaseByCondition(param);
+        for (TaskCaseInfoBo taskCaseInfoBo : taskCaseInfos) {
+            // 2.校验数据
+            validConfig(taskCaseInfoBo);
+            // 3.轨迹详情
+            CaseTrajectoryDetailBo caseTrajectoryDetailBo =
+                    JSONObject.parseObject(taskCaseInfoBo.getTrajectoryInfo(), CaseTrajectoryDetailBo.class);
+            // 4.角色配置信息
+            Map<String, List<TaskCaseConfigBo>> partMap = taskCaseInfoBo.getCaseConfigs().stream().collect(
+                    Collectors.groupingBy(TaskCaseConfigBo::getSupportRoles));
+            // 5.各角色数量
+            int avNum = partMap.containsKey(PartRole.AV) ? partMap.get(PartRole.AV).size() : 0;
+            int simulationNum = partMap.containsKey(PartRole.MV_SIMULATION) ? partMap.get(PartRole.MV_SIMULATION).size() : 0;
+            int pedestrianNum = partMap.containsKey(PartRole.SP) ? partMap.get(PartRole.SP).size() : 0;
+            caseTrajectoryDetailBo.setSceneForm(StringUtils.format(ContentTemplate.SCENE_FORM_TEMPLATE, avNum,
+                    simulationNum, pedestrianNum));
+            caseTrajectoryDetailBo.setSceneDesc(taskCaseInfoBo.getSceneName());
+            // 7.删除后新增任务用例测试记录
+            QueryWrapper<TjTaskCaseRecord> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq(ColumnName.CASE_ID_COLUMN, taskCaseInfoBo.getId());
+            taskCaseRecordMapper.delete(queryWrapper);
+
+            TjTaskCaseRecord tjTaskCaseRecord = new TjTaskCaseRecord();
+            tjTaskCaseRecord.setTaskId(taskCaseInfoBo.getTaskId());
+            tjTaskCaseRecord.setCaseId(taskCaseInfoBo.getId());
+            tjTaskCaseRecord.setDetailInfo(JSONObject.toJSONString(caseTrajectoryDetailBo));
+            tjTaskCaseRecord.setStatus(TestingStatus.NOT_START);
+            taskCaseRecordMapper.insert(tjTaskCaseRecord);
+        }
+        // 7.前端结果集
+        CaseRealTestVo caseRealTestVo = new CaseRealTestVo();
 //        BeanUtils.copyProperties(tjTaskCaseRecord, caseRealTestVo);
 //        caseRealTestVo.setChannels(taskCaseInfoBo.getCaseConfigs().stream().map(TaskCaseConfigBo::getDataChannel)
 //                .collect(Collectors.toList()));
-//        return caseRealTestVo;
+        return caseRealTestVo;
     }
 
     @Override
