@@ -157,7 +157,7 @@ public class TaskController extends BaseController {
             return AjaxResult.error(map.get("msg"));
         }
         TaskBo taskBo = new TaskBo();
-        taskBo.setId(Integer.valueOf(saveTaskSchemeBo.getTask_id()));
+        taskBo.setId(Integer.valueOf(saveTaskSchemeBo.getTaskId()));
         taskBo.setProcessNode(TaskProcessNode.VIEW_PLAN);
         tjTaskService.saveTask(taskBo);
         return AjaxResult.success("成功");
