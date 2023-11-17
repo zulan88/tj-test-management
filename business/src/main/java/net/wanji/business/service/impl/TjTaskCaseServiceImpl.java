@@ -3,6 +3,7 @@ package net.wanji.business.service.impl;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import net.wanji.business.common.Constants;
 import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.business.common.Constants.PartRole;
@@ -423,54 +424,30 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public CaseRealTestVo start(Integer recordId, Integer action) throws BusinessException, IOException {
+    public CaseRealTestVo caseStartEnd(Integer taskId, Integer caseId, Integer action,  boolean taskEnd) throws BusinessException, IOException {
         // 1.任务用例测试记录详情
-        TjTaskCaseRecord taskCaseRecord = taskCaseRecordMapper.selectById(recordId);
-        if (ObjectUtils.isEmpty(taskCaseRecord) || taskCaseRecord.getStatus() > TestingStatus.NOT_START) {
-            throw new BusinessException("未就绪");
-        }
+        TjTaskCaseRecord taskCaseRecord = ssGetTjTaskCaseRecord(taskId, caseId);
         // 2.任务用例详情
-        QueryWrapper<TjTaskCase> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq(ColumnName.CASE_ID_COLUMN, taskCaseRecord.getCaseId()).eq(ColumnName.TASK_ID, taskCaseRecord.getTaskId());
-        TjTaskCase taskCase = taskCaseMapper.selectOne(queryWrapper);
+        TjTaskCase taskCase = getTjTaskCaseByTaskCaseRecord(taskCaseRecord);
         TaskCaseInfoBo taskCaseInfoBo = taskCaseMapper.selectTaskCaseInfo(taskCase.getId());
         // 3.校验数据
         validConfig(taskCaseInfoBo);
         // 4.更新业务数据
-        taskCaseRecord.setStatus(TestingStatus.RUNNING);
-        taskCaseRecord.setStartTime(LocalDateTime.now());
-        taskCaseRecordMapper.updateById(taskCaseRecord);
-
-        Date date = new Date();
-        taskCase.setStartTime(date);
-        taskCase.setStatus("测试中");
-        taskCaseMapper.updateById(taskCase);
-
-        TjTask tjTask = taskMapper.selectById(taskCaseRecord.getTaskId());
-        if (ObjectUtils.isEmpty(tjTask.getStartTime())) {
-            tjTask.setStartTime(date);
-            taskMapper.updateById(tjTask);
-        }
+        ssCaseResultUpdate(action, taskCaseRecord, taskCase);
         // 5.开始监听所有数据通道
         taskRedisTrajectoryConsumer.subscribeAndSend(taskCaseInfoBo);
-        // 6.向主控发送开始请求
-        if (!restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(),
-                String.valueOf(taskCaseInfoBo.getId()), action, generateDeviceConnRules(taskCaseInfoBo)))) {
+        // 6.向主控发送控制请求
+        Optional<TaskCaseConfigBo> first = taskCaseInfoBo.getCaseConfigs()
+            .stream().filter(e -> PartRole.AV.equals(e.getType())).findFirst();
+        if (!restService.sendRuleUrl(
+            new CaseRuleControl(System.currentTimeMillis(),
+                String.valueOf(taskCaseInfoBo.getId()), action,
+                generateDeviceConnRules(taskCaseInfoBo),
+                first.get().getCommandChannel(), taskEnd))) {
             throw new BusinessException("主控响应异常");
         }
         // 7.前端结果集
-        CaseRealTestVo caseRealTestVo = new CaseRealTestVo();
-        BeanUtils.copyProperties(taskCaseRecord, caseRealTestVo);
-        caseRealTestVo.setStartTime(DateUtils.getTime());
-        SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(taskCaseRecord.getDetailInfo(),
-                SceneTrajectoryBo.class);
-        Map<String, List<TrajectoryDetailBo>> mainTrajectoryMap = sceneTrajectoryBo.getParticipantTrajectories()
-                .stream().filter(item -> PartType.MAIN.equals(item.getType())).collect(Collectors.toMap(
-                        ParticipantTrajectoryBo::getId,
-                        ParticipantTrajectoryBo::getTrajectory
-                ));
-        caseRealTestVo.setMainTrajectories(mainTrajectoryMap);
-        return caseRealTestVo;
+        return ssGetCaseRealTestVo(taskCaseRecord);
     }
 
     @Override
@@ -763,6 +740,66 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         }
 
         return time;
+    }
+
+    private TjTaskCaseRecord ssGetTjTaskCaseRecord(Integer taskId, Integer caseId)
+        throws BusinessException {
+        QueryWrapper<TjTaskCaseRecord> recordQueryWrapper = new QueryWrapper<>();
+        recordQueryWrapper.eq(ColumnName.TASK_ID, taskId).eq(ColumnName.CASE_ID_COLUMN,
+            caseId);
+        TjTaskCaseRecord taskCaseRecord = taskCaseRecordMapper.selectOne(
+            recordQueryWrapper);
+        if (ObjectUtils.isEmpty(taskCaseRecord) || taskCaseRecord.getStatus() > TestingStatus.NOT_START) {
+            throw new BusinessException("未就绪");
+        }
+        return taskCaseRecord;
+    }
+    private TjTaskCase getTjTaskCaseByTaskCaseRecord(TjTaskCaseRecord taskCaseRecord) {
+        QueryWrapper<TjTaskCase> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq(ColumnName.CASE_ID_COLUMN, taskCaseRecord.getCaseId()).eq(ColumnName.TASK_ID, taskCaseRecord.getTaskId());
+        return taskCaseMapper.selectOne(queryWrapper);
+    }
+    private void ssCaseResultUpdate(Integer action, TjTaskCaseRecord taskCaseRecord,
+        TjTaskCase taskCase) {
+        if(1 == action){
+            taskCaseRecord.setStatus(TestingStatus.RUNNING);
+            taskCaseRecord.setStartTime(LocalDateTime.now());
+
+            Date date = new Date();
+            taskCase.setStartTime(date);
+            //taskCase.setStatus("测试中");
+
+            TjTask tjTask = taskMapper.selectById(taskCaseRecord.getTaskId());
+            if (ObjectUtils.isEmpty(tjTask.getStartTime())) {
+                tjTask.setStartTime(date);
+                taskMapper.updateById(tjTask);
+            }
+        }else if(0 == action){
+            taskCaseRecord.setStatus(TestingStatus.FINISHED);
+            taskCase.setStatus(Constants.TaskCaseStatusEnum.PASS.getValue());
+        }else if (-1 == action){
+            taskCaseRecord.setStatus(TestingStatus.FINISHED);
+            taskCase.setStatus(Constants.TaskCaseStatusEnum.NO_PASS.getValue());
+        }
+        taskCaseRecordMapper.updateById(taskCaseRecord);
+        taskCaseMapper.updateById(taskCase);
+    }
+
+    private static CaseRealTestVo ssGetCaseRealTestVo(
+        TjTaskCaseRecord taskCaseRecord) {
+        CaseRealTestVo caseRealTestVo = new CaseRealTestVo();
+        BeanUtils.copyProperties(taskCaseRecord, caseRealTestVo);
+        caseRealTestVo.setStartTime(DateUtils.getTime());
+        SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(
+            taskCaseRecord.getDetailInfo(),
+            SceneTrajectoryBo.class);
+        Map<String, List<TrajectoryDetailBo>> mainTrajectoryMap = sceneTrajectoryBo.getParticipantTrajectories()
+            .stream().filter(item -> PartType.MAIN.equals(item.getType())).collect(Collectors.toMap(
+                ParticipantTrajectoryBo::getId,
+                ParticipantTrajectoryBo::getTrajectory
+            ));
+        caseRealTestVo.setMainTrajectories(mainTrajectoryMap);
+        return caseRealTestVo;
     }
 }
 

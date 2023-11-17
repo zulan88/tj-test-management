@@ -15,7 +15,7 @@ public class SaveTaskSchemeBo {
     /**
      * 测试任务id
      */
-    private String task_id;
+    private String taskId;
 
     /**
      * 指标方案id

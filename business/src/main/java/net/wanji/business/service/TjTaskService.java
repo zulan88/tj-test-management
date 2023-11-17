@@ -86,7 +86,7 @@ public interface TjTaskService extends IService<TjTask> {
      */
     boolean routingPlan(RoutingPlanDto routingPlanDto) throws BusinessException;
 
-    int hasUnSubmitTask();
+    TjTask hasUnSubmitTask();
 
     /**
      * 导出

@@ -2,6 +2,7 @@ package net.wanji.web.controller.business;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson2.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import io.swagger.annotations.Api;
@@ -15,6 +16,7 @@ import net.wanji.business.domain.dto.RoutingPlanDto;
 import net.wanji.business.domain.dto.TaskDto;
 import net.wanji.business.domain.dto.device.TaskSaveDto;
 import net.wanji.business.domain.vo.CaseContinuousVo;
+import net.wanji.business.domain.vo.PlatformSSDto;
 import net.wanji.business.domain.vo.TaskListVo;
 import net.wanji.business.entity.TjTask;
 import net.wanji.business.entity.TjTaskCase;
@@ -119,7 +121,12 @@ public class TaskController extends BaseController {
     @ApiOperation(value = "7.判断是否存在待提交的任务")
     @GetMapping("/hasSubmitTask")
     public AjaxResult hasSubmitTask() {
-        return AjaxResult.success(tjTaskService.hasUnSubmitTask());
+        TjTask task = tjTaskService.hasUnSubmitTask();
+        if(task==null) {
+            return AjaxResult.success(0);
+        }else {
+            return AjaxResult.success(task);
+        }
     }
 
     @ApiOperationSort(8)
@@ -156,10 +163,10 @@ public class TaskController extends BaseController {
         if ("500".equals(map.get("code"))){
             return AjaxResult.error(map.get("msg"));
         }
-        TaskBo taskBo = new TaskBo();
-        taskBo.setId(Integer.valueOf(saveTaskSchemeBo.getTask_id()));
-        taskBo.setProcessNode(TaskProcessNode.VIEW_PLAN);
-        tjTaskService.saveTask(taskBo);
+//        TaskBo taskBo = new TaskBo();
+//        taskBo.setId(Integer.valueOf(saveTaskSchemeBo.getTaskId()));
+//        taskBo.setProcessNode(TaskProcessNode.VIEW_PLAN);
+//        tjTaskService.saveTask(taskBo);
         return AjaxResult.success("成功");
     }
 
@@ -240,6 +247,20 @@ public class TaskController extends BaseController {
     public AjaxResult start(Integer taskId, Integer id, Integer action) throws BusinessException, IOException {
         return AjaxResult.success(taskCaseService.controlTask(taskId, id, action));
     }
+
+    @ApiOperationSort(9)
+    @ApiOperation(value = "测试用例开始结束控制接口")
+    @PostMapping("/caseStartEnd")
+    public AjaxResult caseStartEnd(@RequestBody PlatformSSDto platformSSDto){
+        try {
+            taskCaseService.caseStartEnd(platformSSDto.getTaskId(),
+                platformSSDto.getCaseId(), platformSSDto.getState(),
+                platformSSDto.isTaskEnd());
+        } catch (BusinessException | IOException e) {
+            throw new RuntimeException(e);
+        }
+      return null;
+    }
 //
 //    @ApiOperationSort(7)
 //    @ApiOperation(value = "回放")
@@ -283,6 +304,15 @@ public class TaskController extends BaseController {
         return tjTaskService.removeById(id)
                 ? AjaxResult.success("删除成功")
                 : AjaxResult.error("删除失败");
+    }
+
+    @PostMapping("/remove")
+    public AjaxResult removeEnity(){
+        LambdaQueryWrapper<TjTask> wrapper = new LambdaQueryWrapper<TjTask>();
+        wrapper.eq(TjTask::getStatus, "save");
+        return tjTaskService.remove(wrapper)
+                ? AjaxResult.success("成功")
+                : AjaxResult.error("失败");
     }
 
 }

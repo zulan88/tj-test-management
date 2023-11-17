@@ -171,35 +171,37 @@ public class TestingServiceImpl implements TestingService {
             if (PartRole.MV_SIMULATION.equals(caseConfigBo.getSupportRoles())) {
                 SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(caseInfoBo.getDetailInfo(), SceneTrajectoryBo.class);
                 Map<String, Object> tessParams = new HashMap<>();
-                Map<String, Object> param1 = new HashMap<>();
-                param1.put("caseId", caseInfoBo.getId());
-                param1.put("avPassTime", CollectionUtils.emptyIfNull(participantTrajectories).size());
+                // gdj edit start 2023-11-17
 
-                Label label = new Label();
-                label.setParentId(2L);
-                List<Label> sceneTypeLabelList = labelsService.selectLabelsList(label);
-                List<String> sceneTypes = new ArrayList<>();
-                if (StringUtils.isNotEmpty(caseInfoBo.getAllStageLabel())) {
-                    String[] labels = caseInfoBo.getAllStageLabel().split(",");
-                    for (String labelId : labels) {
-                        for (Label sceneTypeLabel : sceneTypeLabelList) {
-                            if (sceneTypeLabel.getId() == Long.parseLong(labelId)) {
-                                sceneTypes.add(sceneTypeLabel.getName());
-                            }
-                        }
-                    }
-                }
-                param1.put("type", sceneTypes.stream().collect(Collectors.joining(",")));
+                List<Map<String, Object>> param1 = new ArrayList<>();
+                Map<String, Object> mapParam1 = new HashMap<>();
+                mapParam1.put("caseId", caseInfoBo.getId());
+                mapParam1.put("avPassTime", CollectionUtils.emptyIfNull(participantTrajectories).size());
+                 Label label = new Label();
+                 label.setParentId(2L);
+                 List<Label> sceneTypeLabelList = labelsService.selectLabelsList(label);
+                 List<String> sceneTypes = new ArrayList<>();
+                 if (StringUtils.isNotEmpty(caseInfoBo.getAllStageLabel())) {
+                     String[] labels = caseInfoBo.getAllStageLabel().split(",");
+                     for (String labelId : labels) {
+                         for (Label sceneTypeLabel : sceneTypeLabelList) {
+                             if (sceneTypeLabel.getId() == Long.parseLong(labelId)) {
+                                 sceneTypes.add(sceneTypeLabel.getName());
+                             }
+                         }
+                     }
+                 }
+                mapParam1.put("type", String.join(",", sceneTypes));
                 List<Map<String, Object>> simulationTrajectories = new ArrayList<>();
                 for (ParticipantTrajectoryBo participantTrajectory : sceneTrajectoryBo.getParticipantTrajectories()) {
                     if (PartRole.AV.equals(businessIdAndRoleMap.get(participantTrajectory.getId()))) {
                         continue;
                     }
                     Map<String, Object> map = new HashMap<>();
-                    map.put("id", participantTrajectory.getId());
-                    map.put("model", participantTrajectory.getModel());
-                    map.put("name", participantTrajectory.getName());
                     map.put("role", businessIdAndRoleMap.get(participantTrajectory.getId()));
+                    map.put("name", participantTrajectory.getName());
+                    map.put("model", participantTrajectory.getModel());
+                    map.put("id", participantTrajectory.getId());
                     map.put("trajectory", participantTrajectory.getTrajectory().stream().map(item -> {
                         Map<String, Object> t = new HashMap<>();
                         t.put("type", item.getType());
@@ -212,7 +214,8 @@ public class TestingServiceImpl implements TestingService {
                     }).collect(Collectors.toList()));
                     simulationTrajectories.add(map);
                 }
-                param1.put("participantTrajectories", simulationTrajectories);
+                mapParam1.put("participantTrajectories", simulationTrajectories);
+                param1.add(mapParam1);
                 tessParams.put("param1", param1);
                 stateParam.setParams(tessParams);
             }
@@ -287,7 +290,8 @@ public class TestingServiceImpl implements TestingService {
         imitateRedisTrajectoryConsumer.subscribeAndSend(caseInfoBo);
         // 6.向主控发送开始请求
         if (!restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(),
-                String.valueOf(caseRealRecord.getCaseId()), action, generateDeviceConnRules(caseInfoBo)))) {
+            String.valueOf(caseRealRecord.getCaseId()), action,
+            generateDeviceConnRules(caseInfoBo), null, true))) {
             throw new BusinessException("主控响应异常");
         }
         // 7.前端结果集
