@@ -290,7 +290,8 @@ public class TestingServiceImpl implements TestingService {
         imitateRedisTrajectoryConsumer.subscribeAndSend(caseInfoBo);
         // 6.向主控发送开始请求
         if (!restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(),
-                String.valueOf(caseRealRecord.getCaseId()), action, generateDeviceConnRules(caseInfoBo)))) {
+            String.valueOf(caseRealRecord.getCaseId()), action,
+            generateDeviceConnRules(caseInfoBo), null, true))) {
             throw new BusinessException("主控响应异常");
         }
         // 7.前端结果集

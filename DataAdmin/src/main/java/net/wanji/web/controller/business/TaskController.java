@@ -256,12 +256,10 @@ public class TaskController extends BaseController {
             taskCaseService.caseStartEnd(platformSSDto.getTaskId(),
                 platformSSDto.getCaseId(), platformSSDto.getState(),
                 platformSSDto.isTaskEnd());
-        } catch (BusinessException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
+        } catch (BusinessException | IOException e) {
             throw new RuntimeException(e);
         }
-        return null;
+      return null;
     }
 //
 //    @ApiOperationSort(7)
