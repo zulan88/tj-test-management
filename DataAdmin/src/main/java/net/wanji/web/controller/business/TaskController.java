@@ -121,7 +121,12 @@ public class TaskController extends BaseController {
     @ApiOperation(value = "7.判断是否存在待提交的任务")
     @GetMapping("/hasSubmitTask")
     public AjaxResult hasSubmitTask() {
-        return AjaxResult.success(tjTaskService.hasUnSubmitTask());
+        TjTask task = tjTaskService.hasUnSubmitTask();
+        if(task==null) {
+            return AjaxResult.success(0);
+        }else {
+            return AjaxResult.success(task);
+        }
     }
 
     @ApiOperationSort(8)
@@ -303,10 +308,10 @@ public class TaskController extends BaseController {
                 : AjaxResult.error("删除失败");
     }
 
-    @DeleteMapping("/remove")
+    @PostMapping("/remove")
     public AjaxResult removeEnity(){
         LambdaQueryWrapper<TjTask> wrapper = new LambdaQueryWrapper<TjTask>();
-        wrapper.eq(TjTask::getStatus, "waiting");
+        wrapper.eq(TjTask::getStatus, "save");
         return tjTaskService.remove(wrapper)
                 ? AjaxResult.success("成功")
                 : AjaxResult.error("失败");

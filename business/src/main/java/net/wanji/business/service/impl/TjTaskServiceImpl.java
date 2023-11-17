@@ -587,7 +587,8 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 tjTask = this.getById(in.getId());
                 // todo 根据testType校验
                 if (CollectionUtils.isEmpty(in.getCases())) {
-                    return in.getId();
+                    throw new BusinessException("请进行连续性场景的配置");
+//                    return in.getId();
                 }
                 if (CollectionUtils.isNotEmpty(in.getCases()) && StringUtils.isEmpty(in.getRouteFile())) {
                     throw new BusinessException("连续性配置后需要进行路径规划");
@@ -668,11 +669,11 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
     }
 
     @Override
-    public int hasUnSubmitTask() {
+    public TjTask hasUnSubmitTask() {
         QueryWrapper<TjTask> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq(ColumnName.STATUS_COLUMN, TaskStatusEnum.NO_SUBMIT.getCode());
         List<TjTask> list = list(queryWrapper);
-        return CollectionUtils.isEmpty(list) ? 0 : list.get(0).getId();
+        return CollectionUtils.isEmpty(list) ? null : list.get(0);
     }
 
     @Override
