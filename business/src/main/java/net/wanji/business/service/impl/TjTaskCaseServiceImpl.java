@@ -241,7 +241,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                         }
                     }
                     caseParam.put("type", sceneTypes.stream().collect(Collectors.joining(",")));
-                    SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(taskCaseInfoBo.getDetailInfo(), SceneTrajectoryBo.class);
+                    SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(taskCaseInfoBo.getRealDetailInfo(), SceneTrajectoryBo.class);
                     List<Map<String, Object>> simulationTrajectories = new ArrayList<>();
                     for (ParticipantTrajectoryBo participantTrajectory : sceneTrajectoryBo.getParticipantTrajectories()) {
                         if (PartType.MAIN.equals(participantTrajectory.getType())) {
@@ -380,10 +380,10 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         List<ParticipantTrajectoryBo> mainPoints = new ArrayList<>();
         for (TaskCaseInfoBo taskCase : taskCaseInfos) {
             CaseSSInfo caseSSInfo = new CaseSSInfo();
-            if (StringUtils.isEmpty(taskCase.getDetailInfo())) {
+            if (StringUtils.isEmpty(taskCase.getRealDetailInfo())) {
                 throw new BusinessException(StringUtils.format("用例{}轨迹不存在", taskCase.getCaseNumber()));
             }
-            SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(taskCase.getDetailInfo(), SceneTrajectoryBo.class);
+            SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(taskCase.getRealDetailInfo(), SceneTrajectoryBo.class);
             List<ParticipantTrajectoryBo> avTrajectory = CollectionUtils.emptyIfNull(sceneTrajectoryBo.getParticipantTrajectories()).stream().filter(t -> PartType.MAIN.equals(t.getType())).collect(Collectors.toList());
             if (CollectionUtils.isEmpty(avTrajectory)) {
                 throw new BusinessException(StringUtils.format("用例{}主车轨迹不存在", taskCase.getCaseNumber()));
@@ -491,7 +491,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 ));
         // 主车全部点位
         List<TrajectoryDetailBo> avPoints = avBusinessIdPointsMap.get(caseConfigBo.getParticipatorId());
-        // 读取仿真验证主车轨迹
+        // todo 读取仿真验证主车轨迹
         List<List<TrajectoryValueDto>> mainSimulations = routeService.readTrajectoryFromRouteFile(taskCaseInfoBo.getRouteFile(),
                 caseConfigBo.getParticipatorId());
         List<TrajectoryValueDto> mainSimuTrajectories = mainSimulations.stream()
@@ -635,11 +635,11 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         if (taskCaseInfoBo.getDataConfigs().stream().allMatch(config -> ObjectUtils.isEmpty(config.getDeviceId()))) {
             throw new BusinessException("用例异常：用例未进行设备配置");
         }
-        if (StringUtils.isEmpty(taskCaseInfoBo.getDetailInfo())) {
+        if (StringUtils.isEmpty(taskCaseInfoBo.getRealDetailInfo())) {
             throw new BusinessException("用例异常：无路径配置信息");
         }
-        if (StringUtils.isEmpty(taskCaseInfoBo.getRouteFile())) {
-            throw new BusinessException("场景异常：场景未验证");
+        if (StringUtils.isEmpty(taskCaseInfoBo.getRealRouteFile())) {
+            throw new BusinessException("用例异常：未进行实车试验");
         }
     }
 
@@ -650,7 +650,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 TaskCaseConfigBo::getParticipatorId,
                 TaskCaseConfigBo::getType));
 
-        SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(caseInfoBo.getDetailInfo(), SceneTrajectoryBo.class);
+        SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(caseInfoBo.getRealDetailInfo(), SceneTrajectoryBo.class);
 
         Map<String, Object> tessParams = new HashMap<>();
         Map<String, Object> param1 = new HashMap<>();

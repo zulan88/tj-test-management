@@ -55,8 +55,9 @@
 
     <resultMap id="TaskCaseInfoResult" type="net.wanji.business.domain.bo.TaskCaseInfoBo">
         <id property="id" column="id"/>
-        <id property="caseId" column="case_id"/>
-        <id property="taskId" column="task_id"/>
+        <result property="caseId" column="case_id"/>
+        <result property="taskId" column="task_id"/>
+        <result property="sort" column="sort"/>
         <result property="sceneName" column="scene_name"/>
         <result property="allStageLabel" column="all_stage_label"/>
         <result property="caseNumber" column="case_number"/>
@@ -71,7 +72,7 @@
     </resultMap>
 
     <resultMap id="TaskCaseConfigResult" type="net.wanji.business.domain.bo.TaskCaseConfigBo">
-        <result property="id" column="config_id"/>
+        <id property="id" column="config_id"/>
         <result property="taskId" column="task_id"/>
         <result property="caseId" column="case_id"/>
         <result property="type" column="type"/>
@@ -143,6 +144,7 @@
             ttc.id,
             ttc.task_id,
             ttc.case_id,
+            ttc.sort,
             ttc.`status`,
             a.case_number,
             a.scene_name,
@@ -175,7 +177,7 @@
             ) sd ON sd.id = tc.scene_detail_id
             LEFT JOIN tj_case_real_record rr ON rr.case_id = tc.id
         ) a ON a.id = ttc.case_id
-        LEFT JOIN tj_task_case_record tcr ON (tcr.task_case_id = ttc.id AND tcr.case_id = ttc.case_id)
+        LEFT JOIN tj_task_case_record tcr ON (tcr.task_id = ttc.task_id AND tcr.case_id = ttc.case_id)
         <where>
             <if test="taskId != null and taskId > 0">
                 and ttc.task_id = #{taskId}
