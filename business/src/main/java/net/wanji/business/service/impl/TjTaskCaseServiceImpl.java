@@ -437,7 +437,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         // 5.开始监听所有数据通道
         taskRedisTrajectoryConsumer.subscribeAndSend(taskCaseInfoBo);
         // 6.向主控发送控制请求
-        Optional<TaskCaseConfigBo> first = taskCaseInfoBo.getCaseConfigs()
+        Optional<TaskCaseConfigBo> first = taskCaseInfoBo.getDataConfigs()
             .stream().filter(e -> PartRole.AV.equals(e.getType())).findFirst();
         if (!restService.sendRuleUrl(
             new CaseRuleControl(System.currentTimeMillis(),

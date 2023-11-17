@@ -22,6 +22,7 @@ import net.wanji.business.entity.TjTask;
 import net.wanji.business.entity.TjTaskCase;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.RestService;
+import net.wanji.business.service.TestingService;
 import net.wanji.business.service.TjTaskCaseService;
 import net.wanji.business.service.TjTaskService;
 import net.wanji.common.constant.HttpStatus;
@@ -30,6 +31,7 @@ import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
 import net.wanji.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.ObjectUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -56,6 +58,9 @@ public class TaskController extends BaseController {
 
     @Autowired
     private TjTaskCaseService taskCaseService;
+
+    @Autowired
+    private TestingService testingService;
 
     @ApiOperationSort(1)
     @ApiOperation(value = "1.节点初始化")
@@ -252,13 +257,22 @@ public class TaskController extends BaseController {
     @ApiOperation(value = "测试用例开始结束控制接口")
     @PostMapping("/caseStartEnd")
     public AjaxResult caseStartEnd(@RequestBody PlatformSSDto platformSSDto){
-        try {
-            taskCaseService.caseStartEnd(platformSSDto.getTaskId(),
-                platformSSDto.getCaseId(), platformSSDto.getState(),
-                platformSSDto.isTaskEnd());
-        } catch (BusinessException | IOException e) {
-            throw new RuntimeException(e);
+        if (ObjectUtils.isEmpty(platformSSDto.getTaskId())) {
+            try {
+                testingService.start(platformSSDto.getCaseId(), platformSSDto.getState());
+            } catch (BusinessException | IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            try {
+                taskCaseService.caseStartEnd(platformSSDto.getTaskId(),
+                        platformSSDto.getCaseId(), platformSSDto.getState(),
+                        platformSSDto.isTaskEnd());
+            } catch (BusinessException | IOException e) {
+                throw new RuntimeException(e);
+            }
         }
+
       return null;
     }
 //

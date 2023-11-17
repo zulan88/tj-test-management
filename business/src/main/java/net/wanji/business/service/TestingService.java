@@ -36,11 +36,11 @@ public interface TestingService {
     /**
      * 开始/结束/回放
      *
-     * @param recordId
+     * @param caseId
      * @param action
      * @return
      */
-    CaseTestStartVo start(Integer recordId, Integer action) throws BusinessException, IOException;
+    CaseTestStartVo start(Integer caseId, Integer action) throws BusinessException, IOException;
 
     void playback(Integer recordId, Integer action) throws BusinessException, IOException;
 

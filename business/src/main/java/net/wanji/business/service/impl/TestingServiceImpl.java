@@ -271,18 +271,18 @@ public class TestingServiceImpl implements TestingService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public CaseTestStartVo start(Integer recordId, Integer action) throws BusinessException, IOException {
+    public CaseTestStartVo start(Integer caseId, Integer action) throws BusinessException, IOException {
         // 1.实车测试记录详情
-        TjCaseRealRecord caseRealRecord = caseRealRecordMapper.selectById(recordId);
-        if (ObjectUtils.isEmpty(caseRealRecord) || caseRealRecord.getStatus() > TestingStatus.NOT_START) {
-            throw new BusinessException("未就绪");
-        }
+
         // 2.用例详情
-        CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseRealRecord.getCaseId());
+        CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
         // 3.校验数据
         validConfig(caseInfoBo);
         // 4.更新业务数据
         TjCaseRealRecord realRecord = caseInfoBo.getCaseRealRecord();
+        if (ObjectUtils.isEmpty(realRecord) || realRecord.getStatus() > TestingStatus.NOT_START) {
+            throw new BusinessException("未就绪");
+        }
         realRecord.setStatus(TestingStatus.RUNNING);
         realRecord.setStartTime(LocalDateTime.now());
         caseRealRecordMapper.updateById(realRecord);
@@ -290,7 +290,7 @@ public class TestingServiceImpl implements TestingService {
         imitateRedisTrajectoryConsumer.subscribeAndSend(caseInfoBo);
         // 6.向主控发送开始请求
         if (!restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(),
-            String.valueOf(caseRealRecord.getCaseId()), action,
+            String.valueOf(caseId), action,
             generateDeviceConnRules(caseInfoBo), null, true))) {
             throw new BusinessException("主控响应异常");
         }
