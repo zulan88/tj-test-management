@@ -2,6 +2,8 @@ package net.wanji.business.domain.bo;
 
 import lombok.Data;
 import net.wanji.business.entity.TjCase;
+import net.wanji.business.entity.TjCaseRealRecord;
+import net.wanji.business.entity.TjTaskCase;
 import net.wanji.business.entity.TjTaskCaseRecord;
 
 import java.util.List;
@@ -12,15 +14,11 @@ import java.util.List;
  * @Descriptoin:
  */
 @Data
-public class TaskCaseInfoBo extends TjCase {
+public class TaskCaseInfoBo extends TjTaskCase {
 
-    private Integer taskCaseId;
-
-    private Integer taskId;
+    private String caseNumber;
 
     private String sceneName;
-
-    private String trajectoryInfo;
 
     private String allStageLabel;
 
@@ -28,7 +26,27 @@ public class TaskCaseInfoBo extends TjCase {
 
     private String geoJsonPath;
 
-    private TjTaskCaseRecord taskCaseRecord;
+    /**
+     * 任务用例测试点位详情
+     */
+    private String detailInfo;
 
-    private List<TaskCaseConfigBo> caseConfigs;
+    /**
+     * 任务用例测试轨迹文件
+     */
+    private String routeFile;
+
+    /**
+     * 实车试验点位详情
+     */
+    private String realDetailInfo;
+
+    /**
+     * 实车试验轨迹文件
+     */
+    private String realRouteFile;
+
+    private Integer recordStatus;
+
+    private List<TaskCaseConfigBo> dataConfigs;
 }

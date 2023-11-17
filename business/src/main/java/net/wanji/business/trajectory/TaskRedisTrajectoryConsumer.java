@@ -104,7 +104,7 @@ public class TaskRedisTrajectoryConsumer {
         ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1,
                 new DefaultThreadFactory("TaskRedisTrajectoryConsumer-removeListeners"));
         scheduledExecutorService.scheduleAtFixedRate(
-                this::removeListeners, 0, 20, TimeUnit.SECONDS);
+                this::removeListeners, 0, 60, TimeUnit.SECONDS);
     }
 
 
@@ -120,23 +120,24 @@ public class TaskRedisTrajectoryConsumer {
     }
 
     public void addRunningChannel(TaskCaseInfoBo taskCaseInfoBo) throws IOException {
-        String key = WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(taskCaseInfoBo.getTaskCaseRecord().getId()),
+        String key = WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(taskCaseInfoBo.getTaskId()),
                 WebSocketManage.TASK, null);
         if (this.runningChannel.containsKey(key)) {
             log.info("通道已存在");
             return;
         }
-        List<TaskCaseConfigBo> taskCaseConfigs = taskCaseInfoBo.getCaseConfigs().stream().filter(info ->
+        List<TaskCaseConfigBo> taskCaseConfigs = taskCaseInfoBo.getDataConfigs().stream().filter(info ->
                 !ObjectUtils.isEmpty(info.getDeviceId())).collect(Collectors.collectingAndThen(
                 Collectors.toCollection(() ->
                         new TreeSet<>(Comparator.comparing(TaskCaseConfigBo::getDeviceId))), ArrayList::new));
 
-        MessageListener listener = createListener(key, taskCaseInfoBo.getTaskCaseRecord(), taskCaseConfigs);
+        // todo TjTaskCaseRecord
+        MessageListener listener = createListener(key, new TjTaskCaseRecord(), taskCaseConfigs);
         List<ChannelTopic> topics = taskCaseConfigs.stream().map(TaskCaseConfigBo::getDataChannel).map(ChannelTopic::new).collect(Collectors.toList());
         List<ChannelListener<SimulationTrajectoryDto>> listeners = new ArrayList<>();
         for (TaskCaseConfigBo configBo : taskCaseConfigs) {
             ChannelListener<SimulationTrajectoryDto> channelListener =
-                    new ChannelListener<>(taskCaseInfoBo.getTaskCaseRecord().getId(),
+                    new ChannelListener<>(taskCaseInfoBo.getTaskId(),
                             configBo.getDataChannel(), SecurityUtils.getUsername(),
                             configBo.getSupportRoles(), System.currentTimeMillis(), listener);
             listeners.add(channelListener);
@@ -427,22 +428,23 @@ public class TaskRedisTrajectoryConsumer {
         if (!this.runningChannel.containsKey(key)) {
             return;
         }
+        // todo taskId与recordId区分
         removeMessageListeners(key);
         List<RealTestTrajectoryDto> data = new ArrayList<>();
         List<ChannelListener<SimulationTrajectoryDto>> channelListeners = this.runningChannel.get(key);
-        Integer recordId = channelListeners.get(0).getRecordId();
+        Integer taskId = channelListeners.get(0).getTaskId();
         for (ChannelListener<SimulationTrajectoryDto> channelListener : channelListeners) {
             RealTestTrajectoryDto realTestTrajectoryDto = new RealTestTrajectoryDto();
             realTestTrajectoryDto.setChannel(channelListener.getChannel());
             realTestTrajectoryDto.setData(channelListener.getData());
             for (SimulationTrajectoryDto trajectoryDto : channelListener.getData()) {
-                routeService.checkRealRoute(recordId, originalTrajectory, trajectoryDto.getValue());
+                routeService.checkRealRoute(taskId, originalTrajectory, trajectoryDto.getValue());
             }
             data.add(realTestTrajectoryDto);
         }
         if (save) {
             try {
-                routeService.saveTaskRouteFile(recordId, data, originalTrajectory);
+                routeService.saveTaskRouteFile(taskId, data, originalTrajectory);
             } catch (ExecutionException | InterruptedException e) {
                 e.printStackTrace();
             }
@@ -488,7 +490,7 @@ public class TaskRedisTrajectoryConsumer {
     }
 
     public static class ChannelListener<T> {
-        private Integer recordId;
+        private Integer taskId;
         private String channel;
         private String userName;
         private String role;
@@ -498,9 +500,9 @@ public class TaskRedisTrajectoryConsumer {
         private boolean finished;
         private boolean started;
 
-        public ChannelListener(Integer recordId, String channel, String userName, String role, Long timestamp,
+        public ChannelListener(Integer taskId, String channel, String userName, String role, Long timestamp,
                                MessageListener listener) {
-            this.recordId = recordId;
+            this.taskId = taskId;
             this.channel = channel;
             this.userName = userName;
             this.role = role;
@@ -524,8 +526,8 @@ public class TaskRedisTrajectoryConsumer {
             return this.data.size();
         }
 
-        public Integer getRecordId() {
-            return recordId;
+        public Integer getTaskId() {
+            return taskId;
         }
 
         public String getChannel() {

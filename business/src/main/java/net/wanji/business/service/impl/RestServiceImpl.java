@@ -223,7 +223,7 @@ public class RestServiceImpl implements RestService {
             ResponseEntity<String> response =
                     restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);
             if (response.getStatusCodeValue() == 200) {
-                if (!"success".equals(response.getBody())) {
+                if (!"true".equals(response.getBody())) {
                     log.error("远程服务调用失败");
                     return false;
                 }

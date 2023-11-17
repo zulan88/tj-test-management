@@ -19,7 +19,7 @@ public class TaskCaseConfigBo extends TjTaskDataConfig {
     private String deviceName;
 
     /**
-     * 设备类型节点
+     * 设备类型
      */
     private String deviceType;
 
