@@ -2,6 +2,7 @@ package net.wanji.web.controller.business;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson2.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import io.swagger.annotations.Api;
@@ -283,6 +284,15 @@ public class TaskController extends BaseController {
         return tjTaskService.removeById(id)
                 ? AjaxResult.success("删除成功")
                 : AjaxResult.error("删除失败");
+    }
+
+    @DeleteMapping("/remove")
+    public AjaxResult removeEnity(){
+        LambdaQueryWrapper<TjTask> wrapper = new LambdaQueryWrapper<TjTask>();
+        wrapper.eq(TjTask::getStatus, "waiting");
+        return tjTaskService.remove(wrapper)
+                ? AjaxResult.success("成功")
+                : AjaxResult.error("失败");
     }
 
 }

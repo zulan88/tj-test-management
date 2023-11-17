@@ -222,8 +222,8 @@ public class RouteService {
             participantTrajectoryVo.setId(trajectoryBo.getId());
             for (TrajectoryDetailBo trajectoryDetailBo : trajectoryBo.getTrajectory()) {
                 Long restime = 0l;
-                if(trajectoryDetailBo.getTime().length()>3) {
-                    restime = (dateFormat.parse(trajectoryDetailBo.getTime()).getTime() - time) / 1000;
+                if(trajectoryDetailBo.getDate()!=null) {
+                    restime = (dateFormat.parse(trajectoryDetailBo.getDate()).getTime() - time) / 1000;
                 }
                 TrajectoryDetailVo trajectoryDetailVo = new TrajectoryDetailVo(trajectoryDetailBo.getFrameId(), trajectoryDetailBo.isPass(), trajectoryDetailBo.getSpeed(), String.valueOf(restime));
                 participantTrajectoryVo.addtrajectory(trajectoryDetailVo);
@@ -279,7 +279,7 @@ public class RouteService {
                     if (instance <= 3) {
                         trajectoryDetailBo.setPass(true);
                         trajectoryDetailBo.setReason("已校验完成");
-                        trajectoryDetailBo.setTime(trajectory.getTimestamp());
+                        trajectoryDetailBo.setDate(trajectory.getTimestamp());
                         trajectoryDetailBo.setSpeed(Double.valueOf(trajectory.getSpeed()));
                     } else {
                         trajectoryDetailBo.setReason("未经过该点位3米范围区域");

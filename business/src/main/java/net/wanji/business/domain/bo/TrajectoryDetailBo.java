@@ -29,6 +29,8 @@ public class TrajectoryDetailBo implements Serializable {
     private boolean pass;
     private String reason = "等待校验";
 
+    private String date;
+
     public void setPosition(String position) {
         if (StringUtils.isNotEmpty(position)) {
             this.position = position;
