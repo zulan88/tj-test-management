@@ -16,6 +16,7 @@ import net.wanji.business.domain.dto.RoutingPlanDto;
 import net.wanji.business.domain.dto.TaskDto;
 import net.wanji.business.domain.dto.device.TaskSaveDto;
 import net.wanji.business.domain.vo.CaseContinuousVo;
+import net.wanji.business.domain.vo.PlatformSSDto;
 import net.wanji.business.domain.vo.TaskListVo;
 import net.wanji.business.entity.TjTask;
 import net.wanji.business.entity.TjTaskCase;
@@ -240,6 +241,22 @@ public class TaskController extends BaseController {
     @GetMapping("/controlTask")
     public AjaxResult start(Integer taskId, Integer id, Integer action) throws BusinessException, IOException {
         return AjaxResult.success(taskCaseService.controlTask(taskId, id, action));
+    }
+
+    @ApiOperationSort(9)
+    @ApiOperation(value = "测试用例开始结束控制接口")
+    @PostMapping("/caseStartEnd")
+    public AjaxResult caseStartEnd(@RequestBody PlatformSSDto platformSSDto){
+        try {
+            taskCaseService.caseStartEnd(platformSSDto.getTaskId(),
+                platformSSDto.getCaseId(), platformSSDto.getState(),
+                platformSSDto.isTaskEnd());
+        } catch (BusinessException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
     }
 //
 //    @ApiOperationSort(7)

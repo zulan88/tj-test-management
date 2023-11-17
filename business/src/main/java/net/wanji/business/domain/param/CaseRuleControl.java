@@ -29,4 +29,12 @@ public class CaseRuleControl {
      * 规则
      */
     private List<DeviceConnRule> rules;
+    /**
+     * 主车控制频道
+     */
+    private String mainControlChannel;
+    /**
+     * 测试任务结束
+     */
+    private boolean taskEnd;
 }
