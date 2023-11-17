@@ -587,8 +587,8 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 tjTask = this.getById(in.getId());
                 // todo 根据testType校验
                 if (CollectionUtils.isEmpty(in.getCases())) {
-                    throw new BusinessException("请进行连续性场景的配置");
-//                    return in.getId();
+//                    throw new BusinessException("请进行连续性场景的配置");
+                    return in.getId();
                 }
                 if (CollectionUtils.isNotEmpty(in.getCases()) && StringUtils.isEmpty(in.getRouteFile())) {
                     throw new BusinessException("连续性配置后需要进行路径规划");
