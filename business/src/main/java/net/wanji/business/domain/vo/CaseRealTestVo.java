@@ -5,6 +5,7 @@ import net.wanji.business.domain.bo.TrajectoryDetailBo;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @Auther: guanyuduo
@@ -14,9 +15,9 @@ import java.util.Map;
 @Data
 public class CaseRealTestVo {
 
-    private Integer id;
+    private Integer taskId;
 
-    private Integer caseId;
+    private Integer taskCaseId;
 
     private String testTypeName;
 
@@ -24,7 +25,7 @@ public class CaseRealTestVo {
 
     private String endTime;
 
-    private List<String> channels;
+    private Set<String> channels;
 
     Map<String, List<TrajectoryDetailBo>> mainTrajectories;
 }

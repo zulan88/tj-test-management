@@ -42,7 +42,7 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
      * @param recordId
      * @return
      */
-    CaseRealTestVo controlTask(Integer recordId) throws BusinessException, IOException;
+    CaseRealTestVo controlTask(Integer taskId, Integer id, Integer action) throws BusinessException, IOException;
 
     /**
      * 开始/结束/回放

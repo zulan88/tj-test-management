@@ -574,16 +574,18 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                     dataConfigList.addAll(slaveConfigs);
                 }
                 tjTaskDataConfigService.saveBatch(dataConfigList);
-                TjTask task = new TjTask();
-                task.setId(in.getId());
-                task.setProcessNode(TaskProcessNode.CONFIG);
-                task.setCaseCount(in.getCaseIds().size());
-                updateById(task);
+                TjTask param1 = new TjTask();
+                param1.setId(in.getId());
+                param1.setProcessNode(TaskProcessNode.CONFIG);
+                param1.setCaseCount(in.getCaseIds().size());
+                updateById(param1);
                 return in.getId();
             case TaskProcessNode.CONFIG:
                 if (ObjectUtil.isEmpty(in.getId())) {
                     throw new BusinessException("请选择任务");
                 }
+                tjTask = this.getById(in.getId());
+                // todo 根据testType校验
                 if (CollectionUtils.isEmpty(in.getCases())) {
                     return in.getId();
                 }
@@ -607,12 +609,12 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                     tjTaskCaseMapper.update(taskCase);
                 }
                 // 修改连续式场景任务完整轨迹信息
-                TjTask param = new TjTask();
-                param.setId(in.getId());
-                param.setProcessNode(TaskProcessNode.VIEW_PLAN);
-                param.setContinuous(Boolean.TRUE);
-                param.setRouteFile(in.getRouteFile());
-                updateById(param);
+                TjTask param2 = new TjTask();
+                param2.setId(in.getId());
+                param2.setProcessNode(TaskProcessNode.VIEW_PLAN);
+                param2.setContinuous(Boolean.TRUE);
+                param2.setRouteFile(in.getRouteFile());
+                updateById(param2);
                 return in.getId();
             case TaskProcessNode.VIEW_PLAN:
                 tjTask.setProcessNode(TaskProcessNode.WAIT_TEST);

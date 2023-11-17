@@ -47,6 +47,7 @@ import net.wanji.business.service.RestService;
 import net.wanji.business.service.RouteService;
 import net.wanji.business.service.TjCaseService;
 import net.wanji.business.service.TjDeviceDetailService;
+import net.wanji.business.service.TjTaskCaseRecordService;
 import net.wanji.business.service.TjTaskCaseService;
 import net.wanji.business.service.TjTaskDataConfigService;
 import net.wanji.business.socket.WebSocketManage;
@@ -74,9 +75,11 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -108,6 +111,9 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
     @Autowired
     private ILabelsService labelsService;
+
+    @Autowired
+    private TjTaskCaseRecordService taskCaseRecordService;
 
     @Autowired
     private TjTaskMapper taskMapper;
@@ -310,6 +316,9 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
     public CaseRealTestVo prepare(TjTaskCase param) throws BusinessException {
         // 1.用例详情
         List<TaskCaseInfoBo> taskCaseInfos = taskCaseMapper.selectTaskCaseByCondition(param);
+        List<Integer> deleteIdList = new ArrayList<>();
+        List<TjTaskCaseRecord> addList = new ArrayList<>();
+        List<String> channels = new ArrayList<>();
         for (TaskCaseInfoBo taskCaseInfoBo : taskCaseInfos) {
             // 2.校验数据
             validConfig(taskCaseInfoBo);
@@ -327,68 +336,87 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                     simulationNum, pedestrianNum));
             caseTrajectoryDetailBo.setSceneDesc(taskCaseInfoBo.getSceneName());
             // 7.删除后新增任务用例测试记录
-            QueryWrapper<TjTaskCaseRecord> queryWrapper = new QueryWrapper<>();
-            queryWrapper.eq(ColumnName.CASE_ID_COLUMN, taskCaseInfoBo.getId());
-            taskCaseRecordMapper.delete(queryWrapper);
+            TjTaskCaseRecord deleteRecord = new TjTaskCaseRecord();
+            deleteRecord.setTaskId(taskCaseInfoBo.getTaskId());
+            deleteRecord.setCaseId(taskCaseInfoBo.getId());
 
-            TjTaskCaseRecord tjTaskCaseRecord = new TjTaskCaseRecord();
-            tjTaskCaseRecord.setTaskId(taskCaseInfoBo.getTaskId());
-            tjTaskCaseRecord.setCaseId(taskCaseInfoBo.getId());
-            tjTaskCaseRecord.setDetailInfo(JSONObject.toJSONString(caseTrajectoryDetailBo));
-            tjTaskCaseRecord.setStatus(TestingStatus.NOT_START);
-            taskCaseRecordMapper.insert(tjTaskCaseRecord);
+
+            TjTaskCaseRecord caseRecord = taskCaseRecordService.getOne(new QueryWrapper<TjTaskCaseRecord>().eq(ColumnName.TASK_ID, taskCaseInfoBo.getTaskId())
+                    .eq(ColumnName.CASE_ID_COLUMN, taskCaseInfoBo.getId()).select("id"));
+            if (caseRecord != null) {
+                deleteIdList.add(caseRecord.getId());
+            }
+
+            TjTaskCaseRecord addRecord = new TjTaskCaseRecord();
+            addRecord.setTaskId(taskCaseInfoBo.getTaskId());
+            addRecord.setCaseId(taskCaseInfoBo.getId());
+            addRecord.setDetailInfo(JSONObject.toJSONString(caseTrajectoryDetailBo));
+            addRecord.setStatus(TestingStatus.NOT_START);
+            addList.add(addRecord);
+
+            channels.addAll(taskCaseInfoBo.getCaseConfigs().stream().map(TaskCaseConfigBo::getDataChannel)
+                    .collect(Collectors.toList()));
         }
+        Optional.of(deleteIdList).filter(CollectionUtils::isNotEmpty).ifPresent(deleteIds -> taskCaseRecordService.removeByIds(deleteIds));
+        taskCaseRecordService.saveBatch(addList);
+
         // 7.前端结果集
         CaseRealTestVo caseRealTestVo = new CaseRealTestVo();
-//        BeanUtils.copyProperties(tjTaskCaseRecord, caseRealTestVo);
-//        caseRealTestVo.setChannels(taskCaseInfoBo.getCaseConfigs().stream().map(TaskCaseConfigBo::getDataChannel)
-//                .collect(Collectors.toList()));
+        caseRealTestVo.setTaskId(param.getTaskId());
+        caseRealTestVo.setTaskCaseId(param.getId());
+        caseRealTestVo.setChannels(new HashSet<>(channels));
         return caseRealTestVo;
     }
 
     @Override
-    public CaseRealTestVo controlTask(Integer recordId) throws BusinessException, IOException {
+    public CaseRealTestVo controlTask(Integer taskId, Integer id, Integer action) throws BusinessException, IOException {
         // 1.任务用例测试记录详情
-        TjTaskCaseRecord taskCaseRecord = taskCaseRecordMapper.selectById(recordId);
-        if (ObjectUtils.isEmpty(taskCaseRecord) || taskCaseRecord.getStatus() > TestingStatus.NOT_START) {
-            throw new BusinessException("未就绪");
-        }
-        TjTaskDataConfig taskDataConfig = taskDataConfigService.getOne(new QueryWrapper<TjTaskDataConfig>()
-                .eq(ColumnName.TASK_ID, taskCaseRecord.getTaskId()).eq(ColumnName.TYPE_COLUMN, PartRole.AV));
-        if (ObjectUtils.isEmpty(taskDataConfig) || ObjectUtils.isEmpty(taskDataConfig.getDeviceId())) {
-            throw new BusinessException("任务数据配置异常");
-        }
-        TjDeviceDetail avDeviceDetail = deviceDetailService.getById(taskDataConfig.getDeviceId());
-        if (ObjectUtils.isEmpty(avDeviceDetail)) {
-            throw new BusinessException("设备不存在");
-        }
-        List<TjTaskCase> taskCaseList = list(new QueryWrapper<TjTaskCase>().eq(ColumnName.TASK_ID, taskCaseRecord.getTaskId()).orderByAsc(ColumnName.SORT_COLUMN));
-        if (CollectionUtils.isEmpty(taskCaseList)) {
+        TjTaskCase param = new TjTaskCase();
+        param.setTaskId(taskId);
+        param.setId(id);
+        List<TaskCaseInfoBo> taskCaseInfos = taskCaseMapper.selectTaskCaseByCondition(param);
+        if (CollectionUtils.isEmpty(taskCaseInfos)) {
             throw new BusinessException("任务用例不存在");
         }
 
+        QueryWrapper<TjTaskCaseRecord> in = new QueryWrapper<TjTaskCaseRecord>().eq(ColumnName.TASK_ID, taskId).in(ColumnName.CASE_ID_COLUMN,
+                taskCaseInfos.stream().map(TaskCaseInfoBo::getId).collect(Collectors.toList()));
+        List<TjTaskCaseRecord> taskCaseRecords = taskCaseRecordMapper.selectList(in);
+
+        if (CollectionUtils.isEmpty(taskCaseRecords) || taskCaseRecords.stream().anyMatch(t -> t.getStatus() > TestingStatus.NOT_START)) {
+            throw new BusinessException("未就绪");
+        }
+
         CaseTrajectoryParam caseTrajectoryParam = new CaseTrajectoryParam();
-        caseTrajectoryParam.setTaskId(taskCaseRecord.getTaskId());
-        caseTrajectoryParam.setDataChannel(avDeviceDetail.getDataChannel());
 
-        Map<String, String> vehicleTypeMap = new HashMap<>();
-        vehicleTypeMap.put(taskDataConfig.getParticipatorId(), taskDataConfig.getType());
-        caseTrajectoryParam.setVehicleTypeMap(vehicleTypeMap);
-
-        List<TjCase> cases = caseService.listByIds(taskCaseList.stream().map(TjTaskCase::getCaseId).collect(Collectors.toList()));
-        Map<Integer, TjCase> caseMap = CollectionUtils.emptyIfNull(cases).stream().collect(
-                Collectors.toMap(TjCase::getId, Function.identity()));
-        List<CaseSSInfo> caseSSInfos = new ArrayList<>();
-        for (TjTaskCase taskCase : taskCaseList) {
-            CaseSSInfo caseSSInfo = new CaseSSInfo();
-            TjCase tjCase = caseMap.get(taskCase.getCaseId());
-            if (ObjectUtils.isEmpty(tjCase) || StringUtils.isEmpty(tjCase.getDetailInfo())) {
-                throw new BusinessException(StringUtils.format("用例{}轨迹不存在", tjCase.getCaseNumber()));
+        for (TaskCaseInfoBo taskCaseInfo : taskCaseInfos) {
+            for (TaskCaseConfigBo caseConfig : taskCaseInfo.getCaseConfigs()) {
+                if (caseConfig.getType().equals(PartRole.AV)) {
+                    caseTrajectoryParam.setDataChannel(caseConfig.getDataChannel());
+                    Map<String, String> vehicleTypeMap = new HashMap<>();
+                    vehicleTypeMap.put(caseConfig.getParticipatorId(), caseConfig.getType());
+                    caseTrajectoryParam.setVehicleTypeMap(vehicleTypeMap);
+                    break;
+                }
             }
-            SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(tjCase.getDetailInfo(), SceneTrajectoryBo.class);
+        }
+        if (ObjectUtils.isEmpty(caseTrajectoryParam.getDataChannel())) {
+            throw new BusinessException("任务数据配置异常");
+        }
+
+        caseTrajectoryParam.setTaskId(taskId);
+
+        List<CaseSSInfo> caseSSInfos = new ArrayList<>();
+        List<ParticipantTrajectoryBo> mainPoints = new ArrayList<>();
+        for (TaskCaseInfoBo taskCase : taskCaseInfos) {
+            CaseSSInfo caseSSInfo = new CaseSSInfo();
+            if (StringUtils.isEmpty(taskCase.getDetailInfo())) {
+                throw new BusinessException(StringUtils.format("用例{}轨迹不存在", taskCase.getCaseNumber()));
+            }
+            SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(taskCase.getDetailInfo(), SceneTrajectoryBo.class);
             List<ParticipantTrajectoryBo> avTrajectory = CollectionUtils.emptyIfNull(sceneTrajectoryBo.getParticipantTrajectories()).stream().filter(t -> PartType.MAIN.equals(t.getType())).collect(Collectors.toList());
             if (CollectionUtils.isEmpty(avTrajectory)) {
-                throw new BusinessException(StringUtils.format("用例{}主车轨迹不存在", tjCase.getCaseNumber()));
+                throw new BusinessException(StringUtils.format("用例{}主车轨迹不存在", taskCase.getCaseNumber()));
             }
             avTrajectory.get(0).getTrajectory().stream().filter(t -> PointTypeEnum.START.getPointType().equals(t.getType())).findFirst().ifPresent(t -> {
                 caseSSInfo.setStartLatitude(Double.parseDouble(t.getLatitude()));
@@ -399,22 +427,27 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 caseSSInfo.setEndLongitude(Double.parseDouble(t.getLongitude()));
             });
             caseSSInfo.setTaskId(taskCase.getTaskId());
-            caseSSInfo.setCaseId(taskCase.getCaseId());
+            caseSSInfo.setCaseId(taskCase.getId());
             caseSSInfos.add(caseSSInfo);
+
+            avTrajectory.stream().filter(item -> PartType.MAIN.equals(item.getType())).findFirst().ifPresent(mainPoints::add);
+
         }
         caseTrajectoryParam.setCaseTrajectorySSList(caseSSInfos);
         restService.sendCaseTrajectoryInfo(caseTrajectoryParam);
 
         CaseRealTestVo caseRealTestVo = new CaseRealTestVo();
-        BeanUtils.copyProperties(taskCaseRecord, caseRealTestVo);
+        caseRealTestVo.setTaskId(taskId);
+        caseRealTestVo.setTaskCaseId(id);
         caseRealTestVo.setStartTime(DateUtils.getTime());
-        SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(taskCaseRecord.getDetailInfo(),
-                SceneTrajectoryBo.class);
-        Map<String, List<TrajectoryDetailBo>> mainTrajectoryMap = sceneTrajectoryBo.getParticipantTrajectories()
-                .stream().filter(item -> PartType.MAIN.equals(item.getType())).collect(Collectors.toMap(
-                        ParticipantTrajectoryBo::getId,
-                        ParticipantTrajectoryBo::getTrajectory
-                ));
+
+        List<TrajectoryDetailBo> trajectoryDetailBos = new ArrayList<>();
+        for (ParticipantTrajectoryBo mainPoint : mainPoints) {
+            trajectoryDetailBos.addAll(mainPoint.getTrajectory());
+        }
+
+        Map<String, List<TrajectoryDetailBo>> mainTrajectoryMap = new HashMap<>();
+        mainTrajectoryMap.put("1", trajectoryDetailBos);
         caseRealTestVo.setMainTrajectories(mainTrajectoryMap);
         return caseRealTestVo;
     }

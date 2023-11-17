@@ -235,13 +235,10 @@ public class TaskController extends BaseController {
     }
 //
     @ApiOperationSort(6)
-    @ApiOperation(value = "开始")
-    @GetMapping("/start")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499")
-    })
-    public AjaxResult start(@RequestParam("recordId") Integer recordId) throws BusinessException, IOException {
-        return AjaxResult.success(taskCaseService.controlTask(recordId));
+    @ApiOperation(value = "controlTask")
+    @GetMapping("/controlTask")
+    public AjaxResult start(Integer taskId, Integer id, Integer action) throws BusinessException, IOException {
+        return AjaxResult.success(taskCaseService.controlTask(taskId, id, action));
     }
 //
 //    @ApiOperationSort(7)

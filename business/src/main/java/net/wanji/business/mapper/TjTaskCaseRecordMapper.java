@@ -19,4 +19,5 @@ public interface TjTaskCaseRecordMapper extends BaseMapper<TjTaskCaseRecord> {
             "SELECT R.START_TIME, R.END_TIME,C.TYPE FROM tj_task_case_record R "
                     + "LEFT JOIN tj_task_data_config C ON R.TASK_ID = C.TASK_ID WHERE R.ID = #{recordId}")
     List<Map<String, Object>> recordPartInfo(Integer recordId);
+
 }
