@@ -441,7 +441,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
     @Override
     public CaseRealTestVo caseStartEnd(Integer taskId, Integer caseId, Integer action, boolean taskEnd, Map<String, Object> context) throws BusinessException, IOException {
         // 1.任务用例测试记录详情
-        TjTaskCaseRecord taskCaseRecord = ssGetTjTaskCaseRecord(taskId, caseId);
+        TjTaskCaseRecord taskCaseRecord = ssGetTjTaskCaseRecord(taskId, caseId, action);
         // 2.任务用例详情
         TjTaskCase taskCase = getTjTaskCaseByTaskCaseRecord(taskCaseRecord);
         TaskCaseInfoBo taskCaseInfoBo = taskCaseMapper.selectTaskCaseByCondition(taskCase).get(0);
@@ -729,15 +729,19 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         return time;
     }
 
-    private TjTaskCaseRecord ssGetTjTaskCaseRecord(Integer taskId, Integer caseId)
+    private TjTaskCaseRecord ssGetTjTaskCaseRecord(Integer taskId, Integer caseId, Integer action)
             throws BusinessException {
         QueryWrapper<TjTaskCaseRecord> recordQueryWrapper = new QueryWrapper<>();
-        recordQueryWrapper.eq(ColumnName.TASK_ID, taskId).eq(ColumnName.CASE_ID_COLUMN,
-                caseId);
-        TjTaskCaseRecord taskCaseRecord = taskCaseRecordMapper.selectOne(
-                recordQueryWrapper);
-        if (ObjectUtils.isEmpty(taskCaseRecord) || taskCaseRecord.getStatus() > TestingStatus.NOT_START) {
+        recordQueryWrapper.eq(ColumnName.TASK_ID, taskId).eq(ColumnName.CASE_ID_COLUMN, caseId);
+        TjTaskCaseRecord taskCaseRecord = taskCaseRecordMapper.selectOne(recordQueryWrapper);
+        if (ObjectUtils.isEmpty(taskCaseRecord)) {
+            throw new BusinessException("未找到用例测试记录");
+        }
+        if (1 == action && taskCaseRecord.getStatus() > TestingStatus.NOT_START) {
             throw new BusinessException("未就绪");
+        }
+        if (1 < action && TestingStatus.RUNNING.equals(taskCaseRecord.getStatus())) {
+            throw new BusinessException("任务未开始，无法结束");
         }
         return taskCaseRecord;
     }
