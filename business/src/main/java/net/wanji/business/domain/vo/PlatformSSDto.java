@@ -50,4 +50,11 @@ public class PlatformSSDto {
       position = 4)
   @NotNull(message = "任务状态不能为空")
   private boolean taskEnd = false;
+
+  @ApiModelProperty(value = "websocket的key",
+          required = true,
+          dataType = "String",
+          example = "admin_1_2",
+          position = 5)
+  private String key;
 }

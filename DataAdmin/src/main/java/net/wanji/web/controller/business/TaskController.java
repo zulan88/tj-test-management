@@ -247,7 +247,7 @@ public class TaskController extends BaseController {
     }
 //
     @ApiOperationSort(6)
-    @ApiOperation(value = "controlTask")
+    @ApiOperation(value = "/controlTask")
     @GetMapping("/controlTask")
     public AjaxResult start(Integer taskId, Integer id, Integer action) throws BusinessException, IOException {
         return AjaxResult.success(taskCaseService.controlTask(taskId, id, action));

@@ -15,10 +15,10 @@ public class CaseTrajectoryParam {
 
     private Integer taskId;
 
-    private Map<String, String> vehicleTypeMap;
+    private Map<String, String> vehicleIdTypeMap;
 
     private String dataChannel;
 
-    private List<CaseSSInfo> caseTrajectorySSList;
+    private List<CaseSSInfo> caseTrajectorySSVoList;
 
 }

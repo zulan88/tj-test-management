@@ -114,37 +114,38 @@ public class TaskRedisTrajectoryConsumer {
      * @param taskCaseInfoBo 任务用例信息
      * @return
      */
-    public void subscribeAndSend(TaskCaseInfoBo taskCaseInfoBo) throws IOException {
+    public void subscribeAndSend(List<TaskCaseInfoBo> taskCaseInfos) throws IOException {
         // 添加监听器
-        this.addRunningChannel(taskCaseInfoBo);
+        this.addRunningChannel(taskCaseInfos);
     }
 
-    public void addRunningChannel(TaskCaseInfoBo taskCaseInfoBo) throws IOException {
-        String key = WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(taskCaseInfoBo.getTaskId()),
-                WebSocketManage.TASK, null);
-        if (this.runningChannel.containsKey(key)) {
-            log.info("通道已存在");
-            return;
-        }
-        List<TaskCaseConfigBo> taskCaseConfigs = taskCaseInfoBo.getDataConfigs().stream().filter(info ->
-                !ObjectUtils.isEmpty(info.getDeviceId())).collect(Collectors.collectingAndThen(
-                Collectors.toCollection(() ->
-                        new TreeSet<>(Comparator.comparing(TaskCaseConfigBo::getDeviceId))), ArrayList::new));
-
-        // todo TjTaskCaseRecord
-        MessageListener listener = createListener(key, new TjTaskCaseRecord(), taskCaseConfigs);
-        List<ChannelTopic> topics = taskCaseConfigs.stream().map(TaskCaseConfigBo::getDataChannel).map(ChannelTopic::new).collect(Collectors.toList());
-        List<ChannelListener<SimulationTrajectoryDto>> listeners = new ArrayList<>();
-        for (TaskCaseConfigBo configBo : taskCaseConfigs) {
-            ChannelListener<SimulationTrajectoryDto> channelListener =
-                    new ChannelListener<>(taskCaseInfoBo.getTaskId(),
-                            configBo.getDataChannel(), SecurityUtils.getUsername(),
-                            configBo.getSupportRoles(), System.currentTimeMillis(), listener);
-            listeners.add(channelListener);
-        }
-        this.runningChannel.put(key, listeners);
-        redisMessageListenerContainer.addMessageListener(listener, topics);
-        log.info("添加监听器成功:{}", JSON.toJSONString(topics));
+    public void addRunningChannel(List<TaskCaseInfoBo> taskCaseInfos) throws IOException {
+//        // todo 用户
+//        String key = WebSocketManage.buildKey("admin", String.valueOf(taskCaseInfos.get(0).getTaskId()),
+//                WebSocketManage.TASK, null);
+//        if (this.runningChannel.containsKey(key)) {
+//            log.info("通道已存在");
+//            return;
+//        }
+//        List<TaskCaseConfigBo> taskCaseConfigs = taskCaseInfos.stream().map()taskCaseInfoBo.getDataConfigs().stream().filter(info ->
+//                !ObjectUtils.isEmpty(info.getDeviceId())).collect(Collectors.collectingAndThen(
+//                Collectors.toCollection(() ->
+//                        new TreeSet<>(Comparator.comparing(TaskCaseConfigBo::getDeviceId))), ArrayList::new));
+//
+//        // todo TjTaskCaseRecord
+//        MessageListener listener = createListener(key, new TjTaskCaseRecord(), taskCaseConfigs);
+//        List<ChannelTopic> topics = taskCaseConfigs.stream().map(TaskCaseConfigBo::getDataChannel).map(ChannelTopic::new).collect(Collectors.toList());
+//        List<ChannelListener<SimulationTrajectoryDto>> listeners = new ArrayList<>();
+//        for (TaskCaseConfigBo configBo : taskCaseConfigs) {
+//            ChannelListener<SimulationTrajectoryDto> channelListener =
+//                    new ChannelListener<>(taskCaseInfoBo.getTaskId(),
+//                            configBo.getDataChannel(), SecurityUtils.getUsername(),
+//                            configBo.getSupportRoles(), System.currentTimeMillis(), listener);
+//            listeners.add(channelListener);
+//        }
+//        this.runningChannel.put(key, listeners);
+//        redisMessageListenerContainer.addMessageListener(listener, topics);
+//        log.info("添加监听器成功:{}", JSON.toJSONString(topics));
     }
 
 
@@ -491,6 +492,7 @@ public class TaskRedisTrajectoryConsumer {
 
     public static class ChannelListener<T> {
         private Integer taskId;
+        private Integer recordId;
         private String channel;
         private String userName;
         private String role;

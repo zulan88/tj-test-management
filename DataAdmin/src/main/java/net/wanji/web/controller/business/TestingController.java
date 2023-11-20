@@ -50,7 +50,7 @@ public class TestingController extends BaseController {
 
     @ApiOperationSort(3)
     @ApiOperation(value = "开始/结束")
-    @GetMapping("/start")
+    @GetMapping("/controlTask")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499"),
             @ApiImplicitParam(name = "action", value = "动作（1：开始；2：结束）", required = true, dataType = "Integer", paramType = "query", example = "1")

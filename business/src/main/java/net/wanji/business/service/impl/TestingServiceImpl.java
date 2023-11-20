@@ -361,6 +361,7 @@ public class TestingServiceImpl implements TestingService {
                 List<RealTestTrajectoryDto> realTestTrajectories = routeService.readRealTrajectoryFromRouteFile(caseRealRecord.getRouteFile());
                 for (RealTestTrajectoryDto realTestTrajectoryDto : realTestTrajectories) {
                     if (avChannelAndBusinessIdMap.containsKey(realTestTrajectoryDto.getChannel())) {
+                        realTestTrajectoryDto.setId(avChannelAndBusinessIdMap.get(realTestTrajectoryDto.getChannel()));
                         realTestTrajectoryDto.setName(avChannelAndNameMap.get(realTestTrajectoryDto.getChannel()));
                         realTestTrajectoryDto.setMain(true);
                         realTestTrajectoryDto.setMainSimuTrajectories(mainSimuTrajectories);

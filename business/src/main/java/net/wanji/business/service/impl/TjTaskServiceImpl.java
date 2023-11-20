@@ -584,7 +584,6 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 if (ObjectUtil.isEmpty(in.getId())) {
                     throw new BusinessException("请选择任务");
                 }
-                tjTask = this.getById(in.getId());
                 // todo 根据testType校验
                 if (CollectionUtils.isEmpty(in.getCases())) {
 //                    throw new BusinessException("请进行连续性场景的配置");
@@ -618,10 +617,11 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 updateById(param2);
                 return in.getId();
             case TaskProcessNode.VIEW_PLAN:
+                tjTask.setId(in.getId());
                 tjTask.setProcessNode(TaskProcessNode.WAIT_TEST);
                 tjTask.setStatus(TaskStatusEnum.WAITING.getCode());
                 updateById(tjTask);
-                break;
+                return tjTask.getId();
             default:
                 break;
         }
