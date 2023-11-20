@@ -264,7 +264,11 @@ public class TaskController extends BaseController {
     public AjaxResult caseStartEnd(@RequestBody PlatformSSDto platformSSDto){
         if (ObjectUtils.isEmpty(platformSSDto.getTaskId())) {
             try {
-                testingService.start(platformSSDto.getCaseId(), platformSSDto.getState());
+                if(platformSSDto.getState()==1) {
+                    testingService.start(platformSSDto.getCaseId(), platformSSDto.getState(), (String) platformSSDto.getContext().get("key"));
+                }else if(platformSSDto.getState()==0) {
+                    testingService.end((String) platformSSDto.getContext().get("channel"));
+                }
             } catch (BusinessException | IOException e) {
                 e.printStackTrace();
             }

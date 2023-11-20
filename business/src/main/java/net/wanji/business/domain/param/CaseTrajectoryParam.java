@@ -26,4 +26,10 @@ public class CaseTrajectoryParam {
 
     private List<CaseSSInfo> caseTrajectorySSVoList;
 
+    public List<CaseSSInfo> getCaseTrajectorySSVoList() {
+        if (caseTrajectorySSVoList == null) {
+            caseTrajectorySSVoList = new java.util.ArrayList<>();
+        }
+        return caseTrajectorySSVoList;
+    }
 }
