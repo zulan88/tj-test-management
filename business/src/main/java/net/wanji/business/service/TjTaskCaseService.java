@@ -11,18 +11,19 @@ import net.wanji.business.exception.BusinessException;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
-* @author guowenhao
-* @description 针对表【tj_task_case(测试任务-用例详情表)】的数据库操作Service
-* @createDate 2023-08-31 17:39:16
-*/
+ * @author guowenhao
+ * @description 针对表【tj_task_case(测试任务-用例详情表)】的数据库操作Service
+ * @createDate 2023-08-31 17:39:16
+ */
 public interface TjTaskCaseService extends IService<TjTaskCase> {
-
 
 
     /**
      * 获取任务用例中参与者状态
+     *
      * @param taskCaseId
      * @return
      */
@@ -30,6 +31,7 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
 
     /**
      * 准备（开始倒计时）
+     *
      * @param taskId
      * @return
      */
@@ -38,6 +40,7 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
 
     /**
      * 开始/结束
+     *
      * @param recordId
      * @return
      */
@@ -45,20 +48,24 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
 
     /**
      * 开始/结束
+     *
      * @param taskId
      * @param caseId
      * @param action
      * @param taskEnd
+     * @param context
      * @return
      * @throws BusinessException
      * @throws IOException
      */
     CaseRealTestVo caseStartEnd(Integer taskId, Integer caseId, Integer action,
-        boolean taskEnd) throws BusinessException, IOException;
+                                boolean taskEnd, Map<String, Object> context) throws BusinessException, IOException;
 
     void playback(Integer recordId, Integer action) throws BusinessException, IOException;
+
     /**
      * 获取实车验证结果
+     *
      * @param recordId
      * @return
      */
@@ -66,6 +73,7 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
 
     /**
      * 通信时延
+     *
      * @param recordId
      * @return
      */

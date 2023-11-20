@@ -1,21 +1,19 @@
 package net.wanji.web.controller.business;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiOperationSort;
-import net.wanji.business.common.Constants.TaskProcessNode;
-import net.wanji.business.domain.bo.*;
+import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
+import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
+import net.wanji.business.domain.bo.SaveTaskSchemeBo;
+import net.wanji.business.domain.bo.TaskBo;
 import net.wanji.business.domain.dto.RoutingPlanDto;
 import net.wanji.business.domain.dto.TaskDto;
 import net.wanji.business.domain.dto.device.TaskSaveDto;
-import net.wanji.business.domain.vo.CaseContinuousVo;
 import net.wanji.business.domain.vo.PlatformSSDto;
 import net.wanji.business.domain.vo.TaskListVo;
 import net.wanji.business.entity.TjTask;
@@ -33,7 +31,14 @@ import net.wanji.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.ObjectUtils;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -267,7 +272,7 @@ public class TaskController extends BaseController {
             try {
                 taskCaseService.caseStartEnd(platformSSDto.getTaskId(),
                         platformSSDto.getCaseId(), platformSSDto.getState(),
-                        platformSSDto.isTaskEnd());
+                        platformSSDto.isTaskEnd(), platformSSDto.getContext());
             } catch (BusinessException | IOException e) {
                 throw new RuntimeException(e);
             }

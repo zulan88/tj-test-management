@@ -10,9 +10,11 @@ import net.wanji.business.common.Constants.PartRole;
 import net.wanji.business.common.Constants.PartType;
 import net.wanji.business.common.Constants.PlaybackAction;
 import net.wanji.business.common.Constants.PointTypeEnum;
+import net.wanji.business.common.Constants.RedisMessageType;
 import net.wanji.business.common.Constants.TestingStatus;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.Label;
+import net.wanji.business.domain.RealWebsocketMessage;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
@@ -189,7 +191,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         // 6.查询主车轨迹
         if (ObjectUtils.isEmpty(param.getId())) {
             try {
-                List<SimulationTrajectoryDto> main = routeService.readOriTrajectoryFromRouteFile(tjTask.getRouteFile(), "1");
+                List<SimulationTrajectoryDto> main = routeService.readOriTrajectoryFromRouteFile(tjTask.getMainPlanFile(), "1");
                 mainTrajectoryMap.put("main", main);
 
             } catch (IOException e) {
@@ -411,9 +413,13 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
         }
         caseTrajectoryParam.setCaseTrajectorySSVoList(caseSSInfos);
-        restService.sendCaseTrajectoryInfo(caseTrajectoryParam);
         // 开始监听所有数据通道
-        taskRedisTrajectoryConsumer.subscribeAndSend(taskCaseInfos);
+        String key = taskRedisTrajectoryConsumer.subscribeAndSend(taskCaseInfos);
+        Map<String, Object> context = new HashMap<>();
+        context.put("key", key);
+        caseTrajectoryParam.setContext(context);
+        restService.sendCaseTrajectoryInfo(caseTrajectoryParam);
+
 
         CaseRealTestVo caseRealTestVo = new CaseRealTestVo();
         caseRealTestVo.setTaskId(taskId);
@@ -433,7 +439,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public CaseRealTestVo caseStartEnd(Integer taskId, Integer caseId, Integer action, boolean taskEnd) throws BusinessException, IOException {
+    public CaseRealTestVo caseStartEnd(Integer taskId, Integer caseId, Integer action, boolean taskEnd, Map<String, Object> context) throws BusinessException, IOException {
         // 1.任务用例测试记录详情
         TjTaskCaseRecord taskCaseRecord = ssGetTjTaskCaseRecord(taskId, caseId);
         // 2.任务用例详情
@@ -454,6 +460,10 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                         generateDeviceConnRules(taskCaseInfoBo),
                         first.get().getCommandChannel(), taskEnd))) {
             throw new BusinessException("主控响应异常");
+        }
+        if (taskEnd) {
+            RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null, null, null);
+            WebSocketManage.sendInfo(String.valueOf(context.get("key")), JSONObject.toJSONString(endMsg));
         }
         // 7.前端结果集
         return ssGetCaseRealTestVo(taskCaseRecord);
@@ -612,11 +622,11 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         statusMap.values().stream().flatMap(List::stream).forEach(configs::add);
         StringBuilder messageBuilder = new StringBuilder();
         for (TaskCaseConfigBo config : configs) {
-            if (YN.Y_INT != config.getStatus()) {
+            if (ObjectUtils.isEmpty(config.getStatus()) || YN.Y_INT != config.getStatus()) {
                 messageBuilder.append(StringUtils.format(ContentTemplate.DEVICE_OFFLINE_TEMPLATE,
                         config.getDeviceName()));
             }
-            if (YN.Y_INT != config.getPositionStatus()) {
+            if (ObjectUtils.isEmpty(config.getPositionStatus()) || YN.Y_INT != config.getPositionStatus()) {
                 messageBuilder.append(StringUtils.format(ContentTemplate.DEVICE_POS_ERROR_TEMPLATE,
                         config.getDeviceName()));
             }

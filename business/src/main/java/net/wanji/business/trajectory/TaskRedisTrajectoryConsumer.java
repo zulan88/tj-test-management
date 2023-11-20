@@ -114,20 +114,21 @@ public class TaskRedisTrajectoryConsumer {
      * @param taskCaseInfoBo 任务用例信息
      * @return
      */
-    public void subscribeAndSend(List<TaskCaseInfoBo> taskCaseInfos) throws IOException {
+    public String subscribeAndSend(List<TaskCaseInfoBo> taskCaseInfos) throws IOException {
         // 添加监听器
-        this.addRunningChannel(taskCaseInfos);
+        return this.addRunningChannel(taskCaseInfos);
     }
 
-    public void addRunningChannel(List<TaskCaseInfoBo> taskCaseInfos) throws IOException {
+    public String addRunningChannel(List<TaskCaseInfoBo> taskCaseInfos) throws IOException {
 //        // todo 用户
-//        String key = WebSocketManage.buildKey("admin", String.valueOf(taskCaseInfos.get(0).getTaskId()),
-//                WebSocketManage.TASK, null);
+        String key = WebSocketManage.buildKey("admin", String.valueOf(taskCaseInfos.get(0).getTaskId()),
+                WebSocketManage.TASK, null);
+        return key;
 //        if (this.runningChannel.containsKey(key)) {
 //            log.info("通道已存在");
 //            return;
 //        }
-//        List<TaskCaseConfigBo> taskCaseConfigs = taskCaseInfos.stream().map()taskCaseInfoBo.getDataConfigs().stream().filter(info ->
+//        List<TaskCaseConfigBo> taskCaseConfigs = taskCaseInfoBo.getDataConfigs().stream().filter(info ->
 //                !ObjectUtils.isEmpty(info.getDeviceId())).collect(Collectors.collectingAndThen(
 //                Collectors.toCollection(() ->
 //                        new TreeSet<>(Comparator.comparing(TaskCaseConfigBo::getDeviceId))), ArrayList::new));

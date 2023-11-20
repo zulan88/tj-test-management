@@ -390,10 +390,10 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                     throw new BusinessException("任务查询失败");
                 }
                 List<Map<String, Double>> mainTrajectories = null;
-                if (ObjectUtil.isNotEmpty(tjTask.getRouteFile())) {
+                if (ObjectUtil.isNotEmpty(tjTask.getMainPlanFile())) {
                     try {
-                        List<List<TrajectoryValueDto>> trajectoryValues = routeService.readRouteFile(tjTask.getRouteFile());
-                        mainTrajectories = trajectoryValues.stream()
+                        List<List<TrajectoryValueDto>> trajectoryValues = routeService.readTrajectoryFromRouteFile(tjTask.getMainPlanFile(), "1");
+                        mainTrajectories = trajectoryValues.stream().filter(CollectionUtils::isNotEmpty)
                                 .map(item -> item.get(0)).map(t -> {
                                     Map<String, Double> map = new HashMap<>();
                                     map.put("longitude", t.getLongitude());
@@ -574,12 +574,10 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                     dataConfigList.addAll(slaveConfigs);
                 }
                 tjTaskDataConfigService.saveBatch(dataConfigList);
-                TjTask param1 = new TjTask();
-                param1.setId(in.getId());
-                param1.setProcessNode(TaskProcessNode.CONFIG);
-                param1.setCaseCount(in.getCaseIds().size());
-                updateById(param1);
-                return in.getId();
+                tjTask.setProcessNode(TaskProcessNode.CONFIG);
+                tjTask.setCaseCount(in.getCaseIds().size());
+                updateById(tjTask);
+                return tjTask.getId();
             case TaskProcessNode.CONFIG:
                 if (ObjectUtil.isEmpty(in.getId())) {
                     throw new BusinessException("请选择任务");
@@ -609,15 +607,15 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                     tjTaskCaseMapper.update(taskCase);
                 }
                 // 修改连续式场景任务完整轨迹信息
-                TjTask param2 = new TjTask();
-                param2.setId(in.getId());
-                param2.setProcessNode(TaskProcessNode.VIEW_PLAN);
-                param2.setContinuous(Boolean.TRUE);
-                param2.setRouteFile(in.getRouteFile());
-                updateById(param2);
-                return in.getId();
+                tjTask.setProcessNode(TaskProcessNode.VIEW_PLAN);
+                tjTask.setContinuous(Boolean.TRUE);
+                tjTask.setMainPlanFile(in.getRouteFile());
+                updateById(tjTask);
+                return tjTask.getId();
             case TaskProcessNode.VIEW_PLAN:
-                tjTask.setId(in.getId());
+                if (ObjectUtil.isEmpty(in.getId())) {
+                    throw new BusinessException("请选择任务");
+                }
                 tjTask.setProcessNode(TaskProcessNode.WAIT_TEST);
                 tjTask.setStatus(TaskStatusEnum.WAITING.getCode());
                 updateById(tjTask);

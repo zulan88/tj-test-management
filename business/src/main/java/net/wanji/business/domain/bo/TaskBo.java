@@ -58,7 +58,7 @@ public class TaskBo {
     @ApiModelProperty(value = "连续性配置（测试连续性配置）")
     private List<CaseContinuousVo> cases;
 
-    @ApiModelProperty(value = "路径文件（测试连续性配置）")
+    @ApiModelProperty(value = "主车轨迹文件（测试连续性配置）")
     private String routeFile;
 
     @ApiModelProperty(value = "任务指标")

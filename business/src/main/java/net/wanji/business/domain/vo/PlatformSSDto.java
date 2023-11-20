@@ -5,6 +5,7 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 import javax.validation.constraints.NotNull;
+import java.util.Map;
 
 /**
  * @author hcy
@@ -51,10 +52,9 @@ public class PlatformSSDto {
   @NotNull(message = "任务状态不能为空")
   private boolean taskEnd = false;
 
-  @ApiModelProperty(value = "websocket的key",
-          required = true,
-          dataType = "String",
-          example = "admin_1_2",
+  @ApiModelProperty(value = "上下文参数",
+          dataType = "Object",
+          example = "",
           position = 5)
-  private String key;
+  private Map<String, Object> context;
 }

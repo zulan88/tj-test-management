@@ -125,7 +125,14 @@ public class TjTask implements Serializable {
     private boolean continuous;
 
     /**
-     * 主车完整轨迹文件
+     * 主车轨迹文件
+     */
+    @TableField(value = "main_plan_file")
+    private String mainPlanFile;
+
+
+    /**
+     * 完整轨迹文件
      */
     @TableField(value = "route_file")
     private String routeFile;

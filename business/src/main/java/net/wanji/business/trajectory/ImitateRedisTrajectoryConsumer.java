@@ -391,6 +391,8 @@ public class ImitateRedisTrajectoryConsumer {
             RealTestTrajectoryDto realTestTrajectoryDto = new RealTestTrajectoryDto();
             realTestTrajectoryDto.setChannel(channelListener.getChannel());
             realTestTrajectoryDto.setData(channelListener.getData());
+            realTestTrajectoryDto.setMain(StringUtils.isNotEmpty(channelListener.getRole())
+                    && PartRole.AV.equals(channelListener.getRole()));
             for (SimulationTrajectoryDto trajectoryDto : channelListener.getData()) {
                 routeService.checkRealRoute(recordId, originalTrajectory, trajectoryDto.getValue());
             }

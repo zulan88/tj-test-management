@@ -17,6 +17,11 @@ public class CaseTrajectoryParam {
 
     private Map<String, String> vehicleIdTypeMap;
 
+    /**
+     * 上下文环境参数
+     */
+    private Map<String, Object> context;
+
     private String dataChannel;
 
     private List<CaseSSInfo> caseTrajectorySSVoList;
