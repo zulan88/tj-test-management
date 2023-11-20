@@ -329,6 +329,7 @@ public class TestingServiceImpl implements TestingService {
             throw new BusinessException("未就绪");
         }
         CaseTrajectoryParam caseTrajectoryParam = new CaseTrajectoryParam();
+        caseTrajectoryParam.setTaskId(0);
         SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(realRecord.getDetailInfo(),
                 SceneTrajectoryBo.class);
         for (ParticipantTrajectoryBo trajectoryBo:sceneTrajectoryBo.getParticipantTrajectories()){
