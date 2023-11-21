@@ -266,8 +266,8 @@ public class TaskController extends BaseController {
             try {
                 if(platformSSDto.getState()==1) {
                     testingService.start(platformSSDto.getCaseId(), platformSSDto.getState(), (String) platformSSDto.getContext().get("key"),(String) platformSSDto.getContext().get("username"));
-                }else if(platformSSDto.getState()==0) {
-                    testingService.end((String) platformSSDto.getContext().get("channel"));
+                }else {
+                    testingService.end(platformSSDto.getCaseId(), (String) platformSSDto.getContext().get("channel"), platformSSDto.getState());
                 }
             } catch (BusinessException | IOException e) {
                 e.printStackTrace();

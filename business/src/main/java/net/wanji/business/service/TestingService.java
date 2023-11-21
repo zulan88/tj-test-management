@@ -42,7 +42,7 @@ public interface TestingService {
      */
     CaseTestStartVo start(Integer caseId, Integer action,String key,String username) throws BusinessException, IOException;
 
-    void end(String channel);
+    void end(Integer caseId, String channel, int action);
 
     CaseTestStartVo controlTask(Integer caseId) throws BusinessException, IOException;
 
