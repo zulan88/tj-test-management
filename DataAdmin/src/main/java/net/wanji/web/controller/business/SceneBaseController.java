@@ -246,9 +246,55 @@ public class SceneBaseController extends BaseController {
         startPage();
         if(tagtoSceneVo.getChoice().equals(0)) {
             List<SceneDetailVo> res = tjFragmentedSceneDetailService.selectTjSceneDetailListOr(tagtoSceneVo.getLabellist(),tagtoSceneVo.getFragmentedSceneId());
+            for(SceneDetailVo sceneDetailVo1 : res){
+                String labels = sceneDetailVo1.getLabel();
+                if(labels==null){
+                    continue;
+                }
+                StringBuilder labelshows = new StringBuilder();
+                for (String str : labels.split(",")) {
+                    try {
+                        long intValue = Long.parseLong(str);
+                        String labelshow = sceneLabelMap.getSceneLabel(intValue);
+                        if(labelshow!=null) {
+                            if(labelshows.length()>0) {
+                                labelshows.append(",").append(labelshow);
+                            }else {
+                                labelshows.append(labelshow);
+                            }
+                        }
+                    } catch (NumberFormatException e) {
+                        // 处理无效的整数字符串
+                    }
+                }
+                sceneDetailVo1.setSceneSort(labelshows.toString());
+            }
             return getDataTable(res);
         }else {
             List<SceneDetailVo> res = tjFragmentedSceneDetailService.selectTjSceneDetailListAnd(tagtoSceneVo.getLabellist(),tagtoSceneVo.getFragmentedSceneId());
+            for(SceneDetailVo sceneDetailVo1 : res){
+                String labels = sceneDetailVo1.getLabel();
+                if(labels==null){
+                    continue;
+                }
+                StringBuilder labelshows = new StringBuilder();
+                for (String str : labels.split(",")) {
+                    try {
+                        long intValue = Long.parseLong(str);
+                        String labelshow = sceneLabelMap.getSceneLabel(intValue);
+                        if(labelshow!=null) {
+                            if(labelshows.length()>0) {
+                                labelshows.append(",").append(labelshow);
+                            }else {
+                                labelshows.append(labelshow);
+                            }
+                        }
+                    } catch (NumberFormatException e) {
+                        // 处理无效的整数字符串
+                    }
+                }
+                sceneDetailVo1.setSceneSort(labelshows.toString());
+            }
             return getDataTable(res);
         }
     }

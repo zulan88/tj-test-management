@@ -165,12 +165,12 @@ public class TjScenelibServiceImpl extends ServiceImpl<TjScenelibMapper,TjScenel
     }
 
     @Override
-    public List<TjScenelib> selectTjSceneDetailListAnd(List<Integer> labellist, Integer treeId) {
+    public List<ScenelibVo> selectTjSceneDetailListAnd(List<Integer> labellist, Integer treeId) {
         return tjScenelibMapper.selectTjSceneDetailListAnd(labellist, treeId);
     }
 
     @Override
-    public List<TjScenelib> selectTjSceneDetailListOr(List<Integer> labellist, Integer treeId) {
+    public List<ScenelibVo> selectTjSceneDetailListOr(List<Integer> labellist, Integer treeId) {
         return tjScenelibMapper.selectTjSceneDetailListOr(labellist, treeId);
     }
 }
