@@ -130,7 +130,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach>
     </delete>
 
-    <select id="selectTjSceneDetailListAnd" resultType="net.wanji.business.entity.TjScenelib">
+    <select id="selectTjSceneDetailListAnd" resultType="net.wanji.business.domain.vo.ScenelibVo">
         <include refid="selectTjScenelibVo"/>
         <where>
             <foreach collection="labellist" item="item" separator = " and " >
@@ -140,7 +140,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </where>
     </select>
 
-    <select id="selectTjSceneDetailListOr" resultType="net.wanji.business.entity.TjScenelib">
+    <select id="selectTjSceneDetailListOr" resultType="net.wanji.business.domain.vo.ScenelibVo">
         <include refid="selectTjScenelibVo"/>
         <where>
             <foreach collection="labellist" item="item" open="(" separator = " or " close=")" >
