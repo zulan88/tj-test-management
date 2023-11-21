@@ -11,4 +11,8 @@ public class TagtoSceneVo {
 
     Integer choice;
 
+    Integer fragmentedSceneId;
+
+    Integer treeId;
+
 }

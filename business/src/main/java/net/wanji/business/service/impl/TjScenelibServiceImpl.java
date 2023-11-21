@@ -14,6 +14,7 @@ import net.wanji.common.utils.CounterUtil;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.StringUtils;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import net.wanji.business.mapper.TjScenelibMapper;
@@ -164,12 +165,12 @@ public class TjScenelibServiceImpl extends ServiceImpl<TjScenelibMapper,TjScenel
     }
 
     @Override
-    public List<TjScenelib> selectTjSceneDetailListAnd(List<Integer> labellist) {
-        return tjScenelibMapper.selectTjSceneDetailListAnd(labellist);
+    public List<TjScenelib> selectTjSceneDetailListAnd(List<Integer> labellist, Integer treeId) {
+        return tjScenelibMapper.selectTjSceneDetailListAnd(labellist, treeId);
     }
 
     @Override
-    public List<TjScenelib> selectTjSceneDetailListOr(List<Integer> labellist) {
-        return tjScenelibMapper.selectTjSceneDetailListOr(labellist);
+    public List<TjScenelib> selectTjSceneDetailListOr(List<Integer> labellist, Integer treeId) {
+        return tjScenelibMapper.selectTjSceneDetailListOr(labellist, treeId);
     }
 }

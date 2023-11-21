@@ -212,10 +212,10 @@ public class ScenelibController extends BaseController {
     public TableDataInfo test(@RequestBody TagtoSceneVo tagtoSceneVo){
         startPage();
         if(tagtoSceneVo.getChoice().equals(0)) {
-            List<TjScenelib> res = scenelibService.selectTjSceneDetailListOr(tagtoSceneVo.getLabellist());
+            List<TjScenelib> res = scenelibService.selectTjSceneDetailListOr(tagtoSceneVo.getLabellist(), tagtoSceneVo.getTreeId());
             return getDataTable(res);
         }else {
-            List<TjScenelib> res = scenelibService.selectTjSceneDetailListAnd(tagtoSceneVo.getLabellist());
+            List<TjScenelib> res = scenelibService.selectTjSceneDetailListAnd(tagtoSceneVo.getLabellist(), tagtoSceneVo.getTreeId());
             return getDataTable(res);
         }
     }

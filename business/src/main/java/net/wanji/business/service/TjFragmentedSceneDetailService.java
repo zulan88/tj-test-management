@@ -74,9 +74,9 @@ public interface TjFragmentedSceneDetailService extends IService<TjFragmentedSce
 
     List<SceneDetailVo> selectTjSceneDetailListBylabels(List<List<Integer>> lists);
 
-    List<SceneDetailVo> selectTjSceneDetailListAnd(List<Integer> labellist);
+    List<SceneDetailVo> selectTjSceneDetailListAnd(List<Integer> labellist, Integer fragmentedSceneId);
 
-    List<SceneDetailVo> selectTjSceneDetailListOr(List<Integer> labellist);
+    List<SceneDetailVo> selectTjSceneDetailListOr(List<Integer> labellist, Integer fragmentedSceneId);
     List<List<TrajectoryValueDto>> getroutelist(Integer id, String participantId) throws BusinessException, IOException;
 
 }
