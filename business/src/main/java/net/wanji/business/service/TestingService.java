@@ -40,7 +40,7 @@ public interface TestingService {
      * @param action
      * @return
      */
-    CaseTestStartVo start(Integer caseId, Integer action,String key) throws BusinessException, IOException;
+    CaseTestStartVo start(Integer caseId, Integer action,String key,String username) throws BusinessException, IOException;
 
     void end(String channel);
 

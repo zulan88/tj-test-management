@@ -124,9 +124,9 @@ public class ImitateRedisTrajectoryConsumer {
      * @param caseInfoBo 用例信息
      * @return
      */
-    public void subscribeAndSend(CaseInfoBo caseInfoBo,String key) throws IOException {
+    public void subscribeAndSend(CaseInfoBo caseInfoBo,String key, String username) throws IOException {
         // 添加监听器
-        this.addRunningChannel(caseInfoBo, key);
+        this.addRunningChannel(caseInfoBo, key, username);
     }
 
     public String createKey(Integer caseId) {
@@ -135,7 +135,7 @@ public class ImitateRedisTrajectoryConsumer {
     }
 
 
-    public void addRunningChannel(CaseInfoBo caseInfoBo,String key) throws IOException {
+    public void addRunningChannel(CaseInfoBo caseInfoBo,String key, String username) throws IOException {
 //        String key = WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(caseInfoBo.getCaseRealRecord().getCaseId()),
 //                WebSocketManage.REAL, null);
         if (this.runningChannel.containsKey(key)) {
@@ -153,7 +153,7 @@ public class ImitateRedisTrajectoryConsumer {
         for (CaseConfigBo configBo : caseConfigs) {
             ChannelListener<SimulationTrajectoryDto> channelListener =
                     new ChannelListener<>(caseInfoBo.getId(), caseInfoBo.getCaseRealRecord().getId(),
-                            configBo.getDataChannel(), SecurityUtils.getUsername(),
+                            configBo.getDataChannel(), username,
                             configBo.getSupportRoles(), System.currentTimeMillis(), listener);
             listeners.add(channelListener);
         }

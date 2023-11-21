@@ -276,7 +276,7 @@ public class TestingServiceImpl implements TestingService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public CaseTestStartVo start(Integer caseId, Integer action, String key) throws BusinessException, IOException {
+    public CaseTestStartVo start(Integer caseId, Integer action, String key,String username) throws BusinessException, IOException {
         // 1.实车测试记录详情
 
         // 2.用例详情
@@ -292,7 +292,7 @@ public class TestingServiceImpl implements TestingService {
         realRecord.setStartTime(LocalDateTime.now());
         caseRealRecordMapper.updateById(realRecord);
         // 5.开始监听所有数据通道
-        imitateRedisTrajectoryConsumer.subscribeAndSend(caseInfoBo,key);
+        imitateRedisTrajectoryConsumer.subscribeAndSend(caseInfoBo,key,username);
         // 6.向主控发送开始请求
         if (!restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(),
             String.valueOf(caseId), action,
@@ -358,6 +358,7 @@ public class TestingServiceImpl implements TestingService {
         Map<String, Object> context = new HashMap<>();
         context.put("key", key);
         context.put("channel",caseTrajectoryParam.getDataChannel());
+        context.put("username",SecurityUtils.getUsername());
         caseTrajectoryParam.setContext(context);
         restService.sendCaseTrajectoryInfo(caseTrajectoryParam);
         CaseTestStartVo startVo = new CaseTestStartVo();
