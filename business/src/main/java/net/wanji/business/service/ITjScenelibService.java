@@ -70,6 +70,6 @@ public interface ITjScenelibService extends IService<TjScenelib>
 
     boolean updateBatch(List<TjScenelib> sceneDetails);
 
-    List<TjScenelib> selectTjSceneDetailListAnd(@Param("labellist") List<Integer> labellist);
-    List<TjScenelib> selectTjSceneDetailListOr(@Param("labellist") List<Integer> labellist);
+    List<TjScenelib> selectTjSceneDetailListAnd(@Param("labellist") List<Integer> labellist, Integer treeId);
+    List<TjScenelib> selectTjSceneDetailListOr(@Param("labellist") List<Integer> labellist, Integer treeId);
 }

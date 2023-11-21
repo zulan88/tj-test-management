@@ -144,18 +144,6 @@ public class TjScenelibTreeServiceImpl extends ServiceImpl<TjScenelibTreeMapper,
         List<Integer> sceneIds = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(scenesList)) {
             sceneIds = scenesList.stream().map(TjScenelibTree::getId).collect(Collectors.toList());
-            QueryWrapper<TjScenelib> detailQueryWrapper = new QueryWrapper<>();
-            detailQueryWrapper.in("tree_id", sceneIds);
-            List<TjScenelib> details = sceneDetailMapper.selectList(detailQueryWrapper);
-            List<Long> detailIds = CollectionUtils.emptyIfNull(details).stream().map(TjScenelib::getId)
-                    .collect(Collectors.toList());
-
-            QueryWrapper<TjCase> caseQueryWrapper = new QueryWrapper<>();
-            caseQueryWrapper.in(ColumnName.SCENE_DETAIL_ID_COLUMN, detailIds);
-            List<TjCase> caseList = caseMapper.selectList(caseQueryWrapper);
-            if (CollectionUtils.isNotEmpty(caseList)) {
-                throw new BusinessException("此类型下存在测试用例，无法删除");
-            }
         }
         // 2.删除场景详情
         if (CollectionUtils.isNotEmpty(sceneIds)) {

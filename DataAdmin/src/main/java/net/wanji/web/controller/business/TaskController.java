@@ -262,9 +262,13 @@ public class TaskController extends BaseController {
     @ApiOperation(value = "测试用例开始结束控制接口")
     @PostMapping("/caseStartEnd")
     public AjaxResult caseStartEnd(@RequestBody PlatformSSDto platformSSDto){
-        if (ObjectUtils.isEmpty(platformSSDto.getTaskId())) {
+        if (platformSSDto.getTaskId()==0) {
             try {
-                testingService.start(platformSSDto.getCaseId(), platformSSDto.getState());
+                if(platformSSDto.getState()==1) {
+                    testingService.start(platformSSDto.getCaseId(), platformSSDto.getState(), (String) platformSSDto.getContext().get("key"),(String) platformSSDto.getContext().get("username"));
+                }else if(platformSSDto.getState()==0) {
+                    testingService.end((String) platformSSDto.getContext().get("channel"));
+                }
             } catch (BusinessException | IOException e) {
                 e.printStackTrace();
             }

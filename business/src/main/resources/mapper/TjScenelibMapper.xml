@@ -136,15 +136,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <foreach collection="labellist" item="item" separator = " and " >
                 FIND_IN_SET(#{item},all_stage_labels)
             </foreach>
+            <if test="treeId != null "> and tree_id = #{treeId}</if>
         </where>
     </select>
 
     <select id="selectTjSceneDetailListOr" resultType="net.wanji.business.entity.TjScenelib">
         <include refid="selectTjScenelibVo"/>
         <where>
-            <foreach collection="labellist" item="item" separator = " or " >
+            <foreach collection="labellist" item="item" open="(" separator = " or " close=")" >
                 FIND_IN_SET(#{item},all_stage_labels)
             </foreach>
+            <if test="treeId != null "> and tree_id = #{treeId}</if>
         </where>
     </select>
 

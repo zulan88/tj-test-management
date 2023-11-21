@@ -124,15 +124,20 @@ public class ImitateRedisTrajectoryConsumer {
      * @param caseInfoBo 用例信息
      * @return
      */
-    public void subscribeAndSend(CaseInfoBo caseInfoBo) throws IOException {
+    public void subscribeAndSend(CaseInfoBo caseInfoBo,String key, String username) throws IOException {
         // 添加监听器
-        this.addRunningChannel(caseInfoBo);
+        this.addRunningChannel(caseInfoBo, key, username);
+    }
+
+    public String createKey(Integer caseId) {
+        return WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(caseId),
+                WebSocketManage.REAL, null);
     }
 
 
-    public void addRunningChannel(CaseInfoBo caseInfoBo) throws IOException {
-        String key = WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(caseInfoBo.getCaseRealRecord().getCaseId()),
-                WebSocketManage.REAL, null);
+    public void addRunningChannel(CaseInfoBo caseInfoBo,String key, String username) throws IOException {
+//        String key = WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(caseInfoBo.getCaseRealRecord().getCaseId()),
+//                WebSocketManage.REAL, null);
         if (this.runningChannel.containsKey(key)) {
             log.info("通道已存在");
             return;
@@ -148,7 +153,7 @@ public class ImitateRedisTrajectoryConsumer {
         for (CaseConfigBo configBo : caseConfigs) {
             ChannelListener<SimulationTrajectoryDto> channelListener =
                     new ChannelListener<>(caseInfoBo.getId(), caseInfoBo.getCaseRealRecord().getId(),
-                            configBo.getDataChannel(), SecurityUtils.getUsername(),
+                            configBo.getDataChannel(), username,
                             configBo.getSupportRoles(), System.currentTimeMillis(), listener);
             listeners.add(channelListener);
         }
@@ -230,9 +235,9 @@ public class ImitateRedisTrajectoryConsumer {
                         channelListener.start();
                         break;
                     case RedisMessageType.TRAJECTORY:
-                        if (!channelListener.started) {
-                            break;
-                        }
+//                        if (!channelListener.started) {
+//                            break;
+//                        }
                         SimulationTrajectoryDto simulationTrajectory = objectMapper.readValue(JSON.toJSONString(simulationMessage.getValue()), SimulationTrajectoryDto.class);
                         // 实际轨迹消息
                         List<TrajectoryValueDto> data = simulationTrajectory.getValue();
@@ -298,10 +303,10 @@ public class ImitateRedisTrajectoryConsumer {
                         }
                         break;
                     case RedisMessageType.END:
-                        if (!channelListener.started) {
-                            break;
-                        }
-                        if ("TESSResult".equals(channel)) {
+//                        if (!channelListener.started) {
+//                            break;
+//                        }
+//                        if ("TESSResult".equals(channel)) {
 //                            CaseTrajectoryDetailBo end = objectMapper.readValue(JSON.toJSONString(simulationMessage.getValue()), CaseTrajectoryDetailBo.class);
 //                            log.info(StringUtils.format("结束接收{}数据：{}", tjCase.getCaseNumber(),
 //                                    JSON.toJSONString(end)));
@@ -324,7 +329,7 @@ public class ImitateRedisTrajectoryConsumer {
                             RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null, null,
                                     duration);
                             WebSocketManage.sendInfo(key.concat("_").concat(channel), JSON.toJSONString(endMsg));
-                        }
+//                        }
                         break;
                     default:
                         break;

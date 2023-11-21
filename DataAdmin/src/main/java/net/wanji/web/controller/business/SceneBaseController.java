@@ -245,10 +245,10 @@ public class SceneBaseController extends BaseController {
     public TableDataInfo test(@RequestBody TagtoSceneVo tagtoSceneVo){
         startPage();
         if(tagtoSceneVo.getChoice().equals(0)) {
-            List<SceneDetailVo> res = tjFragmentedSceneDetailService.selectTjSceneDetailListOr(tagtoSceneVo.getLabellist());
+            List<SceneDetailVo> res = tjFragmentedSceneDetailService.selectTjSceneDetailListOr(tagtoSceneVo.getLabellist(),tagtoSceneVo.getFragmentedSceneId());
             return getDataTable(res);
         }else {
-            List<SceneDetailVo> res = tjFragmentedSceneDetailService.selectTjSceneDetailListAnd(tagtoSceneVo.getLabellist());
+            List<SceneDetailVo> res = tjFragmentedSceneDetailService.selectTjSceneDetailListAnd(tagtoSceneVo.getLabellist(),tagtoSceneVo.getFragmentedSceneId());
             return getDataTable(res);
         }
     }

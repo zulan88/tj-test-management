@@ -163,13 +163,13 @@ public class TjFragmentedSceneDetailServiceImpl
     }
 
     @Override
-    public List<SceneDetailVo> selectTjSceneDetailListAnd(List<Integer> labellist) {
-        return sceneDetailMapper.selectTjSceneDetailListAnd(labellist);
+    public List<SceneDetailVo> selectTjSceneDetailListAnd(List<Integer> labellist, Integer fragmentedSceneId) {
+        return sceneDetailMapper.selectTjSceneDetailListAnd(labellist, fragmentedSceneId);
     }
 
     @Override
-    public List<SceneDetailVo> selectTjSceneDetailListOr(List<Integer> labellist) {
-        return sceneDetailMapper.selectTjSceneDetailListOr(labellist);
+    public List<SceneDetailVo> selectTjSceneDetailListOr(List<Integer> labellist, Integer fragmentedSceneId) {
+        return sceneDetailMapper.selectTjSceneDetailListOr(labellist, fragmentedSceneId);
     }
 
     private void detailVoTranslate(FragmentedScenesDetailVo detailVo) {

@@ -123,15 +123,17 @@
             <foreach collection="labellist" item="item" separator = " and " >
                 FIND_IN_SET(#{item},all_stage_label)
             </foreach>
+            <if test="fragmentedSceneId != null "> and fragmented_scene_id = #{fragmentedSceneId}</if>
         </where>
     </select>
 
     <select id="selectTjSceneDetailListOr" resultType="net.wanji.business.domain.vo.SceneDetailVo">
         <include refid="selectTjFragmentedSceneDetailVo"/>
         <where>
-            <foreach collection="labellist" item="item" separator = " or " >
+            <foreach collection="labellist" item="item" open="(" separator = " or " close=")" >
                 FIND_IN_SET(#{item},all_stage_label)
             </foreach>
+            <if test="fragmentedSceneId != null "> and fragmented_scene_id = #{fragmentedSceneId}</if>
         </where>
     </select>
 

@@ -114,6 +114,73 @@ public class LabelsController extends BaseController {
         return AjaxResult.success(treeVo);
     }
 
+    public AjaxResult list2(Integer id) throws BusinessException{
+        List<Label> labelList = labelsService.selectLabelsList(new Label());
+        Map<Long, Label> labelToNodeMap = new HashMap<>();
+        TreeVo treeVo = new TreeVo();
+        treeVo.setTotal(labelList.size());
+        List<Label> roots = new ArrayList<>();
+        Set<Long> set = new HashSet<>();
+
+        if (id != null) {
+            FragmentedScenesDetailVo detailVo = tjFragmentedSceneDetailService.getDetailVo(id);
+            List<String> labels = detailVo.getLabelList();
+            for (String str : labels) {
+                try {
+                    long intValue = Long.parseLong(str);
+                    set.add(intValue);
+                } catch (NumberFormatException e) {
+                    // 处理无效的整数字符串
+                }
+            }
+        }
+
+        for (Label label : labelList) {
+            if (set.contains(label.getId())) {
+                label.setStatus(true);
+            }
+            labelToNodeMap.put(label.getId(), label);
+
+            if (label.getParentId() == null) {
+                roots.add(label);
+            }
+        }
+
+        for (Label label : labelList) {
+            Label currentNode = labelToNodeMap.get(label.getId());
+            Label parentNode = labelToNodeMap.get(label.getParentId());
+
+            if (parentNode != null) {
+                parentNode.getChildren().add(currentNode);
+            }
+        }
+
+        for (Label parentNode : labelToNodeMap.values()) {
+            if (parentNode.getParentId() == null) {
+                List<Label> leafNodes = new ArrayList<>();
+                for (Label child : parentNode.getChildren()) {
+                    if (child.getChildren().isEmpty()) {
+                        leafNodes.add(child);
+                    }
+                }
+                parentNode.getChildren().removeIf(obj -> obj.getChildren().isEmpty());
+
+                if (leafNodes.size() > 1) {
+                    StringBuilder sb = new StringBuilder();
+                    for (Label leafNode : leafNodes) {
+                        sb.append(leafNode.getName()).append(",");
+                    }
+                    Label label = new Label();
+                    label.setName(sb.substring(0, sb.length() - 1));
+                    parentNode.getChildren().add(label);
+                }
+            }
+        }
+
+        treeVo.setTrees(roots);
+        return AjaxResult.success(treeVo);
+    }
+
     @PostMapping
     public AjaxResult add(@RequestBody Label label){
         labelsService.insertLabels(label);

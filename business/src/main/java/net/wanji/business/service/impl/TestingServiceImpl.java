@@ -1,7 +1,9 @@
 package net.wanji.business.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import net.wanji.business.common.Constants;
 import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.business.common.Constants.PartRole;
@@ -19,9 +21,7 @@ import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.ParamsDto;
-import net.wanji.business.domain.param.CaseRuleControl;
-import net.wanji.business.domain.param.DeviceConnInfo;
-import net.wanji.business.domain.param.DeviceConnRule;
+import net.wanji.business.domain.param.*;
 import net.wanji.business.domain.vo.CaseTestPrepareVo;
 import net.wanji.business.domain.vo.CaseTestStartVo;
 import net.wanji.business.domain.vo.CommunicationDelayVo;
@@ -42,6 +42,7 @@ import net.wanji.business.service.TjDeviceDetailService;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.trajectory.ImitateRedisTrajectoryConsumer;
 import net.wanji.common.common.RealTestTrajectoryDto;
+import net.wanji.common.common.SimulationMessage;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.utils.DateUtils;
@@ -50,6 +51,7 @@ import net.wanji.common.utils.StringUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
@@ -101,6 +103,9 @@ public class TestingServiceImpl implements TestingService {
 
     @Autowired
     private ImitateRedisTrajectoryConsumer imitateRedisTrajectoryConsumer;
+
+    @Autowired
+    private RedisTemplate<String, Object> noClassRedisTemplate;
 
     @Override
     public RealVehicleVerificationPageVo getStatus(Integer caseId) throws BusinessException {
@@ -271,7 +276,7 @@ public class TestingServiceImpl implements TestingService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public CaseTestStartVo start(Integer caseId, Integer action) throws BusinessException, IOException {
+    public CaseTestStartVo start(Integer caseId, Integer action, String key,String username) throws BusinessException, IOException {
         // 1.实车测试记录详情
 
         // 2.用例详情
@@ -280,14 +285,14 @@ public class TestingServiceImpl implements TestingService {
         validConfig(caseInfoBo);
         // 4.更新业务数据
         TjCaseRealRecord realRecord = caseInfoBo.getCaseRealRecord();
-        if (ObjectUtils.isEmpty(realRecord) || realRecord.getStatus() > TestingStatus.NOT_START) {
-            throw new BusinessException("未就绪");
-        }
+//        if (ObjectUtils.isEmpty(realRecord) || realRecord.getStatus() > TestingStatus.NOT_START) {
+//            throw new BusinessException("未就绪");
+//        }
         realRecord.setStatus(TestingStatus.RUNNING);
         realRecord.setStartTime(LocalDateTime.now());
         caseRealRecordMapper.updateById(realRecord);
         // 5.开始监听所有数据通道
-        imitateRedisTrajectoryConsumer.subscribeAndSend(caseInfoBo);
+        imitateRedisTrajectoryConsumer.subscribeAndSend(caseInfoBo,key,username);
         // 6.向主控发送开始请求
         if (!restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(),
             String.valueOf(caseId), action,
@@ -300,6 +305,65 @@ public class TestingServiceImpl implements TestingService {
         startVo.setStartTime(DateUtils.getTime());
         SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(realRecord.getDetailInfo(),
                 SceneTrajectoryBo.class);
+        Map<String, List<TrajectoryDetailBo>> mainTrajectoryMap = sceneTrajectoryBo.getParticipantTrajectories()
+                .stream().filter(item -> PartType.MAIN.equals(item.getType())).collect(Collectors.toMap(
+                        ParticipantTrajectoryBo::getId,
+                        ParticipantTrajectoryBo::getTrajectory
+                ));
+        startVo.setMainTrajectories(mainTrajectoryMap);
+        return startVo;
+    }
+
+    @Override
+    public void end(String channel) {
+        SimulationMessage endMsg = new SimulationMessage(Constants.RedisMessageType.END, new JSONObject());
+        noClassRedisTemplate.convertAndSend(channel,endMsg);
+    }
+
+    @Override
+    public CaseTestStartVo controlTask(Integer caseId) throws BusinessException, IOException {
+        CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
+        validConfig(caseInfoBo);
+        TjCaseRealRecord realRecord = caseInfoBo.getCaseRealRecord();
+        if (ObjectUtils.isEmpty(realRecord) || realRecord.getStatus() > TestingStatus.NOT_START) {
+            throw new BusinessException("未就绪");
+        }
+        CaseTrajectoryParam caseTrajectoryParam = new CaseTrajectoryParam();
+        caseTrajectoryParam.setTaskId(0);
+        SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(realRecord.getDetailInfo(),
+                SceneTrajectoryBo.class);
+        for (ParticipantTrajectoryBo trajectoryBo:sceneTrajectoryBo.getParticipantTrajectories()){
+            if(trajectoryBo.getType().equals(PartType.MAIN)){
+                CaseSSInfo caseSSInfo = new CaseSSInfo();
+                caseSSInfo.setCaseId(caseId);
+                Map<String, String> vehicleTypeMap = new HashMap<>();
+                vehicleTypeMap.put(PartRole.AV, trajectoryBo.getId());
+                caseTrajectoryParam.setVehicleIdTypeMap(vehicleTypeMap);
+                for (TrajectoryDetailBo detailBo:trajectoryBo.getTrajectory()){
+                    if(detailBo.getType().equals("start")){
+                        caseSSInfo.setStartLatitude(Double.valueOf(detailBo.getLatitude()));
+                        caseSSInfo.setStartLongitude(Double.valueOf(detailBo.getLongitude()));
+                    }else if(detailBo.getType().equals("end")){
+                        caseSSInfo.setEndLatitude(Double.valueOf(detailBo.getLatitude()));
+                        caseSSInfo.setEndLongitude(Double.valueOf(detailBo.getLongitude()));
+                    }
+                }
+                caseTrajectoryParam.getCaseTrajectorySSVoList().add(caseSSInfo);
+            }
+        }
+        for (CaseConfigBo caseConfig:caseInfoBo.getCaseConfigs()){
+            caseTrajectoryParam.setDataChannel(caseConfig.getDataChannel());
+        }
+        String key = imitateRedisTrajectoryConsumer.createKey(caseId);
+        Map<String, Object> context = new HashMap<>();
+        context.put("key", key);
+        context.put("channel",caseTrajectoryParam.getDataChannel());
+        context.put("username",SecurityUtils.getUsername());
+        caseTrajectoryParam.setContext(context);
+        restService.sendCaseTrajectoryInfo(caseTrajectoryParam);
+        CaseTestStartVo startVo = new CaseTestStartVo();
+        BeanUtils.copyProperties(realRecord, startVo);
+        startVo.setStartTime(DateUtils.getTime());
         Map<String, List<TrajectoryDetailBo>> mainTrajectoryMap = sceneTrajectoryBo.getParticipantTrajectories()
                 .stream().filter(item -> PartType.MAIN.equals(item.getType())).collect(Collectors.toMap(
                         ParticipantTrajectoryBo::getId,

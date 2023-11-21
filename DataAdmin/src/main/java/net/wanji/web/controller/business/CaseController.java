@@ -101,9 +101,9 @@ public class CaseController extends BaseController {
         if (CollectionUtils.isNotEmpty(caseQueryDto.getLabelList())) {
             List<SceneDetailVo> sceneDetails = null;
             if (ObjectUtils.isEmpty(caseQueryDto) || 0 == caseQueryDto.getChoice()) {
-                sceneDetails = sceneDetailService.selectTjSceneDetailListOr(caseQueryDto.getLabelList());
+                sceneDetails = sceneDetailService.selectTjSceneDetailListOr(caseQueryDto.getLabelList(),null);
             } else {
-                sceneDetails = sceneDetailService.selectTjSceneDetailListAnd(caseQueryDto.getLabelList());
+                sceneDetails = sceneDetailService.selectTjSceneDetailListAnd(caseQueryDto.getLabelList(),null);
             }
             List<Integer> sceneDetailIds = CollectionUtils.emptyIfNull(sceneDetails).stream().map(SceneDetailVo::getId)
                     .collect(Collectors.toList());

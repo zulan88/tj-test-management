@@ -35,6 +35,6 @@ public interface TjFragmentedSceneDetailMapper extends BaseMapper<TjFragmentedSc
 
     List<SceneDetailVo> selectTjSceneDetailListBylabels(@Param("lists") List<List<Integer>> lists);
 
-    List<SceneDetailVo> selectTjSceneDetailListAnd(@Param("labellist") List<Integer> labellist);
-    List<SceneDetailVo> selectTjSceneDetailListOr(@Param("labellist") List<Integer> labellist);
+    List<SceneDetailVo> selectTjSceneDetailListAnd(@Param("labellist") List<Integer> labellist, @Param("fragmentedSceneId")Integer fragmentedSceneId);
+    List<SceneDetailVo> selectTjSceneDetailListOr(@Param("labellist") List<Integer> labellist, @Param("fragmentedSceneId")Integer fragmentedSceneId);
 }
