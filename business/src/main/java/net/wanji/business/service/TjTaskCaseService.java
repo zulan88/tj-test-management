@@ -39,12 +39,14 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
 
 
     /**
-     * 开始/结束
+     * 开始/结束/回放
      *
-     * @param recordId
+     * @param taskId
+     * @param taskCaseId
+     * @param action
      * @return
      */
-    CaseRealTestVo controlTask(Integer taskId, Integer id, Integer action) throws BusinessException, IOException;
+    CaseRealTestVo controlTask(Integer taskId, Integer taskCaseId, Integer action) throws BusinessException, IOException;
 
     /**
      * 开始/结束

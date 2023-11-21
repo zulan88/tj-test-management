@@ -302,14 +302,14 @@ public class ImitateRedisTrajectoryConsumer {
                             break;
                         }
                         if ("TESSResult".equals(channel)) {
-                            CaseTrajectoryDetailBo end = objectMapper.readValue(JSON.toJSONString(simulationMessage.getValue()), CaseTrajectoryDetailBo.class);
-                            log.info(StringUtils.format("结束接收{}数据：{}", tjCase.getCaseNumber(),
-                                    JSON.toJSONString(end)));
-                            try {
-                                Optional.ofNullable(end.getEvaluationVerify()).ifPresent(originalTrajectory::setEvaluationVerify);
-                            } catch (Exception e) {
-                                originalTrajectory.setEvaluationVerify("True");
-                            }
+//                            CaseTrajectoryDetailBo end = objectMapper.readValue(JSON.toJSONString(simulationMessage.getValue()), CaseTrajectoryDetailBo.class);
+//                            log.info(StringUtils.format("结束接收{}数据：{}", tjCase.getCaseNumber(),
+//                                    JSON.toJSONString(end)));
+//                            try {
+//                                Optional.ofNullable(end.getEvaluationVerify()).ifPresent(originalTrajectory::setEvaluationVerify);
+//                            } catch (Exception e) {
+//                                originalTrajectory.setEvaluationVerify("True");
+//                            }
                             TjCaseRealRecord param = new TjCaseRealRecord();
                             param.setId(caseRealRecord.getId());
                             String duration = DateUtils.secondsToDuration(

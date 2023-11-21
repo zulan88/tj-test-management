@@ -63,6 +63,7 @@
         <result property="caseNumber" column="case_number"/>
         <result property="realDetailInfo" column="real_detail_info"/>
         <result property="realRouteFile" column="real_route_file"/>
+        <result property="recordId" column="record_id"/>
         <result property="detailInfo" column="detail_info"/>
         <result property="routeFile" column="route_file"/>
         <result property="status" column="status"/>
@@ -151,6 +152,7 @@
             a.all_stage_label,
             a.real_detail_info,
             a.real_route_file,
+            tcr.id as record_id,
             tcr.detail_info,
             tcr.route_file,
             tcr.status as record_status
@@ -189,6 +191,7 @@
                 and ttc.id = #{id}
             </if>
         </where>
+        ORDER BY ttc.sort
     </select>
 
     <update id="update">

@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.Extension;
+import net.wanji.business.common.Constants.TaskCaseStatusEnum;
 import net.wanji.business.common.Constants.TestingStatus;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
@@ -116,7 +117,7 @@ public class RouteService {
     public void saveTaskRouteFile(Integer recordId, List<RealTestTrajectoryDto> data,
                                   CaseTrajectoryDetailBo originalTrajectory)
             throws ExecutionException, InterruptedException {
-        log.info(StringUtils.format("保存实车测试{}路径文件", recordId));
+        log.info(StringUtils.format("保存任务用例测试{}路径文件", recordId));
         TjTaskCaseRecord taskCaseRecord = taskCaseRecordMapper.selectById(recordId);
         // 保存本地文件
         try {
@@ -131,16 +132,22 @@ public class RouteService {
                         continue;
                     }
                 }
-
             }
-            log.info("saveTaskRouteFile routePath:{}", path);
+            log.info("save task case record routePath:{}", path);
             taskCaseRecord.setRouteFile(path);
             taskCaseRecord.setStatus(TestingStatus.FINISHED);
             taskCaseRecord.setEndTime(LocalDateTime.now());
             taskCaseRecordMapper.updateById(taskCaseRecord);
 
+            log.info("save task case info:{}", path);
             TjTaskCase taskCase = new TjTaskCase();
             taskCase.setPassingRate(pointNum == 0 ? "100%" : Calculate.getPercent(passNum, pointNum));
+            taskCase.setStatus(pointNum == 0 ? TaskCaseStatusEnum.PASS.getCode()
+                    : ((double) passNum / pointNum >= 0.8
+                        ? TaskCaseStatusEnum.PASS.getCode()
+                        : TaskCaseStatusEnum.NO_PASS.getCode()));
+            taskCase.setTestTotalTime(String.valueOf(data.size()));
+            taskCase.setEndTime(new Date());
             QueryWrapper<TjTaskCase> updateMapper = new QueryWrapper<>();
             updateMapper.eq(ColumnName.TASK_ID, taskCaseRecord.getTaskId()).eq(ColumnName.CASE_ID_COLUMN,
                     taskCaseRecord.getCaseId());
@@ -149,7 +156,8 @@ public class RouteService {
             QueryWrapper<TjTaskCase> queryMapper = new QueryWrapper<>();
             queryMapper.eq(ColumnName.TASK_ID, taskCaseRecord.getTaskId());
             List<TjTaskCase> tjTaskCases = taskCaseMapper.selectList(queryMapper);
-            if (CollectionUtils.emptyIfNull(tjTaskCases).stream().allMatch(item -> "已完成".equals(item.getStatus()))) {
+            if (CollectionUtils.emptyIfNull(tjTaskCases).stream().noneMatch(item -> TaskCaseStatusEnum.WAITING.getCode().equals(item.getStatus()))) {
+                log.info("任务{}下所有用例已完成", taskCaseRecord.getTaskId());
                 Integer taskId = tjTaskCases.get(0).getTaskId();
                 TjTask tjTask = new TjTask();
                 tjTask.setId(taskId);
@@ -157,7 +165,6 @@ public class RouteService {
                 tjTask.setTestTotalTime(DateUtils.secondsToDuration(tjTaskCases.stream().mapToInt(caseObj ->
                         Integer.parseInt(caseObj.getTestTotalTime())).sum()));
                 taskMapper.updateById(tjTask);
-
             }
             log.info("更新完成");
         } catch (IOException e) {

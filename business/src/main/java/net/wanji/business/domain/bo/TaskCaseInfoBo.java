@@ -22,6 +22,8 @@ public class TaskCaseInfoBo extends TjTaskCase {
 
     private String allStageLabel;
 
+    private Integer recordId;
+
     private String filePath;
 
     private String geoJsonPath;

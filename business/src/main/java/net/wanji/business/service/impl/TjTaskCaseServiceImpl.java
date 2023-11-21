@@ -52,6 +52,7 @@ import net.wanji.business.service.TjTaskCaseService;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.trajectory.TaskRedisTrajectoryConsumer;
 import net.wanji.common.common.RealTestTrajectoryDto;
+import net.wanji.common.common.SimulationMessage;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.utils.DateUtils;
@@ -60,6 +61,7 @@ import net.wanji.common.utils.StringUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
@@ -112,7 +114,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
     private TjTaskCaseRecordService taskCaseRecordService;
 
     @Autowired
-    private TjCaseRealRecordService caseRealRecordService;
+    private RedisTemplate<String, Object> noClassRedisTemplate;
 
     @Autowired
     private TjTaskMapper taskMapper;
@@ -259,7 +261,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                         Map<String, Object> map = new HashMap<>();
                         map.put("id", participantTrajectory.getId());
                         map.put("model", participantTrajectory.getModel());
-                        map.put("name", participantTrajectory.getName());
+                        map.put("name", caseInfoEntry.getKey() + "_" + participantTrajectory.getName());
                         map.put("role", businessIdAndRoleMap.get(participantTrajectory.getId()));
                         map.put("trajectory", participantTrajectory.getTrajectory().stream().map(item -> {
                             Map<String, Object> t = new HashMap<>();
@@ -352,25 +354,26 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
     }
 
     @Override
-    public CaseRealTestVo controlTask(Integer taskId, Integer id, Integer action) throws BusinessException, IOException {
+    public CaseRealTestVo controlTask(Integer taskId, Integer taskCaseId, Integer action) throws BusinessException, IOException {
         // 1.任务用例测试记录详情
         TjTaskCase param = new TjTaskCase();
         param.setTaskId(taskId);
-        param.setId(id);
+        param.setId(taskCaseId);
         List<TaskCaseInfoBo> taskCaseInfos = taskCaseMapper.selectTaskCaseByCondition(param);
         if (CollectionUtils.isEmpty(taskCaseInfos)) {
             throw new BusinessException("任务用例不存在");
         }
-
         if (taskCaseInfos.stream().anyMatch(t -> t.getRecordStatus() > TestingStatus.NOT_START)) {
             throw new BusinessException("未就绪");
         }
 
         CaseTrajectoryParam caseTrajectoryParam = new CaseTrajectoryParam();
+        Map<String, Object> context = new HashMap<>();
 
         for (TaskCaseInfoBo taskCaseInfo : taskCaseInfos) {
             for (TaskCaseConfigBo caseConfig : taskCaseInfo.getDataConfigs()) {
                 if (caseConfig.getType().equals(PartRole.AV)) {
+                    context.put("dataChannel", caseConfig.getDataChannel());
                     caseTrajectoryParam.setDataChannel(caseConfig.getDataChannel());
                     Map<String, String> vehicleTypeMap = new HashMap<>();
                     vehicleTypeMap.put(caseConfig.getType(), caseConfig.getParticipatorId());
@@ -382,7 +385,6 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         if (ObjectUtils.isEmpty(caseTrajectoryParam.getDataChannel())) {
             throw new BusinessException("任务数据配置异常");
         }
-
         caseTrajectoryParam.setTaskId(taskId);
 
         List<CaseSSInfo> caseSSInfos = new ArrayList<>();
@@ -414,16 +416,17 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         }
         caseTrajectoryParam.setCaseTrajectorySSVoList(caseSSInfos);
         // 开始监听所有数据通道
-        String key = taskRedisTrajectoryConsumer.subscribeAndSend(taskCaseInfos);
-        Map<String, Object> context = new HashMap<>();
+        String key = WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(taskId),
+                WebSocketManage.TASK, null);
         context.put("key", key);
+        taskRedisTrajectoryConsumer.subscribeAndSend(key, taskId, taskCaseId, taskCaseInfos);
         caseTrajectoryParam.setContext(context);
+        // 向主控发送主车信息
         restService.sendCaseTrajectoryInfo(caseTrajectoryParam);
-
 
         CaseRealTestVo caseRealTestVo = new CaseRealTestVo();
         caseRealTestVo.setTaskId(taskId);
-        caseRealTestVo.setTaskCaseId(id);
+        caseRealTestVo.setTaskCaseId(taskCaseId);
         caseRealTestVo.setStartTime(DateUtils.getTime());
 
         List<TrajectoryDetailBo> trajectoryDetailBos = new ArrayList<>();
@@ -450,7 +453,23 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         // 4.更新业务数据
         ssCaseResultUpdate(action, taskCaseRecord, taskCase);
         // 5.开始监听所有数据通道
-//        taskRedisTrajectoryConsumer.subscribeAndSend(taskCaseInfoBo);
+        if (1 == action) {
+            taskRedisTrajectoryConsumer.updateRunningCase(String.valueOf(context.get("key")), caseId);
+        }
+        if (0 == action) {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("taskEnd", false);
+            SimulationMessage endMsg = new SimulationMessage(RedisMessageType.END, jsonObject);
+            noClassRedisTemplate.convertAndSend(String.valueOf(context.get("dataChannel")), endMsg);
+            taskRedisTrajectoryConsumer.clearRunningCase(String.valueOf(context.get("key")));
+        }
+        if (-1 == action || taskEnd) {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("taskEnd", true);
+            SimulationMessage endMsg = new SimulationMessage(RedisMessageType.END, jsonObject);
+            noClassRedisTemplate.convertAndSend(String.valueOf(context.get("dataChannel")), endMsg);
+            taskRedisTrajectoryConsumer.clearRunningCase(String.valueOf(context.get("key")));
+        }
         // 6.向主控发送控制请求
         Optional<TaskCaseConfigBo> first = taskCaseInfoBo.getDataConfigs()
                 .stream().filter(e -> PartRole.AV.equals(e.getType())).findFirst();
@@ -461,10 +480,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                         first.get().getCommandChannel(), taskEnd))) {
             throw new BusinessException("主控响应异常");
         }
-        if (taskEnd) {
-            RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null, null, null);
-            WebSocketManage.sendInfo(String.valueOf(context.get("key")), JSONObject.toJSONString(endMsg));
-        }
+
         // 7.前端结果集
         return ssGetCaseRealTestVo(taskCaseRecord);
     }
@@ -740,7 +756,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         if (1 == action && taskCaseRecord.getStatus() > TestingStatus.NOT_START) {
             throw new BusinessException("未就绪");
         }
-        if (1 < action && TestingStatus.RUNNING.equals(taskCaseRecord.getStatus())) {
+        if (1 > action && TestingStatus.RUNNING.equals(taskCaseRecord.getStatus())) {
             throw new BusinessException("任务未开始，无法结束");
         }
         return taskCaseRecord;
@@ -768,9 +784,11 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 taskMapper.updateById(tjTask);
             }
         } else if (0 == action) {
+            taskCaseRecord.setEndTime(LocalDateTime.now());
             taskCaseRecord.setStatus(TestingStatus.FINISHED);
             taskCase.setStatus(Constants.TaskCaseStatusEnum.PASS.getValue());
         } else if (-1 == action) {
+            taskCaseRecord.setEndTime(LocalDateTime.now());
             taskCaseRecord.setStatus(TestingStatus.FINISHED);
             taskCase.setStatus(Constants.TaskCaseStatusEnum.NO_PASS.getValue());
         }

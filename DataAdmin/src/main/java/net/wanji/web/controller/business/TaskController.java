@@ -277,7 +277,6 @@ public class TaskController extends BaseController {
                 throw new RuntimeException(e);
             }
         }
-
       return null;
     }
 //
@@ -294,21 +293,21 @@ public class TaskController extends BaseController {
 //        return AjaxResult.success();
 //    }
 //
-//    @ApiOperationSort(8)
-//    @ApiOperation(value = "测试结果")
-//    @GetMapping("/getResult")
-//    @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499")
-//    public AjaxResult getResult(@RequestParam("recordId") Integer recordId) throws BusinessException {
-//        return AjaxResult.success(taskCaseService.getResult(recordId));
-//    }
+    @ApiOperationSort(8)
+    @ApiOperation(value = "测试结果")
+    @GetMapping("/getResult")
+    @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499")
+    public AjaxResult getResult(@RequestParam("recordId") Integer recordId) throws BusinessException {
+        return AjaxResult.success(taskCaseService.getResult(recordId));
+    }
 //
-//    @ApiOperationSort(9)
-//    @ApiOperation(value = "图形列表")
-//    @GetMapping("/communicationDelay")
-//    @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499")
-//    public AjaxResult communicationDelayVo(@RequestParam Integer recordId) {
-//        return AjaxResult.success(taskCaseService.communicationDelayVo(recordId));
-//    }
+    @ApiOperationSort(9)
+    @ApiOperation(value = "图形列表")
+    @GetMapping("/communicationDelay")
+    @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499")
+    public AjaxResult communicationDelayVo(@RequestParam Integer recordId) {
+        return AjaxResult.success(taskCaseService.communicationDelayVo(recordId));
+    }
 //
 //    @ApiOperationSort(10)
 //    @ApiOperation(value = "导出")
