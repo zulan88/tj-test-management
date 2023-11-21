@@ -178,19 +178,24 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
                     .collect(Collectors.toList());
 
             QueryWrapper<TjCase> caseQueryWrapper = new QueryWrapper<>();
-            caseQueryWrapper.in(ColumnName.SCENE_DETAIL_ID_COLUMN, detailIds);
-            List<TjCase> caseList = caseMapper.selectList(caseQueryWrapper);
-            if (CollectionUtils.isNotEmpty(caseList)) {
-                throw new BusinessException("此类型下存在测试用例，无法删除");
+            if(detailIds.size()>0){
+                caseQueryWrapper.in(ColumnName.SCENE_DETAIL_ID_COLUMN, detailIds);
+                List<TjCase> caseList = caseMapper.selectList(caseQueryWrapper);
+                if (CollectionUtils.isNotEmpty(caseList)) {
+                    throw new BusinessException("此类型下存在测试用例，无法删除");
+                }
             }
         }
         // 2.删除场景详情
         if (CollectionUtils.isNotEmpty(sceneIds)) {
             QueryWrapper<TjFragmentedSceneDetail> detailQueryWrapper = new QueryWrapper<>();
             detailQueryWrapper.in(ColumnName.SCENE_ID_COLUMN, sceneIds);
-            int removeDetail = sceneDetailMapper.delete(detailQueryWrapper);
-            if (removeDetail != sceneIds.size()) {
-                throw new BusinessException("删除详情失败");
+            List<TjFragmentedSceneDetail> list = sceneDetailMapper.selectList(detailQueryWrapper);
+            if(list.size()>0) {
+                int removeDetail = sceneDetailMapper.delete(detailQueryWrapper);
+                if (removeDetail != sceneIds.size()) {
+                    throw new BusinessException("删除详情失败");
+                }
             }
         }
         // 3.删除场景
