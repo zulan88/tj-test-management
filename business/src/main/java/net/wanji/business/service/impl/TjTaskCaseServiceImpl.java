@@ -573,16 +573,16 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
     @Override
     public RealTestResultVo getResult(Integer taskId, Integer id) throws BusinessException {
-        TjTask tjTask = taskMapper.selectById(taskId);
-        if (ObjectUtils.isEmpty(tjTask)) {
-            throw new BusinessException("未查询到任务信息");
-        }
         TjTaskCaseRecord taskCaseRecord = taskCaseRecordMapper.selectById(id);
         if (ObjectUtils.isEmpty(taskCaseRecord) || ObjectUtils.isEmpty(taskCaseRecord.getDetailInfo())) {
             throw new BusinessException("待开始测试");
         }
         if (TestingStatus.FINISHED > taskCaseRecord.getStatus()) {
             return null;
+        }
+        TjTask tjTask = taskMapper.selectById(taskCaseRecord.getTaskId());
+        if (ObjectUtils.isEmpty(tjTask)) {
+            throw new BusinessException("未查询到任务信息");
         }
         CaseTrajectoryDetailBo caseTrajectoryDetailBo = JSONObject.parseObject(taskCaseRecord.getDetailInfo(),
                 CaseTrajectoryDetailBo.class);
