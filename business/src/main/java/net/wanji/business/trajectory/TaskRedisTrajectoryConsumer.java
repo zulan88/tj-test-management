@@ -301,15 +301,17 @@ public class TaskRedisTrajectoryConsumer {
                         param.setId(caseInfo.getRecordId());
                         originalTrajectory.setDuration(duration);
                         param.setDetailInfo(JSON.toJSONString(originalTrajectory));
-                        if (end.getBoolean("taskEnd")) {
-                            removeListener(key);
-                        }
                         int endSuccess = taskCaseRecordMapper.updateById(param);
                         log.info(StringUtils.format("修改用例场景评价:{}", endSuccess));
-                        save(key, caseInfo.getRecordId(), originalTrajectory);
-                        RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null, null,
-                                duration);
-                        WebSocketManage.sendInfo(key.concat("_").concat(channel), JSON.toJSONString(endMsg));
+                        clearRunningCase(String.valueOf(caseInfo.getCaseId()));
+                        save(key, caseInfo.getRecordId(), originalTrajectory, end.getInteger("action"));
+                        if (end.getBoolean("taskEnd")) {
+                            removeListener(key);
+                            RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null, null,
+                                    duration);
+                            WebSocketManage.sendInfo(key.concat("_").concat(channel), JSON.toJSONString(endMsg));
+                        }
+
                         break;
                     default:
                         break;
@@ -443,7 +445,7 @@ public class TaskRedisTrajectoryConsumer {
         this.runningChannel.remove(key);
     }
 
-    public void save(String key, Integer recordId, CaseTrajectoryDetailBo originalTrajectory) {
+    public void save(String key, Integer recordId, CaseTrajectoryDetailBo originalTrajectory, Integer action) {
         try {
             List<RealTestTrajectoryDto> data = new ArrayList<>();
             List<ChannelListener<SimulationTrajectoryDto>> channelListeners = this.runningChannel.get(key);
@@ -456,7 +458,7 @@ public class TaskRedisTrajectoryConsumer {
                 }
                 data.add(realTestTrajectoryDto);
             }
-            routeService.saveTaskRouteFile(recordId, data, originalTrajectory);
+            routeService.saveTaskRouteFile(recordId, data, originalTrajectory, action);
         } catch (ExecutionException | InterruptedException e) {
             e.printStackTrace();
         }

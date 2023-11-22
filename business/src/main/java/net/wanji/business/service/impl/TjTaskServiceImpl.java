@@ -604,7 +604,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                     taskCase.setSort(i + 1);
                     Object obj = map.get(taskCase.getId());
                     taskCase.setConnectInfo(ObjectUtil.isEmpty(obj) ? null : JSONObject.toJSONString(obj));
-                    tjTaskCaseMapper.update(taskCase);
+                    tjTaskCaseMapper.updateByCondition(taskCase);
                 }
                 // 修改连续式场景任务完整轨迹信息
                 tjTask.setProcessNode(TaskProcessNode.VIEW_PLAN);

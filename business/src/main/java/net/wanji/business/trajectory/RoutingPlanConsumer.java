@@ -126,7 +126,7 @@ public class RoutingPlanConsumer {
                 SimulationMessage simulationMessage = objectMapper.readValue(
                         message.toString(),
                         SimulationMessage.class);
-                log.info(StringUtils.format("{}收到消息：{}", methodLog, JSONObject.toJSONString(simulationMessage)));
+//                log.info(StringUtils.format("{}收到消息：{}", methodLog, JSONObject.toJSONString(simulationMessage)));
                 // 计时
                 String duration = DateUtils.secondsToDuration(
                         (int) Math.ceil((double) (getDataSize(channel)) / 10));

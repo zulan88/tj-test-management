@@ -194,7 +194,7 @@
         ORDER BY ttc.sort
     </select>
 
-    <update id="update">
+    <update id="updateByCondition">
         update tj_task_case
         set status          = #{status},
             passing_rate    = #{passingRate},

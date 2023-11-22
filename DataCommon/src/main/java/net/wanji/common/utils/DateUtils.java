@@ -3,6 +3,7 @@ package net.wanji.common.utils;
 import java.lang.management.ManagementFactory;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -213,6 +214,17 @@ public class DateUtils extends org.apache.commons.lang3.time.DateUtils
         return String.format("%02d:%02d:%02d", hours, minutes, seconds);
     }
 
+
+    /**
+     * 将时长转换为秒数(00:00:00)
+     * @param duration
+     * @return
+     */
+    public static int durationToSeconds(String duration) {
+        LocalTime time = LocalTime.parse(duration);
+        return time.toSecondOfDay();
+    }
+
     /**
      * 日期转换字符串
      * @param date
@@ -223,6 +235,15 @@ public class DateUtils extends org.apache.commons.lang3.time.DateUtils
         LocalTime time = date.toInstant().atZone(ZoneId.systemDefault()).toLocalTime();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
         return time.format(formatter);
+    }
+
+    /**
+     * 日期转换ldt
+     * @param date
+     * @return
+     */
+    public static LocalDateTime dateToLDT(Date date) {
+        return LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
     }
 
 }
