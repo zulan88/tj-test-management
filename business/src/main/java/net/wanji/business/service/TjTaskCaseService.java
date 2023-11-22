@@ -68,21 +68,22 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
     void playback(Integer recordId, Integer action) throws BusinessException, IOException;
 
     /**
-     * 获取任务实车验证结果
-     *
+     * 获取实时测试结果
      * @param taskId
      * @param id
      * @return
+     * @throws BusinessException
      */
     RealTestResultVo getResult(Integer taskId, Integer id) throws BusinessException;
 
     /**
      * 通信时延
      *
-     * @param recordId
+     * @param taskId
+     * @param id
      * @return
      */
-    CommunicationDelayVo communicationDelayVo(Integer recordId);
+    CommunicationDelayVo communicationDelayVo(Integer taskId, Integer id) throws BusinessException;
 
     List<TaskReportVo> getReport(Integer taskId, Integer taskCaseId);
 }

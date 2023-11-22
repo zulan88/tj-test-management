@@ -204,4 +204,16 @@
             connect_info    = #{connectInfo}
         where id = #{id}
     </update>
+    <update id="reset">
+        update tj_task_case
+        set status          = 'waiting',
+            passing_rate    = null,
+            start_time      = null,
+            end_time        = null,
+            test_total_time = null
+        where id in
+        <foreach collection="ids" item="id" index="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
 </mapper>

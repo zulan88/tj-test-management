@@ -302,8 +302,8 @@ public class TaskController extends BaseController {
     @ApiOperation(value = "测试结果")
     @GetMapping("/getResult")
     @ApiImplicitParams({
-            @ApiImplicitParam(name = "taskId", value = "任务ID", required = true, dataType = "Integer", paramType = "query", example = "499"),
-            @ApiImplicitParam(name = "id", value = "子列表ID", required = false, dataType = "Integer", paramType = "query", example = "499")
+            @ApiImplicitParam(name = "taskId", value = "任务ID", dataType = "Integer", paramType = "query", example = "499"),
+            @ApiImplicitParam(name = "id", value = "子列表ID", dataType = "Integer", paramType = "query", example = "499")
     })
     public AjaxResult getResult(Integer taskId, Integer id) throws BusinessException {
         return AjaxResult.success(taskCaseService.getResult(taskId, id));
@@ -312,9 +312,12 @@ public class TaskController extends BaseController {
     @ApiOperationSort(9)
     @ApiOperation(value = "图形列表")
     @GetMapping("/communicationDelay")
-    @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499")
-    public AjaxResult communicationDelayVo(@RequestParam Integer recordId) {
-        return AjaxResult.success(taskCaseService.communicationDelayVo(recordId));
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "taskId", value = "任务ID", dataType = "Integer", paramType = "query", example = "499"),
+            @ApiImplicitParam(name = "id", value = "子列表ID", dataType = "Integer", paramType = "query", example = "499")
+    })
+    public AjaxResult communicationDelayVo(Integer taskId, Integer id) throws BusinessException {
+        return AjaxResult.success(taskCaseService.communicationDelayVo(taskId, id));
     }
 //
 //    @ApiOperationSort(10)

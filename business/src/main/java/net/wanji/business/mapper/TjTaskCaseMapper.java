@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import net.wanji.business.domain.bo.TaskCaseInfoBo;
 import net.wanji.business.domain.vo.TaskCaseVo;
 import net.wanji.business.entity.TjTaskCase;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -22,6 +23,8 @@ public interface TjTaskCaseMapper extends BaseMapper<TjTaskCase> {
     TaskCaseInfoBo selectTaskCaseInfo(Integer taskCaseId);
 
     List<TaskCaseInfoBo> selectTaskCaseByCondition(TjTaskCase taskCase);
+
+    int reset(@Param("ids") List<Integer> ids);
 }
 
 
