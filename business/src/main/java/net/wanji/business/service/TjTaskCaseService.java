@@ -48,6 +48,8 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
      */
     CaseRealTestVo controlTask(Integer taskId, Integer taskCaseId, Integer action) throws BusinessException, IOException;
 
+    CaseRealTestVo gettaskInfo(Integer taskId) throws BusinessException;
+
     /**
      * 开始/结束
      *

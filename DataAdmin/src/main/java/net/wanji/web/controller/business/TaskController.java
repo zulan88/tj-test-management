@@ -337,4 +337,9 @@ public class TaskController extends BaseController {
                 : AjaxResult.error("失败");
     }
 
+    @GetMapping("/taskinfo")
+    public AjaxResult taskinfo(@RequestParam Integer taskId) throws BusinessException {
+        return AjaxResult.success(taskCaseService.gettaskInfo(taskId));
+    }
+
 }

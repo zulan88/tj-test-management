@@ -15,13 +15,7 @@ import net.wanji.business.common.Constants.RedisMessageType;
 import net.wanji.business.common.Constants.TestingStatus;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.Label;
-import net.wanji.business.domain.RealWebsocketMessage;
-import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
-import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
-import net.wanji.business.domain.bo.SceneTrajectoryBo;
-import net.wanji.business.domain.bo.TaskCaseConfigBo;
-import net.wanji.business.domain.bo.TaskCaseInfoBo;
-import net.wanji.business.domain.bo.TrajectoryDetailBo;
+import net.wanji.business.domain.bo.*;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.ParamsDto;
 import net.wanji.business.domain.param.CaseRuleControl;
@@ -45,7 +39,6 @@ import net.wanji.business.schedule.RealPlaybackSchedule;
 import net.wanji.business.service.ILabelsService;
 import net.wanji.business.service.RestService;
 import net.wanji.business.service.RouteService;
-import net.wanji.business.service.TjCaseRealRecordService;
 import net.wanji.business.service.TjCaseService;
 import net.wanji.business.service.TjDeviceDetailService;
 import net.wanji.business.service.TjTaskCaseRecordService;
@@ -439,6 +432,19 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         Map<String, List<TrajectoryDetailBo>> mainTrajectoryMap = new HashMap<>();
         mainTrajectoryMap.put("1", trajectoryDetailBos);
         caseRealTestVo.setMainTrajectories(mainTrajectoryMap);
+        return caseRealTestVo;
+    }
+
+    @Override
+    public CaseRealTestVo gettaskInfo(Integer taskId) throws BusinessException {
+        String key = WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(taskId),
+                WebSocketManage.TASK, null);
+        Integer caseId = taskRedisTrajectoryConsumer.getRunningCase(key);
+        CaseRealTestVo caseRealTestVo = new CaseRealTestVo();
+        caseRealTestVo.setTaskId(taskId);
+        caseRealTestVo.setTaskCaseId(caseId);
+        CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
+        caseRealTestVo.setTestTypeName(caseInfoBo.getTestScene());
         return caseRealTestVo;
     }
 
