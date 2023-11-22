@@ -41,6 +41,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -210,6 +211,14 @@ public class TaskController extends BaseController {
     @ApiImplicitParam(name = "taskId", value = "任务id", required = true, dataType = "Integer", paramType = "query", example = "1")
     public AjaxResult getTaskCaseList(@RequestParam("taskId") Integer taskId) throws BusinessException {
         return AjaxResult.success(tjTaskService.getTaskCaseList(taskId));
+    }
+
+    @ApiOperationSort(13)
+    @ApiOperation(value = "13.下载测试报告")
+    @GetMapping("/downloadTestReport")
+    public AjaxResult downloadTestReport(HttpServletResponse response) throws BusinessException {
+        restService.downloadTestReport(response);
+        return AjaxResult.success();
     }
 
 
