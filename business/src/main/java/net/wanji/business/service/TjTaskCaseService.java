@@ -68,12 +68,13 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
     void playback(Integer recordId, Integer action) throws BusinessException, IOException;
 
     /**
-     * 获取实车验证结果
+     * 获取任务实车验证结果
      *
-     * @param recordId
+     * @param taskId
+     * @param id
      * @return
      */
-    RealTestResultVo getResult(Integer recordId) throws BusinessException;
+    RealTestResultVo getResult(Integer taskId, Integer id) throws BusinessException;
 
     /**
      * 通信时延

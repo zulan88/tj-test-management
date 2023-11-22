@@ -5,6 +5,7 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiOperationSort;
 import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
@@ -300,9 +301,12 @@ public class TaskController extends BaseController {
     @ApiOperationSort(8)
     @ApiOperation(value = "测试结果")
     @GetMapping("/getResult")
-    @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499")
-    public AjaxResult getResult(@RequestParam("recordId") Integer recordId) throws BusinessException {
-        return AjaxResult.success(taskCaseService.getResult(recordId));
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "taskId", value = "任务ID", required = true, dataType = "Integer", paramType = "query", example = "499"),
+            @ApiImplicitParam(name = "id", value = "子列表ID", required = false, dataType = "Integer", paramType = "query", example = "499")
+    })
+    public AjaxResult getResult(Integer taskId, Integer id) throws BusinessException {
+        return AjaxResult.success(taskCaseService.getResult(taskId, id));
     }
 //
     @ApiOperationSort(9)

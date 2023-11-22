@@ -2,6 +2,7 @@ package net.wanji.business.service;
 
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import net.wanji.business.common.Constants;
 import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.Extension;
 import net.wanji.business.common.Constants.TaskCaseStatusEnum;
@@ -115,39 +116,41 @@ public class RouteService {
     }
 
     public void saveTaskRouteFile(Integer recordId, List<RealTestTrajectoryDto> data,
-                                  CaseTrajectoryDetailBo originalTrajectory)
+                                  CaseTrajectoryDetailBo originalTrajectory, Integer action)
             throws ExecutionException, InterruptedException {
         log.info(StringUtils.format("保存任务用例测试{}路径文件", recordId));
         TjTaskCaseRecord taskCaseRecord = taskCaseRecordMapper.selectById(recordId);
         // 保存本地文件
         try {
-            int pointNum = 0;
-            int passNum = 0;
+//            int pointNum = 0;
+//            int passNum = 0;
             String path = FileUtils.writeRoute(data, WanjiConfig.getRoutePath(), Extension.TXT);
-            for (ParticipantTrajectoryBo participantTrajectory : originalTrajectory.getParticipantTrajectories()) {
-                for (TrajectoryDetailBo trajectoryDetailBo : participantTrajectory.getTrajectory()) {
-                    pointNum++;
-                    if (trajectoryDetailBo.isPass()) {
-                        passNum++;
-                        continue;
-                    }
-                }
-            }
+//            for (ParticipantTrajectoryBo participantTrajectory : originalTrajectory.getParticipantTrajectories()) {
+//                for (TrajectoryDetailBo trajectoryDetailBo : participantTrajectory.getTrajectory()) {
+//                    pointNum++;
+//                    if (trajectoryDetailBo.isPass()) {
+//                        passNum++;
+//                        continue;
+//                    }
+//                }
+//            }
             log.info("save task case record routePath:{}", path);
             taskCaseRecord.setRouteFile(path);
             taskCaseRecord.setStatus(TestingStatus.FINISHED);
             taskCaseRecord.setEndTime(LocalDateTime.now());
             taskCaseRecordMapper.updateById(taskCaseRecord);
 
-            log.info("save task case info:{}", path);
             TjTaskCase taskCase = new TjTaskCase();
-            taskCase.setPassingRate(pointNum == 0 ? "100%" : Calculate.getPercent(passNum, pointNum));
-            taskCase.setStatus(pointNum == 0 ? TaskCaseStatusEnum.PASS.getCode()
-                    : ((double) passNum / pointNum >= 0.8
-                        ? TaskCaseStatusEnum.PASS.getCode()
-                        : TaskCaseStatusEnum.NO_PASS.getCode()));
-            taskCase.setTestTotalTime(String.valueOf(data.size()));
+            taskCase.setTestTotalTime(String.valueOf(DateUtils.durationToSeconds(originalTrajectory.getDuration())));
             taskCase.setEndTime(new Date());
+            if (0 == action) {
+                taskCase.setPassingRate("100%");
+                taskCase.setStatus(Constants.TaskCaseStatusEnum.PASS.getCode());
+            } else if (-1 == action) {
+                taskCase.setPassingRate("0%");
+                taskCase.setStatus(Constants.TaskCaseStatusEnum.NO_PASS.getCode());
+            }
+            log.info("save task case info");
             QueryWrapper<TjTaskCase> updateMapper = new QueryWrapper<>();
             updateMapper.eq(ColumnName.TASK_ID, taskCaseRecord.getTaskId()).eq(ColumnName.CASE_ID_COLUMN,
                     taskCaseRecord.getCaseId());

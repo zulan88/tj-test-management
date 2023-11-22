@@ -15,7 +15,7 @@ import java.util.List;
 */
 public interface TjTaskCaseMapper extends BaseMapper<TjTaskCase> {
 
-    int update(TjTaskCase taskCase);
+    int updateByCondition(TjTaskCase taskCase);
 
     List<TaskCaseVo> selectByCondition(TjTaskCase taskCase);
 
