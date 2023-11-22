@@ -12,6 +12,7 @@ import net.wanji.business.common.Constants.PartType;
 import net.wanji.business.common.Constants.PlaybackAction;
 import net.wanji.business.common.Constants.PointTypeEnum;
 import net.wanji.business.common.Constants.RedisMessageType;
+import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.TestingStatus;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.Label;
@@ -52,6 +53,7 @@ import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
+import net.wanji.system.service.ISysDictDataService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -107,6 +109,9 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
     @Autowired
     private TjTaskCaseRecordService taskCaseRecordService;
+
+    @Autowired
+    private ISysDictDataService dictDataService;
 
     @Autowired
     private RedisTemplate<String, Object> noClassRedisTemplate;
@@ -568,6 +573,10 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
     @Override
     public RealTestResultVo getResult(Integer taskId, Integer id) throws BusinessException {
+        TjTask tjTask = taskMapper.selectById(taskId);
+        if (ObjectUtils.isEmpty(tjTask)) {
+            throw new BusinessException("未查询到任务信息");
+        }
         TjTaskCaseRecord taskCaseRecord = taskCaseRecordMapper.selectById(id);
         if (ObjectUtils.isEmpty(taskCaseRecord) || ObjectUtils.isEmpty(taskCaseRecord.getDetailInfo())) {
             throw new BusinessException("待开始测试");
@@ -582,6 +591,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         caseTrajectoryDetailBo.setParticipantTrajectories(trajectoryBos);
         RealTestResultVo realTestResultVo = new RealTestResultVo();
         BeanUtils.copyProperties(caseTrajectoryDetailBo, realTestResultVo);
+        realTestResultVo.setTestTypeName(dictDataService.selectDictLabel(SysType.TEST_TYPE, tjTask.getTestType()));
         realTestResultVo.setSceneName(caseTrajectoryDetailBo.getSceneDesc());
         realTestResultVo.setId(taskCaseRecord.getId());
         realTestResultVo.setStartTime(taskCaseRecord.getStartTime());
@@ -696,6 +706,24 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
 //        }
         return new ArrayList<>();
+    }
+
+    @Override
+    public void stop(Integer taskId, Integer taskCaseId) throws BusinessException {
+        TjTaskCase taskCase = new TjTaskCase();
+        taskCase.setTaskId(taskId);
+        TaskCaseInfoBo taskCaseInfoBo = taskCaseMapper.selectTaskCaseByCondition(taskCase).get(0);
+
+        Optional<TaskCaseConfigBo> first = taskCaseInfoBo.getDataConfigs()
+                .stream().filter(e -> PartRole.AV.equals(e.getType())).findFirst();
+        if (!restService.sendRuleUrl(
+                new CaseRuleControl(System.currentTimeMillis(),
+                        String.valueOf(taskId), 0,
+                        generateDeviceConnRules(taskCaseInfoBo),
+                        first.get().getCommandChannel(), true))) {
+            throw new BusinessException("主控响应异常");
+        }
+
     }
 
     private void validStatus(TaskCaseVerificationPageVo pageVo) {

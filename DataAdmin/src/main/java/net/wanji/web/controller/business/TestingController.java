@@ -59,6 +59,18 @@ public class TestingController extends BaseController {
         return  AjaxResult.success(testingService.controlTask(recordId));
     }
 
+    @ApiOperationSort(3)
+    @ApiOperation(value = "清除任务")
+    @GetMapping("/stop")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499"),
+            @ApiImplicitParam(name = "action", value = "动作（1：开始；2：结束）", required = true, dataType = "Integer", paramType = "query", example = "1")
+    })
+    public AjaxResult stop(Integer recordId, Integer action) throws BusinessException {
+        testingService.stop(recordId);
+        return  AjaxResult.success();
+    }
+
     @ApiOperationSort(4)
     @ApiOperation(value = "回放")
     @GetMapping("/playback")

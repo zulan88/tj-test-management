@@ -86,4 +86,6 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
     CommunicationDelayVo communicationDelayVo(Integer taskId, Integer id) throws BusinessException;
 
     List<TaskReportVo> getReport(Integer taskId, Integer taskCaseId);
+
+    void stop(Integer taskId, Integer taskCaseId) throws BusinessException;
 }
