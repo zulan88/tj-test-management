@@ -3,6 +3,7 @@ package net.wanji.business.service.impl;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import lombok.extern.slf4j.Slf4j;
 import net.wanji.business.common.Constants;
 import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.ContentTemplate;
@@ -18,6 +19,7 @@ import net.wanji.business.domain.bo.CaseInfoBo;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
+import net.wanji.business.domain.bo.TaskCaseConfigBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.ParamsDto;
@@ -68,6 +70,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -77,6 +80,7 @@ import java.util.stream.Collectors;
  * @Date: 2023/8/24 10:00
  * @Descriptoin:
  */
+@Slf4j
 @Service
 public class TestingServiceImpl implements TestingService {
 
@@ -277,7 +281,7 @@ public class TestingServiceImpl implements TestingService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public CaseTestStartVo start(Integer caseId, Integer action, String key,String username) throws BusinessException, IOException {
-        // 1.实车测试记录详情
+        log.info("开始实车测试，用例id：{}，操作：{}", caseId, action);
 
         // 2.用例详情
         CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
@@ -299,6 +303,7 @@ public class TestingServiceImpl implements TestingService {
             generateDeviceConnRules(caseInfoBo), null, true))) {
             throw new BusinessException("主控响应异常");
         }
+        log.info("主控响应完毕，用例id：{}，操作：{}", caseId, action);
         // 7.前端结果集
         CaseTestStartVo startVo = new CaseTestStartVo();
         BeanUtils.copyProperties(realRecord, startVo);
@@ -315,9 +320,31 @@ public class TestingServiceImpl implements TestingService {
     }
 
     @Override
-    public void end(String channel) {
-        SimulationMessage endMsg = new SimulationMessage(Constants.RedisMessageType.END, new JSONObject());
-        noClassRedisTemplate.convertAndSend(channel,endMsg);
+    public void end(Integer caseId, String channel, int action) {
+        if (0 == action) {
+            log.info("正常结束实车测试，{}", channel);
+            SimulationMessage endMsg = new SimulationMessage(Constants.RedisMessageType.END, new JSONObject());
+            noClassRedisTemplate.convertAndSend(channel,endMsg);
+        }
+        if (-1 == action) {
+            log.info("异常结束实车测试，{}", channel);
+            SimulationMessage endMsg = new SimulationMessage(Constants.RedisMessageType.END, new JSONObject());
+            noClassRedisTemplate.convertAndSend(channel,endMsg);
+        }
+        try {
+            // 6.向主控发送控制请求
+            CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
+            String commandChannel = caseInfoBo.getCaseConfigs().stream().filter(t -> PartRole.AV.equals(t.getParticipantRole())).findFirst().get().getCommandChannel();
+            if (!restService.sendRuleUrl(
+                    new CaseRuleControl(System.currentTimeMillis(),
+                            String.valueOf(caseId), 0,
+                            generateDeviceConnRules(caseInfoBo),
+                            commandChannel, true))) {
+                throw new BusinessException("主控响应异常");
+            }
+        } catch (BusinessException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -351,9 +378,9 @@ public class TestingServiceImpl implements TestingService {
                 caseTrajectoryParam.getCaseTrajectorySSVoList().add(caseSSInfo);
             }
         }
-        for (CaseConfigBo caseConfig:caseInfoBo.getCaseConfigs()){
-            caseTrajectoryParam.setDataChannel(caseConfig.getDataChannel());
-        }
+        caseInfoBo.getCaseConfigs().stream().filter(t -> PartRole.AV.equals(t.getSupportRoles())).findFirst().ifPresent(t -> {
+            caseTrajectoryParam.setDataChannel(t.getDataChannel());
+        });
         String key = imitateRedisTrajectoryConsumer.createKey(caseId);
         Map<String, Object> context = new HashMap<>();
         context.put("key", key);

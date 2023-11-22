@@ -266,7 +266,7 @@ public class ImitateRedisTrajectoryConsumer {
                                         realMap.put("percent", percent * 100);
                                     }
                                 } catch (Exception e) {
-                                    log.error("倒计时计算异常：{}", e.getMessage());
+                                    log.error("倒计时计算异常：{}", e);
                                 }
                                 PathwayPoints nearestPoint = pathwayPoints.findNearestPoint(data.get(0).getLongitude(), data.get(0).getLatitude());
                                 Map<String, Object> tipsMap = new HashMap<>();
@@ -303,6 +303,7 @@ public class ImitateRedisTrajectoryConsumer {
                         }
                         break;
                     case RedisMessageType.END:
+                        log.info("收到结束消息：{}", key);
 //                        if (!channelListener.started) {
 //                            break;
 //                        }

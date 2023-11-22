@@ -3,6 +3,7 @@ package net.wanji.business.service.impl;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.extern.slf4j.Slf4j;
 import net.wanji.business.common.Constants;
 import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.ContentTemplate;
@@ -92,6 +93,7 @@ import java.util.stream.Collectors;
  * @createDate 2023-08-31 17:39:16
  */
 @Service
+@Slf4j
 public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskCase>
         implements TjTaskCaseService {
 
@@ -443,6 +445,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
     @Transactional(rollbackFor = Exception.class)
     @Override
     public CaseRealTestVo caseStartEnd(Integer taskId, Integer caseId, Integer action, boolean taskEnd, Map<String, Object> context) throws BusinessException, IOException {
+        log.info("任务{} 用例{} ,action:{}, 上下文：{}, 任务终止:{}", taskId, caseId, action, JSONObject.toJSONString(context), taskEnd);
         // 1.任务用例测试记录详情
         TjTaskCaseRecord taskCaseRecord = ssGetTjTaskCaseRecord(taskId, caseId, action);
         // 2.任务用例详情
@@ -475,7 +478,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 .stream().filter(e -> PartRole.AV.equals(e.getType())).findFirst();
         if (!restService.sendRuleUrl(
                 new CaseRuleControl(System.currentTimeMillis(),
-                        String.valueOf(taskCaseInfoBo.getTaskId()), action,
+                        String.valueOf(taskCaseInfoBo.getTaskId()), action > 0 ? action : 0,
                         generateDeviceConnRules(taskCaseInfoBo),
                         first.get().getCommandChannel(), taskEnd))) {
             throw new BusinessException("主控响应异常");
@@ -756,7 +759,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         if (1 == action && taskCaseRecord.getStatus() > TestingStatus.NOT_START) {
             throw new BusinessException("未就绪");
         }
-        if (1 > action && TestingStatus.RUNNING.equals(taskCaseRecord.getStatus())) {
+        if (1 > action && !TestingStatus.RUNNING.equals(taskCaseRecord.getStatus())) {
             throw new BusinessException("任务未开始，无法结束");
         }
         return taskCaseRecord;
