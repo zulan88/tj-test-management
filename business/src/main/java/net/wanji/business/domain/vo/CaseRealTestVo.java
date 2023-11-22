@@ -15,6 +15,8 @@ import java.util.Set;
 @Data
 public class CaseRealTestVo {
 
+    private Integer id;
+
     private Integer taskId;
 
     private Integer taskCaseId;

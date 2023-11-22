@@ -17,6 +17,7 @@ import net.wanji.business.domain.vo.SceneIndexSchemeVo;
 import net.wanji.business.domain.vo.SceneWeightDetailsVo;
 import org.springframework.http.HttpMethod;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.Map;
 
@@ -129,4 +130,11 @@ public interface RestService {
      */
     Map<String, String> saveCustomIndexWeight(SaveCustomIndexWeightBo saveCustomIndexWeightBo);
 
+    /**
+     * 下载测试报告
+     * @return {@link String}
+     * @author liruitao
+     * @date 2023-11-22
+     */
+    void downloadTestReport(HttpServletResponse response);
 }

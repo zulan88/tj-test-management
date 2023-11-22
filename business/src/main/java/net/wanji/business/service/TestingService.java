@@ -46,6 +46,8 @@ public interface TestingService {
 
     CaseTestStartVo controlTask(Integer caseId) throws BusinessException, IOException;
 
+    void stop(Integer caseId) throws BusinessException;
+
     void playback(Integer recordId, Integer action) throws BusinessException, IOException;
 
     /**

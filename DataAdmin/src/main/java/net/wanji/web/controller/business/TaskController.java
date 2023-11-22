@@ -8,6 +8,7 @@ import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiOperationSort;
+import lombok.extern.slf4j.Slf4j;
 import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.bo.SaveTaskSchemeBo;
@@ -41,6 +42,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -52,6 +54,7 @@ import java.util.Map;
  * @description: 测试任务控制器
  */
 @Api(tags = "特色测试服务-测试任务")
+@Slf4j
 @RestController
 @RequestMapping("/task")
 public class TaskController extends BaseController {
@@ -212,6 +215,14 @@ public class TaskController extends BaseController {
         return AjaxResult.success(tjTaskService.getTaskCaseList(taskId));
     }
 
+    @ApiOperationSort(13)
+    @ApiOperation(value = "13.下载测试报告")
+    @GetMapping("/downloadTestReport")
+    public AjaxResult downloadTestReport(HttpServletResponse response) throws BusinessException {
+        restService.downloadTestReport(response);
+        return AjaxResult.success();
+    }
+
 
 //    @ApiOperationSort(1)
 //    @ApiOperation(value = "创建任务")
@@ -238,6 +249,7 @@ public class TaskController extends BaseController {
 //    }
 //
 //
+
     @ApiOperationSort(4)
     @ApiOperation(value = "获取状态")
     @PostMapping("/getStatus")
@@ -263,6 +275,9 @@ public class TaskController extends BaseController {
     @ApiOperation(value = "测试用例开始结束控制接口")
     @PostMapping("/caseStartEnd")
     public AjaxResult caseStartEnd(@RequestBody PlatformSSDto platformSSDto){
+        if (platformSSDto.getState() == -1) {
+            log.error("用例异常结束原因：{}", platformSSDto.getMessage());
+        }
         if (platformSSDto.getTaskId()==0) {
             try {
                 if(platformSSDto.getState()==1) {
@@ -302,19 +317,22 @@ public class TaskController extends BaseController {
     @ApiOperation(value = "测试结果")
     @GetMapping("/getResult")
     @ApiImplicitParams({
-            @ApiImplicitParam(name = "taskId", value = "任务ID", required = true, dataType = "Integer", paramType = "query", example = "499"),
-            @ApiImplicitParam(name = "id", value = "子列表ID", required = false, dataType = "Integer", paramType = "query", example = "499")
+            @ApiImplicitParam(name = "taskId", value = "任务ID", dataType = "Integer", paramType = "query", example = "499"),
+            @ApiImplicitParam(name = "recordId", value = "子列表ID", dataType = "Integer", paramType = "query", example = "499")
     })
-    public AjaxResult getResult(Integer taskId, Integer id) throws BusinessException {
-        return AjaxResult.success(taskCaseService.getResult(taskId, id));
+    public AjaxResult getResult(Integer taskId, Integer recordId) throws BusinessException {
+        return AjaxResult.success(taskCaseService.getResult(taskId, recordId));
     }
 //
     @ApiOperationSort(9)
     @ApiOperation(value = "图形列表")
     @GetMapping("/communicationDelay")
-    @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499")
-    public AjaxResult communicationDelayVo(@RequestParam Integer recordId) {
-        return AjaxResult.success(taskCaseService.communicationDelayVo(recordId));
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "taskId", value = "任务ID", dataType = "Integer", paramType = "query", example = "499"),
+            @ApiImplicitParam(name = "recordId", value = "子列表ID", dataType = "Integer", paramType = "query", example = "499")
+    })
+    public AjaxResult communicationDelayVo(Integer taskId, Integer recordId) throws BusinessException {
+        return AjaxResult.success(taskCaseService.communicationDelayVo(taskId, recordId));
     }
 //
 //    @ApiOperationSort(10)
@@ -346,4 +364,12 @@ public class TaskController extends BaseController {
         return AjaxResult.success(taskCaseService.gettaskInfo(taskId));
     }
 
+
+    @ApiOperationSort(10)
+    @ApiOperation(value = "停止任务")
+    @GetMapping("/stop")
+    public AjaxResult stop(Integer taskId, Integer id, Integer action) throws BusinessException {
+        taskCaseService.stop(taskId, id);
+        return AjaxResult.success();
+    }
 }

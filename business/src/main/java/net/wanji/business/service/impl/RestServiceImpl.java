@@ -31,9 +31,12 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -90,6 +93,9 @@ public class RestServiceImpl implements RestService {
 
     @Value("${tess.saveCustomIndexWeight}")
     private String saveCustomIndexWeightUrl;
+
+    @Value("${tess.downloadTestReport}")
+    private String downloadTestReportUrl;
 
     @Autowired
     private RedisCache redisCache;
@@ -598,6 +604,42 @@ public class RestServiceImpl implements RestService {
             resultMap.put("msg", "济达场景方案&指标方案创建接口异常!");
         }
         return resultMap;
+    }
+
+    @Override
+    public void downloadTestReport(HttpServletResponse response) {
+        try {
+            // 发送HTTP GET请求获取文件字节数组
+            ResponseEntity<byte[]> responseEntity = restTemplate.exchange(downloadTestReportUrl, HttpMethod.GET, null, byte[].class);
+            if(CollectionUtils.isEmpty(responseEntity.getHeaders().get(HttpHeaders.CONTENT_DISPOSITION))){
+               return;
+            }
+
+            MediaType contentType = responseEntity.getHeaders().getContentType();
+            String contentTypeStr;
+            if(contentType != null){
+                contentTypeStr = contentType.toString();
+            }else{
+                contentTypeStr = "multipart/form-data";
+            }
+            // 设置响应头
+            response.setContentType(contentTypeStr);
+            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, responseEntity.getHeaders().get(HttpHeaders.CONTENT_DISPOSITION).get(0));
+
+            // 将文件字节数组写入响应流
+            response.getOutputStream().write(Objects.requireNonNull(responseEntity.getBody()));
+        }catch (Exception e){
+            e.printStackTrace();
+        }finally {
+            if(response != null){
+                try {
+                    response.getOutputStream().flush();
+                    response.getOutputStream().close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
 }

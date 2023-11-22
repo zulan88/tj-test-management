@@ -12,6 +12,7 @@ import net.wanji.business.common.Constants.PartType;
 import net.wanji.business.common.Constants.PlaybackAction;
 import net.wanji.business.common.Constants.PointTypeEnum;
 import net.wanji.business.common.Constants.RedisMessageType;
+import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.TestingStatus;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.Label;
@@ -52,6 +53,7 @@ import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
+import net.wanji.system.service.ISysDictDataService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -107,6 +109,9 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
     @Autowired
     private TjTaskCaseRecordService taskCaseRecordService;
+
+    @Autowired
+    private ISysDictDataService dictDataService;
 
     @Autowired
     private RedisTemplate<String, Object> noClassRedisTemplate;
@@ -296,6 +301,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
     public CaseRealTestVo prepare(TjTaskCase param) throws BusinessException {
         // 1.用例详情
         List<TaskCaseInfoBo> taskCaseInfos = taskCaseMapper.selectTaskCaseByCondition(param);
+        List<Integer> resetList = new ArrayList<>();
         List<Integer> deleteIdList = new ArrayList<>();
         List<TjTaskCaseRecord> addList = new ArrayList<>();
         List<String> channels = new ArrayList<>();
@@ -320,7 +326,6 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             deleteRecord.setTaskId(taskCaseInfoBo.getTaskId());
             deleteRecord.setCaseId(taskCaseInfoBo.getCaseId());
 
-
             TjTaskCaseRecord caseRecord = taskCaseRecordService.getOne(new QueryWrapper<TjTaskCaseRecord>().eq(ColumnName.TASK_ID, taskCaseInfoBo.getTaskId())
                     .eq(ColumnName.CASE_ID_COLUMN, taskCaseInfoBo.getCaseId()).select("id"));
             if (caseRecord != null) {
@@ -336,12 +341,16 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
             channels.addAll(taskCaseInfoBo.getDataConfigs().stream().map(TaskCaseConfigBo::getDataChannel)
                     .collect(Collectors.toList()));
+
+            resetList.add(taskCaseInfoBo.getId());
         }
         Optional.of(deleteIdList).filter(CollectionUtils::isNotEmpty).ifPresent(deleteIds -> taskCaseRecordService.removeByIds(deleteIds));
         taskCaseRecordService.saveBatch(addList);
+        taskCaseMapper.reset(resetList);
 
         // 7.前端结果集
         CaseRealTestVo caseRealTestVo = new CaseRealTestVo();
+        caseRealTestVo.setId(addList.get(0).getId());
         caseRealTestVo.setTaskId(param.getTaskId());
         caseRealTestVo.setTaskCaseId(param.getId());
         caseRealTestVo.setChannels(new HashSet<>(channels));
@@ -564,76 +573,97 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
     @Override
     public RealTestResultVo getResult(Integer taskId, Integer id) throws BusinessException {
-        RealTestResultVo realTestResultVo = new RealTestResultVo();
-
-
-        if (ObjectUtils.isEmpty(id)) {
-            TjTask tjTask = taskMapper.selectById(taskId);
-//            TjTaskCase taskCase = taskCaseMapper.selectOne(new QueryWrapper<TjTaskCase>().eq(ColumnName.TASK_ID, taskId));
-
-            List<TjTaskCaseRecord> taskCaseRecords = taskCaseRecordMapper.selectList(
-                    new QueryWrapper<TjTaskCaseRecord>().eq(ColumnName.TASK_ID, taskId));
-            if (ObjectUtils.isEmpty(taskCaseRecords)) {
-                throw new BusinessException("未查询到任务测试记录");
-            }
-            CaseTrajectoryDetailBo newDetail = new CaseTrajectoryDetailBo();
-            for (TjTaskCaseRecord taskCaseRecord : taskCaseRecords) {
-                CaseTrajectoryDetailBo caseTrajectoryDetailBo = JSONObject.parseObject(taskCaseRecord.getDetailInfo(),
-                        CaseTrajectoryDetailBo.class);
-                if (StringUtils.isEmpty(newDetail.getSceneDesc())) {
-                    newDetail.setSceneDesc(caseTrajectoryDetailBo.getSceneDesc());
-                }
-
-
-                List<ParticipantTrajectoryBo> trajectoryBos = caseTrajectoryDetailBo.getParticipantTrajectories().stream()
-                        .filter(item -> PartType.MAIN.equals(item.getType())).collect(Collectors.toList());
-                CollectionUtils.emptyIfNull(newDetail.getParticipantTrajectories()).addAll(trajectoryBos);
-
-
-                caseTrajectoryDetailBo.setParticipantTrajectories(trajectoryBos);
-            }
-
-            BeanUtils.copyProperties(newDetail, realTestResultVo);
-            realTestResultVo.setSceneName(newDetail.getSceneDesc());
-            realTestResultVo.setStartTime(DateUtils.dateToLDT(tjTask.getStartTime()));
-            realTestResultVo.setEndTime(DateUtils.dateToLDT(tjTask.getEndTime()));
-
-
-        } else {
-
-
-            TjTaskCase taskCase = getById(id);
-
-            TjTaskCaseRecord taskCaseRecord = taskCaseRecordMapper.selectOne(
-                    new QueryWrapper<TjTaskCaseRecord>()
-                            .eq(ColumnName.TASK_ID, taskId)
-                            .eq(ColumnName.CASE_ID_COLUMN, taskCase.getCaseId()));
-            if (ObjectUtils.isEmpty(taskCaseRecord) || ObjectUtils.isEmpty(taskCaseRecord.getDetailInfo())) {
-                throw new BusinessException("待开始测试");
-            }
-            if (TestingStatus.FINISHED > taskCaseRecord.getStatus()) {
-                return null;
-            }
-            CaseTrajectoryDetailBo caseTrajectoryDetailBo = JSONObject.parseObject(taskCaseRecord.getDetailInfo(),
-                    CaseTrajectoryDetailBo.class);
-            List<ParticipantTrajectoryBo> trajectoryBos = caseTrajectoryDetailBo.getParticipantTrajectories().stream()
-                    .filter(item -> PartType.MAIN.equals(item.getType())).collect(Collectors.toList());
-            caseTrajectoryDetailBo.setParticipantTrajectories(trajectoryBos);
-
-            BeanUtils.copyProperties(caseTrajectoryDetailBo, realTestResultVo);
-            realTestResultVo.setSceneName(caseTrajectoryDetailBo.getSceneDesc());
-            realTestResultVo.setId(id);
-            realTestResultVo.setStartTime(taskCaseRecord.getStartTime());
-            realTestResultVo.setEndTime(taskCaseRecord.getEndTime());
+        TjTaskCaseRecord taskCaseRecord = taskCaseRecordMapper.selectById(id);
+        if (ObjectUtils.isEmpty(taskCaseRecord) || ObjectUtils.isEmpty(taskCaseRecord.getDetailInfo())) {
+            throw new BusinessException("待开始测试");
         }
-        realTestResultVo.setTaskId(taskId);
+        if (TestingStatus.FINISHED > taskCaseRecord.getStatus()) {
+            return null;
+        }
+        TjTask tjTask = taskMapper.selectById(taskCaseRecord.getTaskId());
+        if (ObjectUtils.isEmpty(tjTask)) {
+            throw new BusinessException("未查询到任务信息");
+        }
+        CaseTrajectoryDetailBo caseTrajectoryDetailBo = JSONObject.parseObject(taskCaseRecord.getDetailInfo(),
+                CaseTrajectoryDetailBo.class);
+        List<ParticipantTrajectoryBo> trajectoryBos = caseTrajectoryDetailBo.getParticipantTrajectories().stream()
+                .filter(item -> PartType.MAIN.equals(item.getType())).collect(Collectors.toList());
+        caseTrajectoryDetailBo.setParticipantTrajectories(trajectoryBos);
+        RealTestResultVo realTestResultVo = new RealTestResultVo();
+        BeanUtils.copyProperties(caseTrajectoryDetailBo, realTestResultVo);
+        realTestResultVo.setTestTypeName(dictDataService.selectDictLabel(SysType.TEST_TYPE, tjTask.getTestType()));
+        realTestResultVo.setSceneName(caseTrajectoryDetailBo.getSceneDesc());
+        realTestResultVo.setId(taskCaseRecord.getId());
+        realTestResultVo.setStartTime(taskCaseRecord.getStartTime());
+        realTestResultVo.setEndTime(taskCaseRecord.getEndTime());
         return realTestResultVo;
     }
 
+//    @Override
+//    public RealTestResultVo getResult(Integer taskId, Integer id) throws BusinessException {
+//        RealTestResultVo realTestResultVo = new RealTestResultVo();
+//        if (ObjectUtils.isEmpty(id)) {
+//            TjTask tjTask = taskMapper.selectById(taskId);
+////            TjTaskCase taskCase = taskCaseMapper.selectOne(new QueryWrapper<TjTaskCase>().eq(ColumnName.TASK_ID, taskId));
+//
+//            List<TjTaskCaseRecord> taskCaseRecords = taskCaseRecordMapper.selectList(
+//                    new QueryWrapper<TjTaskCaseRecord>().eq(ColumnName.TASK_ID, taskId));
+//            if (ObjectUtils.isEmpty(taskCaseRecords)) {
+//                throw new BusinessException("未查询到任务测试记录");
+//            }
+//            List<ParticipantTrajectoryBo> participantTrajectoryBos = new ArrayList<>();
+//            for (TjTaskCaseRecord taskCaseRecord : taskCaseRecords) {
+//                CaseTrajectoryDetailBo caseTrajectoryDetailBo = JSONObject.parseObject(taskCaseRecord.getDetailInfo(),
+//                        CaseTrajectoryDetailBo.class);
+//                if (StringUtils.isEmpty(realTestResultVo.getSceneDesc())) {
+//                    realTestResultVo.setSceneName(caseTrajectoryDetailBo.getSceneDesc());
+//                }
+//                if (StringUtils.isEmpty(realTestResultVo.getSceneDesc())) {
+//                    realTestResultVo.setSceneDesc(caseTrajectoryDetailBo.getSceneDesc());
+//                }
+//                List<ParticipantTrajectoryBo> trajectoryBos = caseTrajectoryDetailBo.getParticipantTrajectories().stream()
+//                        .filter(item -> PartType.MAIN.equals(item.getType())).collect(Collectors.toList());
+//                participantTrajectoryBos.addAll(trajectoryBos);
+//            }
+//            realTestResultVo.setParticipantTrajectories(participantTrajectoryBos);
+//            realTestResultVo.setStartTime(DateUtils.dateToLDT(tjTask.getStartTime()));
+//            realTestResultVo.setEndTime(DateUtils.dateToLDT(tjTask.getEndTime()));
+//
+//
+//        } else {
+//
+//
+//            TjTaskCase taskCase = getById(id);
+//
+//            TjTaskCaseRecord taskCaseRecord = taskCaseRecordMapper.selectOne(
+//                    new QueryWrapper<TjTaskCaseRecord>()
+//                            .eq(ColumnName.TASK_ID, taskId)
+//                            .eq(ColumnName.CASE_ID_COLUMN, taskCase.getCaseId()));
+//            if (ObjectUtils.isEmpty(taskCaseRecord) || ObjectUtils.isEmpty(taskCaseRecord.getDetailInfo())) {
+//                throw new BusinessException("待开始测试");
+//            }
+//            if (TestingStatus.FINISHED > taskCaseRecord.getStatus()) {
+//                return null;
+//            }
+//            CaseTrajectoryDetailBo caseTrajectoryDetailBo = JSONObject.parseObject(taskCaseRecord.getDetailInfo(),
+//                    CaseTrajectoryDetailBo.class);
+//            List<ParticipantTrajectoryBo> trajectoryBos = caseTrajectoryDetailBo.getParticipantTrajectories().stream()
+//                    .filter(item -> PartType.MAIN.equals(item.getType())).collect(Collectors.toList());
+//            caseTrajectoryDetailBo.setParticipantTrajectories(trajectoryBos);
+//
+//            BeanUtils.copyProperties(caseTrajectoryDetailBo, realTestResultVo);
+//            realTestResultVo.setSceneName(caseTrajectoryDetailBo.getSceneDesc());
+//            realTestResultVo.setId(id);
+//            realTestResultVo.setStartTime(taskCaseRecord.getStartTime());
+//            realTestResultVo.setEndTime(taskCaseRecord.getEndTime());
+//        }
+//        realTestResultVo.setTaskId(taskId);
+//        return realTestResultVo;
+//    }
+
     @Override
-    public CommunicationDelayVo communicationDelayVo(Integer recordId) {
-        List<Map<String, Object>> infos = taskCaseRecordMapper.recordPartInfo(
-                recordId);
+    public CommunicationDelayVo communicationDelayVo(Integer taskId, Integer id) throws BusinessException {
+        List<Map<String, Object>> infos = taskCaseRecordMapper.recordPartInfo(id);
         CommunicationDelayVo communicationDelayVo = new CommunicationDelayVo();
         List<String> type = new ArrayList<>();
         Date startTime = null;
@@ -676,6 +706,24 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
 //        }
         return new ArrayList<>();
+    }
+
+    @Override
+    public void stop(Integer taskId, Integer taskCaseId) throws BusinessException {
+        TjTaskCase taskCase = new TjTaskCase();
+        taskCase.setTaskId(taskId);
+        TaskCaseInfoBo taskCaseInfoBo = taskCaseMapper.selectTaskCaseByCondition(taskCase).get(0);
+
+        Optional<TaskCaseConfigBo> first = taskCaseInfoBo.getDataConfigs()
+                .stream().filter(e -> PartRole.AV.equals(e.getType())).findFirst();
+        if (!restService.sendRuleUrl(
+                new CaseRuleControl(System.currentTimeMillis(),
+                        String.valueOf(taskId), 0,
+                        generateDeviceConnRules(taskCaseInfoBo),
+                        first.get().getCommandChannel(), true))) {
+            throw new BusinessException("主控响应异常");
+        }
+
     }
 
     private void validStatus(TaskCaseVerificationPageVo pageVo) {
@@ -802,9 +850,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         if (1 == action && taskCaseRecord.getStatus() > TestingStatus.NOT_START) {
             throw new BusinessException("未就绪");
         }
-        if (1 > action && !TestingStatus.RUNNING.equals(taskCaseRecord.getStatus())) {
-            throw new BusinessException("任务未开始，无法结束");
-        }
+
         return taskCaseRecord;
     }
 

@@ -6,6 +6,7 @@ import net.wanji.business.common.Constants;
 import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.Extension;
 import net.wanji.business.common.Constants.TaskCaseStatusEnum;
+import net.wanji.business.common.Constants.TaskStatusEnum;
 import net.wanji.business.common.Constants.TestingStatus;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
@@ -167,6 +168,7 @@ public class RouteService {
                 tjTask.setEndTime(new Date());
                 tjTask.setTestTotalTime(DateUtils.secondsToDuration(tjTaskCases.stream().mapToInt(caseObj ->
                         Integer.parseInt(caseObj.getTestTotalTime())).sum()));
+                tjTask.setStatus(TaskStatusEnum.FINISHED.getCode());
                 taskMapper.updateById(tjTask);
             }
             log.info("更新完成");

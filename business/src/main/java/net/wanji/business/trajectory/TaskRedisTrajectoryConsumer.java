@@ -311,7 +311,6 @@ public class TaskRedisTrajectoryConsumer {
                                     duration);
                             WebSocketManage.sendInfo(key.concat("_").concat(channel), JSON.toJSONString(endMsg));
                         }
-
                         break;
                     default:
                         break;

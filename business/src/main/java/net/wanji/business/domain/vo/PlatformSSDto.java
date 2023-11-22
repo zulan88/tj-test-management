@@ -57,4 +57,10 @@ public class PlatformSSDto {
           example = "",
           position = 5)
   private Map<String, Object> context;
+
+  @ApiModelProperty(value = "错误信息",
+          dataType = "String",
+          example = "",
+          position = 6)
+  private String message;
 }
