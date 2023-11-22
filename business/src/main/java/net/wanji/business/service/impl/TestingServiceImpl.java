@@ -397,6 +397,8 @@ public class TestingServiceImpl implements TestingService {
                         ParticipantTrajectoryBo::getTrajectory
                 ));
         startVo.setMainTrajectories(mainTrajectoryMap);
+        startVo.setTestTypeName(caseInfoBo.getTestScene());
+        startVo.setCaseId(caseId);
         return startVo;
     }
 

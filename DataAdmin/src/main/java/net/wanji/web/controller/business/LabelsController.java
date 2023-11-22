@@ -114,6 +114,7 @@ public class LabelsController extends BaseController {
         return AjaxResult.success(treeVo);
     }
 
+    @GetMapping("/list2")
     public AjaxResult list2(Integer id) throws BusinessException{
         List<Label> labelList = labelsService.selectLabelsList(new Label());
         Map<Long, Label> labelToNodeMap = new HashMap<>();
@@ -156,24 +157,25 @@ public class LabelsController extends BaseController {
         }
 
         for (Label parentNode : labelToNodeMap.values()) {
-            if (parentNode.getParentId() == null) {
-                List<Label> leafNodes = new ArrayList<>();
-                for (Label child : parentNode.getChildren()) {
-                    if (child.getChildren().isEmpty()) {
-                        leafNodes.add(child);
-                    }
+            List<Label> leafNodes = new ArrayList<>();
+            for (Label child : parentNode.getChildren()) {
+                if (child.getChildren().isEmpty()) {
+                    leafNodes.add(child);
                 }
-                parentNode.getChildren().removeIf(obj -> obj.getChildren().isEmpty());
+            }
+            parentNode.getChildren().removeIf(obj -> obj.getChildren().isEmpty());
 
-                if (leafNodes.size() > 1) {
-                    StringBuilder sb = new StringBuilder();
-                    for (Label leafNode : leafNodes) {
-                        sb.append(leafNode.getName()).append(",");
-                    }
-                    Label label = new Label();
-                    label.setName(sb.substring(0, sb.length() - 1));
-                    parentNode.getChildren().add(label);
+            if (leafNodes.size() > 1) {
+                StringBuilder sb = new StringBuilder();
+                StringBuilder ids = new StringBuilder();
+                for (Label leafNode : leafNodes) {
+                    sb.append(leafNode.getName()).append(",");
+                    ids.append(leafNode.getId()).append(",");
                 }
+                Label label = new Label();
+                label.setName(sb.substring(0, sb.length() - 1));
+                label.setDirection(ids.substring(0, ids.length() - 1));
+                parentNode.getChildren().add(label);
             }
         }
 

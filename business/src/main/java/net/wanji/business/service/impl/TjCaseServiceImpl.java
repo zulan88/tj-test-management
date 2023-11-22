@@ -460,6 +460,23 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
             tjCase.setRouteFile(sceneDetail.getRouteFile());
             tjCase.setCreatedBy(SecurityUtils.getUsername());
             tjCase.setCreatedDate(LocalDateTime.now());
+            StringBuilder labelshows = new StringBuilder();
+            for (String str : sceneDetail.getLabel().split(",")) {
+                try {
+                    long intValue = Long.parseLong(str);
+                    String labelshow = sceneLabelMap.getSceneLabel(intValue);
+                    if(labelshow!=null) {
+                        if(labelshows.length()>0) {
+//                            labelshows.append(",").append(labelshow);
+                        }else {
+                            labelshows.append(labelshow);
+                        }
+                    }
+                } catch (NumberFormatException e) {
+                    // 处理无效的整数字符串
+                }
+            }
+            tjCase.setTestScene(labelshows.toString());
         } else {
             tjCase = this.getById(tjCaseDto.getId());
             List<TjCasePartConfig> configs = new ArrayList<>();
