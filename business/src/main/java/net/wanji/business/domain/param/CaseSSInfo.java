@@ -2,6 +2,9 @@ package net.wanji.business.domain.param;
 
 import lombok.Data;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * @author: guanyuduo
  * @date: 2023/11/15 18:10
@@ -10,9 +13,5 @@ import lombok.Data;
 @Data
 public class CaseSSInfo {
     private Integer caseId;
-    private Integer taskId;
-    private Double endLatitude;
-    private Double endLongitude;
-    private Double startLatitude;
-    private Double startLongitude;
+    private List<Map<String, Object>> trajectoryPoints;
 }

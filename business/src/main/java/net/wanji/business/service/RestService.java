@@ -32,12 +32,12 @@ public interface RestService {
     /**
      * 开始仿真
      */
-    boolean start(TestStartParam startParam);
+    boolean start(String ip, Integer port, TestStartParam startParam);
 
     /**
      * 多场景路径规划
      */
-    boolean startRoutingPlan(List<CaseContinuousVo> caseContinuousVos);
+    boolean startRoutingPlan(String ip, Integer port, List<CaseContinuousVo> caseContinuousVos);
 
     /**
      * 查询设备信息
@@ -61,11 +61,12 @@ public interface RestService {
      */
     boolean sendRuleUrl(CaseRuleControl caseRuleControl);
 
+    /**
+     * 向主控发送用例轨迹信息
+     * @param param
+     * @return
+     */
     boolean sendCaseTrajectoryInfo(CaseTrajectoryParam param);
-
-    Object imitateClientUrl(List<CaseConfigBo> param);
-
-    Object taskClientUrl(List<TaskCaseConfigBo> param);
 
     /**
      * 获取济达场景&指标方案列表

@@ -20,11 +20,16 @@ import java.util.Map;
  */
 public interface TjTaskCaseService extends IService<TjTaskCase> {
 
-
+    /**
+     * 重置状态
+     * @param param
+     * @throws BusinessException
+     */
+    void resetStatus(TjTaskCase param) throws BusinessException;
     /**
      * 获取任务用例中参与者状态
      *
-     * @param taskCaseId
+     * @param param
      * @return
      */
     TaskCaseVerificationPageVo getStatus(TjTaskCase param) throws BusinessException;

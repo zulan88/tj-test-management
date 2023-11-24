@@ -23,6 +23,9 @@
             <if test="status != null">
                 AND d.status = #{status}
             </if>
+            <if test="attribute2 != null and attribute2 != ''">
+                AND d.attribute2 = #{attribute2}
+            </if>
             <if test="deviceIds != null and deviceIds.size()>0">
                 AND d.device_id IN
                 <foreach collection="deviceIds" item="deviceId" open="(" separator="," close=")">

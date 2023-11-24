@@ -31,8 +31,7 @@ public class CaseSceneVo {
     private Object labelDetail;
 
     @JsonIgnore
+    @ApiModelProperty("场景点位配置信息")
     private String trajectoryInfo;
-
-    private String routeFile;
 
 }

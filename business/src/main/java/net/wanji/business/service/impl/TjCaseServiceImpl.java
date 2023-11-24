@@ -1,6 +1,5 @@
 package net.wanji.business.service.impl;
 
-import com.alibaba.excel.EasyExcel;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -8,7 +7,6 @@ import net.wanji.business.common.Constants.CaseStatusEnum;
 import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.business.common.Constants.ModelEnum;
-import net.wanji.business.common.Constants.PartRole;
 import net.wanji.business.common.Constants.PartType;
 import net.wanji.business.common.Constants.PlaybackAction;
 import net.wanji.business.common.Constants.SysType;
@@ -16,23 +14,20 @@ import net.wanji.business.domain.Label;
 import net.wanji.business.domain.PartConfigSelect;
 import net.wanji.business.domain.bo.CaseConfigBo;
 import net.wanji.business.domain.bo.CaseInfoBo;
+import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
-import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.business.domain.dto.CaseQueryDto;
 import net.wanji.business.domain.dto.TjCaseDto;
-import net.wanji.business.domain.param.TestStartParam;
 import net.wanji.business.domain.vo.CaseDetailVo;
 import net.wanji.business.domain.vo.CasePageVo;
 import net.wanji.business.domain.vo.CasePartConfigVo;
 import net.wanji.business.domain.vo.CaseVerificationVo;
-import net.wanji.business.domain.vo.CaseVo;
 import net.wanji.business.domain.vo.DeviceDetailVo;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjCasePartConfig;
 import net.wanji.business.entity.TjDeviceDetail;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
-import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.entity.TjResourcesDetail;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.mapper.TjCaseMapper;
@@ -45,7 +40,6 @@ import net.wanji.business.service.TjCasePartConfigService;
 import net.wanji.business.service.TjCaseService;
 import net.wanji.business.service.TjDeviceDetailService;
 import net.wanji.business.service.TjFragmentedSceneDetailService;
-import net.wanji.business.service.TjFragmentedScenesService;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.core.domain.SimpleSelect;
@@ -96,9 +90,6 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     private ISysDictDataService dictDataService;
 
     @Autowired
-    private TjFragmentedScenesService scenesService;
-
-    @Autowired
     private TjFragmentedSceneDetailService sceneDetailService;
 
     @Autowired
@@ -138,6 +129,10 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     public Map<String, List<PartConfigSelect>> initEdit(Integer caseId) {
         Map<String, List<PartConfigSelect>> result = new HashMap<>(1);
         CaseDetailVo caseDetailVo = this.selectCaseDetail(caseId);
+
+//        CaseTrajectoryDetailBo trajectoryDetailBo = JSONObject.parseObject(caseDetailVo.getDetailInfo(), CaseTrajectoryDetailBo.class);
+//        Map<String, List<CasePartConfigVo>> configMap = casePartConfigService.trajectory2Config(trajectoryDetailBo);
+
         handleCasePartConfig(caseDetailVo);
         for (PartConfigSelect partConfigSelect : CollectionUtils.emptyIfNull(caseDetailVo.getPartConfigSelects())) {
             for (CasePartConfigVo part : CollectionUtils.emptyIfNull(partConfigSelect.getParts())) {
@@ -270,14 +265,14 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
 
     private void handleCasePartConfig(CaseDetailVo caseDetailVo) {
         List<PartConfigSelect> configSelect = this.getConfigSelect(caseDetailVo.getId(),
-                JSONObject.parseObject(caseDetailVo.getTrajectoryInfo(), SceneTrajectoryBo.class), false);
+                JSONObject.parseObject(caseDetailVo.getDetailInfo(), CaseTrajectoryDetailBo.class), false);
         caseDetailVo.setPartConfigSelects(configSelect);
     }
 
 
     @Override
     public List<PartConfigSelect> getConfigSelect(Integer caseId,
-                                                  SceneTrajectoryBo sceneTrajectoryBo,
+                                                  CaseTrajectoryDetailBo caseTrajectoryDetailBo,
                                                   boolean deviceConfig) {
         // 1.查询用例已存在的参与者角色配置
         QueryWrapper<TjCasePartConfig> queryWrapper = new QueryWrapper<>();
@@ -287,8 +282,8 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
         // 2.查询设备信息
         Map<String, List<TjDeviceDetail>> devicesMap = deviceDetailService.list()
                 .stream().collect(Collectors.groupingBy(TjDeviceDetail::getSupportRoles));
-        // 3.将场景参与者转换为配置模板 sceneTrajectoryBo.participantTrajectories -> CasePartConfigVo
-        Map<String, List<CasePartConfigVo>> configMap = casePartConfigService.trajectory2Config(sceneTrajectoryBo);
+        // 3.将场景参与者转换为配置模板 caseTrajectoryDetailBo.participantTrajectories -> CasePartConfigVo
+        Map<String, List<CasePartConfigVo>> configMap = casePartConfigService.trajectory2Config(caseTrajectoryDetailBo);
         // 4.根据参与者角色字典进行匹配
         return CollectionUtils.emptyIfNull(dictTypeService.selectDictDataByType(SysType.PART_ROLE)).stream()
                 .map(role -> {
@@ -401,42 +396,6 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
                 }).collect(Collectors.toList());
     }
 
-    @Override
-    public List<TjFragmentedScenes> selectScenesInCase(String testType, String type) {
-        List<TjFragmentedScenes> scenes = caseMapper.selectSceneIdInCase(testType, type);
-        List<Integer> pIds = new ArrayList<>();
-        List<TjFragmentedScenes> result = new ArrayList<>();
-        for (TjFragmentedScenes item : scenes) {
-            result.addAll(getAllParentNode(item, pIds));
-        }
-        return result;
-    }
-
-    private List<TjFragmentedScenes> getAllParentNode(TjFragmentedScenes scenes, List<Integer> pIds) {
-        List<TjFragmentedScenes> result = new ArrayList<>();
-        result.add(scenes);
-        if (!pIds.contains(scenes.getParentId()) && hasParent(scenes)) {
-            pIds.add(scenes.getParentId());
-            TjFragmentedScenes parentScene = scenesService.getById(scenes.getParentId());
-            result.addAll(getAllParentNode(parentScene, pIds));
-        }
-        return result;
-    }
-
-    private boolean hasParent(TjFragmentedScenes scenes) {
-        return !ObjectUtils.isEmpty(scenes) && scenes.getParentId() > 0;
-    }
-
-    @Override
-    public List<CaseVo> getCases(CaseQueryDto caseQueryDto) {
-//        List<CaseVo> result = caseMapper.selectCases(caseQueryDto);
-//        for (CaseVo caseVo : CollectionUtils.emptyIfNull(result)) {
-//            caseVo.setCaseNumber(caseVo.getCaseNumber() + "_" + caseVo.getId());
-//        }
-//        return result;
-        return null;
-    }
-
     @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean saveCase(TjCaseDto tjCaseDto) throws BusinessException {
@@ -465,10 +424,10 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
                 try {
                     long intValue = Long.parseLong(str);
                     String labelshow = sceneLabelMap.getSceneLabel(intValue);
-                    if(labelshow!=null) {
-                        if(labelshows.length()>0) {
+                    if (labelshow != null) {
+                        if (labelshows.length() > 0) {
 //                            labelshows.append(",").append(labelshow);
-                        }else {
+                        } else {
                             labelshows.append(labelshow);
                         }
                     }
@@ -479,6 +438,7 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
             tjCase.setTestScene(labelshows.toString());
         } else {
             tjCase = this.getById(tjCaseDto.getId());
+            tjCase.setTestTarget(tjCaseDto.getTestTarget());
             List<TjCasePartConfig> configs = new ArrayList<>();
             for (PartConfigSelect partConfigSelect : tjCaseDto.getPartConfigSelects()) {
                 for (int i = 0; i < CollectionUtils.emptyIfNull(partConfigSelect.getParts()).size(); i++) {
@@ -555,18 +515,6 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
 
     }
 
-    @Override
-    public boolean cloneCase(TjCaseDto tjCaseDto) {
-        TjCase tjCase = this.getById(tjCaseDto.getId());
-        tjCase.setId(null);
-        tjCase.setCaseNumber(this.buildCaseNumber());
-        tjCase.setCreatedBy(SecurityUtils.getUsername());
-        tjCase.setUpdatedDate(LocalDateTime.now());
-        tjCase.setUpdatedBy(null);
-        tjCase.setUpdatedDate(null);
-        return this.save(tjCase);
-    }
-
     @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean batchDelete(List<Integer> caseIds) throws BusinessException {
@@ -588,11 +536,6 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
             throw new BusinessException("删除用例失败");
         }
         return true;
-    }
-
-    @Override
-    public void exportCases(List<TjCase> cases, String fileName) throws IOException {
-        EasyExcel.write(fileName, TjCase.class).sheet("Sheet1").doWrite(cases);
     }
 
     @Override
@@ -687,47 +630,17 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
         if (ObjectUtils.isEmpty(tjCase)) {
             throw new BusinessException("未查询到对应的测试用例");
         }
-        return this.getConfigSelect(caseId,
-                JSONObject.parseObject(tjCase.getDetailInfo(), SceneTrajectoryBo.class),
-                true);
+        return this.getConfigSelect(caseId, JSONObject.parseObject(tjCase.getDetailInfo(), CaseTrajectoryDetailBo.class), true);
     }
 
-    @Override
-    public List<PartConfigSelect> getTaskConfigDetail(Integer caseId) throws BusinessException {
-        TjCase tjCase = this.getById(caseId);
-        if (ObjectUtils.isEmpty(tjCase)) {
-            throw new BusinessException("未查询到对应的测试用例");
-        }
-        return this.getConfigSelect(caseId,
-                JSONObject.parseObject(tjCase.getDetailInfo(), SceneTrajectoryBo.class));
-    }
 
     public synchronized String buildCaseNumber() {
         return StringUtils.format(ContentTemplate.CASE_NUMBER_TEMPLATE, DateUtils.getNowDayString(),
                 CounterUtil.getNextNumber(ContentTemplate.CASE_NUMBER_TEMPLATE));
     }
 
-    public TestStartParam buildStartParam(CaseInfoBo caseInfo) {
-        // 计算caseInfo.getCaseConfigs()中各个角色的数量
-        long avNum = (int) caseInfo.getCaseConfigs().stream().filter(config ->
-                PartRole.AV.equals(config.getParticipantRole())).count();
-        long simulationNum = caseInfo.getCaseConfigs().stream().filter(config ->
-                PartRole.MV_SIMULATION.equals(config.getParticipantRole())).count();
-        long pedestrianNum = caseInfo.getCaseConfigs().stream().filter(config ->
-                PartRole.SP.equals(config.getParticipantRole())).count();
-        SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(caseInfo.getDetailInfo(), SceneTrajectoryBo.class);
-        for (ParticipantTrajectoryBo participantTrajectory : sceneTrajectoryBo.getParticipantTrajectories()) {
-            for (TrajectoryDetailBo trajectoryDetailBo : participantTrajectory.getTrajectory()) {
-                String[] pos = trajectoryDetailBo.getPosition().split(",");
-                if (!ObjectUtils.isEmpty(pos)) {
-                    trajectoryDetailBo.setLongitude(pos[0]);
-                    trajectoryDetailBo.setLatitude(pos[1]);
-                }
-            }
-        }
-        return new TestStartParam(caseInfo.getId(),
-                WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(caseInfo.getId()),
-                        WebSocketManage.SIMULATION, null), (int) avNum, (int) simulationNum,
-                (int) pedestrianNum, sceneTrajectoryBo.getParticipantTrajectories());
+    private List<SysDictData> getPartRoleList(List<String> filters) {
+        return CollectionUtils.emptyIfNull(dictTypeService.selectDictDataByType(SysType.PART_ROLE)).stream()
+                .filter(t -> !filters.contains(t.getDictValue())).collect(Collectors.toList());
     }
 }

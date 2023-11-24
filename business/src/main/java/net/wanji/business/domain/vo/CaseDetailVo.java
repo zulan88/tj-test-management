@@ -32,6 +32,13 @@ public class CaseDetailVo extends CaseSceneVo {
     @ApiModelProperty("用例状态")
     private String status;
 
+    @ApiModelProperty("场景轨迹文件（复制）")
+    private String routeFile;
+
+    @JsonIgnore
+    @ApiModelProperty("用例点位配置及校验信息")
+    private String detailInfo;
+
     @ApiModelProperty("用例状态名称")
     private String statusName;
 

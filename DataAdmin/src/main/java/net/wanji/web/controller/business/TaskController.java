@@ -250,28 +250,36 @@ public class TaskController extends BaseController {
 //
 //
 
-    @ApiOperationSort(4)
-    @ApiOperation(value = "获取状态")
+    @ApiOperationSort(14)
+    @ApiOperation(value = "14.重置状态")
+    @PostMapping("/resetStatus")
+    public AjaxResult resetStatus(@RequestBody TjTaskCase param) throws BusinessException {
+        taskCaseService.resetStatus(param);
+        return AjaxResult.success();
+    }
+
+    @ApiOperationSort(15)
+    @ApiOperation(value = "15.获取状态")
     @PostMapping("/getStatus")
     public AjaxResult getStatus(@RequestBody TjTaskCase param) throws BusinessException {
         return AjaxResult.success(taskCaseService.getStatus(param));
     }
 //
-    @ApiOperationSort(5)
-    @ApiOperation(value = "准备")
+    @ApiOperationSort(16)
+    @ApiOperation(value = "16.准备")
     @PostMapping("/prepare")
     public AjaxResult prepare(@RequestBody TjTaskCase param) throws BusinessException {
         return AjaxResult.success(taskCaseService.prepare(param));
     }
 //
-    @ApiOperationSort(6)
-    @ApiOperation(value = "/controlTask")
+    @ApiOperationSort(17)
+    @ApiOperation(value = "17.任务控制")
     @GetMapping("/controlTask")
     public AjaxResult start(Integer taskId, Integer id, Integer action) throws BusinessException, IOException {
         return AjaxResult.success(taskCaseService.controlTask(taskId, id, action));
     }
 
-    @ApiOperationSort(9)
+    @ApiOperationSort(18)
     @ApiOperation(value = "测试用例开始结束控制接口")
     @PostMapping("/caseStartEnd")
     public AjaxResult caseStartEnd(@RequestBody PlatformSSDto platformSSDto){
@@ -299,22 +307,9 @@ public class TaskController extends BaseController {
         }
       return null;
     }
-//
-//    @ApiOperationSort(7)
-//    @ApiOperation(value = "回放")
-//    @GetMapping("/playback")
-//    @ApiImplicitParams({
-//            @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499"),
-//            @ApiImplicitParam(name = "action", value = "动作（1：开始；2：结束）", required = true, dataType = "Integer", paramType = "query", example = "1")
-//    })
-//    public AjaxResult playback(@RequestParam("recordId") Integer recordId, @RequestParam("action") Integer action)
-//            throws BusinessException, IOException {
-//        taskCaseService.playback(recordId, action);
-//        return AjaxResult.success();
-//    }
-//
-    @ApiOperationSort(8)
-    @ApiOperation(value = "测试结果")
+
+    @ApiOperationSort(19)
+    @ApiOperation(value = "19.测试结果")
     @GetMapping("/getResult")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "taskId", value = "任务ID", dataType = "Integer", paramType = "query", example = "499"),
@@ -324,8 +319,8 @@ public class TaskController extends BaseController {
         return AjaxResult.success(taskCaseService.getResult(taskId, recordId));
     }
 //
-    @ApiOperationSort(9)
-    @ApiOperation(value = "图形列表")
+    @ApiOperationSort(20)
+    @ApiOperation(value = "20.图形列表")
     @GetMapping("/communicationDelay")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "taskId", value = "任务ID", dataType = "Integer", paramType = "query", example = "499"),
@@ -334,14 +329,7 @@ public class TaskController extends BaseController {
     public AjaxResult communicationDelayVo(Integer taskId, Integer recordId) throws BusinessException {
         return AjaxResult.success(taskCaseService.communicationDelayVo(taskId, recordId));
     }
-//
-//    @ApiOperationSort(10)
-//    @ApiOperation(value = "导出")
-//    @PostMapping("/report")
-//    @ApiImplicitParam(name = "taskId", value = "任务ID", required = true, dataType = "Integer", paramType = "query", example = "499")
-//    public void report(HttpServletResponse response, @RequestParam("taskId") Integer taskId) throws IOException {
-//        tjTaskService.export(response, taskId);
-//    }
+
 
     @DeleteMapping("/{id}")
     public AjaxResult remove(@PathVariable Long id){

@@ -33,6 +33,15 @@ public class TestingController extends BaseController {
     private TestingService testingService;
 
     @ApiOperationSort(1)
+    @ApiOperation(value = "重置状态")
+    @GetMapping("/resetStatus")
+    @ApiImplicitParam(name = "caseId", value = "用例ID", required = true, dataType = "Integer", paramType = "query", example = "278")
+    public AjaxResult resetStatus(Integer caseId) throws BusinessException {
+        testingService.resetStatus(caseId);
+        return AjaxResult.success();
+    }
+
+    @ApiOperationSort(1)
     @ApiOperation(value = "获取状态")
     @GetMapping("/getStatus")
     @ApiImplicitParam(name = "caseId", value = "用例ID", required = true, dataType = "Integer", paramType = "query", example = "278")

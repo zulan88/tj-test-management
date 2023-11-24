@@ -57,4 +57,6 @@ public class TjDeviceDetailDto {
     @NotEmpty(message = "请选择至少一个设备", groups = {BatchGroup.class})
     private List<Integer> deviceIds;
 
+    private String attribute2;
+
 }

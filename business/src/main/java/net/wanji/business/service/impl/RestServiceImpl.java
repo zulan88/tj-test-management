@@ -3,11 +3,9 @@ package net.wanji.business.service.impl;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import net.wanji.business.common.Constants.YN;
-import net.wanji.business.domain.bo.CaseConfigBo;
 import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.bo.SaveTaskSchemeBo;
-import net.wanji.business.domain.bo.TaskCaseConfigBo;
 import net.wanji.business.domain.dto.device.DeviceReadyStateDto;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.TaskSaveDto;
@@ -36,7 +34,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.*;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -101,10 +99,10 @@ public class RestServiceImpl implements RestService {
     private RedisCache redisCache;
 
     @Override
-    public boolean start(TestStartParam startParam) {
+    public boolean start(String ip, Integer port, TestStartParam startParam) {
         try {
-            String resultUrl = tessStartUrl;
-            log.info("============================== tess start：{}", tessStartUrl);
+            String resultUrl = ip + ":" + port + tessStartUrl;
+            log.info("============================== tess start：{}", resultUrl);
             HttpHeaders httpHeaders = new HttpHeaders();
             httpHeaders.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<TestStartParam> resultHttpEntity = new HttpEntity<>(startParam, httpHeaders);
@@ -127,10 +125,10 @@ public class RestServiceImpl implements RestService {
     }
 
     @Override
-    public boolean startRoutingPlan(List<CaseContinuousVo> caseContinuousVos) {
+    public boolean startRoutingPlan(String ip, Integer port, List<CaseContinuousVo> caseContinuousVos) {
         try {
-            String resultUrl = routingPlanUrl;
-            log.info("============================== tess routing plan ：{}", routingPlanUrl);
+            String resultUrl = ip + ":" + port + routingPlanUrl;
+            log.info("============================== tess routing plan ：{}", resultUrl);
             HttpHeaders httpHeaders = new HttpHeaders();
             httpHeaders.setContentType(MediaType.APPLICATION_JSON);
             Map<String, Object> param = new HashMap<>();
@@ -231,58 +229,6 @@ public class RestServiceImpl implements RestService {
             if (response.getStatusCodeValue() == 200) {
                 if (!"true".equals(response.getBody())) {
                     log.error("远程服务调用失败");
-                    return false;
-                }
-                return true;
-            }
-        } catch (Exception e) {
-            log.error("远程服务调用失败:{}", e);
-        }
-        return false;
-    }
-
-    @Override
-    public Object imitateClientUrl(List<CaseConfigBo> param) {
-        try {
-            String resultUrl = imitateClientUrl;
-            log.info("============================== imitateClient：{}", imitateClientUrl);
-            HttpHeaders httpHeaders = new HttpHeaders();
-            httpHeaders.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<List<CaseConfigBo>> resultHttpEntity = new HttpEntity<>(param, httpHeaders);
-            log.info("============================== imitateClient：{}", JSONObject.toJSONString(param));
-            ResponseEntity<String> response =
-                    restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);
-            if (response.getStatusCodeValue() == 200) {
-                JSONObject result = JSONObject.parseObject(response.getBody(), JSONObject.class);
-                log.info("============================== imitateClient  result:{}", JSONObject.toJSONString(result));
-                if (Objects.isNull(result) || !"success".equals(result.get("status"))) {
-                    log.error("远程服务调用失败:{}", result.get("msg"));
-                    return false;
-                }
-                return true;
-            }
-        } catch (Exception e) {
-            log.error("远程服务调用失败:{}", e);
-        }
-        return false;
-    }
-
-    @Override
-    public Object taskClientUrl(List<TaskCaseConfigBo> param) {
-        try {
-            String resultUrl = imitateClientUrl;
-            log.info("============================== imitateClient：{}", imitateClientUrl);
-            HttpHeaders httpHeaders = new HttpHeaders();
-            httpHeaders.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<List<TaskCaseConfigBo>> resultHttpEntity = new HttpEntity<>(param, httpHeaders);
-            log.info("============================== imitateClient：{}", JSONObject.toJSONString(param));
-            ResponseEntity<String> response =
-                    restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);
-            if (response.getStatusCodeValue() == 200) {
-                JSONObject result = JSONObject.parseObject(response.getBody(), JSONObject.class);
-                log.info("============================== imitateClient  result:{}", JSONObject.toJSONString(result));
-                if (Objects.isNull(result) || !"success".equals(result.get("status"))) {
-                    log.error("远程服务调用失败:{}", result.get("msg"));
                     return false;
                 }
                 return true;

@@ -82,9 +82,9 @@ public class RoutingPlanConsumer {
      * @param taskId
      * @param taskCode
      */
-    public void subscribeAndSend(Integer taskId, String taskCode) {
+    public void subscribeAndSend(String routingChannel, Integer taskId, String taskCode) {
         // 添加监听器
-        this.addRunningChannel(taskId, taskCode);
+        this.addRunningChannel(routingChannel, taskId, taskCode);
     }
 
 
@@ -93,30 +93,31 @@ public class RoutingPlanConsumer {
      *
      * @param sceneDebugDto
      */
-    public void addRunningChannel(Integer taskId, String taskCode) {
-        String channel = WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(taskId),
+    public void addRunningChannel(String routingChannel, Integer taskId, String taskCode) {
+        String wsChannel = WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(taskId),
                 WebSocketManage.PLAN, null);
-        if (this.runningChannel.containsKey(channel)) {
+        if (this.runningChannel.containsKey(wsChannel)) {
             log.info("通道已存在");
             return;
         }
-        MessageListener listener = createListener(channel, taskId, taskCode);
-        this.runningChannel.put(channel, new ChannelListener(channel, SecurityUtils.getUsername(),
+        MessageListener listener = createListener(routingChannel, wsChannel, taskId, taskCode);
+        this.runningChannel.put(wsChannel, new ChannelListener(wsChannel, SecurityUtils.getUsername(),
                 System.currentTimeMillis(), listener));
-        redisMessageListenerContainer.addMessageListener(listener, new ChannelTopic(ROUTING_CHANNEL));
-        log.info("添加监听器成功:{}", channel);
+        redisMessageListenerContainer.addMessageListener(listener, new ChannelTopic(routingChannel));
+        log.info("添加监听器成功:{}", wsChannel);
     }
 
 
     /**
      * 创建监听器
      *
-     * @param channel  通道名称
+     * @param routingChannel  路径规划redis通道名称
+     * @param channel  ws通道名称
      * @param taskId   调试参数
      * @param taskCode 调试参数
      * @return
      */
-    public MessageListener createListener(String channel, Integer taskId, String taskCode) {
+    public MessageListener createListener(String routingChannel, String channel, Integer taskId, String taskCode) {
         ObjectMapper objectMapper = new ObjectMapper();
         String methodLog = StringUtils.format("{}多场景路径优化 - ", taskCode);
         TjTask task = taskMapper.selectById(taskId);
@@ -174,7 +175,7 @@ public class RoutingPlanConsumer {
                             log.error("保存轨迹文件失败：{}", e);
                         }
                         // 移除监听器
-                        removeListener(ROUTING_CHANNEL);
+                        removeListener(routingChannel);
                         // 解析消息
                         CaseTrajectoryDetailBo end = objectMapper.readValue(String.valueOf(simulationMessage.getValue()),
                                 CaseTrajectoryDetailBo.class);
@@ -191,7 +192,7 @@ public class RoutingPlanConsumer {
                 }
             } catch (IOException e) {
                 log.error("解析消息失败：{}", e);
-                removeListener(ROUTING_CHANNEL);
+                removeListener(routingChannel);
             }
         };
     }

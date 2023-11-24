@@ -16,6 +16,7 @@ import net.wanji.common.common.SimulationOptimizeDto;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.config.WanjiConfig;
+import net.wanji.common.core.redis.RedisCache;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
@@ -66,6 +67,9 @@ public class RedisTrajectory2Consumer {
     @Autowired
     private RouteService routeService;
 
+    @Autowired
+    private RedisCache redisCache;
+
     @PostConstruct
     public void validChannel() {
         ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1,
@@ -79,9 +83,9 @@ public class RedisTrajectory2Consumer {
      *
      * @param sceneDebugDto
      */
-    public void subscribeAndSend(SceneDebugDto sceneDebugDto) {
+    public void subscribeAndSend(Integer deviceId, SceneDebugDto sceneDebugDto) {
         // 添加监听器
-        this.addRunningChannel(sceneDebugDto);
+        this.addRunningChannel(deviceId, sceneDebugDto);
     }
 
 
@@ -90,14 +94,15 @@ public class RedisTrajectory2Consumer {
      *
      * @param sceneDebugDto
      */
-    public void addRunningChannel(SceneDebugDto sceneDebugDto) {
+    public void addRunningChannel(Integer deviceId, SceneDebugDto sceneDebugDto) {
         String channel = WebSocketManage.buildKey(SecurityUtils.getUsername(), sceneDebugDto.getNumber(),
                 WebSocketManage.SIMULATION, null);
+        String debugKey = "DEBUGGING_" + deviceId;
         if (this.runningChannel.containsKey(channel)) {
             log.info("通道已存在");
             return;
         }
-        MessageListener listener = createListener(channel, sceneDebugDto);
+        MessageListener listener = createListener(debugKey, channel, sceneDebugDto);
         this.runningChannel.put(channel, new ChannelListener(sceneDebugDto.getNumber(), channel, SecurityUtils.getUsername(),
                 System.currentTimeMillis(), listener));
         redisMessageListenerContainer.addMessageListener(listener, new ChannelTopic(channel));
@@ -112,7 +117,7 @@ public class RedisTrajectory2Consumer {
      * @param sceneDebugDto 调试参数
      * @return
      */
-    public MessageListener createListener(String channel, SceneDebugDto sceneDebugDto) {
+    public MessageListener createListener(String debugKey, String channel, SceneDebugDto sceneDebugDto) {
         ObjectMapper objectMapper = new ObjectMapper();
         String methodLog = StringUtils.format("{}仿真验证 - ", sceneDebugDto.getNumber());
         Long nowtime = System.currentTimeMillis();
@@ -177,6 +182,8 @@ public class RedisTrajectory2Consumer {
                         }
                         // 移除监听器
                         removeListener(channel);
+                        String repeatKey = "DEBUGGING_SCENE_" + sceneDebugDto.getNumber();
+                        redisCache.deleteObject(repeatKey);
                         // 解析消息
                         CaseTrajectoryDetailBo end = objectMapper.readValue(String.valueOf(simulationMessage.getValue()),
                                 CaseTrajectoryDetailBo.class);

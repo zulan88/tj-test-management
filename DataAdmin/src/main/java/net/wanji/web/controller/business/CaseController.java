@@ -6,7 +6,6 @@ import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiOperationSort;
-import net.wanji.business.common.Constants.DeleteGroup;
 import net.wanji.business.common.Constants.InsertGroup;
 import net.wanji.business.common.Constants.UpdateGroup;
 import net.wanji.business.domain.PartConfigSelect;
@@ -101,9 +100,9 @@ public class CaseController extends BaseController {
         if (CollectionUtils.isNotEmpty(caseQueryDto.getLabelList())) {
             List<SceneDetailVo> sceneDetails = null;
             if (ObjectUtils.isEmpty(caseQueryDto) || 0 == caseQueryDto.getChoice()) {
-                sceneDetails = sceneDetailService.selectTjSceneDetailListOr(caseQueryDto.getLabelList(),null);
+                sceneDetails = sceneDetailService.selectTjSceneDetailListOr(caseQueryDto.getLabelList(), null);
             } else {
-                sceneDetails = sceneDetailService.selectTjSceneDetailListAnd(caseQueryDto.getLabelList(),null);
+                sceneDetails = sceneDetailService.selectTjSceneDetailListAnd(caseQueryDto.getLabelList(), null);
             }
             List<Integer> sceneDetailIds = CollectionUtils.emptyIfNull(sceneDetails).stream().map(SceneDetailVo::getId)
                     .collect(Collectors.toList());
@@ -214,8 +213,8 @@ public class CaseController extends BaseController {
             @ApiImplicitParam(name = "vehicleId", value = "参与者ID", required = false, dataType = "Integer", paramType = "query", example = "1")
     })
     public AjaxResult preview(@RequestParam(value = "id") Integer id,
-                               @RequestParam(value = "action") int action,
-                               @RequestParam(value = "vehicleId", required = false) String vehicleId)
+                              @RequestParam(value = "action") int action,
+                              @RequestParam(value = "vehicleId", required = false) String vehicleId)
             throws BusinessException, IOException {
         caseService.playback(id, vehicleId, action);
         return AjaxResult.success();

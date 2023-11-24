@@ -16,8 +16,10 @@ import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.business.domain.dto.SceneDebugDto;
 import net.wanji.business.domain.dto.SceneQueryDto;
+import net.wanji.business.domain.dto.TjDeviceDetailDto;
 import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
 import net.wanji.business.domain.param.TestStartParam;
+import net.wanji.business.domain.vo.DeviceDetailVo;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
 import net.wanji.business.domain.vo.SceneDetailVo;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
@@ -25,6 +27,7 @@ import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.entity.TjResourcesDetail;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.mapper.TjCaseMapper;
+import net.wanji.business.mapper.TjDeviceDetailMapper;
 import net.wanji.business.mapper.TjFragmentedSceneDetailMapper;
 import net.wanji.business.mapper.TjFragmentedScenesMapper;
 import net.wanji.business.schedule.PlaybackSchedule;
@@ -32,6 +35,7 @@ import net.wanji.business.service.*;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.trajectory.RedisTrajectory2Consumer;
 import net.wanji.common.common.TrajectoryValueDto;
+import net.wanji.common.core.redis.RedisCache;
 import net.wanji.common.utils.CounterUtil;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
@@ -50,6 +54,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -91,6 +96,12 @@ public class TjFragmentedSceneDetailServiceImpl
 
     @Autowired
     private RouteService routeService;
+
+    @Autowired
+    private TjDeviceDetailMapper deviceDetailMapper;
+
+    @Autowired
+    private RedisCache redisCache;
 
     @Override
     public FragmentedScenesDetailVo getDetailVo(Integer id) throws BusinessException {
@@ -298,14 +309,26 @@ public class TjFragmentedSceneDetailServiceImpl
                 if (ObjectUtils.isEmpty(scenes)) {
                     throw new BusinessException("场景节点不存在");
                 }
+                TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
+                deviceDetailDto.setSupportRoles(PartRole.MV_SIMULATION);
+                deviceDetailDto.setAttribute2(SecurityUtils.getUsername());
+                List<DeviceDetailVo> deviceDetailVos = deviceDetailMapper.selectByCondition(deviceDetailDto);
+
+                if (CollectionUtils.isEmpty(deviceDetailVos)) {
+                    throw new BusinessException("当前无可用仿真程序");
+                }
+                DeviceDetailVo detailVo = deviceDetailVos.get(0);
+
                 sceneDebugDto.getTrajectoryJson().setSceneDesc(scenes.getName());
                 sceneDebugDto.getTrajectoryJson().setSceneForm(StringUtils.format(ContentTemplate.SCENE_FORM_TEMPLATE, testStartParam.getAvNum(),
                         testStartParam.getSimulationNum(), testStartParam.getPedestrianNum()));
-                redisTrajectoryConsumer.subscribeAndSend(sceneDebugDto);
-                boolean start = restService.start(testStartParam);
+                redisTrajectoryConsumer.subscribeAndSend(detailVo.getDeviceId(), sceneDebugDto);
+                boolean start = restService.start(detailVo.getIp(), Integer.valueOf(detailVo.getServiceAddress()), testStartParam);
                 if (!start) {
                     throw new BusinessException("仿真程序连接失败");
                 }
+                String debugKey = "DEBUGGING_DEVICE_" + detailVo.getDeviceId();
+                redisCache.setCacheObject(debugKey, debugKey, 3, TimeUnit.SECONDS);
                 break;
             case PlaybackAction.SUSPEND:
                 PlaybackSchedule.suspend(key);

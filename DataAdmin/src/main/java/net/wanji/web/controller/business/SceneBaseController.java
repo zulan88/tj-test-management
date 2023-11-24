@@ -27,6 +27,7 @@ import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
 import net.wanji.common.core.redis.RedisCache;
+import net.wanji.common.utils.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -42,6 +43,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @Auther: guanyuduo
@@ -190,10 +192,16 @@ public class SceneBaseController extends BaseController {
     @PostMapping("/debugging")
     public AjaxResult debugging(@Validated(value = OtherGroup.class) @RequestBody SceneDebugDto sceneDebugDto)
             throws BusinessException, IOException {
-        String key = "DEBUGGING_" + sceneDebugDto.getNumber();
+        String repeatKey = "DEBUGGING_SCENE_" + sceneDebugDto.getNumber();
+        if (redisCache.hasKey(repeatKey) && !redisCache.getCacheObject(repeatKey).equals(SecurityUtils.getUsername())) {
+            return AjaxResult.error("有其他用户正在调试该场景，请稍后再试");
+        }
+        redisCache.setCacheObject(repeatKey, SecurityUtils.getUsername(), 3, TimeUnit.MINUTES);
+        String key = "DEBUGGING_SUBMIT_" + sceneDebugDto.getNumber();
         if (!redisCache.lock(key, key, 10)) {
             return AjaxResult.error("正在连接仿真软件，请稍后再试");
         }
+        SecurityUtils.getUsername();
         List<ParticipantTrajectoryBo> participantTrajectoryBos = sceneDebugDto.getTrajectoryJson().getParticipantTrajectories();
         participantTrajectoryBos.stream().filter(item -> item.getIsHide()!=null&&!item.getIsHide());
 //        sceneDebugDto.getTrajectoryJson().setParticipantTrajectories(participantTrajectoryBos);

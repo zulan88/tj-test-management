@@ -37,6 +37,7 @@ import net.wanji.business.domain.dto.TjDeviceDetailDto;
 import net.wanji.business.domain.dto.device.TaskSaveDto;
 import net.wanji.business.domain.vo.*;
 import net.wanji.business.entity.TjCase;
+import net.wanji.business.entity.TjDeviceDetail;
 import net.wanji.business.entity.TjTask;
 import net.wanji.business.entity.TjTaskCase;
 import net.wanji.business.entity.TjTaskDataConfig;
@@ -630,12 +631,13 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
     public boolean routingPlan(RoutingPlanDto routingPlanDto) throws BusinessException {
         CaseQueryDto param = new CaseQueryDto();
         param.setSelectedIds(CollectionUtils.emptyIfNull(routingPlanDto.getCases()).stream().map(CaseContinuousVo::getCaseId).collect(Collectors.toList()));
-
         List<CaseDetailVo> caseDetails = caseMapper.selectCases(param);
         Map<Integer, CaseDetailVo> caseDetailMap = CollectionUtils.emptyIfNull(caseDetails).stream().collect(Collectors.toMap(CaseDetailVo::getId, Function.identity()));
 
         TjTask task = getById(routingPlanDto.getTaskId());
-        routingPlanConsumer.subscribeAndSend(task.getId(), task.getTaskCode());
+        if (ObjectUtil.isEmpty(task)) {
+            throw new BusinessException("任务不存在");
+        }
         List<CaseContinuousVo> caseContinuousInfo = routingPlanDto.getCases();
         for (int i = 0; i < caseContinuousInfo.size(); i++) {
             CaseContinuousVo caseContinuousVo = caseContinuousInfo.get(i);
@@ -657,7 +659,14 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                         caseDetail.getRouteFile()));
             }
         }
-        return restService.startRoutingPlan(caseContinuousInfo);
+        List<TjTaskDataConfig> configs = tjTaskDataConfigService.list(new QueryWrapper<TjTaskDataConfig>().eq(ColumnName.TASK_ID, routingPlanDto.getTaskId())).stream()
+                .filter(t -> t.getType().equals(PartRole.MV_SIMULATION)).collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(configs)) {
+            throw new BusinessException("请先创建任务信息");
+        }
+        TjDeviceDetail deviceDetail = deviceDetailMapper.selectById(configs.get(0).getDeviceId());
+        routingPlanConsumer.subscribeAndSend(deviceDetail.getAttribute1(), task.getId(), task.getTaskCode());
+        return restService.startRoutingPlan(deviceDetail.getIp(), Integer.valueOf(deviceDetail.getServiceAddress()), caseContinuousInfo);
     }
 
     private Map<String, Object> updateMap(Map<String, Object> ori) {

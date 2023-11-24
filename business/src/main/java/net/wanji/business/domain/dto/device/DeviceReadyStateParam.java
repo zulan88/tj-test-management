@@ -21,4 +21,12 @@ public class DeviceReadyStateParam extends DeviceReadyStateDto{
    * 自定义参数
    */
   private Object params;
+
+
+  public DeviceReadyStateParam(Integer deviceId, String controlChannel) {
+    this.setDeviceId(deviceId);
+    this.setTimestamp(System.currentTimeMillis());
+    this.setType(1);
+    this.controlChannel = controlChannel;
+  }
 }

@@ -452,9 +452,6 @@ public class TaskRedisTrajectoryConsumer {
                 RealTestTrajectoryDto realTestTrajectoryDto = new RealTestTrajectoryDto();
                 realTestTrajectoryDto.setChannel(channelListener.getChannel());
                 realTestTrajectoryDto.setData(channelListener.getData());
-                for (SimulationTrajectoryDto trajectoryDto : channelListener.getData()) {
-                    routeService.checkRealRoute(recordId, originalTrajectory, trajectoryDto.getValue());
-                }
                 data.add(realTestTrajectoryDto);
             }
             routeService.saveTaskRouteFile(recordId, data, originalTrajectory, action);

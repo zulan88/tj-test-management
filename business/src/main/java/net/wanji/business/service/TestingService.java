@@ -17,6 +17,8 @@ import java.io.IOException;
 
 public interface TestingService {
 
+    void resetStatus(Integer caseId) throws BusinessException;
+
     /**
      * 获取用例中参与者状态
      *
