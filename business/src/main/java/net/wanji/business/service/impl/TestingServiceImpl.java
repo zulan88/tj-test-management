@@ -1,7 +1,6 @@
 package net.wanji.business.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import net.wanji.business.common.Constants;
@@ -19,7 +18,6 @@ import net.wanji.business.domain.bo.CaseInfoBo;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
-import net.wanji.business.domain.bo.TaskCaseConfigBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.ParamsDto;
@@ -70,7 +68,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -397,6 +394,15 @@ public class TestingServiceImpl implements TestingService {
                         ParticipantTrajectoryBo::getTrajectory
                 ));
         startVo.setMainTrajectories(mainTrajectoryMap);
+        startVo.setTestTypeName(caseInfoBo.getTestScene());
+        startVo.setCaseId(caseId);
+        return startVo;
+    }
+
+    @Override
+    public CaseTestStartVo hjktest(Integer caseId) throws BusinessException {
+        CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
+        CaseTestStartVo startVo = new CaseTestStartVo();
         startVo.setTestTypeName(caseInfoBo.getTestScene());
         startVo.setCaseId(caseId);
         return startVo;
