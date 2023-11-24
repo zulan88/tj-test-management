@@ -68,6 +68,11 @@ public class TestingController extends BaseController {
         return  AjaxResult.success(testingService.controlTask(recordId));
     }
 
+//    @GetMapping("/hjktest")
+//    public AjaxResult test(Integer recordId) throws BusinessException {
+//        return  AjaxResult.success(testingService.hjktest(recordId));
+//    }
+
     @ApiOperationSort(3)
     @ApiOperation(value = "清除任务")
     @GetMapping("/stop")

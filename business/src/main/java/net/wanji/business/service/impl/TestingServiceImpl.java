@@ -459,6 +459,15 @@ public class TestingServiceImpl implements TestingService {
     }
 
     @Override
+    public CaseTestStartVo hjktest(Integer caseId) throws BusinessException {
+        CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
+        CaseTestStartVo startVo = new CaseTestStartVo();
+        startVo.setTestTypeName(caseInfoBo.getTestScene());
+        startVo.setCaseId(caseId);
+        return startVo;
+    }
+
+    @Override
     public void stop(Integer caseId) throws BusinessException {
         CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
         String commandChannel = caseInfoBo.getCaseConfigs().stream().filter(t -> PartRole.AV.equals(t.getParticipantRole())).findFirst().get().getCommandChannel();

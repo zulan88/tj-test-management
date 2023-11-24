@@ -155,6 +155,7 @@
         <result property="allStageLabel" column="all_stage_label"/>
         <result property="sceneDetailId" column="scene_detail_id"/>
         <result property="testTarget" column="test_target"/>
+        <result property="testScene" column="test_scene"/>
         <result property="detailInfo" column="detail_info"/>
         <result property="routeFile" column="route_file"/>
         <result property="status" column="status"/>
@@ -194,6 +195,7 @@
         SELECT tc.id,
                tc.case_number,
                tc.test_target,
+               tc.test_scene,
                tc.`status`,
                tc.detail_info,
                tc.route_file,

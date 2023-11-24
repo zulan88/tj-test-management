@@ -2,13 +2,17 @@ package net.wanji.openx.service;
 
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
+import net.wanji.business.entity.TjResourcesDetail;
 import net.wanji.business.entity.TjScenelib;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.ITjScenelibService;
 import net.wanji.business.service.TjFragmentedSceneDetailService;
+import net.wanji.business.service.TjResourcesDetailService;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.config.WanjiConfig;
+import net.wanji.common.constant.Constants;
 import net.wanji.common.utils.DateUtils;
+import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.file.FileUploadUtils;
 import net.wanji.openx.generated.*;
 import net.wanji.openx.generated.File;
@@ -32,8 +36,12 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 @Component
@@ -44,6 +52,9 @@ public class ToBuildOpenX {
 
     @Autowired
     ITjScenelibService scenelibService;
+
+    @Autowired
+    private TjResourcesDetailService tjResourcesDetailService;
 
     private static final CoordinateTransformFactory ctFactory = new CoordinateTransformFactory();
     private static final CRSFactory crsFactory = new CRSFactory();
@@ -62,6 +73,86 @@ public class ToBuildOpenX {
             }
 
             java.io.File xodrfile = new java.io.File(WanjiConfig.getScenelibPath(),c1);
+
+            if(fragmentedScenesDetailVo.getResourcesDetailId()!=null){
+                TjResourcesDetail tjResourcesDetail = tjResourcesDetailService.getById(fragmentedScenesDetailVo.getResourcesDetailId());
+                if(tjResourcesDetail.getAttribute5().isEmpty()) {
+                    String localPath = WanjiConfig.getProfile();
+                    String downloadPath = localPath + StringUtils.substringAfter(tjResourcesDetail.getFilePath(), Constants.RESOURCE_PREFIX);
+                    java.io.File file = new java.io.File(downloadPath);
+                    ZipFile zipFile = new ZipFile(file);
+                    Enumeration<? extends ZipEntry> entries = zipFile.entries();
+                    while (entries.hasMoreElements()) {
+                        ZipEntry entry = entries.nextElement();
+                        String entryName = (int) (System.currentTimeMillis() % 1000) + "_" + entry.getName();
+                        java.io.File entryFile = new java.io.File(outputFolder, entryName);
+
+                        if (entry.isDirectory()) {
+                            entryFile.mkdirs();
+                        } else {
+                            InputStream inputStream = zipFile.getInputStream(entry);
+                            FileOutputStream outputStream = new FileOutputStream(entryFile);
+
+                            byte[] buffer = new byte[1024];
+                            int length;
+                            while ((length = inputStream.read(buffer)) > 0) {
+                                outputStream.write(buffer, 0, length);
+                            }
+
+                            inputStream.close();
+                            outputStream.close();
+                        }
+                        String filepath = entryFile.getAbsolutePath();
+                        if (filepath.endsWith("xodr")) {
+                            tjResourcesDetail.setAttribute5(filepath);
+                            xodrfile = new java.io.File(filepath);
+                            c1 = entryName;
+                            BufferedReader reader = new BufferedReader(new FileReader(filepath));
+                            StringBuilder fileContent = new StringBuilder();
+                            String line;
+                            while ((line = reader.readLine()) != null) {
+                                fileContent.append(line);
+                            }
+                            reader.close();
+                            // 使用正则表达式提取proj参数值
+                            String regex = "\\+proj=[^\\s]+.*?\\]";
+                            Pattern pattern = Pattern.compile(regex);
+                            Matcher matcher = pattern.matcher(fileContent.toString());
+                            if (matcher.find()) {
+                                String projValue = matcher.group();
+                                proj = projValue.substring(0, projValue.length() - 1);
+                            } else {
+                                //异常处理
+                                System.out.println("未提取到proj参数");
+                            }
+                            break;
+                        }
+                    }
+                    tjResourcesDetailService.updateById(tjResourcesDetail);
+                }else {
+                    String filepath = tjResourcesDetail.getAttribute5();
+                    xodrfile = new java.io.File(filepath);
+                    c1 = StringUtils.substringAfterLast(filepath,java.io.File.separator);
+                    BufferedReader reader = new BufferedReader(new FileReader(filepath));
+                    StringBuilder fileContent = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        fileContent.append(line);
+                    }
+                    reader.close();
+                    // 使用正则表达式提取proj参数值
+                    String regex = "\\+proj=[^\\s]+.*?\\]";
+                    Pattern pattern = Pattern.compile(regex);
+                    Matcher matcher = pattern.matcher(fileContent.toString());
+                    if (matcher.find()) {
+                        String projValue = matcher.group();
+                        proj = projValue.substring(0, projValue.length() - 1);
+                    } else {
+                        //异常处理
+                        System.out.println("未提取到proj参数");
+                    }
+                }
+            }
 
             OpenScenario openScenario = new OpenScenario();
             FileHeader fileHeader = new FileHeader();

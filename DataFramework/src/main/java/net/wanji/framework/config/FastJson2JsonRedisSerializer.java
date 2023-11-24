@@ -45,9 +45,11 @@ public class FastJson2JsonRedisSerializer<T> implements RedisSerializer<T>
 
         str = str.replace("cn.net.wanji.system.api","net.wanji.common.core.domain");
         str = str.replace("Set[\"*:*:*\"]","[\"*:*:*\"]");
-        str = str.replace("\"roles\":Set[\"admin\"],","");
+        str = str.replace("Set[]","[]");
+        str = str.replace("\"roles\":Set[\"\\w+\"],","");
         str = str.replace("sysUser","user");
         str = str.replace("\"admin\":true,", "\"@type\":\"net.wanji.common.core.domain.entity.SysUser\",\"admin\":true,");
+        str = str.replace("\"admin\":false,", "\"@type\":\"net.wanji.common.core.domain.entity.SysUser\",\"admin\":false,");
 //        clazz.isLocalClass();
         return JSON.parseObject(str, clazz, JSONReader.Feature.SupportAutoType);
     }
