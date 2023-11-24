@@ -145,6 +145,7 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
 
     @Override
     public List<CasePageVo> pageList(CaseQueryDto caseQueryDto) {
+        caseQueryDto.setUserName(SecurityUtils.getUsername());
         List<CaseDetailVo> caseVos = caseMapper.selectCases(caseQueryDto);
         handleLabels(caseVos);
         List<TjDeviceDetail> deviceDetails = deviceDetailService.list();
@@ -210,6 +211,7 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     public CaseDetailVo selectCaseDetail(Integer caseId) {
         CaseQueryDto caseQueryDto = new CaseQueryDto();
         caseQueryDto.setId(caseId);
+        caseQueryDto.setUserName(SecurityUtils.getUsername());
         List<CaseDetailVo> caseVos = caseMapper.selectCases(caseQueryDto);
         if (CollectionUtils.isNotEmpty(caseVos)) {
             handleLabels(caseVos);
@@ -314,14 +316,17 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
                             if (deviceConfig) {
                                 // 对应参与者类型可选择的设备列表
                                 List<TjDeviceDetail> devices = devicesMap.get(role.getDictValue());
-                                List<DeviceDetailVo> deviceVos = CollectionUtils.emptyIfNull(devices).stream().map(device -> {
-                                    DeviceDetailVo detailVo = new DeviceDetailVo();
-                                    BeanUtils.copyBeanProp(detailVo, device);
-                                    if (detailVo.getDeviceId().equals(part.getDeviceId())) {
-                                        detailVo.setSelected(Boolean.TRUE);
-                                    }
-                                    return detailVo;
-                                }).collect(Collectors.toList());
+                                List<DeviceDetailVo> deviceVos = CollectionUtils.emptyIfNull(devices).stream()
+                                        .filter(t -> StringUtils.isEmpty(t.getAttribute2())
+                                                || SecurityUtils.getUsername().equals(t.getAttribute2()))
+                                        .map(device -> {
+                                            DeviceDetailVo detailVo = new DeviceDetailVo();
+                                            BeanUtils.copyBeanProp(detailVo, device);
+                                            if (detailVo.getDeviceId().equals(part.getDeviceId())) {
+                                                detailVo.setSelected(Boolean.TRUE);
+                                            }
+                                            return detailVo;
+                                        }).collect(Collectors.toList());
                                 part.setDevices(deviceVos);
                             }
                         }

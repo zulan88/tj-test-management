@@ -64,4 +64,6 @@ public class TaskDto {
 
     @ApiModelProperty(value = "主键ID", dataType = "Integer", example = "1", position = 14)
     private Integer id;
+
+    private String createdBy;
 }

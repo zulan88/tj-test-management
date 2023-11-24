@@ -60,4 +60,6 @@ public class CaseQueryDto {
 
     @ApiModelProperty(value = "用例显示方式:null：初始化；0：显示全部；1：显示已选中", example = "0")
     private Integer showType;
+
+    private String userName;
 }

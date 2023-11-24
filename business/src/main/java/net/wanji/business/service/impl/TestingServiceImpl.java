@@ -273,7 +273,9 @@ public class TestingServiceImpl implements TestingService {
         List<Map<String, Object>> simulationTrajectories = new ArrayList<>();
         SceneTrajectoryBo trajectoryBo = JSONObject.parseObject(caseInfoBo.getDetailInfo(), SceneTrajectoryBo.class);
         for (ParticipantTrajectoryBo participantTrajectory : trajectoryBo.getParticipantTrajectories()) {
-            if (PartRole.AV.equals(businessIdAndRoleMap.get(participantTrajectory.getId()))) {
+            if (PartType.MAIN.equals(participantTrajectory.getType())) {
+                tessParams.put("avId", participantTrajectory.getId());
+                tessParams.put("avName", participantTrajectory.getName());
                 continue;
             }
             Map<String, Object> map = new HashMap<>();
@@ -296,6 +298,8 @@ public class TestingServiceImpl implements TestingService {
         mapParam1.put("participantTrajectories", simulationTrajectories);
         param1.add(mapParam1);
         tessParams.put("param1", param1);
+        tessParams.put("taskId", 0);
+
         return tessParams;
     }
 

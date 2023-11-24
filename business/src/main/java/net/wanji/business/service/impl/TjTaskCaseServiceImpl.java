@@ -219,7 +219,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 stateParam.setParams(new ParamsDto(mainTrajectoryMap.get("main")));
             }
             if (PartRole.MV_SIMULATION.equals(taskCaseConfigBo.getType())) {
-                stateParam.setParams(buildTessStateParam(taskCaseInfoMap, caseBusinessIdAndRoleMap, caseMainSize));
+                stateParam.setParams(buildTessStateParam(param.getTaskId(), taskCaseInfoMap, caseBusinessIdAndRoleMap, caseMainSize));
             }
             restService.selectDeviceReadyState(stateParam);
         }
@@ -321,7 +321,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 stateParam.setParams(new ParamsDto(mainTrajectoryMap.get("main")));
             }
             if (PartRole.MV_SIMULATION.equals(taskCaseConfigBo.getType())) {
-                stateParam.setParams(buildTessStateParam(taskCaseInfoMap, caseBusinessIdAndRoleMap, caseMainSize));
+                stateParam.setParams(buildTessStateParam(param.getTaskId(), taskCaseInfoMap, caseBusinessIdAndRoleMap, caseMainSize));
             }
             taskCaseConfigBo.setPositionStatus(deviceDetailService.selectDeviceReadyState(taskCaseConfigBo.getDeviceId(), stateParam, false));
         }
@@ -338,14 +338,15 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
     /**
      * 创建tess准备状态参数
+     *
      * @param taskCaseInfoMap
      * @param caseBusinessIdAndRoleMap
      * @param caseMainSize
      * @return
      */
-    private Map<String, Object> buildTessStateParam(Map<Integer, TaskCaseInfoBo> taskCaseInfoMap,
-                                                   Map<Integer, Map<String, String>> caseBusinessIdAndRoleMap,
-                                                   Map<Integer, Integer> caseMainSize) {
+    private Map<String, Object> buildTessStateParam(Integer taskId, Map<Integer, TaskCaseInfoBo> taskCaseInfoMap,
+                                                    Map<Integer, Map<String, String>> caseBusinessIdAndRoleMap,
+                                                    Map<Integer, Integer> caseMainSize) {
         Map<String, Object> tessParams = new HashMap<>();
 
         List<Map<String, Object>> param1 = new ArrayList<>();
@@ -376,6 +377,8 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             List<Map<String, Object>> simulationTrajectories = new ArrayList<>();
             for (ParticipantTrajectoryBo participantTrajectory : sceneTrajectoryBo.getParticipantTrajectories()) {
                 if (PartType.MAIN.equals(participantTrajectory.getType())) {
+                    tessParams.put("avId", participantTrajectory.getId());
+                    tessParams.put("avName", participantTrajectory.getName());
                     continue;
                 }
                 Map<String, Object> map = new HashMap<>();
@@ -399,6 +402,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             param1.add(caseParam);
         }
         tessParams.put("param1", param1);
+        tessParams.put("taskId", taskId);
         return tessParams;
     }
 
@@ -1007,6 +1011,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
     /**
      * 辅助方法：根据指定的属性值去重
+     *
      * @param keyExtractor
      * @param <T>
      * @return

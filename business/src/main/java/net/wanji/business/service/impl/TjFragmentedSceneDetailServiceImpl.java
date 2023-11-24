@@ -314,22 +314,21 @@ public class TjFragmentedSceneDetailServiceImpl
                 deviceDetailDto.setSupportRoles(PartRole.MV_SIMULATION);
                 deviceDetailDto.setAttribute2(SecurityUtils.getUsername());
                 List<DeviceDetailVo> deviceDetailVos = deviceDetailMapper.selectByCondition(deviceDetailDto);
-
                 if (CollectionUtils.isEmpty(deviceDetailVos)) {
                     throw new BusinessException("当前无可用仿真程序");
                 }
-                DeviceDetailVo detailVo = deviceDetailVos.get(0);
-
                 sceneDebugDto.getTrajectoryJson().setSceneDesc(scenes.getName());
                 sceneDebugDto.getTrajectoryJson().setSceneForm(StringUtils.format(ContentTemplate.SCENE_FORM_TEMPLATE, testStartParam.getAvNum(),
                         testStartParam.getSimulationNum(), testStartParam.getPedestrianNum()));
-                redisTrajectoryConsumer.subscribeAndSend(detailVo.getDeviceId(), sceneDebugDto);
+                redisTrajectoryConsumer.subscribeAndSend(sceneDebugDto);
+
+                DeviceDetailVo detailVo = deviceDetailVos.get(0);
                 boolean start = restService.start(detailVo.getIp(), Integer.valueOf(detailVo.getServiceAddress()), testStartParam);
                 if (!start) {
+                    String repeatKey = "DEBUGGING_SCENE_" + sceneDebugDto.getNumber();
+                    redisCache.deleteObject(repeatKey);
                     throw new BusinessException("仿真程序连接失败");
                 }
-                String debugKey = "DEBUGGING_DEVICE_" + detailVo.getDeviceId();
-                redisCache.setCacheObject(debugKey, debugKey, 3, TimeUnit.SECONDS);
                 break;
             case PlaybackAction.SUSPEND:
                 PlaybackSchedule.suspend(key);

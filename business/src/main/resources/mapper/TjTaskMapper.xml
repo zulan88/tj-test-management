@@ -187,6 +187,9 @@
             <if test="id != null and id != ''">
                 AND tt.id = #{id}
             </if>
+            <if test="createdBy != null and createdBy != ''">
+                AND tt.created_by = #{createdBy}
+            </if>
         </where>
         order by tt.plan_date desc, tt.create_time desc
     </select>

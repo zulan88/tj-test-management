@@ -29,9 +29,10 @@ import net.wanji.common.constant.HttpStatus;
 import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
+import net.wanji.common.core.redis.RedisCache;
+import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.ObjectUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -47,6 +48,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author: guowenhao
@@ -70,6 +72,9 @@ public class TaskController extends BaseController {
 
     @Autowired
     private TestingService testingService;
+
+    @Autowired
+    private RedisCache redisCache;
 
     @ApiOperationSort(1)
     @ApiOperation(value = "1.节点初始化")
@@ -101,7 +106,17 @@ public class TaskController extends BaseController {
     @ApiOperation(value = "4.路径优化")
     @PostMapping("/routingPlan")
     public AjaxResult routingPlan(@Validated @RequestBody RoutingPlanDto routingPlanDto) throws BusinessException {
+        String repeatKey = "ROUTING_TASK_" + routingPlanDto.getTaskId();
+        if (redisCache.hasKey(repeatKey) && !redisCache.getCacheObject(repeatKey).equals(SecurityUtils.getUsername())) {
+            return AjaxResult.error("有其他用户正在规划该任务路径，请稍后再试");
+        }
+        redisCache.setCacheObject(repeatKey, SecurityUtils.getUsername(), 3, TimeUnit.MINUTES);
+        String key = "ROUTING_SUBMIT_" + routingPlanDto.getTaskId();
+        if (!redisCache.lock(key, key, 10)) {
+            return AjaxResult.error("正在连接仿真软件，请稍后再试");
+        }
         tjTaskService.routingPlan(routingPlanDto);
+        redisCache.unlock2(key, key);
         return AjaxResult.success("开始进行路径优规划");
     }
 

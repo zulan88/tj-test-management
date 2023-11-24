@@ -61,8 +61,10 @@ import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.core.domain.SimpleSelect;
 import net.wanji.common.core.domain.entity.SysDictData;
 import net.wanji.common.core.page.TableDataInfo;
+import net.wanji.common.core.redis.RedisCache;
 import net.wanji.common.utils.CounterUtil;
 import net.wanji.common.utils.DateUtils;
+import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.bean.BeanUtils;
 import net.wanji.system.service.ISysDictDataService;
@@ -86,6 +88,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -150,6 +153,9 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
     @Autowired
     private RoutingPlanConsumer routingPlanConsumer;
 
+    @Autowired
+    private RedisCache redisCache;
+
     private static final SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss");
 
     @Override
@@ -182,6 +188,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
 
     @Override
     public List<TaskListVo> pageList(TaskDto in) {
+        in.setCreatedBy(SecurityUtils.getUsername());
         List<TaskListVo> pageList = tjTaskMapper.getPageList(in);
         List<DeviceDetailVo> deviceDetails = deviceDetailMapper.selectByCondition(new TjDeviceDetailDto());
         Map<Integer, DeviceDetailVo> deviceMap = CollectionUtils.emptyIfNull(deviceDetails).stream()
@@ -268,6 +275,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         }
         CaseQueryDto param = new CaseQueryDto();
         param.setSelectedIds(taskCaseVos.stream().map(TaskCaseVo::getCaseId).collect(Collectors.toList()));
+        param.setUserName(SecurityUtils.getUsername());
         return tjCaseService.pageList(param);
     }
 
@@ -308,6 +316,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
                 deviceDetailDto.setStatus(YN.Y_INT);
                 deviceDetailDto.setSupportRoles(PartRole.AV);
+                deviceDetailDto.setAttribute2(SecurityUtils.getUsername());
                 List<DeviceDetailVo> avDevices = deviceDetailMapper.selectByCondition(deviceDetailDto);
                 TjTask task = new TjTask();
                 if (ObjectUtil.isNotEmpty(taskSaveDto.getId())) {
@@ -346,6 +355,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 // 分页查询用例
                 List<Integer> selectedIds = new ArrayList<>();
                 CaseQueryDto caseQueryDto = taskSaveDto.getCaseQueryDto();
+                caseQueryDto.setUserName(SecurityUtils.getUsername());
                 PageHelper.startPage(caseQueryDto.getPageNum(), caseQueryDto.getPageSize());
                 List<CasePageVo> casePageVos = null;
                 if (ObjectUtil.isEmpty(caseQueryDto.getShowType())) {
@@ -427,7 +437,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         List<TaskCaseVo> taskCaseVos = tjTaskCaseMapper.selectByCondition(taskCase);
         CaseQueryDto param = new CaseQueryDto();
         param.setSelectedIds(CollectionUtils.emptyIfNull(taskCaseVos).stream().map(TaskCaseVo::getCaseId).collect(Collectors.toList()));
-
+        param.setUserName(SecurityUtils.getUsername());
         List<CaseDetailVo> caseDetails = caseMapper.selectCases(param);
         Map<Integer, CaseDetailVo> caseDetailMap = CollectionUtils.emptyIfNull(caseDetails).stream().collect(Collectors.toMap(CaseDetailVo::getId, Function.identity()));
         return CollectionUtils.emptyIfNull(taskCaseVos).stream().map(t -> {
@@ -504,6 +514,8 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                     tjTask.setContract(in.getContract());
                     tjTask.setStartTime(in.getStartTime());
                     tjTask.setEndTime(in.getEndTime());
+                    tjTask.setUpdatedBy(SecurityUtils.getUsername());
+                    tjTask.setUpdatedDate(LocalDateTime.now());
                     this.updateById(tjTask);
                     tjTaskDataConfigService.remove(new QueryWrapper<TjTaskDataConfig>().eq(ColumnName.TASK_ID, tjTask.getId()));
                 } else {
@@ -514,6 +526,8 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                     tjTask.setPlanDate(new Date());
                     tjTask.setCreateTime(new Date());
                     tjTask.setStatus(TaskStatusEnum.NO_SUBMIT.getCode());
+                    tjTask.setCreatedBy(SecurityUtils.getUsername());
+                    tjTask.setCreatedDate(LocalDateTime.now());
                     this.save(tjTask);
                 }
                 List<TjTaskDataConfig> dataConfigs = new ArrayList<>();
@@ -553,6 +567,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 // todo 设备从运营平台查询
                 TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
                 deviceDetailDto.setSupportRoles(PartRole.MV_SIMULATION);
+                deviceDetailDto.setAttribute2(SecurityUtils.getUsername());
                 List<DeviceDetailVo> simulationDevices = deviceDetailMapper.selectByCondition(deviceDetailDto);
                 if (CollectionUtils.isEmpty(simulationDevices)) {
                     throw new BusinessException("无可用的从车设备");
@@ -631,6 +646,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
     public boolean routingPlan(RoutingPlanDto routingPlanDto) throws BusinessException {
         CaseQueryDto param = new CaseQueryDto();
         param.setSelectedIds(CollectionUtils.emptyIfNull(routingPlanDto.getCases()).stream().map(CaseContinuousVo::getCaseId).collect(Collectors.toList()));
+        param.setUserName(SecurityUtils.getUsername());
         List<CaseDetailVo> caseDetails = caseMapper.selectCases(param);
         Map<Integer, CaseDetailVo> caseDetailMap = CollectionUtils.emptyIfNull(caseDetails).stream().collect(Collectors.toMap(CaseDetailVo::getId, Function.identity()));
 
@@ -666,7 +682,13 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         }
         TjDeviceDetail deviceDetail = deviceDetailMapper.selectById(configs.get(0).getDeviceId());
         routingPlanConsumer.subscribeAndSend(deviceDetail.getAttribute1(), task.getId(), task.getTaskCode());
-        return restService.startRoutingPlan(deviceDetail.getIp(), Integer.valueOf(deviceDetail.getServiceAddress()), caseContinuousInfo);
+        boolean b = restService.startRoutingPlan(deviceDetail.getIp(), Integer.valueOf(deviceDetail.getServiceAddress()), caseContinuousInfo);
+        if (!b) {
+            String repeatKey = "ROUTING_TASK_" + routingPlanDto.getTaskId();
+            redisCache.deleteObject(repeatKey);
+            throw new BusinessException("路径规划失败");
+        }
+        return b;
     }
 
     private Map<String, Object> updateMap(Map<String, Object> ori) {

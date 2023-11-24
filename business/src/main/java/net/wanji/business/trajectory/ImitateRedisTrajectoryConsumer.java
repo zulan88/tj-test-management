@@ -253,21 +253,6 @@ public class ImitateRedisTrajectoryConsumer {
                                     (int) Math.floor((double) (getDataSize(key, channel)) / 10));
                             if (!ObjectUtils.isEmpty(avChannelAndBusinessIdMap)
                                     && avChannelAndBusinessIdMap.containsKey(channel)) {
-                                try {
-                                    CountDownDto countDownDto = countDown.countDown(data.get(0).getSpeed(),
-                                            new Point2D.Double(data.get(0).getLongitude(), data.get(0).getLatitude()));
-                                    if (!ObjectUtils.isEmpty(countDownDto)) {
-                                        double mileage = countDownDto.getFullLength();
-                                        double remainLength = countDownDto.getRemainLength();
-                                        realMap.put("mileage", String.format("%.2f", mileage));
-                                        realMap.put("duration", countDownDto.getTimeRemaining());
-                                        realMap.put("arriveTime", DateUtils.dateToString(countDownDto.getArrivalTime(), DateUtils.HH_MM_SS));
-                                        double percent = mileage > 0 ? 1 - (remainLength / mileage) : 1;
-                                        realMap.put("percent", percent * 100);
-                                    }
-                                } catch (Exception e) {
-                                    log.error("倒计时计算异常：{}", e);
-                                }
                                 PathwayPoints nearestPoint = pathwayPoints.findNearestPoint(data.get(0).getLongitude(), data.get(0).getLatitude());
                                 Map<String, Object> tipsMap = new HashMap<>();
                                 if (nearestPoint.hasTips()) {
@@ -279,17 +264,6 @@ public class ImitateRedisTrajectoryConsumer {
                                 realMap.put("tips", tipsMap);
                                 // 仿真车未来轨迹
                                 List<Map<String, Double>> futureList = new ArrayList<>();
-//                                if (!CollectionUtils.isEmpty(mainSimuTrajectories)) {
-//                                    // 仿真验证中当前主车位置
-//                                    data.add(mainSimuTrajectories.remove(0));
-//                                    // 仿真验证中主车剩余轨迹
-//                                    futureList = mainSimuTrajectories.stream().map(item -> {
-//                                        Map<String, Double> posMap = new HashMap<>();
-//                                        posMap.put("longitude", item.getLongitude());
-//                                        posMap.put("latitude", item.getLatitude());
-//                                        return posMap;
-//                                    }).collect(Collectors.toList());
-//                                }
                                 realMap.put("simuFuture", futureList);
                                 realMap.put("speed", data.get(0).getSpeed());
                                 RealWebsocketMessage msg = new RealWebsocketMessage(RedisMessageType.TRAJECTORY, realMap, data,

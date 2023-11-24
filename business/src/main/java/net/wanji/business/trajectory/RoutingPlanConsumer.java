@@ -15,6 +15,7 @@ import net.wanji.common.common.SimulationMessage;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.config.WanjiConfig;
+import net.wanji.common.core.redis.RedisCache;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
@@ -63,7 +64,7 @@ public class RoutingPlanConsumer {
     }
 
     @Autowired
-    private RouteService routeService;
+    private RedisCache redisCache;
 
     @Autowired
     private TjTaskMapper taskMapper;
@@ -176,6 +177,8 @@ public class RoutingPlanConsumer {
                         }
                         // 移除监听器
                         removeListener(routingChannel);
+                        String repeatKey = "ROUTING_TASK_" + taskId;
+                        redisCache.deleteObject(repeatKey);
                         // 解析消息
                         CaseTrajectoryDetailBo end = objectMapper.readValue(String.valueOf(simulationMessage.getValue()),
                                 CaseTrajectoryDetailBo.class);

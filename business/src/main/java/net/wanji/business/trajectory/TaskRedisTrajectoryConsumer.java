@@ -232,20 +232,9 @@ public class TaskRedisTrajectoryConsumer {
                             // send ws
                             RealWebsocketMessage msg = null;
                             if (!ObjectUtils.isEmpty(paramItem) && paramItem.containsKey(channel)) {
-                                CountDown countDown = paramItem.getObject("avCountDown", CountDown.class);
                                 try {
                                     // 速度
                                     mainInfoMap.put("speed", data.get(0).getSpeed());
-                                    // 全程、剩余时间、到达时间
-                                    CountDownDto countDownDto = countDown.countDown(data.get(0).getSpeed(),
-                                            new Point2D.Double(data.get(0).getLongitude(), data.get(0).getLatitude()));
-                                    boolean hasCountDown = !ObjectUtils.isEmpty(countDownDto);
-                                    double mileage = hasCountDown ? countDownDto.getFullLength() : 0;
-                                    double remainLength = hasCountDown ? countDownDto.getRemainLength() : 0;
-                                    mainInfoMap.put("mileage", String.format("%.2f", mileage));
-                                    mainInfoMap.put("duration", hasCountDown ? countDownDto.getTimeRemaining() : 0L);
-                                    mainInfoMap.put("arriveTime", hasCountDown ? DateUtils.dateToString(countDownDto.getArrivalTime(), DateUtils.HH_MM_SS) : "--:--:--");
-                                    mainInfoMap.put("percent", (mileage > 0 ? 1 - (remainLength / mileage) : 0) * 100);
 
                                     // 途径点距离、速度
                                     PathwayPoints pathwayPoints = paramItem.getObject("avPathwayPoints", PathwayPoints.class);

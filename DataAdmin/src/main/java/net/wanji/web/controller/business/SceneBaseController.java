@@ -44,6 +44,7 @@ import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * @Auther: guanyuduo
@@ -201,10 +202,8 @@ public class SceneBaseController extends BaseController {
         if (!redisCache.lock(key, key, 10)) {
             return AjaxResult.error("正在连接仿真软件，请稍后再试");
         }
-        SecurityUtils.getUsername();
-        List<ParticipantTrajectoryBo> participantTrajectoryBos = sceneDebugDto.getTrajectoryJson().getParticipantTrajectories();
-        participantTrajectoryBos.stream().filter(item -> item.getIsHide()!=null&&!item.getIsHide());
-//        sceneDebugDto.getTrajectoryJson().setParticipantTrajectories(participantTrajectoryBos);
+        List<ParticipantTrajectoryBo> participantTrajectoryBos = sceneDebugDto.getTrajectoryJson()
+                .getParticipantTrajectories().stream().filter(item -> item.getIsHide()!=null&&!item.getIsHide()).collect(Collectors.toList());
         tjFragmentedSceneDetailService.debugging(sceneDebugDto);
         redisCache.unlock2(key, key);
         return AjaxResult.success();
