@@ -12,7 +12,7 @@ import net.wanji.business.common.Constants.PlaybackAction;
 import net.wanji.business.common.Constants.PointTypeEnum;
 import net.wanji.business.common.Constants.RedisMessageType;
 import net.wanji.business.common.Constants.SysType;
-import net.wanji.business.common.Constants.TestingStatus;
+import net.wanji.business.common.Constants.TestingStatusEnum;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.Label;
 import net.wanji.business.domain.bo.CaseInfoBo;
@@ -446,7 +446,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             addRecord.setTaskId(taskCaseInfoBo.getTaskId());
             addRecord.setCaseId(taskCaseInfoBo.getCaseId());
             addRecord.setDetailInfo(JSONObject.toJSONString(caseTrajectoryDetailBo));
-            addRecord.setStatus(TestingStatus.NOT_START);
+            addRecord.setStatus(TestingStatusEnum.NOT_START.getCode());
             addList.add(addRecord);
 
             channels.addAll(taskCaseInfoBo.getDataConfigs().stream().map(TaskCaseConfigBo::getDataChannel)
@@ -477,7 +477,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         if (CollectionUtils.isEmpty(taskCaseInfos)) {
             throw new BusinessException("任务用例不存在");
         }
-        if (taskCaseInfos.stream().anyMatch(t -> t.getRecordStatus() > TestingStatus.NOT_START)) {
+        if (taskCaseInfos.stream().anyMatch(t -> t.getRecordStatus() > TestingStatusEnum.NOT_START.getCode())) {
             throw new BusinessException("未就绪");
         }
 
@@ -614,7 +614,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         if (ObjectUtils.isEmpty(taskCaseRecord)) {
             throw new BusinessException("未查询到任务用例测试记录");
         }
-        if (TestingStatus.FINISHED > taskCaseRecord.getStatus() || StringUtils.isEmpty(taskCaseRecord.getRouteFile())) {
+        if (TestingStatusEnum.FINISHED.getCode() > taskCaseRecord.getStatus() || StringUtils.isEmpty(taskCaseRecord.getRouteFile())) {
             throw new BusinessException("无完整试验记录");
         }
         QueryWrapper<TjTaskCase> queryWrapper = new QueryWrapper<>();
@@ -688,7 +688,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         if (ObjectUtils.isEmpty(taskCaseRecord) || ObjectUtils.isEmpty(taskCaseRecord.getDetailInfo())) {
             throw new BusinessException("待开始测试");
         }
-        if (TestingStatus.FINISHED > taskCaseRecord.getStatus()) {
+        if (TestingStatusEnum.FINISHED.getCode() > taskCaseRecord.getStatus()) {
             return null;
         }
         TjTask tjTask = taskMapper.selectById(taskCaseRecord.getTaskId());
@@ -958,7 +958,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         if (ObjectUtils.isEmpty(taskCaseRecord)) {
             throw new BusinessException("未找到用例测试记录");
         }
-        if (1 == action && taskCaseRecord.getStatus() > TestingStatus.NOT_START) {
+        if (1 == action && taskCaseRecord.getStatus() > TestingStatusEnum.NOT_START.getCode()) {
             throw new BusinessException("未就绪");
         }
 
@@ -974,7 +974,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
     private void ssCaseResultUpdate(Integer action, TjTaskCaseRecord taskCaseRecord,
                                     TjTaskCase taskCase) {
         if (1 == action) {
-            taskCaseRecord.setStatus(TestingStatus.RUNNING);
+            taskCaseRecord.setStatus(TestingStatusEnum.RUNNING.getCode());
             taskCaseRecord.setStartTime(LocalDateTime.now());
 
             Date date = new Date();

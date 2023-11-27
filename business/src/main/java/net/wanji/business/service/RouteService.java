@@ -7,7 +7,7 @@ import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.Extension;
 import net.wanji.business.common.Constants.TaskCaseStatusEnum;
 import net.wanji.business.common.Constants.TaskStatusEnum;
-import net.wanji.business.common.Constants.TestingStatus;
+import net.wanji.business.common.Constants.TestingStatusEnum;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
@@ -18,7 +18,6 @@ import net.wanji.business.entity.TjCaseRealRecord;
 import net.wanji.business.entity.TjTask;
 import net.wanji.business.entity.TjTaskCase;
 import net.wanji.business.entity.TjTaskCaseRecord;
-import net.wanji.business.exception.BusinessException;
 import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjCaseRealRecordMapper;
 import net.wanji.business.mapper.TjTaskCaseMapper;
@@ -28,7 +27,6 @@ import net.wanji.common.common.RealTestTrajectoryDto;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.config.WanjiConfig;
-import net.wanji.common.utils.Calculate;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.GeoUtil;
 import net.wanji.common.utils.StringUtils;
@@ -107,7 +105,7 @@ public class RouteService {
             String path = FileUtils.writeRoute(data, WanjiConfig.getRoutePath(), Extension.TXT);
             log.info("saveRealRouteFile routePath:{}", path);
             caseRealRecord.setRouteFile(path);
-            caseRealRecord.setStatus(TestingStatus.FINISHED);
+            caseRealRecord.setStatus(TestingStatusEnum.FINISHED.getCode());
             caseRealRecord.setEndTime(LocalDateTime.now());
             caseRealRecordMapper.updateById(caseRealRecord);
             log.info("更新完成");
@@ -137,7 +135,7 @@ public class RouteService {
 //            }
             log.info("save task case record routePath:{}", path);
             taskCaseRecord.setRouteFile(path);
-            taskCaseRecord.setStatus(TestingStatus.FINISHED);
+            taskCaseRecord.setStatus(TestingStatusEnum.FINISHED.getCode());
             taskCaseRecord.setEndTime(LocalDateTime.now());
             taskCaseRecordMapper.updateById(taskCaseRecord);
 

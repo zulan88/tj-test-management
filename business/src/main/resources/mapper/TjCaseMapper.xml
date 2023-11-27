@@ -25,6 +25,7 @@
         <result property="remark" column="remark" jdbcType="VARCHAR"/>
         <result property="updatedDate" column="updated_date" jdbcType="TIMESTAMP"/>
         <collection property="partConfigs" ofType="net.wanji.business.entity.TjCasePartConfig" select="selectCasesConfig" column="id" />
+        <collection property="caseRealRecords" ofType="net.wanji.business.entity.TjCaseRealRecord" select="selectCasesRecord" column="id" />
     </resultMap>
 
     <resultMap id="PartConfigResult" type="net.wanji.business.entity.TjCasePartConfig">
@@ -35,6 +36,14 @@
         <result property="name" column="name" jdbcType="VARCHAR"/>
         <result property="model" column="model" jdbcType="INTEGER"/>
         <result property="deviceId" column="deviceId" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <resultMap id="CaseRealRecordResult" type="net.wanji.business.domain.vo.CaseRealRecordVo">
+        <id property="id" column="record_id" jdbcType="INTEGER"/>
+        <result property="caseId" column="case_id" jdbcType="INTEGER"/>
+        <result property="routeFile" column="route_file" jdbcType="VARCHAR"/>
+        <result property="status" column="status" jdbcType="INTEGER"/>
+        <result property="statusName" column="status_name" jdbcType="INTEGER"/>
     </resultMap>
 
     <select id="selectCases" resultMap="CasePageResult">
@@ -109,6 +118,22 @@
         from tj_case_part_config ps
         where ps.case_id = #{id}
 
+    </select>
+
+    <select id="selectCasesRecord" resultMap="CaseRealRecordResult">
+        select
+            pr.id as record_id,
+            pr.case_id,
+            pr.route_file,
+            pr.status,
+            case pr.status
+                when 0 then '未开始'
+                when 1 then '进行中'
+                when 2 then '已完成'
+                else '-'
+            end as status_name
+        from tj_case_real_record pr
+        where pr.case_id = #{id}
     </select>
 
     <select id="selectCountBySceneIds" resultType="java.lang.Integer">

@@ -241,46 +241,8 @@ public interface Constants {
     }
 
     /**
-     * 场景类型
+     * 实车试验记录状态
      */
-    class SceneType {
-        /**
-         * 仿真场景
-         */
-        public static final String SIMULATION = "simulation";
-        /**
-         * 自然驾驶场景
-         */
-        public static final String NATURAL_DRIVING = "naturalDriving";
-    }
-
-    /**
-     * 测试类型
-     */
-    class TestType {
-        /**
-         * 虚实融合测试
-         */
-        public static final String VRFT = "virtualRealFusion";
-        /**
-         * 虚实对比测试
-         */
-        public static final String VRCT = "virtualRealContrast";
-        /**
-         * 人在环路测试
-         */
-        public static final String MILT = "mainInLoop";
-        /**
-         * 平行推演测试
-         */
-        public static final String PDT = "parallelDeduction";
-        /**
-         * 三项映射测试
-         */
-        public static final String TTMT = "threeTermMapping";
-    }
-
-
     class TestingStatus {
         /**
          * 未开始
@@ -318,6 +280,44 @@ public interface Constants {
         public static final int FINISHED = 6;
     }
 
+
+    /**
+     * 任务状态
+     */
+    enum TestingStatusEnum {
+        NOT_START(0, "未开始"),
+        RUNNING(1, "进行中"),
+        FINISHED(2, "已完成");
+
+        private Integer code;
+
+        private String value;
+
+        TestingStatusEnum(Integer code, String value) {
+            this.code = code;
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public Integer getCode() {
+            return code;
+        }
+
+        public static String getValueByCode(Integer code) {
+            if (ObjectUtils.isEmpty(code)) {
+                return "-";
+            }
+            for (TestingStatusEnum testingStatusEnum : values()) {
+                if (testingStatusEnum.getCode().equals(code)) {
+                    return testingStatusEnum.getValue();
+                }
+            }
+            return "-";
+        }
+    }
 
     /**
      * 任务状态

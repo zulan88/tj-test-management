@@ -10,7 +10,7 @@ import net.wanji.business.common.Constants.PartRole;
 import net.wanji.business.common.Constants.PartType;
 import net.wanji.business.common.Constants.PlaybackAction;
 import net.wanji.business.common.Constants.PointTypeEnum;
-import net.wanji.business.common.Constants.TestingStatus;
+import net.wanji.business.common.Constants.TestingStatusEnum;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.Label;
 import net.wanji.business.domain.bo.CaseConfigBo;
@@ -330,7 +330,7 @@ public class TestingServiceImpl implements TestingService {
         TjCaseRealRecord tjCaseRealRecord = new TjCaseRealRecord();
         tjCaseRealRecord.setCaseId(caseId);
         tjCaseRealRecord.setDetailInfo(JSONObject.toJSONString(caseTrajectoryDetailBo));
-        tjCaseRealRecord.setStatus(TestingStatus.NOT_START);
+        tjCaseRealRecord.setStatus(TestingStatusEnum.NOT_START.getCode());
         caseRealRecordMapper.insert(tjCaseRealRecord);
         // 7.前端结果集
         CaseTestPrepareVo caseTestPrepareVo = new CaseTestPrepareVo();
@@ -351,10 +351,7 @@ public class TestingServiceImpl implements TestingService {
         validConfig(caseInfoBo);
         // 4.更新业务数据
         TjCaseRealRecord realRecord = caseInfoBo.getCaseRealRecord();
-//        if (ObjectUtils.isEmpty(realRecord) || realRecord.getStatus() > TestingStatus.NOT_START) {
-//            throw new BusinessException("未就绪");
-//        }
-        realRecord.setStatus(TestingStatus.RUNNING);
+        realRecord.setStatus(TestingStatusEnum.RUNNING.getCode());
         realRecord.setStartTime(LocalDateTime.now());
         caseRealRecordMapper.updateById(realRecord);
         // 5.开始监听所有数据通道
@@ -414,7 +411,7 @@ public class TestingServiceImpl implements TestingService {
         CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
         validConfig(caseInfoBo);
         TjCaseRealRecord realRecord = caseInfoBo.getCaseRealRecord();
-        if (ObjectUtils.isEmpty(realRecord) || realRecord.getStatus() > TestingStatus.NOT_START) {
+        if (ObjectUtils.isEmpty(realRecord) || realRecord.getStatus() > TestingStatusEnum.NOT_START.getCode()) {
             throw new BusinessException("未就绪");
         }
         CaseTrajectoryParam caseTrajectoryParam = new CaseTrajectoryParam();
@@ -492,7 +489,7 @@ public class TestingServiceImpl implements TestingService {
         if (ObjectUtils.isEmpty(caseRealRecord)) {
             throw new BusinessException("未查询到试验记录");
         }
-        if (TestingStatus.FINISHED > caseRealRecord.getStatus() || StringUtils.isEmpty(caseRealRecord.getRouteFile())) {
+        if (TestingStatusEnum.FINISHED.getCode() > caseRealRecord.getStatus() || StringUtils.isEmpty(caseRealRecord.getRouteFile())) {
             throw new BusinessException("无完整试验记录");
         }
         CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseRealRecord.getCaseId());
@@ -565,7 +562,7 @@ public class TestingServiceImpl implements TestingService {
         if (ObjectUtils.isEmpty(caseRealRecord) || ObjectUtils.isEmpty(caseRealRecord.getDetailInfo())) {
             throw new BusinessException("待试验");
         }
-        if (TestingStatus.FINISHED > caseRealRecord.getStatus()) {
+        if (TestingStatusEnum.FINISHED.getCode() > caseRealRecord.getStatus()) {
             return null;
         }
         CaseTrajectoryDetailBo caseTrajectoryDetailBo = JSONObject.parseObject(caseRealRecord.getDetailInfo(),

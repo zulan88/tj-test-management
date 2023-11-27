@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
+import net.wanji.business.entity.TjCaseRealRecord;
+
+import java.util.List;
 
 /**
  * @author: guanyuduo
@@ -23,6 +26,9 @@ public class CasePageVo extends CaseDetailVo {
 
     @ApiModelProperty("角色配置详情")
     private Object roleConfigDetail;
+
+    @ApiModelProperty("实车试验测试记录")
+    private List<TjCaseRealRecord> caseRealRecords;
 
     private boolean selected;
 }
