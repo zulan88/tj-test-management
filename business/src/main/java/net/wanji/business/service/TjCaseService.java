@@ -157,4 +157,11 @@ public interface TjCaseService extends IService<TjCase> {
      */
     List<PartConfigSelect> getConfigDetail(Integer caseId) throws BusinessException, InterruptedException, ExecutionException;
 
+    /**
+     * 删除实车测试记录
+     * @param recordId
+     * @return
+     * @throws BusinessException
+     */
+    boolean deleteRecord(Integer recordId) throws BusinessException;
 }

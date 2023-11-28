@@ -50,8 +50,6 @@ public interface TestingService {
 
     CaseTestStartVo hjktest(Integer caseId) throws BusinessException;
 
-    void stop(Integer caseId) throws BusinessException;
-
     void playback(Integer recordId, Integer action) throws BusinessException, IOException;
 
     /**
