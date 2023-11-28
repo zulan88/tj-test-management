@@ -469,19 +469,6 @@ public class TestingServiceImpl implements TestingService {
     }
 
     @Override
-    public void stop(Integer caseId) throws BusinessException {
-        CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
-        String commandChannel = caseInfoBo.getCaseConfigs().stream().filter(t -> PartRole.AV.equals(t.getParticipantRole())).findFirst().get().getCommandChannel();
-        if (!restService.sendRuleUrl(
-                new CaseRuleControl(System.currentTimeMillis(),
-                        String.valueOf(caseId), 0,
-                        generateDeviceConnRules(caseInfoBo),
-                        commandChannel, true))) {
-            throw new BusinessException("主控响应异常");
-        }
-    }
-
-    @Override
     public void playback(Integer recordId, Integer action) throws BusinessException, IOException {
         // 1.实车测试记录
         TjCaseRealRecord caseRealRecord = caseRealRecordMapper.selectById(recordId);

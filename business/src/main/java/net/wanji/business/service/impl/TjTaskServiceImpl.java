@@ -25,6 +25,7 @@ import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.TaskCaseStatusEnum;
 import net.wanji.business.common.Constants.TaskProcessNode;
 import net.wanji.business.common.Constants.TaskStatusEnum;
+import net.wanji.business.common.Constants.TestingStatusEnum;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
@@ -37,6 +38,7 @@ import net.wanji.business.domain.dto.TjDeviceDetailDto;
 import net.wanji.business.domain.dto.device.TaskSaveDto;
 import net.wanji.business.domain.vo.*;
 import net.wanji.business.entity.TjCase;
+import net.wanji.business.entity.TjCaseRealRecord;
 import net.wanji.business.entity.TjDeviceDetail;
 import net.wanji.business.entity.TjTask;
 import net.wanji.business.entity.TjTaskCase;
@@ -439,12 +441,16 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         param.setSelectedIds(CollectionUtils.emptyIfNull(taskCaseVos).stream().map(TaskCaseVo::getCaseId).collect(Collectors.toList()));
         param.setUserName(SecurityUtils.getUsername());
         List<CaseDetailVo> caseDetails = caseMapper.selectCases(param);
-        Map<Integer, CaseDetailVo> caseDetailMap = CollectionUtils.emptyIfNull(caseDetails).stream().collect(Collectors.toMap(CaseDetailVo::getId, Function.identity()));
+        Map<Integer, CasePageVo> caseDetailMap = CollectionUtils.emptyIfNull(caseDetails).stream().collect(Collectors.toMap(CaseDetailVo::getId, v -> {
+            CasePageVo casePageVo = new CasePageVo();
+            BeanUtils.copyBeanProp(casePageVo, v);
+            return casePageVo;
+        }));
         return CollectionUtils.emptyIfNull(taskCaseVos).stream().map(t -> {
             CaseContinuousVo caseContinuousVo = new CaseContinuousVo();
             BeanUtils.copyBeanProp(caseContinuousVo, t);
 
-            CaseDetailVo caseDetail = caseDetailMap.get(t.getCaseId());
+            CasePageVo caseDetail = caseDetailMap.get(t.getCaseId());
             // 场景分类
             if (ObjectUtil.isNotEmpty(caseDetail) && StringUtils.isNotEmpty(caseDetail.getLabel())) {
                 StringBuilder labelSort = new StringBuilder();
@@ -466,26 +472,32 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 caseContinuousVo.setSceneSort(labelSort.toString());
             }
             // 主车轨迹
-            List<List<TrajectoryValueDto>> mainSimulations = null;
-            try {
-                mainSimulations = routeService.readTrajectoryFromRouteFile(caseDetail.getRouteFile(), "1");
-                List<Map<String, Double>> mainSimuTrajectories = mainSimulations.stream()
-                        .map(item -> item.get(0)).map(n -> {
-                            Map<String, Double> map = new HashMap<>();
-                            map.put("longitude", n.getLongitude());
-                            map.put("latitude", n.getLatitude());
-                            map.put("courseAngle", n.getCourseAngle());
-                            return map;
-                        }).collect(Collectors.toList());
-                caseContinuousVo.setMainTrajectory(mainSimuTrajectories);
-                caseContinuousVo.setStartPoint(mainSimuTrajectories.get(0));
-                caseContinuousVo.setEndPoint(mainSimuTrajectories.get(mainSimuTrajectories.size() - 1));
-            } catch (IOException e) {
-                log.error(StringUtils.format("读取{}路线文件失败:{}", caseContinuousVo.getCaseNumber(), e));
-            } catch (IndexOutOfBoundsException e1) {
-                log.error(StringUtils.format("{}主车轨迹信息异常，请检查{}", caseContinuousVo.getCaseNumber(),
-                        caseDetail.getRouteFile()));
-            }
+            CollectionUtils.emptyIfNull(caseDetail.getCaseRealRecords()).stream()
+                    .filter(p -> TestingStatusEnum.FINISHED.getCode().equals(p.getStatus()))
+                    .max(Comparator.comparing(TjCaseRealRecord::getEndTime))
+                    .ifPresent(p -> {
+                        try {
+                            List<List<TrajectoryValueDto>> mainSimulations =
+                                    routeService.readTrajectoryFromRouteFile(p.getRouteFile(), "1");
+                            List<Map<String, Double>> mainSimuTrajectories = mainSimulations.stream()
+                                    .map(item -> item.get(0)).map(n -> {
+                                        Map<String, Double> map = new HashMap<>();
+                                        map.put("longitude", n.getLongitude());
+                                        map.put("latitude", n.getLatitude());
+                                        map.put("courseAngle", n.getCourseAngle());
+                                        return map;
+                                    }).collect(Collectors.toList());
+                            caseContinuousVo.setMainTrajectory(mainSimuTrajectories);
+                            caseContinuousVo.setStartPoint(mainSimuTrajectories.get(0));
+                            caseContinuousVo.setEndPoint(mainSimuTrajectories.get(mainSimuTrajectories.size() - 1));
+                        } catch (IOException e) {
+                            log.error(StringUtils.format("读取{}路线文件失败:{}", caseContinuousVo.getCaseNumber(), e));
+                        } catch (IndexOutOfBoundsException e1) {
+                            log.error(StringUtils.format("{}主车轨迹信息异常，请检查{}", caseContinuousVo.getCaseNumber(),
+                                    caseDetail.getRouteFile()));
+                        }
+                    });
+
             // 连接轨迹
             List<Map> trajectoryBos = JSONObject.parseArray(t.getConnectInfo(), Map.class);
             caseContinuousVo.setConnectInfo(trajectoryBos);

@@ -16,4 +16,7 @@ public class CaseRealRecordVo extends TjCaseRealRecord {
 
     @ApiModelProperty("记录状态名称")
     private String statusName;
+
+    @ApiModelProperty("秒数")
+    private int seconds;
 }

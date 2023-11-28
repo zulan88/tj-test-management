@@ -221,4 +221,12 @@ public class CaseController extends BaseController {
         caseService.playback(id, vehicleId, action);
         return AjaxResult.success();
     }
+
+    @ApiOperationSort(7)
+    @ApiOperation(value = "删除任务记录")
+    @GetMapping("/deleteRecord")
+    @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499")
+    public AjaxResult deleteRecord(Integer recordId) throws BusinessException {
+        return  caseService.deleteRecord(recordId) ? AjaxResult.success("删除成功") : AjaxResult.error("删除失败");
+    }
 }

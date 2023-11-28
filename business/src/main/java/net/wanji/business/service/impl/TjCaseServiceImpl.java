@@ -37,6 +37,7 @@ import net.wanji.business.schedule.SceneLabelMap;
 import net.wanji.business.service.ILabelsService;
 import net.wanji.business.service.RouteService;
 import net.wanji.business.service.TjCasePartConfigService;
+import net.wanji.business.service.TjCaseRealRecordService;
 import net.wanji.business.service.TjCaseService;
 import net.wanji.business.service.TjDeviceDetailService;
 import net.wanji.business.service.TjFragmentedSceneDetailService;
@@ -103,6 +104,9 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
 
     @Autowired
     private ILabelsService labelsService;
+
+    @Autowired
+    private TjCaseRealRecordService caseRealRecordService;
 
     @Autowired
     private TjCaseMapper caseMapper;
@@ -636,6 +640,11 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
             throw new BusinessException("未查询到对应的测试用例");
         }
         return this.getConfigSelect(caseId, JSONObject.parseObject(tjCase.getDetailInfo(), CaseTrajectoryDetailBo.class), true);
+    }
+
+    @Override
+    public boolean deleteRecord(Integer recordId) throws BusinessException {
+        return caseRealRecordService.removeById(recordId);
     }
 
 
