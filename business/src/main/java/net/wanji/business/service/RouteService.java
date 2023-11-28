@@ -231,9 +231,12 @@ public class RouteService {
             ParticipantTrajectoryVo participantTrajectoryVo = new ParticipantTrajectoryVo();
             participantTrajectoryVo.setId(trajectoryBo.getId());
             for (TrajectoryDetailBo trajectoryDetailBo : trajectoryBo.getTrajectory()) {
-                Long restime = 0l;
+                Double restime = 0D;
                 if(trajectoryDetailBo.getDate()!=null) {
-                    restime = (dateFormat.parse(trajectoryDetailBo.getDate()).getTime() - time) / 1000;
+                    restime = (dateFormat.parse(trajectoryDetailBo.getDate()).getTime() - time) / 1000D;
+                    if (restime<0.9){
+                        restime = 0D;
+                    }
                 }
                 TrajectoryDetailVo trajectoryDetailVo = new TrajectoryDetailVo(trajectoryDetailBo.getFrameId(), trajectoryDetailBo.isPass(), trajectoryDetailBo.getSpeed(), String.valueOf(restime));
                 participantTrajectoryVo.addtrajectory(trajectoryDetailVo);

@@ -553,10 +553,11 @@ public class RestServiceImpl implements RestService {
     }
 
     @Override
-    public void downloadTestReport(HttpServletResponse response) {
+    public void downloadTestReport(HttpServletResponse response, int taskId) {
         try {
+            String url = downloadTestReportUrl + "/" + taskId;
             // 发送HTTP GET请求获取文件字节数组
-            ResponseEntity<byte[]> responseEntity = restTemplate.exchange(downloadTestReportUrl, HttpMethod.GET, null, byte[].class);
+            ResponseEntity<byte[]> responseEntity = restTemplate.exchange(url, HttpMethod.GET, null, byte[].class);
             if(CollectionUtils.isEmpty(responseEntity.getHeaders().get(HttpHeaders.CONTENT_DISPOSITION))){
                return;
             }

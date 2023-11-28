@@ -105,7 +105,7 @@ public class CommonController {
 
     @ApiOperation("上传")
     @PostMapping("/uploadZips")
-    public AjaxResult uploadZipFile(@RequestParam("files") List<MultipartFile> files, @RequestParam("character") String character) throws Exception {
+    public AjaxResult uploadZipFile(@RequestParam("files") List<MultipartFile> files) throws Exception {
         try {
             // 上传文件路径
             String filePath = WanjiConfig.getUploadPath();

@@ -137,5 +137,5 @@ public interface RestService {
      * @author liruitao
      * @date 2023-11-22
      */
-    void downloadTestReport(HttpServletResponse response);
+    void downloadTestReport(HttpServletResponse response, int taskId);
 }
