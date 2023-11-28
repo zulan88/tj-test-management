@@ -233,8 +233,8 @@ public class TaskController extends BaseController {
     @ApiOperationSort(13)
     @ApiOperation(value = "13.下载测试报告")
     @GetMapping("/downloadTestReport")
-    public AjaxResult downloadTestReport(HttpServletResponse response) throws BusinessException {
-        restService.downloadTestReport(response);
+    public AjaxResult downloadTestReport(HttpServletResponse response, int taskId) throws BusinessException {
+        restService.downloadTestReport(response, taskId);
         return AjaxResult.success();
     }
 
