@@ -585,7 +585,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         validConfig(taskCaseInfoBo);
         // 4.更新业务数据
         ssCaseResultUpdate(action, taskCaseRecord, taskCase);
-        // 5.开始监听所有数据通道
+        // 5.记录redis中正在运行的用例
         if (1 == action) {
             taskRedisTrajectoryConsumer.updateRunningCase(String.valueOf(context.get("key")), caseId);
         } else {

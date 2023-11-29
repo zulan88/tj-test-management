@@ -249,25 +249,6 @@ public interface Constants {
         public static final String OBSTACLE = "obstacle";
     }
 
-    /**
-     * 实车试验记录状态
-     */
-    class TestingStatus {
-        /**
-         * 未开始
-         */
-        public static final Integer NOT_START = 0;
-        /**
-         * 进行中
-         */
-        public static final Integer RUNNING = 1;
-        /**
-         * 已完成
-         */
-        public static final Integer FINISHED = 2;
-    }
-
-
     class Extension {
         public static final String TXT = "txt";
     }
@@ -291,10 +272,10 @@ public interface Constants {
 
 
     /**
-     * 任务状态
+     * 实车试验记录状态
      */
     enum TestingStatusEnum {
-        NOT_START(0, "未开始"),
+        NOT_START(0, "就绪"),
         RUNNING(1, "进行中"),
         FINISHED(2, "已完成");
 
@@ -388,7 +369,7 @@ public interface Constants {
     }
 
     /**
-     * 任务状态
+     * 任务用例测试状态
      */
     enum TaskCaseStatusEnum {
         WAITING("waiting", "待测试"),

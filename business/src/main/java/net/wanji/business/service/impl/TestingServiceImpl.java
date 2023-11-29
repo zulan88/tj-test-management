@@ -126,9 +126,6 @@ public class TestingServiceImpl implements TestingService {
         CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
         // 2.数据校验
         validConfig(caseInfoBo);
-        // 3.轨迹详情
-        CaseTrajectoryDetailBo trajectoryDetail = JSONObject.parseObject(caseInfoBo.getDetailInfo(),
-                CaseTrajectoryDetailBo.class);
         // 5.重复设备过滤
         List<CaseConfigBo> caseConfigs = caseInfoBo.getCaseConfigs().stream().filter(info ->
                 !ObjectUtils.isEmpty(info.getDeviceId())).collect(Collectors.collectingAndThen(
@@ -469,6 +466,19 @@ public class TestingServiceImpl implements TestingService {
         startVo.setTestTypeName(caseInfoBo.getTestScene());
         startVo.setCaseId(caseId);
         return startVo;
+    }
+
+    @Override
+    public void stop(Integer caseId) throws BusinessException {
+        CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
+        String commandChannel = caseInfoBo.getCaseConfigs().stream().filter(t -> PartRole.AV.equals(t.getParticipantRole())).findFirst().get().getCommandChannel();
+        if (!restService.sendRuleUrl(
+                new CaseRuleControl(System.currentTimeMillis(),
+                        String.valueOf(caseId), 0,
+                        generateDeviceConnRules(caseInfoBo),
+                        commandChannel, true))) {
+            throw new BusinessException("主控响应异常");
+        }
     }
 
     @Override
