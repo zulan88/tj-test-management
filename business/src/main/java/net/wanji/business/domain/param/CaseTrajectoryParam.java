@@ -14,6 +14,7 @@ import java.util.Map;
 public class CaseTrajectoryParam {
 
     private Integer taskId;
+    private Integer caseId;
 
     private Map<String, String> vehicleIdTypeMap;
 

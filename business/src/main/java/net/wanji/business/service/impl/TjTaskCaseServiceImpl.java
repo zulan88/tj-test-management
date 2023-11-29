@@ -500,6 +500,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             throw new BusinessException("任务数据配置异常");
         }
         caseTrajectoryParam.setTaskId(taskId);
+        caseTrajectoryParam.setCaseId(taskCaseId);
 
         List<CaseSSInfo> caseSSInfos = new ArrayList<>();
         List<ParticipantTrajectoryBo> mainPoints = new ArrayList<>();
