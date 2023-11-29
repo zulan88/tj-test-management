@@ -137,7 +137,7 @@
                    end as status_name,
                pr.start_time,
                pr.end_time,
-               TIME_TO_SEC(TIMEDIFF(end_time, start_time)) AS seconds
+               IFNULL(TIME_TO_SEC(TIMEDIFF(end_time, start_time)), 0) AS seconds
         from tj_case_real_record pr
         where pr.case_id = #{id}
     </select>
