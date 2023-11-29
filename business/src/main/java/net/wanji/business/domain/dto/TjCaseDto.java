@@ -40,4 +40,6 @@ public class TjCaseDto {
 
     @NotEmpty(message = "请选择至少一条数据", groups = {BatchGroup.class})
     private List<Integer> ids;
+
+    private String remark;
 }

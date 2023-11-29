@@ -6,12 +6,14 @@ import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiOperationSort;
+import net.wanji.business.common.Constants;
 import net.wanji.business.common.Constants.InsertGroup;
 import net.wanji.business.common.Constants.UpdateGroup;
 import net.wanji.business.domain.PartConfigSelect;
 import net.wanji.business.domain.dto.CaseQueryDto;
 import net.wanji.business.domain.dto.CaseTreeDto;
 import net.wanji.business.domain.dto.TjCaseDto;
+import net.wanji.business.domain.vo.RoleVo;
 import net.wanji.business.domain.vo.SceneDetailVo;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.TjCasePartConfigService;
@@ -23,6 +25,7 @@ import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
 import net.wanji.common.utils.SecurityUtils;
 import org.apache.commons.collections4.CollectionUtils;
+import org.checkerframework.checker.units.qual.C;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.ObjectUtils;
 import org.springframework.validation.annotation.Validated;
@@ -34,6 +37,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -228,5 +232,38 @@ public class CaseController extends BaseController {
     @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499")
     public AjaxResult deleteRecord(Integer recordId) throws BusinessException {
         return  caseService.deleteRecord(recordId) ? AjaxResult.success("删除成功") : AjaxResult.error("删除失败");
+    }
+
+    @GetMapping("/getroledict")
+    public AjaxResult getRoleDict(String type) {
+        List<RoleVo> roleList = new ArrayList<>();
+        if(type.equals(Constants.PartType.MAIN)) {
+            roleList.add(new RoleVo("AV车", Constants.PartRole.AV));
+        }else if(type.equals(Constants.PartType.SLAVE)) {
+            roleList.add(new RoleVo("MV-远程驾驶车", Constants.PartRole.MV_REAL));
+            roleList.add(new RoleVo("MV-虚拟驾驶车", Constants.PartRole.MV_VIRTUAL));
+            roleList.add(new RoleVo("SV-仿真车", Constants.PartRole.MV_SIMULATION));
+        }else if(type.equals(Constants.PartType.PEDESTRIAN)) {
+            roleList.add(new RoleVo("SP-行人", Constants.PartRole.SP));
+            roleList.add(new RoleVo("CAVE-行人", Constants.PartRole.CAVE));
+        }else {
+            roleList.add(new RoleVo("AV车", Constants.PartRole.AV));
+            roleList.add(new RoleVo("MV-远程驾驶车", Constants.PartRole.MV_REAL));
+            roleList.add(new RoleVo("MV-虚拟驾驶车", Constants.PartRole.MV_VIRTUAL));
+            roleList.add(new RoleVo("SV-仿真车", Constants.PartRole.MV_SIMULATION));
+            roleList.add(new RoleVo("SP-行人", Constants.PartRole.SP));
+            roleList.add(new RoleVo("CAVE-行人", Constants.PartRole.CAVE));
+        }
+        return AjaxResult.success(roleList);
+    }
+
+    @GetMapping("/initEditNew")
+    public AjaxResult initEditNew(Integer caseId) throws BusinessException {
+        return AjaxResult.success(caseService.initEditNew(caseId));
+    }
+
+    @GetMapping("/configDetailNew")
+    public AjaxResult configDetailNew(@RequestParam("id") Integer id) throws BusinessException {
+        return AjaxResult.success(caseService.getConfigDetailNew(id));
     }
 }

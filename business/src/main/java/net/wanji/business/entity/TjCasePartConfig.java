@@ -76,4 +76,7 @@ public class TjCasePartConfig implements Serializable {
      */
     @TableField("device_id")
     private Integer deviceId;
+
+    @TableField("frist_site")
+    private String fristSite;
 }

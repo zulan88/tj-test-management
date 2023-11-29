@@ -204,17 +204,26 @@ public interface Constants {
          */
         public static final String AV = "av";
         /**
-         * MV-实车
+         * MV-远程驾驶车
          */
         public static final String MV_REAL = "mvReal";
         /**
-         * MV-仿真车
+         * MV-虚拟驾驶车
+         */
+        public static final String MV_VIRTUAL = "mvVirtual";
+        /**
+         * SV-仿真车
          */
         public static final String MV_SIMULATION = "mvSimulation";
         /**
-         * 行人
+         * SP-行人
          */
         public static final String SP = "sp";
+
+        /**
+         * CAVE-行人
+         */
+        public static final String CAVE = "cave";
     }
 
 

@@ -10,6 +10,7 @@ import net.wanji.business.domain.dto.TjCaseDto;
 import net.wanji.business.domain.vo.CaseDetailVo;
 import net.wanji.business.domain.vo.CasePageVo;
 import net.wanji.business.domain.vo.CaseVerificationVo;
+import net.wanji.business.domain.vo.TjCasePartRoleVo;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.common.core.domain.SimpleSelect;
@@ -42,6 +43,13 @@ public interface TjCaseService extends IService<TjCase> {
      * @return
      */
     Map<String, List<PartConfigSelect>> initEdit(Integer caseId);
+
+    /**
+     * 测试用例编辑页新UI初始化
+     *
+     * @return
+     */
+    List<TjCasePartRoleVo> initEditNew(Integer caseId) throws BusinessException;
 
     /**
      * 分页列表
@@ -156,6 +164,8 @@ public interface TjCaseService extends IService<TjCase> {
      * @throws BusinessException
      */
     List<PartConfigSelect> getConfigDetail(Integer caseId) throws BusinessException, InterruptedException, ExecutionException;
+
+    List<TjCasePartRoleVo> getConfigDetailNew(Integer caseId) throws BusinessException;
 
     /**
      * 删除实车测试记录

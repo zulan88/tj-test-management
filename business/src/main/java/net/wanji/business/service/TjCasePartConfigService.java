@@ -27,6 +27,8 @@ public interface TjCasePartConfigService extends IService<TjCasePartConfig> {
      */
     Map<String, List<CasePartConfigVo>> getConfigInfo(Integer caseId) throws BusinessException;
 
+    List<CasePartConfigVo> getConfigInfoByCaseId(Integer caseId) throws BusinessException;
+
     /**
      * 场景参与者信息转换为配置信息
      *
@@ -52,5 +54,7 @@ public interface TjCasePartConfigService extends IService<TjCasePartConfig> {
      * @throws BusinessException
      */
     boolean removeThenSave(Integer caseId,  List<TjCasePartConfig> configs) throws BusinessException;
+
+    boolean saveAndupdate(Integer caseId,  List<TjCasePartConfig> configs) throws BusinessException;
 
 }

@@ -19,11 +19,7 @@ import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.dto.CaseQueryDto;
 import net.wanji.business.domain.dto.TjCaseDto;
-import net.wanji.business.domain.vo.CaseDetailVo;
-import net.wanji.business.domain.vo.CasePageVo;
-import net.wanji.business.domain.vo.CasePartConfigVo;
-import net.wanji.business.domain.vo.CaseVerificationVo;
-import net.wanji.business.domain.vo.DeviceDetailVo;
+import net.wanji.business.domain.vo.*;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjCasePartConfig;
 import net.wanji.business.entity.TjDeviceDetail;
@@ -69,6 +65,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 /**
@@ -145,6 +142,37 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
         }
         result.put(SysType.PART_ROLE, caseDetailVo.getPartConfigSelects());
         return result;
+    }
+
+    @Override
+    public List<TjCasePartRoleVo> initEditNew(Integer caseId) throws BusinessException {
+        List<TjCasePartRoleVo> roleVos = new ArrayList<>();
+        List<CasePartConfigVo> casePartConfigVos = casePartConfigService.getConfigInfoByCaseId(caseId);
+        TjCasePartRoleVo main = new TjCasePartRoleVo();
+        main.setType("main");
+        TjCasePartRoleVo slave = new TjCasePartRoleVo();
+        slave.setType("slave");
+        TjCasePartRoleVo pedestrian = new TjCasePartRoleVo();
+        pedestrian.setType("pedestrian");
+        if (CollectionUtils.isNotEmpty(casePartConfigVos)) {
+            for (CasePartConfigVo casePartConfigVo : casePartConfigVos) {
+                switch (casePartConfigVo.getBusinessType()) {
+                    case "main":
+                        main.getCasePartConfigs().add(casePartConfigVo);
+                        break;
+                    case "slave":
+                        slave.getCasePartConfigs().add(casePartConfigVo);
+                        break;
+                    case "pedestrian":
+                        pedestrian.getCasePartConfigs().add(casePartConfigVo);
+                        break;
+                }
+            }
+        }
+        roleVos.add(main);
+        roleVos.add(slave);
+        roleVos.add(pedestrian);
+        return roleVos;
     }
 
     @Override
@@ -416,7 +444,7 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
             if (ObjectUtils.isEmpty(sceneDetail)) {
                 throw new BusinessException("创建失败：场景不存在");
             }
-
+            SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(sceneDetail.getTrajectoryInfo(), SceneTrajectoryBo.class);
             if (StringUtils.isEmpty(sceneDetail.getTrajectoryInfo())) {
                 throw new BusinessException("创建失败：未获取到场景点位配置");
             }
@@ -445,36 +473,52 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
                 }
             }
             tjCase.setTestScene(labelshows.toString());
+            List<ParticipantTrajectoryBo> participantTrajectories = sceneTrajectoryBo.getParticipantTrajectories();
+            List<TjCasePartConfig> result = CollectionUtils.emptyIfNull(participantTrajectories).stream().map(part -> {
+                TjCasePartConfig config = new CasePartConfigVo();
+                config.setBusinessId(part.getId());
+                config.setBusinessType(part.getType());
+                config.setName(part.getName());
+                config.setModel(part.getModel());
+                config.setFristSite(part.getTrajectory().get(0).getLongitude()+","+part.getTrajectory().get(0).getLatitude());
+                return config;
+            }).collect(Collectors.toList());
+            tjCase.setUpdatedDate(LocalDateTime.now());
+            tjCase.setUpdatedBy(SecurityUtils.getUsername());
+            this.saveOrUpdate(tjCase);
+            casePartConfigService.saveAndupdate(tjCase.getId(), result);
+            return true;
         } else {
             tjCase = this.getById(tjCaseDto.getId());
             tjCase.setTestTarget(tjCaseDto.getTestTarget());
+            tjCase.setRemark(tjCaseDto.getRemark());
             List<TjCasePartConfig> configs = new ArrayList<>();
             for (PartConfigSelect partConfigSelect : tjCaseDto.getPartConfigSelects()) {
                 for (int i = 0; i < CollectionUtils.emptyIfNull(partConfigSelect.getParts()).size(); i++) {
                     CasePartConfigVo part = partConfigSelect.getParts().get(i);
-                    if (!PartType.MAIN.equals(part.getBusinessType()) && !part.isSelected()) {
-                        continue;
-                    }
+//                    if (!PartType.MAIN.equals(part.getBusinessType()) && !part.isSelected()) {
+//                        continue;
+//                    }
                     TjCasePartConfig config = new TjCasePartConfig();
                     BeanUtils.copyBeanProp(config, part);
-                    config.setCaseId(tjCase.getId());
-                    config.setParticipantRole(partConfigSelect.getDictValue());
-                    config.setName(part.getName());
-                    config.setModel(part.getModel());
+//                    config.setCaseId(tjCase.getId());
+//                    config.setParticipantRole(part.getParticipantRole());
+//                    config.setName(part.getName());
+//                    config.setModel(part.getModel());
                     configs.add(config);
                 }
             }
-            boolean saveConfig = casePartConfigService.removeThenSave(tjCaseDto.getId(), configs);
+            boolean saveConfig = casePartConfigService.saveAndupdate(tjCaseDto.getId(), configs);
             if (!saveConfig) {
                 throw new BusinessException("保存配置失败");
             }
             if (tjCase.getStatus().equals(CaseStatusEnum.WAIT_CONFIG.getCode())) {
                 tjCase.setStatus(CaseStatusEnum.WAIT_TEST.getCode());
             }
+            tjCase.setUpdatedDate(LocalDateTime.now());
+            tjCase.setUpdatedBy(SecurityUtils.getUsername());
+            return this.saveOrUpdate(tjCase);
         }
-        tjCase.setUpdatedDate(LocalDateTime.now());
-        tjCase.setUpdatedBy(SecurityUtils.getUsername());
-        return this.saveOrUpdate(tjCase);
     }
 
     @Override
@@ -640,6 +684,34 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
             throw new BusinessException("未查询到对应的测试用例");
         }
         return this.getConfigSelect(caseId, JSONObject.parseObject(tjCase.getDetailInfo(), CaseTrajectoryDetailBo.class), true);
+    }
+
+    @Override
+    public List<TjCasePartRoleVo> getConfigDetailNew(Integer caseId) throws BusinessException {
+        TjCase tjCase = this.getById(caseId);
+        if (ObjectUtils.isEmpty(tjCase)) {
+            throw new BusinessException("未查询到对应的测试用例");
+        }
+        List<DeviceDetailVo> deviceDetails = deviceDetailService.list().stream().map(device -> {
+            DeviceDetailVo detailVo = new DeviceDetailVo();
+            BeanUtils.copyBeanProp(detailVo, device);
+            return detailVo;
+        }).collect(Collectors.toList());
+        Map<String, List<DeviceDetailVo>> devicesMap = deviceDetails.stream().collect(Collectors.groupingBy(DeviceDetailVo::getSupportRoles));
+        Map<String, List<CasePartConfigVo>> casePartConfigVoMap = casePartConfigService.getConfigInfoByCaseId(caseId).stream().collect(Collectors.groupingBy(CasePartConfigVo::getParticipantRole));
+        List<TjCasePartRoleVo> roleVos = new ArrayList<>();
+        casePartConfigVoMap.remove("mvSimulation");
+        casePartConfigVoMap.remove("sp");
+        for (Entry<String, List<CasePartConfigVo>> entry:casePartConfigVoMap.entrySet()){
+            TjCasePartRoleVo tjCasePartRoleVo = new TjCasePartRoleVo();
+            tjCasePartRoleVo.setType(entry.getKey());
+            for (CasePartConfigVo casePartConfigVo:entry.getValue()){
+                casePartConfigVo.setDevices(devicesMap.get(entry.getKey()));
+                tjCasePartRoleVo.getCasePartConfigs().add(casePartConfigVo);
+            }
+            roleVos.add(tjCasePartRoleVo);
+        }
+        return roleVos;
     }
 
     @Override

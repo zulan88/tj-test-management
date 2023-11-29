@@ -2,6 +2,7 @@ package net.wanji.business.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import net.wanji.business.common.Constants;
 import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.ModelEnum;
 import net.wanji.business.common.Constants.SysType;
@@ -79,6 +80,19 @@ public class TjCasePartConfigServiceImpl extends ServiceImpl<TjCasePartConfigMap
     }
 
     @Override
+    public List<CasePartConfigVo> getConfigInfoByCaseId(Integer caseId) throws BusinessException {
+        QueryWrapper<TjCasePartConfig> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq(ColumnName.CASE_ID_COLUMN, caseId);
+        List<TjCasePartConfig> configs = this.list(queryWrapper);
+        List<CasePartConfigVo> casePartConfigVos = configs.stream().map(item -> {
+            CasePartConfigVo casePartConfigVo = new CasePartConfigVo();
+            BeanUtils.copyProperties(item, casePartConfigVo);
+            return casePartConfigVo;
+        }).collect(Collectors.toList());
+        return casePartConfigVos;
+    }
+
+    @Override
     public Map<String, List<CasePartConfigVo>> trajectory2Config(SceneTrajectoryBo sceneTrajectoryBo) {
         if (ObjectUtils.isEmpty(sceneTrajectoryBo)) {
             return new HashMap<>();
@@ -129,4 +143,35 @@ public class TjCasePartConfigServiceImpl extends ServiceImpl<TjCasePartConfigMap
         return true;
     }
 
+    @Override
+    public boolean saveAndupdate(Integer caseId, List<TjCasePartConfig> configs) throws BusinessException {
+        if (ObjectUtils.isEmpty(caseId) || CollectionUtils.isEmpty(configs)) {
+            return false;
+        }
+        for (TjCasePartConfig config : configs) {
+            if(config.getCaseId() == null) {
+                config.setCaseId(caseId);
+            }
+            if(config.getId()==null && config.getParticipantRole() == null) {
+                switch (config.getBusinessType()) {
+                    case Constants.PartType.MAIN:
+                        config.setParticipantRole(Constants.PartRole.AV);
+                        break;
+                    case Constants.PartType.SLAVE:
+                        config.setParticipantRole(Constants.PartRole.MV_SIMULATION);
+                        break;
+                    case Constants.PartType.PEDESTRIAN:
+                        config.setParticipantRole(Constants.PartRole.SP);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+        boolean saveBatch = this.saveOrUpdateBatch(configs);
+        if (!saveBatch) {
+            throw new BusinessException("保存角色配置失败");
+        }
+        return true;
+    }
 }
