@@ -121,7 +121,6 @@
                ps.device_id
         from tj_case_part_config ps
         where ps.case_id = #{id}
-
     </select>
 
     <select id="selectCasesRecord" resultMap="CaseRealRecordResult">
@@ -238,7 +237,7 @@
                sd.test_scene_desc,
                sd.label,
                sd.all_stage_label,
-               pc.id          AS config_id,
+               pc.id AS config_id,
                pc.case_id,
                pc.participant_role,
                pc.business_id,
