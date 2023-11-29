@@ -32,7 +32,7 @@ public class TjCaseDto {
     @NotNull(message = "请选择场景", groups = {InsertGroup.class})
     private Integer sceneDetailId;
 
-    @NotBlank(message = "请输入测试说明", groups = {UpdateGroup.class})
+//    @NotBlank(message = "请输入测试说明", groups = {UpdateGroup.class})
     private String testTarget;
 
     @NotNull(message = "请配置角色", groups = {UpdateGroup.class})

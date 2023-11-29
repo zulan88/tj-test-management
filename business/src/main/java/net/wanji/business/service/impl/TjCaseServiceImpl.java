@@ -65,7 +65,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 /**
@@ -490,7 +489,9 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
             return true;
         } else {
             tjCase = this.getById(tjCaseDto.getId());
-            tjCase.setTestTarget(tjCaseDto.getTestTarget());
+            if(!tjCaseDto.getTestTarget().isEmpty()) {
+                tjCase.setTestTarget(tjCaseDto.getTestTarget());
+            }
             tjCase.setRemark(tjCaseDto.getRemark());
             List<TjCasePartConfig> configs = new ArrayList<>();
             for (PartConfigSelect partConfigSelect : tjCaseDto.getPartConfigSelects()) {
