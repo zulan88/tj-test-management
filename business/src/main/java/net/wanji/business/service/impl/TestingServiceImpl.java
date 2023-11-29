@@ -416,6 +416,7 @@ public class TestingServiceImpl implements TestingService {
         }
         CaseTrajectoryParam caseTrajectoryParam = new CaseTrajectoryParam();
         caseTrajectoryParam.setTaskId(0);
+        caseTrajectoryParam.setCaseId(caseId);
         SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(realRecord.getDetailInfo(),
                 SceneTrajectoryBo.class);
 
