@@ -159,6 +159,9 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             throw new BusinessException("查询失败，请检查任务是否存在");
         }
 
+        // 先停止
+        stop(param.getTaskId(), param.getId());
+
         List<TaskCaseConfigBo> taskCaseConfigs = taskCaseInfos.stream().flatMap(t -> t.getDataConfigs().stream()).filter(distinctByKey(TaskCaseConfigBo::getDeviceId)).collect(Collectors.toList());
         Map<Integer, Map<String, String>> caseBusinessIdAndRoleMap = new HashMap<>();
         Map<Integer, Integer> caseMainSize = new HashMap<>();

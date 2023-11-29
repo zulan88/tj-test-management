@@ -44,6 +44,8 @@
         <result property="routeFile" column="route_file" jdbcType="VARCHAR"/>
         <result property="status" column="status" jdbcType="INTEGER"/>
         <result property="statusName" column="status_name" jdbcType="INTEGER"/>
+        <result property="startTime" column="start_time" jdbcType="TIMESTAMP"/>
+        <result property="endTime" column="end_time" jdbcType="TIMESTAMP"/>
     </resultMap>
 
     <select id="selectCases" resultMap="CasePageResult">
@@ -131,7 +133,9 @@
                 when 1 then '进行中'
                 when 2 then '已完成'
                 else '-'
-            end as status_name
+            end as status_name,
+            pr.start_time,
+            pr.end_time
         from tj_case_real_record pr
         where pr.case_id = #{id}
     </select>

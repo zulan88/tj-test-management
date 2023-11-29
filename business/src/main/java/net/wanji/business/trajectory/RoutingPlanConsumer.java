@@ -57,8 +57,6 @@ public class RoutingPlanConsumer {
 
     private final RedisMessageListenerContainer redisMessageListenerContainer;
 
-    public static String ROUTING_CHANNEL = "ROUTINGResult";
-
     public RoutingPlanConsumer(RedisMessageListenerContainer redisMessageListenerContainer) {
         this.redisMessageListenerContainer = redisMessageListenerContainer;
     }
@@ -102,7 +100,7 @@ public class RoutingPlanConsumer {
             return;
         }
         MessageListener listener = createListener(routingChannel, wsChannel, taskId, taskCode);
-        this.runningChannel.put(wsChannel, new ChannelListener(wsChannel, SecurityUtils.getUsername(),
+        this.runningChannel.put(wsChannel, new ChannelListener(routingChannel, wsChannel, SecurityUtils.getUsername(),
                 System.currentTimeMillis(), listener));
         redisMessageListenerContainer.addMessageListener(listener, new ChannelTopic(routingChannel));
         log.info("添加监听器成功:{}", wsChannel);
@@ -262,7 +260,7 @@ public class RoutingPlanConsumer {
                 ChannelListener<SimulationTrajectoryDto> channelListener = entry.getValue();
                 if (channelListener.isExpire()) {
                     redisMessageListenerContainer.removeMessageListener(channelListener.getListener(),
-                            new ChannelTopic(ROUTING_CHANNEL));
+                            new ChannelTopic(channelListener.getRoutingChannel()));
                     iterator.remove();  // Removes the current element from the map
                 }
             }
@@ -277,6 +275,7 @@ public class RoutingPlanConsumer {
      * @param <T>
      */
     public static class ChannelListener<T> implements MessageListener {
+        private final String routingChannel;
         private final String channel;
         private boolean started;
         private final String userName;
@@ -284,8 +283,9 @@ public class RoutingPlanConsumer {
         private final MessageListener listener;
         private final List<T> data;
 
-        public ChannelListener(String channel, String userName, Long timestamp,
+        public ChannelListener(String routingChannel, String channel, String userName, Long timestamp,
                                MessageListener listener) {
+            this.routingChannel = routingChannel;
             this.channel = channel;
             this.started = false;
             this.userName = userName;
@@ -305,6 +305,10 @@ public class RoutingPlanConsumer {
 
         public int getCurrentSize() {
             return this.data.size();
+        }
+
+        public String getRoutingChannel() {
+            return routingChannel;
         }
 
         public String getChannel() {

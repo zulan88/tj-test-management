@@ -36,7 +36,15 @@ import net.wanji.business.domain.dto.RoutingPlanDto;
 import net.wanji.business.domain.dto.TaskDto;
 import net.wanji.business.domain.dto.TjDeviceDetailDto;
 import net.wanji.business.domain.dto.device.TaskSaveDto;
-import net.wanji.business.domain.vo.*;
+import net.wanji.business.domain.vo.CaseContinuousVo;
+import net.wanji.business.domain.vo.CaseDetailVo;
+import net.wanji.business.domain.vo.CasePageVo;
+import net.wanji.business.domain.vo.DeviceDetailVo;
+import net.wanji.business.domain.vo.SceneIndexSchemeVo;
+import net.wanji.business.domain.vo.TaskCaseVo;
+import net.wanji.business.domain.vo.TaskListVo;
+import net.wanji.business.domain.vo.TaskReportVo;
+import net.wanji.business.domain.vo.TaskTargetVehicleVo;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjCaseRealRecord;
 import net.wanji.business.entity.TjDeviceDetail;
@@ -48,7 +56,6 @@ import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjDeviceDetailMapper;
 import net.wanji.business.mapper.TjTaskCaseMapper;
 import net.wanji.business.mapper.TjTaskDataConfigMapper;
-import net.wanji.business.mapper.TjTaskDcMapper;
 import net.wanji.business.mapper.TjTaskMapper;
 import net.wanji.business.schedule.SceneLabelMap;
 import net.wanji.business.service.RestService;
@@ -59,6 +66,7 @@ import net.wanji.business.service.TjTaskDataConfigService;
 import net.wanji.business.service.TjTaskService;
 import net.wanji.business.trajectory.RoutingPlanConsumer;
 import net.wanji.business.util.CustomMergeStrategy;
+import net.wanji.common.common.RealTestTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.core.domain.SimpleSelect;
 import net.wanji.common.core.domain.entity.SysDictData;
@@ -477,27 +485,25 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                     .max(Comparator.comparing(TjCaseRealRecord::getEndTime))
                     .ifPresent(p -> {
                         try {
-                            List<List<TrajectoryValueDto>> mainSimulations =
-                                    routeService.readTrajectoryFromRouteFile(p.getRouteFile(), "1");
-                            List<Map<String, Double>> mainSimuTrajectories = mainSimulations.stream()
-                                    .map(item -> item.get(0)).map(n -> {
-                                        Map<String, Double> map = new HashMap<>();
-                                        map.put("longitude", n.getLongitude());
-                                        map.put("latitude", n.getLatitude());
-                                        map.put("courseAngle", n.getCourseAngle());
-                                        return map;
-                                    }).collect(Collectors.toList());
-                            caseContinuousVo.setMainTrajectory(mainSimuTrajectories);
-                            caseContinuousVo.setStartPoint(mainSimuTrajectories.get(0));
-                            caseContinuousVo.setEndPoint(mainSimuTrajectories.get(mainSimuTrajectories.size() - 1));
-                        } catch (IOException e) {
-                            log.error(StringUtils.format("读取{}路线文件失败:{}", caseContinuousVo.getCaseNumber(), e));
+                            List<RealTestTrajectoryDto> realTestTrajectoryDtos =
+                                    routeService.readRealTrajectoryFromRouteFile(p.getRouteFile());
+                            realTestTrajectoryDtos.stream().filter(RealTestTrajectoryDto::isMain).findFirst().ifPresent(r -> {
+                                List<Map<String, Double>> mainSimuTrajectories = r.getData().stream().map(n -> {
+                                    Map<String, Double> map = new HashMap<>();
+                                    map.put("longitude", n.getValue().get(0).getLongitude());
+                                    map.put("latitude", n.getValue().get(0).getLatitude());
+                                    map.put("courseAngle", n.getValue().get(0).getCourseAngle());
+                                    return map;
+                                }).collect(Collectors.toList());
+                                caseContinuousVo.setMainTrajectory(mainSimuTrajectories);
+                                caseContinuousVo.setStartPoint(mainSimuTrajectories.get(0));
+                                caseContinuousVo.setEndPoint(mainSimuTrajectories.get(mainSimuTrajectories.size() - 1));
+                            });
                         } catch (IndexOutOfBoundsException e1) {
                             log.error(StringUtils.format("{}主车轨迹信息异常，请检查{}", caseContinuousVo.getCaseNumber(),
                                     caseDetail.getRouteFile()));
                         }
                     });
-
             // 连接轨迹
             List<Map> trajectoryBos = JSONObject.parseArray(t.getConnectInfo(), Map.class);
             caseContinuousVo.setConnectInfo(trajectoryBos);

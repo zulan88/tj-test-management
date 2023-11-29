@@ -120,6 +120,8 @@ public class TestingServiceImpl implements TestingService {
 
     @Override
     public void resetStatus(Integer caseId) throws BusinessException {
+        // 先发个停止
+        stop(caseId);
         // 1.查询用例详情
         CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
         // 2.数据校验

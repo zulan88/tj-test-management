@@ -5,7 +5,6 @@ import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiOperationSort;
-import io.swagger.annotations.ApiOperationSort;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.TestingService;
 import net.wanji.common.core.controller.BaseController;
@@ -64,7 +63,7 @@ public class TestingController extends BaseController {
             @ApiImplicitParam(name = "action", value = "动作（1：开始；2：结束）", required = true, dataType = "Integer", paramType = "query", example = "1")
     })
     public AjaxResult start(Integer recordId, Integer action) throws BusinessException, IOException {
-        return  AjaxResult.success(testingService.controlTask(recordId));
+        return AjaxResult.success(testingService.controlTask(recordId));
     }
 
 //    @GetMapping("/hjktest")
@@ -81,7 +80,7 @@ public class TestingController extends BaseController {
     })
     public AjaxResult stop(Integer recordId, Integer action) throws BusinessException {
         testingService.stop(recordId);
-        return  AjaxResult.success();
+        return AjaxResult.success();
     }
 
     @ApiOperationSort(4)
@@ -94,7 +93,7 @@ public class TestingController extends BaseController {
     public AjaxResult playback(@RequestParam("recordId") Integer recordId, @RequestParam("action") Integer action)
             throws BusinessException, IOException {
         testingService.playback(recordId, action);
-        return  AjaxResult.success();
+        return AjaxResult.success();
     }
 
     @ApiOperationSort(5)
