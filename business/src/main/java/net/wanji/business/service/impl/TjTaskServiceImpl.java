@@ -585,6 +585,9 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 if (CollectionUtils.isEmpty(simulationDevices)) {
                     throw new BusinessException("无可用的从车设备");
                 }
+                // 删除老的任务配置
+                tjTaskDataConfigService.remove(new QueryWrapper<TjTaskDataConfig>().eq(ColumnName.TASK_ID, in.getId()));
+                // 添加新的任务配置
                 List<TjTaskDataConfig> dataConfigList = new ArrayList<>();
                 for (TjCase tjCase : cases) {
                     SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(tjCase.getDetailInfo(), SceneTrajectoryBo.class);
@@ -603,6 +606,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                     dataConfigList.addAll(slaveConfigs);
                 }
                 tjTaskDataConfigService.saveBatch(dataConfigList);
+                // 修改任务信息
                 tjTask.setProcessNode(TaskProcessNode.CONFIG);
                 tjTask.setCaseCount(cases.size());
                 updateById(tjTask);

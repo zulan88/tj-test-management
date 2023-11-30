@@ -845,14 +845,13 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
     @Override
     public List<CaseTreeVo> selectTree(String type, Integer taskId) {
         List<CaseTreeVo> caseTree = caseTreeService.selectTree(type, null);
-
         TjTaskCase taskCase = new TjTaskCase();
         taskCase.setTaskId(taskId);
         List<TaskCaseVo> taskCaseList = taskCaseMapper.selectByCondition(taskCase);
         Map<Integer, Long> caseCountMap = CollectionUtils.emptyIfNull(taskCaseList).stream()
                 .collect(Collectors.groupingBy(TaskCaseVo::getTreeId, Collectors.counting()));
         for (CaseTreeVo treeVo : CollectionUtils.emptyIfNull(caseTree)) {
-            treeVo.setNumber(caseCountMap.get(treeVo.getId()).intValue());
+            treeVo.setNumber(caseCountMap.containsKey(treeVo.getId()) ? caseCountMap.get(treeVo.getId()).intValue() : 0);
         }
         return caseTree;
     }

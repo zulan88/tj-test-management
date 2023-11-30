@@ -69,7 +69,7 @@ public interface TjTaskService extends IService<TjTask> {
      * @param in
      * @return
      */
-    public int saveTask(TaskBo in) throws BusinessException;
+    int saveTask(TaskBo in) throws BusinessException;
 
     /**
      * 路径规划
