@@ -363,41 +363,30 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 if (ObjectUtil.isEmpty(taskSaveDto.getCaseQueryDto())) {
                     throw new BusinessException("请确认用例查询条件");
                 }
+                // 已选择的用例
+                TjTaskCase taskCase = new TjTaskCase();
+                taskCase.setTaskId(taskSaveDto.getId());
+                List<TaskCaseVo> taskCaseVos = tjTaskCaseMapper.selectByCondition(taskCase);
+                List<Integer> choiceCaseIds = taskCaseVos.stream().map(TaskCaseVo::getCaseId).collect(Collectors.toList());
                 // 分页查询用例
                 List<Integer> selectedIds = new ArrayList<>();
                 CaseQueryDto caseQueryDto = taskSaveDto.getCaseQueryDto();
                 caseQueryDto.setUserName(SecurityUtils.getUsername());
                 PageHelper.startPage(caseQueryDto.getPageNum(), caseQueryDto.getPageSize());
                 List<CasePageVo> casePageVos = null;
-                if (ObjectUtil.isEmpty(caseQueryDto.getShowType())) {
-                    caseQueryDto.setSelectedIds(null);
-                    casePageVos = tjCaseService.pageList(caseQueryDto);
-                    // 已选择的用例
-                    TjTaskCase taskCase = new TjTaskCase();
-                    taskCase.setTaskId(taskSaveDto.getId());
-                    List<TaskCaseVo> taskCaseVos = tjTaskCaseMapper.selectByCondition(taskCase);
-                    if (CollectionUtils.isNotEmpty(taskCaseVos)) {
-                        selectedIds = taskCaseVos.stream().map(TaskCaseVo::getCaseId).collect(Collectors.toList());
-                        CollectionUtils.emptyIfNull(casePageVos).forEach(t -> {
-                            if (CollectionUtils.emptyIfNull(taskCaseVos).stream().anyMatch(tc -> tc.getCaseId().equals(t.getId()))) {
-                                t.setSelected(Boolean.TRUE);
-                            }
-                        });
-                    }
-                } else if (1 == caseQueryDto.getShowType()) {
-                    // 仅查看选中用例
-                    selectedIds = caseQueryDto.getSelectedIds();
-                    casePageVos = tjCaseService.pageList(caseQueryDto);
-                    CollectionUtils.emptyIfNull(casePageVos).forEach(t -> t.setSelected(Boolean.TRUE));
-                } else {
-                    selectedIds = caseQueryDto.getSelectedIds();
+                if (ObjectUtils.isEmpty(caseQueryDto.getShowType()) || 0 == caseQueryDto.getShowType()) {
                     caseQueryDto.setSelectedIds(null);
                     casePageVos = tjCaseService.pageList(caseQueryDto);
                     for (CasePageVo casePageVo : CollectionUtils.emptyIfNull(casePageVos)) {
-                        if (selectedIds.contains(casePageVo.getId())) {
+                        if (CollectionUtils.isNotEmpty(taskCaseVos) && choiceCaseIds.contains(casePageVo.getId())) {
                             casePageVo.setSelected(Boolean.TRUE);
                         }
                     }
+                } else {
+                    // 仅查看选中用例
+                    caseQueryDto.setSelectedIds(choiceCaseIds);
+                    casePageVos = tjCaseService.pageList(caseQueryDto);
+                    CollectionUtils.emptyIfNull(casePageVos).forEach(t -> t.setSelected(Boolean.TRUE));
                 }
                 // 列表数据+已选择的用例
                 TableDataInfo rspData = new TableDataInfo();
@@ -566,7 +555,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                     throw new BusinessException("请选择任务");
                 }
                 List<TjTaskCase> taskCaseList = tjTaskCaseService.list(
-                        new QueryWrapper<TjTaskCase>().eq(ColumnName.TASK_ID, in.getId()).orderByDesc(ColumnName.CREATED_TIME_COLUMN));
+                        new QueryWrapper<TjTaskCase>().eq(ColumnName.TASK_ID, in.getId()).orderByDesc(ColumnName.CREATE_TIME_COLUMN));
                 if (CollectionUtils.isEmpty(taskCaseList)) {
                     throw new BusinessException("请选择用例");
                 }

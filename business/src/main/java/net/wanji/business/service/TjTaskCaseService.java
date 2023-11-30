@@ -98,8 +98,8 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
 
     List<CaseTreeVo> selectTree(String type, Integer taskId);
 
-    boolean addTaskCase(@NotNull Integer taskId, @NotNull Integer caseId);
+    boolean addTaskCase(@NotNull Integer taskId, @NotNull List<Integer> caseIds);
 
-    boolean deleteTaskCase(@NotNull Integer taskId, @NotNull Integer caseId);
+    boolean deleteTaskCase(@NotNull Integer taskId, @NotNull List<Integer> caseIds);
 
 }

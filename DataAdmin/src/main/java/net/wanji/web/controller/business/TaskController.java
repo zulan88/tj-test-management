@@ -385,15 +385,17 @@ public class TaskController extends BaseController {
     @GetMapping("/choiceCase")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "taskId", value = "任务ID", required = true, dataType = "Integer", paramType = "query", example = "1"),
-            @ApiImplicitParam(name = "caseId", value = "用例ID", required = true, dataType = "Integer", paramType = "query", example = "1"),
+            @ApiImplicitParam(name = "caseIds", value = "用例ID", required = true, dataType = "List", paramType = "query", example = "1,2,3"),
             @ApiImplicitParam(name = "action", value = "选中(1)/取消(0)", required = true, dataType = "Integer", paramType = "query", example = "1")
     })
-    public AjaxResult choiceCase(Integer taskId, Integer caseId, Integer action) {
+    public AjaxResult choiceCase(@RequestParam("taskId") Integer taskId,
+                                 @RequestParam("caseIds") List<Integer> caseIds,
+                                 @RequestParam("action") Integer action) {
         if (1 == action) {
-            return AjaxResult.success(taskCaseService.addTaskCase(taskId, caseId));
+            return AjaxResult.success(taskCaseService.addTaskCase(taskId, caseIds));
         }
         if (0 == action) {
-            return AjaxResult.success(taskCaseService.deleteTaskCase(taskId, caseId));
+            return AjaxResult.success(taskCaseService.deleteTaskCase(taskId, caseIds));
         }
         return AjaxResult.error("操作失败");
     }

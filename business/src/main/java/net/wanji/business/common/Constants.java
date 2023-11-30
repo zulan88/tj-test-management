@@ -111,7 +111,7 @@ public interface Constants {
         public static final String DEVICE_ID_COLUMN = "device_id";
         public static final String DEVICE_TYPE_COLUMN = "device_type";
         public static final String CREATED_DATE_COLUMN = "created_date";
-        public static final String CREATED_TIME_COLUMN = "created_time";
+        public static final String CREATE_TIME_COLUMN = "create_time";
         public static final String SORT_COLUMN = "sort";
         public static final String TASK_ID = "task_id";
     }

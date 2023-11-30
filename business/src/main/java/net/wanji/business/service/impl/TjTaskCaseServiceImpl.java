@@ -857,20 +857,31 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
     }
 
     @Override
-    public boolean addTaskCase(@NotNull Integer taskId, @NotNull Integer caseId) {
-        TjTaskCase taskCase = new TjTaskCase();
-        taskCase.setTaskId(taskId);
-        taskCase.setCaseId(caseId);
-        taskCase.setSort(0);
-        taskCase.setCreateTime(new Date());
-        taskCase.setStatus(TaskCaseStatusEnum.WAITING.getCode());
-        return save(taskCase);
+    public boolean addTaskCase(@NotNull Integer taskId, @NotNull List<Integer> caseIds) {
+        List<TjTaskCase> addedList = list(new QueryWrapper<TjTaskCase>().eq(ColumnName.TASK_ID, taskId)
+                .in(ColumnName.CASE_ID_COLUMN, caseIds));
+        List<Integer> addedIdList = CollectionUtils.emptyIfNull(addedList).stream()
+                .map(TjTaskCase::getCaseId).collect(Collectors.toList());
+        List<TjTaskCase> saveList = new ArrayList<>();
+        for (Integer caseId : caseIds) {
+            if (addedIdList.contains(caseId)) {
+                continue;
+            }
+            TjTaskCase taskCase = new TjTaskCase();
+            taskCase.setTaskId(taskId);
+            taskCase.setCaseId(caseId);
+            taskCase.setSort(0);
+            taskCase.setCreateTime(new Date());
+            taskCase.setStatus(TaskCaseStatusEnum.WAITING.getCode());
+            saveList.add(taskCase);
+        }
+        return saveBatch(saveList);
     }
 
     @Override
-    public boolean deleteTaskCase(@NotNull Integer taskId, @NotNull Integer caseId) {
+    public boolean deleteTaskCase(@NotNull Integer taskId, @NotNull List<Integer> caseIds) {
         return remove(new QueryWrapper<TjTaskCase>().eq(ColumnName.TASK_ID, taskId)
-                .eq(ColumnName.CASE_ID_COLUMN, caseId));
+                .in(ColumnName.CASE_ID_COLUMN, caseIds));
     }
 
     private void validStatus(TaskCaseVerificationPageVo pageVo) {
