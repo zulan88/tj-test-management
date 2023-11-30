@@ -489,7 +489,7 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
             return true;
         } else {
             tjCase = this.getById(tjCaseDto.getId());
-            if(!tjCaseDto.getTestTarget().isEmpty()) {
+            if(tjCaseDto.getTestTarget()!=null) {
                 tjCase.setTestTarget(tjCaseDto.getTestTarget());
             }
             tjCase.setRemark(tjCaseDto.getRemark());
