@@ -56,6 +56,9 @@ public class TaskCaseVo extends TjTaskCase {
     @ApiModelProperty(value = "角色配置简述", required = true, dataType = "String", example = "角色配置简述", position = 4)
     private String roleConfigSort;
 
+    @ApiModelProperty(value = "所属文件", dataType = "Integer", example = "1", position = 6)
+    private Integer treeId;
+
 
 
 }

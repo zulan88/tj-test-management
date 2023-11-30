@@ -44,9 +44,9 @@ public interface TestingService {
      */
     CaseTestStartVo start(Integer caseId, Integer action,String key,String username) throws BusinessException, IOException;
 
-    void end(Integer caseId, String channel, int action);
+    void end(Integer caseId, String channel, int action) throws BusinessException;
 
-    CaseTestStartVo controlTask(Integer caseId) throws BusinessException, IOException;
+    CaseTestStartVo controlTask(Integer caseId) throws BusinessException;
 
     CaseTestStartVo hjktest(Integer caseId) throws BusinessException;
 

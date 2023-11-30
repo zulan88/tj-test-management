@@ -23,6 +23,8 @@ public class CaseTreeVo {
 
     private Integer parentId;
 
+    private Integer number;
+
     public CaseTreeVo(TjCaseTree caseTree) {
         this.id = caseTree.getId();
         this.type = caseTree.getType();

@@ -2,6 +2,7 @@ package net.wanji.business.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import net.wanji.business.domain.vo.CaseRealTestVo;
+import net.wanji.business.domain.vo.CaseTreeVo;
 import net.wanji.business.domain.vo.CommunicationDelayVo;
 import net.wanji.business.domain.vo.RealTestResultVo;
 import net.wanji.business.domain.vo.TaskCaseVerificationPageVo;
@@ -9,6 +10,7 @@ import net.wanji.business.domain.vo.TaskReportVo;
 import net.wanji.business.entity.TjTaskCase;
 import net.wanji.business.exception.BusinessException;
 
+import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -93,4 +95,11 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
     List<TaskReportVo> getReport(Integer taskId, Integer taskCaseId);
 
     void stop(Integer taskId, Integer taskCaseId) throws BusinessException;
+
+    List<CaseTreeVo> selectTree(String type, Integer taskId);
+
+    boolean addTaskCase(@NotNull Integer taskId, @NotNull Integer caseId);
+
+    boolean deleteTaskCase(@NotNull Integer taskId, @NotNull Integer caseId);
+
 }

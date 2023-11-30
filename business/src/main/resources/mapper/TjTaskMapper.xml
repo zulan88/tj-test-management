@@ -68,6 +68,9 @@
             <if test="status != null and status != ''">
                 AND tt.status = #{status}
             </if>
+            <if test="createdBy != null and createdBy != ''">
+                AND tt.created_by = #{createdBy}
+            </if>
         </where>
     </select>
 

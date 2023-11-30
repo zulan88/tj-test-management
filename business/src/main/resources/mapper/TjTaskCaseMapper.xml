@@ -39,7 +39,8 @@
         a.test_total_time ,
         a.test_total_time,
         a.connect_info,
-        b.case_number
+        b.case_number,
+        b.tree_id
         from tj_task_case a
         left join tj_case b on a.case_id = b.id
         <where>

@@ -12,6 +12,7 @@ import net.wanji.business.common.Constants.PlaybackAction;
 import net.wanji.business.common.Constants.PointTypeEnum;
 import net.wanji.business.common.Constants.RedisMessageType;
 import net.wanji.business.common.Constants.SysType;
+import net.wanji.business.common.Constants.TaskCaseStatusEnum;
 import net.wanji.business.common.Constants.TestingStatusEnum;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.Label;
@@ -31,9 +32,11 @@ import net.wanji.business.domain.param.CaseTrajectoryParam;
 import net.wanji.business.domain.param.DeviceConnInfo;
 import net.wanji.business.domain.param.DeviceConnRule;
 import net.wanji.business.domain.vo.CaseRealTestVo;
+import net.wanji.business.domain.vo.CaseTreeVo;
 import net.wanji.business.domain.vo.CommunicationDelayVo;
 import net.wanji.business.domain.vo.RealTestResultVo;
 import net.wanji.business.domain.vo.TaskCaseVerificationPageVo;
+import net.wanji.business.domain.vo.TaskCaseVo;
 import net.wanji.business.domain.vo.TaskReportVo;
 import net.wanji.business.entity.TjTask;
 import net.wanji.business.entity.TjTaskCase;
@@ -48,6 +51,7 @@ import net.wanji.business.service.ILabelsService;
 import net.wanji.business.service.RestService;
 import net.wanji.business.service.RouteService;
 import net.wanji.business.service.TjCaseService;
+import net.wanji.business.service.TjCaseTreeService;
 import net.wanji.business.service.TjDeviceDetailService;
 import net.wanji.business.service.TjTaskCaseRecordService;
 import net.wanji.business.service.TjTaskCaseService;
@@ -69,6 +73,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
+import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -125,6 +130,9 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
     @Autowired
     private DeviceStateSendService deviceStateSendService;
+
+    @Autowired
+    private TjCaseTreeService caseTreeService;
 
     @Autowired
     private RedisTemplate<String, Object> noClassRedisTemplate;
@@ -449,7 +457,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             addRecord.setTaskId(taskCaseInfoBo.getTaskId());
             addRecord.setCaseId(taskCaseInfoBo.getCaseId());
             addRecord.setDetailInfo(JSONObject.toJSONString(caseTrajectoryDetailBo));
-            addRecord.setStatus(TestingStatusEnum.NOT_START.getCode());
+            addRecord.setStatus(TestingStatusEnum.NO_PASS.getCode());
             addList.add(addRecord);
 
             channels.addAll(taskCaseInfoBo.getDataConfigs().stream().map(TaskCaseConfigBo::getDataChannel)
@@ -480,10 +488,6 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         if (CollectionUtils.isEmpty(taskCaseInfos)) {
             throw new BusinessException("任务用例不存在");
         }
-        if (taskCaseInfos.stream().anyMatch(t -> t.getRecordStatus() > TestingStatusEnum.NOT_START.getCode())) {
-            throw new BusinessException("未就绪");
-        }
-
         CaseTrajectoryParam caseTrajectoryParam = new CaseTrajectoryParam();
         Map<String, Object> context = new HashMap<>();
 
@@ -579,7 +583,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         // 1.任务用例测试记录详情
         TjTaskCaseRecord taskCaseRecord = ssGetTjTaskCaseRecord(taskId, caseId, action);
         // 2.任务用例详情
-        TjTaskCase taskCase = getTjTaskCaseByTaskCaseRecord(taskCaseRecord);
+        TjTaskCase taskCase = getTjTaskCaseByTaskCaseRecord(taskId, caseId);
         TaskCaseInfoBo taskCaseInfoBo = taskCaseMapper.selectTaskCaseByCondition(taskCase).get(0);
         // 3.校验数据
         validConfig(taskCaseInfoBo);
@@ -618,8 +622,8 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         if (ObjectUtils.isEmpty(taskCaseRecord)) {
             throw new BusinessException("未查询到任务用例测试记录");
         }
-        if (TestingStatusEnum.FINISHED.getCode() > taskCaseRecord.getStatus() || StringUtils.isEmpty(taskCaseRecord.getRouteFile())) {
-            throw new BusinessException("无完整试验记录");
+        if (StringUtils.isEmpty(taskCaseRecord.getRouteFile())) {
+            throw new BusinessException("未查询到可使用轨迹文件，请先进行试验");
         }
         QueryWrapper<TjTaskCase> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq(ColumnName.CASE_ID_COLUMN, taskCaseRecord.getCaseId()).eq(ColumnName.TASK_ID, taskCaseRecord.getTaskId());
@@ -691,9 +695,6 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         TjTaskCaseRecord taskCaseRecord = taskCaseRecordMapper.selectById(id);
         if (ObjectUtils.isEmpty(taskCaseRecord) || ObjectUtils.isEmpty(taskCaseRecord.getDetailInfo())) {
             throw new BusinessException("待开始测试");
-        }
-        if (TestingStatusEnum.FINISHED.getCode() > taskCaseRecord.getStatus()) {
-            return null;
         }
         TjTask tjTask = taskMapper.selectById(taskCaseRecord.getTaskId());
         if (ObjectUtils.isEmpty(tjTask)) {
@@ -841,6 +842,38 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
     }
 
+    @Override
+    public List<CaseTreeVo> selectTree(String type, Integer taskId) {
+        List<CaseTreeVo> caseTree = caseTreeService.selectTree(type, null);
+
+        TjTaskCase taskCase = new TjTaskCase();
+        taskCase.setTaskId(taskId);
+        List<TaskCaseVo> taskCaseList = taskCaseMapper.selectByCondition(taskCase);
+        Map<Integer, Long> caseCountMap = CollectionUtils.emptyIfNull(taskCaseList).stream()
+                .collect(Collectors.groupingBy(TaskCaseVo::getTreeId, Collectors.counting()));
+        for (CaseTreeVo treeVo : CollectionUtils.emptyIfNull(caseTree)) {
+            treeVo.setNumber(caseCountMap.get(treeVo.getId()).intValue());
+        }
+        return caseTree;
+    }
+
+    @Override
+    public boolean addTaskCase(@NotNull Integer taskId, @NotNull Integer caseId) {
+        TjTaskCase taskCase = new TjTaskCase();
+        taskCase.setTaskId(taskId);
+        taskCase.setCaseId(caseId);
+        taskCase.setSort(0);
+        taskCase.setCreateTime(new Date());
+        taskCase.setStatus(TaskCaseStatusEnum.WAITING.getCode());
+        return save(taskCase);
+    }
+
+    @Override
+    public boolean deleteTaskCase(@NotNull Integer taskId, @NotNull Integer caseId) {
+        return remove(new QueryWrapper<TjTaskCase>().eq(ColumnName.TASK_ID, taskId)
+                .eq(ColumnName.CASE_ID_COLUMN, caseId));
+    }
+
     private void validStatus(TaskCaseVerificationPageVo pageVo) {
         Map<String, List<TaskCaseConfigBo>> statusMap = pageVo.getStatusMap();
         List<TaskCaseConfigBo> configs = new ArrayList<>();
@@ -962,28 +995,23 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         if (ObjectUtils.isEmpty(taskCaseRecord)) {
             throw new BusinessException("未找到用例测试记录");
         }
-        if (1 == action && taskCaseRecord.getStatus() > TestingStatusEnum.NOT_START.getCode()) {
-            throw new BusinessException("未就绪");
-        }
-
         return taskCaseRecord;
     }
 
-    private TjTaskCase getTjTaskCaseByTaskCaseRecord(TjTaskCaseRecord taskCaseRecord) {
+    private TjTaskCase getTjTaskCaseByTaskCaseRecord(Integer taskId, Integer caseId) {
         QueryWrapper<TjTaskCase> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq(ColumnName.CASE_ID_COLUMN, taskCaseRecord.getCaseId()).eq(ColumnName.TASK_ID, taskCaseRecord.getTaskId());
+        queryWrapper.eq(ColumnName.CASE_ID_COLUMN, caseId).eq(ColumnName.TASK_ID, taskId);
         return taskCaseMapper.selectOne(queryWrapper);
     }
 
     private void ssCaseResultUpdate(Integer action, TjTaskCaseRecord taskCaseRecord,
                                     TjTaskCase taskCase) {
         if (1 == action) {
-            taskCaseRecord.setStatus(TestingStatusEnum.RUNNING.getCode());
             taskCaseRecord.setStartTime(LocalDateTime.now());
 
             Date date = new Date();
             taskCase.setStartTime(date);
-            //taskCase.setStatus("测试中");
+            taskCase.setStatus(TaskCaseStatusEnum.RUNNING.getCode());
 
             TjTask tjTask = taskMapper.selectById(taskCaseRecord.getTaskId());
             if (ObjectUtils.isEmpty(tjTask.getStartTime())) {

@@ -61,6 +61,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.StopWatch;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -329,7 +330,7 @@ public class TestingServiceImpl implements TestingService {
         TjCaseRealRecord tjCaseRealRecord = new TjCaseRealRecord();
         tjCaseRealRecord.setCaseId(caseId);
         tjCaseRealRecord.setDetailInfo(JSONObject.toJSONString(caseTrajectoryDetailBo));
-        tjCaseRealRecord.setStatus(TestingStatusEnum.NOT_START.getCode());
+        tjCaseRealRecord.setStatus(TestingStatusEnum.NO_PASS.getCode());
         caseRealRecordMapper.insert(tjCaseRealRecord);
         // 7.前端结果集
         CaseTestPrepareVo caseTestPrepareVo = new CaseTestPrepareVo();
@@ -342,27 +343,36 @@ public class TestingServiceImpl implements TestingService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public CaseTestStartVo start(Integer caseId, Integer action, String key, String username) throws BusinessException, IOException {
-        log.info("开始实车测试，用例id：{}，操作：{}", caseId, action);
-
-        // 2.用例详情
+        StopWatch stopWatch = new StopWatch(StringUtils.format("开始实车试验 - 用例ID:{}", caseId));
+        stopWatch.start("1.查询用例详情并校验");
+        // 1.用例详情
         CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
-        // 3.校验数据
         validConfig(caseInfoBo);
-        // 4.更新业务数据
+        stopWatch.stop();
+
+        stopWatch.start("2.更新业务数据");
+        // 3.更新业务数据
         TjCaseRealRecord realRecord = caseInfoBo.getCaseRealRecord();
-        realRecord.setStatus(TestingStatusEnum.RUNNING.getCode());
         realRecord.setStartTime(LocalDateTime.now());
         caseRealRecordMapper.updateById(realRecord);
-        // 5.开始监听所有数据通道
+        stopWatch.stop();
+
+        stopWatch.start("3.创建监听器");
+        // 4.开始监听所有数据通道
         imitateRedisTrajectoryConsumer.subscribeAndSend(caseInfoBo, key, username);
-        // 6.向主控发送开始请求
+        stopWatch.stop();
+
+        stopWatch.start("4.向主控发送规则");
+        // 5.向主控发送规则
         if (!restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(),
                 String.valueOf(caseId), action,
                 generateDeviceConnRules(caseInfoBo), null, true))) {
             throw new BusinessException("主控响应异常");
         }
-        log.info("主控响应完毕，用例id：{}，操作：{}", caseId, action);
-        // 7.前端结果集
+        stopWatch.stop();
+
+        stopWatch.start("5.构建结果集");
+        // 6.前端结果集
         CaseTestStartVo startVo = new CaseTestStartVo();
         BeanUtils.copyProperties(realRecord, startVo);
         startVo.setStartTime(DateUtils.getTime());
@@ -374,44 +384,53 @@ public class TestingServiceImpl implements TestingService {
                         ParticipantTrajectoryBo::getTrajectory
                 ));
         startVo.setMainTrajectories(mainTrajectoryMap);
+        stopWatch.stop();
+        log.info("耗时：{}", stopWatch.prettyPrint());
         return startVo;
     }
 
     @Override
-    public void end(Integer caseId, String channel, int action) {
+    public void end(Integer caseId, String channel, int action) throws BusinessException {
+        StopWatch stopWatch = new StopWatch(StringUtils.format("结束实车试验 - 用例ID:{}", caseId));
         if (0 == action) {
-            log.info("正常结束实车测试，{}", channel);
+            stopWatch.start("1.正常结束实车测试，发送ws end消息");
             SimulationMessage endMsg = new SimulationMessage(Constants.RedisMessageType.END, new JSONObject());
             noClassRedisTemplate.convertAndSend(channel, endMsg);
         }
         if (-1 == action) {
-            log.info("异常结束实车测试，{}", channel);
+            stopWatch.start("1.异常结束实车测试，发送ws end消息");
             SimulationMessage endMsg = new SimulationMessage(Constants.RedisMessageType.END, new JSONObject());
             noClassRedisTemplate.convertAndSend(channel, endMsg);
         }
-        try {
-            // 6.向主控发送控制请求
-            CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
-            String commandChannel = caseInfoBo.getCaseConfigs().stream().filter(t -> PartRole.AV.equals(t.getParticipantRole())).findFirst().get().getCommandChannel();
-            if (!restService.sendRuleUrl(
-                    new CaseRuleControl(System.currentTimeMillis(),
-                            String.valueOf(caseId), 0,
-                            generateDeviceConnRules(caseInfoBo),
-                            commandChannel, true))) {
-                throw new BusinessException("主控响应异常");
-            }
-        } catch (BusinessException e) {
-            e.printStackTrace();
+        stopWatch.stop();
+
+        stopWatch.start("2.向主控发送结束控制请求");
+        // 向主控发送控制请求
+        CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
+        if (ObjectUtils.isEmpty(caseInfoBo) || CollectionUtils.isEmpty(caseInfoBo.getCaseConfigs())) {
+            throw new BusinessException("未查询到用例配置信息");
         }
+        CaseConfigBo mainConfig = caseInfoBo.getCaseConfigs().stream().filter(t ->
+                PartRole.AV.equals(t.getParticipantRole())).findFirst().orElseThrow(() ->
+                new BusinessException("用例主车配置信息异常"));
+        if (!restService.sendRuleUrl(
+                new CaseRuleControl(System.currentTimeMillis(),
+                        String.valueOf(caseId), 0,
+                        generateDeviceConnRules(caseInfoBo),
+                        mainConfig.getCommandChannel(), true))) {
+            throw new BusinessException("主控响应异常");
+        }
+        stopWatch.stop();
+        log.info("耗时：{}", stopWatch.prettyPrint());
     }
 
     @Override
-    public CaseTestStartVo controlTask(Integer caseId) throws BusinessException, IOException {
+    public CaseTestStartVo controlTask(Integer caseId) throws BusinessException {
         CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
         validConfig(caseInfoBo);
         TjCaseRealRecord realRecord = caseInfoBo.getCaseRealRecord();
-        if (ObjectUtils.isEmpty(realRecord) || realRecord.getStatus() > TestingStatusEnum.NOT_START.getCode()) {
-            throw new BusinessException("未就绪");
+        if (ObjectUtils.isEmpty(realRecord)) {
+            throw new BusinessException("未查询到测试记录");
         }
         CaseTrajectoryParam caseTrajectoryParam = new CaseTrajectoryParam();
         caseTrajectoryParam.setTaskId(0);
@@ -489,7 +508,7 @@ public class TestingServiceImpl implements TestingService {
         if (ObjectUtils.isEmpty(caseRealRecord)) {
             throw new BusinessException("未查询到试验记录");
         }
-        if (TestingStatusEnum.FINISHED.getCode() > caseRealRecord.getStatus() || StringUtils.isEmpty(caseRealRecord.getRouteFile())) {
+        if (StringUtils.isEmpty(caseRealRecord.getRouteFile())) {
             throw new BusinessException("无完整试验记录");
         }
         CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseRealRecord.getCaseId());
@@ -561,9 +580,6 @@ public class TestingServiceImpl implements TestingService {
         TjCaseRealRecord caseRealRecord = caseRealRecordMapper.selectById(recordId);
         if (ObjectUtils.isEmpty(caseRealRecord) || ObjectUtils.isEmpty(caseRealRecord.getDetailInfo())) {
             throw new BusinessException("待试验");
-        }
-        if (TestingStatusEnum.FINISHED.getCode() > caseRealRecord.getStatus()) {
-            return null;
         }
         CaseTrajectoryDetailBo caseTrajectoryDetailBo = JSONObject.parseObject(caseRealRecord.getDetailInfo(),
                 CaseTrajectoryDetailBo.class);

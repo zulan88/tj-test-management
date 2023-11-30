@@ -25,6 +25,7 @@ import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.TaskCaseStatusEnum;
 import net.wanji.business.common.Constants.TaskProcessNode;
 import net.wanji.business.common.Constants.TaskStatusEnum;
+import net.wanji.business.common.Constants.TestType;
 import net.wanji.business.common.Constants.TestingStatusEnum;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
@@ -94,6 +95,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.constraints.NotNull;
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
@@ -198,7 +200,6 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
 
     @Override
     public List<TaskListVo> pageList(TaskDto in) {
-        in.setCreatedBy(SecurityUtils.getUsername());
         List<TaskListVo> pageList = tjTaskMapper.getPageList(in);
         List<DeviceDetailVo> deviceDetails = deviceDetailMapper.selectByCondition(new TjDeviceDetailDto());
         Map<Integer, DeviceDetailVo> deviceMap = CollectionUtils.emptyIfNull(deviceDetails).stream()
@@ -210,7 +211,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
             taskVo.setStatusName(TaskStatusEnum.getValueByCode(taskVo.getStatus()));
             // 已完成用例
             taskVo.setFinishedCaseCount((int) CollectionUtils.emptyIfNull(taskVo.getTaskCaseVos()).stream()
-                    .filter(t -> TaskCaseStatusEnum.PASS.getCode().equals(t.getStatus())).count());
+                    .filter(t -> TaskCaseStatusEnum.FINISHED.getCode().equals(t.getStatus())).count());
             // 用例配置
             Map<Integer, List<TjTaskDataConfig>> taskCaseConfigMap = CollectionUtils
                     .emptyIfNull(taskVo.getTaskCaseConfigs()).stream().collect(
@@ -481,7 +482,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
             }
             // 主车轨迹
             CollectionUtils.emptyIfNull(caseDetail.getCaseRealRecords()).stream()
-                    .filter(p -> TestingStatusEnum.FINISHED.getCode().equals(p.getStatus()))
+                    .filter(p -> TestingStatusEnum.PASS.getCode().equals(p.getStatus()))
                     .max(Comparator.comparing(TjCaseRealRecord::getEndTime))
                     .ifPresent(p -> {
                         try {
@@ -564,24 +565,18 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 if (ObjectUtil.isEmpty(in.getId())) {
                     throw new BusinessException("请选择任务");
                 }
-                if (CollectionUtils.isEmpty(in.getCaseIds())) {
+                List<TjTaskCase> taskCaseList = tjTaskCaseService.list(
+                        new QueryWrapper<TjTaskCase>().eq(ColumnName.TASK_ID, in.getId()).orderByDesc(ColumnName.CREATED_TIME_COLUMN));
+                if (CollectionUtils.isEmpty(taskCaseList)) {
                     throw new BusinessException("请选择用例");
                 }
-                tjTaskCaseService.remove(new QueryWrapper<TjTaskCase>().eq(ColumnName.TASK_ID, in.getId()));
-
-                List<TjTaskCase> taskCases = new ArrayList<>();
-                IntStream.range(0, in.getCaseIds().size()).forEach(i -> {
-                    TjTaskCase taskCase = new TjTaskCase();
-                    taskCase.setTaskId(in.getId());
-                    taskCase.setCaseId(in.getCaseIds().get(i));
-                    taskCase.setSort(i + 1);
-                    taskCase.setCreateTime(new Date());
-                    taskCase.setStatus(TaskCaseStatusEnum.WAITING.getCode());
-                    taskCases.add(taskCase);
+                // 默认按创建时间排序
+                IntStream.range(0, taskCaseList.size()).forEach(i -> {
+                    taskCaseList.get(i).setSort(i + 1);
                 });
-                tjTaskCaseService.saveBatch(taskCases);
+                tjTaskCaseService.updateBatchById(taskCaseList);
 
-                List<TjCase> cases = tjCaseService.listByIds(in.getCaseIds());
+                List<TjCase> cases = tjCaseService.listByIds(taskCaseList.stream().map(TjTaskCase::getCaseId).collect(Collectors.toList()));
                 // todo 设备从运营平台查询
                 TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
                 deviceDetailDto.setSupportRoles(PartRole.MV_SIMULATION);
@@ -609,41 +604,41 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 }
                 tjTaskDataConfigService.saveBatch(dataConfigList);
                 tjTask.setProcessNode(TaskProcessNode.CONFIG);
-                tjTask.setCaseCount(in.getCaseIds().size());
+                tjTask.setCaseCount(cases.size());
                 updateById(tjTask);
                 return tjTask.getId();
             case TaskProcessNode.CONFIG:
                 if (ObjectUtil.isEmpty(in.getId())) {
                     throw new BusinessException("请选择任务");
                 }
-                // todo 根据testType校验
-                if (CollectionUtils.isEmpty(in.getCases())) {
-//                    throw new BusinessException("请进行连续性场景的配置");
-                    return in.getId();
-                }
-                if (CollectionUtils.isNotEmpty(in.getCases()) && StringUtils.isEmpty(in.getRouteFile())) {
-                    throw new BusinessException("连续性配置后需要进行路径规划");
-                }
-                if (in.getCases().subList(0, in.getCases().size() - 1).stream().anyMatch(t -> CollectionUtils.isEmpty((List) t.getConnectInfo()))) {
-                    throw new BusinessException("请完善用例连接信息");
-                }
-                // 修改任务用例信息
-                List<TjTaskCase> tjTaskCases = tjTaskCaseService.listByIds(in.getCases().stream()
-                        .map(CaseContinuousVo::getId).collect(Collectors.toList()));
+                if (TestType.VIRTUAL_REAL_FUSION.equals(tjTask.getTestType())) {
+                    if (CollectionUtils.isEmpty(in.getCases())) {
+                       throw new BusinessException("请选择用例");
+                    }
+                    if (StringUtils.isEmpty(in.getRouteFile())) {
+                        throw new BusinessException("请进行路径规划");
+                    }
+                    if (in.getCases().subList(0, in.getCases().size() - 1).stream().anyMatch(t -> CollectionUtils.isEmpty((List) t.getConnectInfo()))) {
+                        throw new BusinessException("请完善用例连接信息");
+                    }
+                    // 修改任务用例信息
+                    List<TjTaskCase> tjTaskCases = tjTaskCaseService.listByIds(in.getCases().stream()
+                            .map(CaseContinuousVo::getId).collect(Collectors.toList()));
 
-                Map<Integer, Object> map = in.getCases().stream().collect(Collectors.toMap(CaseContinuousVo::getId,
-                        CaseContinuousVo::getConnectInfo));
-                for (int i = 0; i < tjTaskCases.size(); i++) {
-                    TjTaskCase taskCase = tjTaskCases.get(i);
-                    taskCase.setSort(i + 1);
-                    Object obj = map.get(taskCase.getId());
-                    taskCase.setConnectInfo(ObjectUtil.isEmpty(obj) ? null : JSONObject.toJSONString(obj));
-                    tjTaskCaseMapper.updateByCondition(taskCase);
+                    Map<Integer, Object> map = in.getCases().stream().collect(Collectors.toMap(CaseContinuousVo::getId,
+                            CaseContinuousVo::getConnectInfo));
+                    for (int i = 0; i < tjTaskCases.size(); i++) {
+                        TjTaskCase taskCase = tjTaskCases.get(i);
+                        taskCase.setSort(i + 1);
+                        Object obj = map.get(taskCase.getId());
+                        taskCase.setConnectInfo(ObjectUtil.isEmpty(obj) ? null : JSONObject.toJSONString(obj));
+                        tjTaskCaseMapper.updateByCondition(taskCase);
+                    }
+                    // 修改连续式场景任务完整轨迹信息
+                    tjTask.setMainPlanFile(in.getRouteFile());
+                    tjTask.setContinuous(Boolean.TRUE);
                 }
-                // 修改连续式场景任务完整轨迹信息
                 tjTask.setProcessNode(TaskProcessNode.VIEW_PLAN);
-                tjTask.setContinuous(Boolean.TRUE);
-                tjTask.setMainPlanFile(in.getRouteFile());
                 updateById(tjTask);
                 return tjTask.getId();
             case TaskProcessNode.VIEW_PLAN:

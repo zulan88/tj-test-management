@@ -105,7 +105,7 @@ public class RouteService {
             String path = FileUtils.writeRoute(data, WanjiConfig.getRoutePath(), Extension.TXT);
             log.info("saveRealRouteFile routePath:{}", path);
             caseRealRecord.setRouteFile(path);
-            caseRealRecord.setStatus(TestingStatusEnum.FINISHED.getCode());
+            caseRealRecord.setStatus(TestingStatusEnum.PASS.getCode());
             caseRealRecord.setEndTime(LocalDateTime.now());
             caseRealRecordMapper.updateById(caseRealRecord);
             log.info("更新完成");
@@ -121,35 +121,21 @@ public class RouteService {
         TjTaskCaseRecord taskCaseRecord = taskCaseRecordMapper.selectById(recordId);
         // 保存本地文件
         try {
-//            int pointNum = 0;
-//            int passNum = 0;
             String path = FileUtils.writeRoute(data, WanjiConfig.getRoutePath(), Extension.TXT);
-//            for (ParticipantTrajectoryBo participantTrajectory : originalTrajectory.getParticipantTrajectories()) {
-//                for (TrajectoryDetailBo trajectoryDetailBo : participantTrajectory.getTrajectory()) {
-//                    pointNum++;
-//                    if (trajectoryDetailBo.isPass()) {
-//                        passNum++;
-//                        continue;
-//                    }
-//                }
-//            }
+
+
             log.info("save task case record routePath:{}", path);
             taskCaseRecord.setRouteFile(path);
-            taskCaseRecord.setStatus(TestingStatusEnum.FINISHED.getCode());
+            taskCaseRecord.setStatus(0 == action ? TestingStatusEnum.PASS.getCode() : TestingStatusEnum.NO_PASS.getCode());
             taskCaseRecord.setEndTime(LocalDateTime.now());
             taskCaseRecordMapper.updateById(taskCaseRecord);
 
+            log.info("save task case info");
             TjTaskCase taskCase = new TjTaskCase();
             taskCase.setTestTotalTime(String.valueOf(DateUtils.durationToSeconds(originalTrajectory.getDuration())));
             taskCase.setEndTime(new Date());
-            if (0 == action) {
-                taskCase.setPassingRate("100%");
-                taskCase.setStatus(Constants.TaskCaseStatusEnum.PASS.getCode());
-            } else if (-1 == action) {
-                taskCase.setPassingRate("0%");
-                taskCase.setStatus(Constants.TaskCaseStatusEnum.NO_PASS.getCode());
-            }
-            log.info("save task case info");
+            taskCase.setStatus(TaskCaseStatusEnum.FINISHED.getCode());
+            taskCase.setPassingRate(0 == action ? "100%" : "0%");
             QueryWrapper<TjTaskCase> updateMapper = new QueryWrapper<>();
             updateMapper.eq(ColumnName.TASK_ID, taskCaseRecord.getTaskId()).eq(ColumnName.CASE_ID_COLUMN,
                     taskCaseRecord.getCaseId());
@@ -158,11 +144,11 @@ public class RouteService {
             QueryWrapper<TjTaskCase> queryMapper = new QueryWrapper<>();
             queryMapper.eq(ColumnName.TASK_ID, taskCaseRecord.getTaskId());
             List<TjTaskCase> tjTaskCases = taskCaseMapper.selectList(queryMapper);
-            if (CollectionUtils.emptyIfNull(tjTaskCases).stream().noneMatch(item -> TaskCaseStatusEnum.WAITING.getCode().equals(item.getStatus()))) {
+            if (CollectionUtils.emptyIfNull(tjTaskCases).stream().allMatch(item ->
+                    TaskCaseStatusEnum.FINISHED.getCode().equals(item.getStatus()))) {
                 log.info("任务{}下所有用例已完成", taskCaseRecord.getTaskId());
-                Integer taskId = tjTaskCases.get(0).getTaskId();
                 TjTask tjTask = new TjTask();
-                tjTask.setId(taskId);
+                tjTask.setId(tjTaskCases.get(0).getTaskId());
                 tjTask.setEndTime(new Date());
                 tjTask.setTestTotalTime(DateUtils.secondsToDuration(tjTaskCases.stream().mapToInt(caseObj ->
                         Integer.parseInt(caseObj.getTestTotalTime())).sum()));

@@ -52,9 +52,6 @@ public class TaskBo {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date endTime;
 
-    @ApiModelProperty(value = "测试用例ID集合（选择测试用例）")
-    private List<Integer> caseIds;
-
     @ApiModelProperty(value = "连续性配置（测试连续性配置）")
     private List<CaseContinuousVo> cases;
 

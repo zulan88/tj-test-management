@@ -111,8 +111,16 @@ public interface Constants {
         public static final String DEVICE_ID_COLUMN = "device_id";
         public static final String DEVICE_TYPE_COLUMN = "device_type";
         public static final String CREATED_DATE_COLUMN = "created_date";
-        public static final String TASK_ID = "task_id";
+        public static final String CREATED_TIME_COLUMN = "created_time";
         public static final String SORT_COLUMN = "sort";
+        public static final String TASK_ID = "task_id";
+    }
+
+    class TestType {
+        /**
+         * 虚实融合测试
+         */
+        public static final String VIRTUAL_REAL_FUSION = "virtualRealFusion";
     }
 
     class ResourceType {
@@ -272,12 +280,11 @@ public interface Constants {
 
 
     /**
-     * 实车试验记录状态
+     * 试验记录状态
      */
     enum TestingStatusEnum {
-        NOT_START(0, "就绪"),
-        RUNNING(1, "进行中"),
-        FINISHED(2, "已完成");
+        NO_PASS(1, "未通过"),
+        PASS(2, "通过");
 
         private Integer code;
 
@@ -373,8 +380,8 @@ public interface Constants {
      */
     enum TaskCaseStatusEnum {
         WAITING("waiting", "待测试"),
-        PASS("pass", "通过"),
-        NO_PASS("no_pass", "未通过");
+        RUNNING("running", "测试中"),
+        FINISHED("finished", "已完成");
 
         private String code;
 

@@ -3,26 +3,20 @@ package net.wanji.business.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
-import net.wanji.business.domain.bo.SceneTrajectoryBo;
+import net.wanji.business.domain.bo.TaskBo;
 import net.wanji.business.domain.dto.RoutingPlanDto;
 import net.wanji.business.domain.dto.TaskDto;
-import net.wanji.business.domain.bo.TaskBo;
 import net.wanji.business.domain.dto.device.TaskSaveDto;
-import net.wanji.business.domain.vo.CaseContinuousVo;
 import net.wanji.business.domain.vo.CasePageVo;
-import net.wanji.business.domain.vo.TaskCaseVo;
 import net.wanji.business.domain.vo.TaskListVo;
-import net.wanji.business.domain.vo.TaskVo;
 import net.wanji.business.entity.TjTask;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.common.core.domain.SimpleSelect;
-import net.wanji.common.core.page.TableDataInfo;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 /**
 * @author guowenhao
@@ -70,7 +64,6 @@ public interface TjTaskService extends IService<TjTask> {
      */
     Object processedInfo(TaskSaveDto taskSaveDto) throws BusinessException;
 
-
     /**
      * 保存创建任务
      * @param in
@@ -80,7 +73,7 @@ public interface TjTaskService extends IService<TjTask> {
 
     /**
      * 路径规划
-     * @param caseContinuousVos
+     * @param routingPlanDto
      * @return
      * @throws BusinessException
      */
@@ -91,7 +84,7 @@ public interface TjTaskService extends IService<TjTask> {
     /**
      * 导出
      * @param response
-     * @param taskIds
+     * @param taskId
      */
     void export(HttpServletResponse response, Integer taskId) throws IOException;
 

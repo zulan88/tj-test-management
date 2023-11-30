@@ -124,6 +124,7 @@ public class TaskController extends BaseController {
     @ApiOperation(value = "5.列表")
     @PostMapping("/pageList")
     public Map<String, Object> pageList(@Validated @RequestBody TaskDto taskDto) throws BusinessException {
+        taskDto.setCreatedBy(SecurityUtils.getUsername());
         Map<String, Object> result = new HashMap<>();
         Map<String, Long> countMap = tjTaskService.selectCount(taskDto);
         result.put("statistics", countMap);
@@ -290,35 +291,27 @@ public class TaskController extends BaseController {
     @ApiOperationSort(17)
     @ApiOperation(value = "17.任务控制")
     @GetMapping("/controlTask")
-    public AjaxResult start(Integer taskId, Integer id, Integer action) throws BusinessException, IOException {
+    public AjaxResult controlTask(Integer taskId, Integer id, Integer action) throws BusinessException, IOException {
         return AjaxResult.success(taskCaseService.controlTask(taskId, id, action));
     }
 
     @ApiOperationSort(18)
     @ApiOperation(value = "测试用例开始结束控制接口")
     @PostMapping("/caseStartEnd")
-    public AjaxResult caseStartEnd(@RequestBody PlatformSSDto platformSSDto){
+    public AjaxResult caseStartEnd(@RequestBody PlatformSSDto platformSSDto) throws BusinessException, IOException {
         if (platformSSDto.getState() == -1) {
             log.error("用例异常结束原因：{}", platformSSDto.getMessage());
         }
         if (platformSSDto.getTaskId()==0) {
-            try {
-                if(platformSSDto.getState()==1) {
-                    testingService.start(platformSSDto.getCaseId(), platformSSDto.getState(), (String) platformSSDto.getContext().get("key"),(String) platformSSDto.getContext().get("username"));
-                }else {
-                    testingService.end(platformSSDto.getCaseId(), (String) platformSSDto.getContext().get("channel"), platformSSDto.getState());
-                }
-            } catch (BusinessException | IOException e) {
-                e.printStackTrace();
+            if(platformSSDto.getState()==1) {
+                testingService.start(platformSSDto.getCaseId(), platformSSDto.getState(), (String) platformSSDto.getContext().get("key"),(String) platformSSDto.getContext().get("username"));
+            }else {
+                testingService.end(platformSSDto.getCaseId(), (String) platformSSDto.getContext().get("channel"), platformSSDto.getState());
             }
         } else {
-            try {
-                taskCaseService.caseStartEnd(platformSSDto.getTaskId(),
-                        platformSSDto.getCaseId(), platformSSDto.getState(),
-                        platformSSDto.isTaskEnd(), platformSSDto.getContext());
-            } catch (BusinessException | IOException e) {
-                throw new RuntimeException(e);
-            }
+            taskCaseService.caseStartEnd(platformSSDto.getTaskId(),
+                    platformSSDto.getCaseId(), platformSSDto.getState(),
+                    platformSSDto.isTaskEnd(), platformSSDto.getContext());
         }
       return null;
     }
@@ -368,11 +361,40 @@ public class TaskController extends BaseController {
     }
 
 
-    @ApiOperationSort(10)
+    @ApiOperationSort(21)
     @ApiOperation(value = "停止任务")
     @GetMapping("/stop")
     public AjaxResult stop(Integer taskId, Integer id, Integer action) throws BusinessException {
         taskCaseService.stop(taskId, id);
         return AjaxResult.success();
+    }
+
+    @ApiOperationSort(22)
+    @ApiOperation(value = "22.查询测试用例树")
+    @GetMapping("/selectTree")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "type", value = "类型", required = true, dataType = "String", paramType = "query", example = "virtualRealFusion"),
+            @ApiImplicitParam(name = "taskId", value = "任务ID", required = true, dataType = "Integer", paramType = "query", example = "1")
+    })
+    public AjaxResult selectTree(String type, Integer taskId) {
+        return AjaxResult.success(taskCaseService.selectTree(type, taskId));
+    }
+
+    @ApiOperationSort(23)
+    @ApiOperation(value = "23.选择测试用例")
+    @GetMapping("/choiceCase")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "taskId", value = "任务ID", required = true, dataType = "Integer", paramType = "query", example = "1"),
+            @ApiImplicitParam(name = "caseId", value = "用例ID", required = true, dataType = "Integer", paramType = "query", example = "1"),
+            @ApiImplicitParam(name = "action", value = "选中(1)/取消(0)", required = true, dataType = "Integer", paramType = "query", example = "1")
+    })
+    public AjaxResult choiceCase(Integer taskId, Integer caseId, Integer action) {
+        if (1 == action) {
+            return AjaxResult.success(taskCaseService.addTaskCase(taskId, caseId));
+        }
+        if (0 == action) {
+            return AjaxResult.success(taskCaseService.deleteTaskCase(taskId, caseId));
+        }
+        return AjaxResult.error("操作失败");
     }
 }
