@@ -513,6 +513,7 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
                 LoginUser loginUser = SecurityUtils.getLoginUser();
                 QueryWrapper<TjDeviceDetail> queryWrapper = new QueryWrapper<>();
                 queryWrapper.eq(ColumnName.ATTRIBUTE2_COLUMN, loginUser.getUsername());
+                queryWrapper.eq(ColumnName.SUPPORT_ROLES_COLUMN, "mvSimulation");
                 List<TjDeviceDetail> deviceDetails = deviceDetailService.list(queryWrapper);
                 Integer deviceId = null;
                 if (CollectionUtils.isNotEmpty(deviceDetails)) {
@@ -712,7 +713,10 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
         if (ObjectUtils.isEmpty(tjCase)) {
             throw new BusinessException("未查询到对应的测试用例");
         }
-        List<DeviceDetailVo> deviceDetails = deviceDetailService.list().stream().map(device -> {
+        LoginUser loginUser = SecurityUtils.getLoginUser();
+        QueryWrapper<TjDeviceDetail> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq(ColumnName.ATTRIBUTE2_COLUMN, loginUser.getUsername());
+        List<DeviceDetailVo> deviceDetails = deviceDetailService.list(queryWrapper).stream().map(device -> {
             DeviceDetailVo detailVo = new DeviceDetailVo();
             BeanUtils.copyBeanProp(detailVo, device);
             return detailVo;
