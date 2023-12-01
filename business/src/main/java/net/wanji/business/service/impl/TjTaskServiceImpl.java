@@ -575,7 +575,10 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                     throw new BusinessException("无可用的从车设备");
                 }
                 // 删除老的任务配置
-                tjTaskDataConfigService.remove(new QueryWrapper<TjTaskDataConfig>().eq(ColumnName.TASK_ID, in.getId()));
+                QueryWrapper<TjTaskDataConfig> queryWrapper = new QueryWrapper<TjTaskDataConfig>();
+                queryWrapper.eq(ColumnName.TASK_ID, in.getId());
+                queryWrapper.ne("type", PartRole.AV);
+                tjTaskDataConfigService.remove(queryWrapper);
                 // 添加新的任务配置
                 List<TjTaskDataConfig> dataConfigList = new ArrayList<>();
                 for (TjCase tjCase : cases) {
