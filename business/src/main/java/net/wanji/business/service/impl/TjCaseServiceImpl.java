@@ -20,11 +20,7 @@ import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.dto.CaseQueryDto;
 import net.wanji.business.domain.dto.TjCaseDto;
 import net.wanji.business.domain.vo.*;
-import net.wanji.business.entity.TjCase;
-import net.wanji.business.entity.TjCasePartConfig;
-import net.wanji.business.entity.TjDeviceDetail;
-import net.wanji.business.entity.TjFragmentedSceneDetail;
-import net.wanji.business.entity.TjResourcesDetail;
+import net.wanji.business.entity.*;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjResourcesDetailMapper;
@@ -41,6 +37,7 @@ import net.wanji.business.socket.WebSocketManage;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.core.domain.SimpleSelect;
 import net.wanji.common.core.domain.entity.SysDictData;
+import net.wanji.common.core.domain.model.LoginUser;
 import net.wanji.common.utils.CounterUtil;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
@@ -493,6 +490,7 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
                 tjCase.setTestTarget(tjCaseDto.getTestTarget());
             }
             tjCase.setRemark(tjCaseDto.getRemark());
+            Integer istest = null;
             List<TjCasePartConfig> configs = new ArrayList<>();
             for (PartConfigSelect partConfigSelect : tjCaseDto.getPartConfigSelects()) {
                 for (int i = 0; i < CollectionUtils.emptyIfNull(partConfigSelect.getParts()).size(); i++) {
@@ -502,6 +500,7 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
 //                    }
                     TjCasePartConfig config = new TjCasePartConfig();
                     BeanUtils.copyBeanProp(config, part);
+                    istest = part.getDeviceId();
 //                    config.setCaseId(tjCase.getId());
 //                    config.setParticipantRole(part.getParticipantRole());
 //                    config.setName(part.getName());
@@ -510,6 +509,26 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
                 }
             }
             boolean saveConfig = casePartConfigService.saveAndupdate(tjCaseDto.getId(), configs);
+            if(istest!=null){
+                LoginUser loginUser = SecurityUtils.getLoginUser();
+                QueryWrapper<TjDeviceDetail> queryWrapper = new QueryWrapper<>();
+                queryWrapper.eq(ColumnName.ATTRIBUTE2_COLUMN, loginUser.getUsername());
+                List<TjDeviceDetail> deviceDetails = deviceDetailService.list(queryWrapper);
+                Integer deviceId = null;
+                if (CollectionUtils.isNotEmpty(deviceDetails)) {
+                    deviceId = deviceDetails.get(0).getDeviceId();
+                }
+                QueryWrapper<TjCasePartConfig> configQueryWrapper = new QueryWrapper<>();
+                queryWrapper.eq(ColumnName.CASE_ID_COLUMN, tjCaseDto.getId());
+                queryWrapper.eq(ColumnName.PARTICIPANT_ROLE_COLUMN,"mvSimulation");
+                List<TjCasePartConfig> svconfigs = casePartConfigService.list(configQueryWrapper);
+                if (CollectionUtils.isNotEmpty(svconfigs)) {
+                    for(TjCasePartConfig tjCasePartConfig:svconfigs){
+                        tjCasePartConfig.setDeviceId(deviceId);
+                    }
+                }
+                casePartConfigService.saveAndupdate(tjCaseDto.getId(), svconfigs);
+            }
             if (!saveConfig) {
                 throw new BusinessException("保存配置失败");
             }

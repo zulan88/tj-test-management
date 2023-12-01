@@ -109,6 +109,8 @@ public interface Constants {
         public static final String CASE_NUMBER_COLUMN = "case_number";
         public static final String TEST_TYPE_COLUMN = "test_type";
         public static final String DEVICE_ID_COLUMN = "device_id";
+        public static final String ATTRIBUTE2_COLUMN = "attribute2";
+        public static final String PARTICIPANT_ROLE_COLUMN = "participant_role";
         public static final String DEVICE_TYPE_COLUMN = "device_type";
         public static final String CREATED_DATE_COLUMN = "created_date";
         public static final String CREATED_TIME_COLUMN = "created_time";
