@@ -519,8 +519,8 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
                     deviceId = deviceDetails.get(0).getDeviceId();
                 }
                 QueryWrapper<TjCasePartConfig> configQueryWrapper = new QueryWrapper<>();
-                queryWrapper.eq(ColumnName.CASE_ID_COLUMN, tjCaseDto.getId());
-                queryWrapper.eq(ColumnName.PARTICIPANT_ROLE_COLUMN,"mvSimulation");
+                configQueryWrapper.eq(ColumnName.CASE_ID_COLUMN, tjCaseDto.getId());
+                configQueryWrapper.eq(ColumnName.PARTICIPANT_ROLE_COLUMN,"mvSimulation");
                 List<TjCasePartConfig> svconfigs = casePartConfigService.list(configQueryWrapper);
                 if (CollectionUtils.isNotEmpty(svconfigs)) {
                     for(TjCasePartConfig tjCasePartConfig:svconfigs){
