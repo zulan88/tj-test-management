@@ -31,7 +31,7 @@ public class TestingController extends BaseController {
     private TestingService testingService;
 
     @ApiOperationSort(1)
-    @ApiOperation(value = "重置状态")
+    @ApiOperation(value = "1.重置状态")
     @GetMapping("/resetStatus")
     @ApiImplicitParam(name = "caseId", value = "用例ID", required = true, dataType = "Integer", paramType = "query", example = "278")
     public AjaxResult resetStatus(Integer caseId) throws BusinessException {
@@ -39,24 +39,24 @@ public class TestingController extends BaseController {
         return AjaxResult.success();
     }
 
-    @ApiOperationSort(1)
-    @ApiOperation(value = "获取状态")
+    @ApiOperationSort(2)
+    @ApiOperation(value = "2.获取状态")
     @GetMapping("/getStatus")
     @ApiImplicitParam(name = "caseId", value = "用例ID", required = true, dataType = "Integer", paramType = "query", example = "278")
     public AjaxResult getStatus(Integer caseId) throws BusinessException {
         return AjaxResult.success(testingService.getStatus(caseId));
     }
 
-    @ApiOperationSort(2)
-    @ApiOperation(value = "准备")
+    @ApiOperationSort(3)
+    @ApiOperation(value = "3.准备")
     @GetMapping("/prepare")
     @ApiImplicitParam(name = "caseId", value = "用例ID", required = true, dataType = "Integer", paramType = "query", example = "278")
     public AjaxResult prepare(Integer caseId) throws BusinessException {
         return AjaxResult.success(testingService.prepare(caseId));
     }
 
-    @ApiOperationSort(3)
-    @ApiOperation(value = "开始/结束")
+    @ApiOperationSort(4)
+    @ApiOperation(value = "4.开始/结束")
     @GetMapping("/controlTask")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499"),
@@ -71,8 +71,8 @@ public class TestingController extends BaseController {
 //        return  AjaxResult.success(testingService.hjktest(recordId));
 //    }
 
-    @ApiOperationSort(4)
-    @ApiOperation(value = "回放")
+    @ApiOperationSort(5.)
+    @ApiOperation(value = "5.回放")
     @GetMapping("/playback")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499"),
@@ -84,16 +84,16 @@ public class TestingController extends BaseController {
         return AjaxResult.success();
     }
 
-    @ApiOperationSort(5)
-    @ApiOperation(value = "测试结果")
+    @ApiOperationSort(6.)
+    @ApiOperation(value = "6.获取测试结果")
     @GetMapping("/getResult")
     @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499")
     public AjaxResult getResult(@RequestParam("recordId") Integer recordId) throws BusinessException {
         return AjaxResult.success(testingService.getResult(recordId));
     }
 
-    @ApiOperationSort(6)
-    @ApiOperation(value = "图形列表")
+    @ApiOperationSort(7)
+    @ApiOperation(value = "7.图形列表")
     @GetMapping("/communicationDelay")
     @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499")
     public AjaxResult communicationDelayVo(@RequestParam Integer recordId) {

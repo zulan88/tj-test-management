@@ -1,6 +1,8 @@
 package net.wanji.web.controller.business;
 
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiOperationSort;
 import net.wanji.business.common.Constants.InsertGroup;
 import net.wanji.business.common.Constants.OtherGroup;
 import net.wanji.business.common.Constants.UpdateGroup;
@@ -43,12 +45,16 @@ public class ResourcesController extends BaseController {
     private TjResourcesDetailService tjResourcesDetailService;
 
     //@PreAuthorize("@ss.hasPermi('resource:init')")
+    @ApiOperationSort(1)
+    @ApiOperation(value = "1.初始化")
     @GetMapping("/init")
     public AjaxResult init() {
         return AjaxResult.success(tjResourcesService.init());
     }
 
     //@PreAuthorize("@ss.hasPermi('resource:selectTree')")
+    @ApiOperationSort(2)
+    @ApiOperation(value = "2.查询文件树")
     @GetMapping("/selectTree")
     public AjaxResult selectTree(@RequestParam("type") String type,
                                  @RequestParam(value = "name", required = false) String name) {
@@ -58,6 +64,8 @@ public class ResourcesController extends BaseController {
     }
 
     //@PreAuthorize("@ss.hasPermi('resource:deleteTree')")
+    @ApiOperationSort(3)
+    @ApiOperation(value = "3.删除文件树")
     @GetMapping("/deleteTree")
     public AjaxResult deleteTree(@RequestParam("resourceId") Integer resourceId) throws BusinessException {
         return tjResourcesService.deleteTree(resourceId)
@@ -66,6 +74,8 @@ public class ResourcesController extends BaseController {
     }
 
     //@PreAuthorize("@ss.hasPermi('resource:saveTree')")
+    @ApiOperationSort(4)
+    @ApiOperation(value = "4.保存文件树")
     @PostMapping("/saveTree")
     public AjaxResult saveTree(@Validated(InsertGroup.class) @RequestBody TjResourcesDto resourcesDto) {
         return tjResourcesService.saveTree(resourcesDto)
@@ -74,6 +84,8 @@ public class ResourcesController extends BaseController {
     }
 
     //@PreAuthorize("@ss.hasPermi('resources:getDetailList')")
+    @ApiOperationSort(5)
+    @ApiOperation(value = "5.获取文件树下资源列表")
     @GetMapping("/getDetailList")
     public AjaxResult getDetailList(@RequestParam("resourceId") Integer resourceId,
                                     @RequestParam(value = "name", required = false) String name) {
@@ -81,6 +93,8 @@ public class ResourcesController extends BaseController {
     }
 
     //@PreAuthorize("@ss.hasPermi('resource:preview')")
+    @ApiOperationSort(6)
+    @ApiOperation(value = "6.预览")
     @PostMapping("/preview")
     public AjaxResult preview(@Validated(value = OtherGroup.class) @RequestBody TjResourcesDetailDto resourcesDetailDto)
             throws BusinessException, IOException {
@@ -88,6 +102,8 @@ public class ResourcesController extends BaseController {
     }
 
     //@PreAuthorize("@ss.hasPermi('resource:saveResourceDetail')")
+    @ApiOperationSort(7)
+    @ApiOperation(value = "7.保存资源详情")
     @PostMapping("/saveResourceDetail")
     public AjaxResult saveResourceDetail(@Validated(value = {InsertGroup.class, UpdateGroup.class})
                                              @RequestBody TjResourcesDetailDto resourcesDetailDto)
@@ -98,6 +114,8 @@ public class ResourcesController extends BaseController {
     }
 
     //@PreAuthorize("@ss.hasPermi('resource:deleteResourceDetail')")
+    @ApiOperationSort(8)
+    @ApiOperation(value = "8.删除资源详情")
     @GetMapping("/deleteResourceDetail")
     public AjaxResult deleteResourceDetail(@RequestParam("id") Integer id)
             throws BusinessException{
@@ -107,6 +125,8 @@ public class ResourcesController extends BaseController {
     }
 
     //@PreAuthorize("@ss.hasPermi('resource:collectResourceDetail')")
+    @ApiOperationSort(9)
+    @ApiOperation(value = "9.关联资源详情")
     @GetMapping("/collectResourceDetail")
     public AjaxResult collectResourceDetail(@RequestParam("id") Integer id) {
         return tjResourcesDetailService.collectByDetailId(id)
@@ -115,6 +135,8 @@ public class ResourcesController extends BaseController {
     }
 
     //@PreAuthorize("@ss.hasPermi('resource:getResourceSelect')")
+    @ApiOperationSort(10)
+    @ApiOperation(value = "10.获取资源详情下拉列表")
     @GetMapping("/getResourceSelect")
     public AjaxResult getResourceSelect(@RequestParam(value = "type", required = false) String type,
                                         @RequestParam(value = "sceneTreeType", required = false) String sceneTreeType,

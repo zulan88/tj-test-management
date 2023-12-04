@@ -1,6 +1,8 @@
 package net.wanji.web.controller.business;
 
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiOperationSort;
 import net.wanji.business.domain.Label;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
 import net.wanji.business.domain.vo.SceneDetailVo;
@@ -12,9 +14,21 @@ import net.wanji.business.service.TjFragmentedSceneDetailService;
 import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Api(tags = "场景创建-标签管理")
 @RestController
@@ -30,8 +44,8 @@ public class LabelsController extends BaseController {
     @Autowired
     private SceneLabelMap sceneLabelMap;
 
-
-    //输出为树形结构
+    @ApiOperationSort(1)
+    @ApiOperation(value = "1.列表页查询（输出为树形结构）")
     @GetMapping("/list")
     public AjaxResult list(Integer id) throws BusinessException {
         List<Label> labelList = labelsService.selectLabelsList(new Label());
@@ -40,7 +54,7 @@ public class LabelsController extends BaseController {
         treeVo.setTotal(labelList.size());
         List<Label> roots = new ArrayList<>();
         Set<Long> set = new HashSet<>();
-        if(id!=null) {
+        if (id != null) {
             FragmentedScenesDetailVo detailVo = tjFragmentedSceneDetailService.getDetailVo(id);
             List<String> labels = detailVo.getLabelList();
             for (String str : labels) {
@@ -53,7 +67,7 @@ public class LabelsController extends BaseController {
             }
         }
         for (Label label : labelList) {
-            if(set.contains(label.getId())){
+            if (set.contains(label.getId())) {
                 label.setStatus(true);
             }
             labelToNodeMap.put(label.getId(), label);
@@ -74,6 +88,8 @@ public class LabelsController extends BaseController {
         return AjaxResult.success(treeVo);
     }
 
+    @ApiOperationSort(3)
+    @ApiOperation(value = "3.获取标签树")
     @PostMapping("/tree")
     public AjaxResult getlabeltree(@RequestBody List<String> labels) throws BusinessException {
         List<Label> labelList = labelsService.selectLabelsList(new Label());
@@ -93,7 +109,7 @@ public class LabelsController extends BaseController {
         }
 
         for (Label label : labelList) {
-            if(set.contains(label.getId())){
+            if (set.contains(label.getId())) {
                 label.setStatus(true);
             }
             labelToNodeMap.put(label.getId(), label);
@@ -114,8 +130,10 @@ public class LabelsController extends BaseController {
         return AjaxResult.success(treeVo);
     }
 
+    @ApiOperationSort(2)
+    @ApiOperation(value = "2.列表页查询（新）")
     @GetMapping("/list2")
-    public AjaxResult list2(Integer id) throws BusinessException{
+    public AjaxResult list2(Integer id) throws BusinessException {
         List<Label> labelList = labelsService.selectLabelsList(new Label());
         Map<Long, Label> labelToNodeMap = new HashMap<>();
         TreeVo treeVo = new TreeVo();
@@ -183,56 +201,64 @@ public class LabelsController extends BaseController {
         return AjaxResult.success(treeVo);
     }
 
+    @ApiOperationSort(4)
+    @ApiOperation(value = "4.新增标签")
     @PostMapping
-    public AjaxResult add(@RequestBody Label label){
+    public AjaxResult add(@RequestBody Label label) {
         labelsService.insertLabels(label);
         sceneLabelMap.reset(2l);
         return AjaxResult.success(label.getId());
     }
 
+    @ApiOperationSort(5)
+    @ApiOperation(value = "5.修改标签")
     @PutMapping
-    public AjaxResult edit(@RequestBody Label label){
+    public AjaxResult edit(@RequestBody Label label) {
         labelsService.updateLabels(label);
         sceneLabelMap.reset(2l);
         return AjaxResult.success();
     }
 
+    @ApiOperationSort(6)
+    @ApiOperation(value = "6.批量删除标签")
     @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable Long[] ids) throws BusinessException {
-        for (Long id:ids){
+        for (Long id : ids) {
             SceneDetailVo sceneDetailVo = new SceneDetailVo();
             sceneDetailVo.setLabel(String.valueOf(id));
             List<SceneDetailVo> list = tjFragmentedSceneDetailService.selectTjFragmentedSceneDetailList(sceneDetailVo);
-            if(list.size()>0){
+            if (list.size() > 0) {
                 AjaxResult.error("该标签被场景或用例选中，请删除场景和用例后再试");
             }
         }
         return toAjax(labelsService.deleteLabelsByIds(ids));
     }
 
+    @ApiOperationSort(7)
+    @ApiOperation(value = "7.获取标签简述列表")
     @GetMapping("/getlabel")
     public AjaxResult getlabel(Integer id) throws BusinessException {
         List<Label> labelList = labelsService.selectLabelsList(new Label());
-        Map<Long,String> sceneMap = new HashMap<>();
-        for(Label tlabel : labelList){
+        Map<Long, String> sceneMap = new HashMap<>();
+        for (Label tlabel : labelList) {
             Long parentId = tlabel.getParentId();
             String prelabel = null;
-            if(parentId!=null) {
-               prelabel = sceneMap.getOrDefault(parentId, null);
-            }else {
+            if (parentId != null) {
+                prelabel = sceneMap.getOrDefault(parentId, null);
+            } else {
                 continue;
             }
-            if(tlabel.getId().equals(2L)){
+            if (tlabel.getId().equals(2L)) {
                 continue;
             }
-            if(prelabel==null){
-                sceneMap.put(tlabel.getId(),tlabel.getName());
-            }else {
-                sceneMap.put(tlabel.getId(),prelabel+"-"+tlabel.getName());
+            if (prelabel == null) {
+                sceneMap.put(tlabel.getId(), tlabel.getName());
+            } else {
+                sceneMap.put(tlabel.getId(), prelabel + "-" + tlabel.getName());
             }
         }
         List<String> data = new ArrayList<>();
-        if(id!=null) {
+        if (id != null) {
             FragmentedScenesDetailVo detailVo = tjFragmentedSceneDetailService.getDetailVo(id);
             List<String> labels = detailVo.getLabelList();
             for (String str : labels) {
@@ -247,8 +273,10 @@ public class LabelsController extends BaseController {
         return AjaxResult.success(data);
     }
 
+    @ApiOperationSort(8)
+    @ApiOperation(value = "8.场景类型标签树")
     @GetMapping("/singlelist")
-    public AjaxResult singlelist(){
+    public AjaxResult singlelist() {
         List<Label> labelList = labelsService.selectLabelsList(new Label());
         Map<Long, Label> labelToNodeMap = new HashMap<>();
         TreeVo treeVo = new TreeVo();
@@ -258,7 +286,7 @@ public class LabelsController extends BaseController {
 
             labelToNodeMap.put(label.getId(), label);
 
-            if (label.getParentId()!=null&&label.getParentId().equals(2l)) {
+            if (label.getParentId() != null && label.getParentId().equals(2l)) {
                 roots.add(label);
             }
         }

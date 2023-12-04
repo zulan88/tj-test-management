@@ -154,9 +154,9 @@ public class TaskController extends BaseController {
     @GetMapping("/hasSubmitTask")
     public AjaxResult hasSubmitTask() {
         TjTask task = tjTaskService.hasUnSubmitTask();
-        if(task==null) {
+        if (task == null) {
             return AjaxResult.success(0);
-        }else {
+        } else {
             return AjaxResult.success(task);
         }
     }
@@ -165,16 +165,16 @@ public class TaskController extends BaseController {
     @ApiOperation(value = "8.根据场景权重选择权重详情")
     @GetMapping("/getWeightDetailsById")
     public AjaxResult getWeightDetailsById(String id, Integer type) throws BusinessException {
-        if(StringUtils.isEmpty(id)){
+        if (StringUtils.isEmpty(id)) {
             return AjaxResult.error("场景权重id为空!");
         }
-        if(type == null){
+        if (type == null) {
             return AjaxResult.error("指标或指标类型为空!");
         }
         //0 场景分类方案 1 指标方案
-        if(type == 0){
+        if (type == 0) {
             return AjaxResult.success(restService.getSceneWeightDetailsById(id));
-        }else if(type == 1){
+        } else if (type == 1) {
             return AjaxResult.success(restService.getIndexWeightDetailsById(id));
         }
         return AjaxResult.success();
@@ -192,7 +192,7 @@ public class TaskController extends BaseController {
     @PostMapping("/saveTaskScheme")
     public AjaxResult saveTaskScheme(@RequestBody SaveTaskSchemeBo saveTaskSchemeBo) throws BusinessException {
         Map<String, String> map = restService.saveTaskScheme(saveTaskSchemeBo);
-        if ("500".equals(map.get("code"))){
+        if ("500".equals(map.get("code"))) {
             return AjaxResult.error(map.get("msg"));
         }
 //        TaskBo taskBo = new TaskBo();
@@ -207,8 +207,8 @@ public class TaskController extends BaseController {
     @PostMapping("/saveCustomScenarioWeight")
     public AjaxResult saveCustomScenarioWeight(@RequestBody SaveCustomScenarioWeightBo saveCustomScenarioWeightBo) throws BusinessException {
         Map<String, String> map = restService.saveCustomScenarioWeight(saveCustomScenarioWeightBo);
-        if ("500".equals(map.get("code"))){
-           return AjaxResult.error(map.get("msg"));
+        if ("500".equals(map.get("code"))) {
+            return AjaxResult.error(map.get("msg"));
         }
         tjTaskService.saveCustomScenarioWeight(saveCustomScenarioWeightBo);
         return AjaxResult.success();
@@ -219,12 +219,13 @@ public class TaskController extends BaseController {
     @PostMapping("/saveCustomIndexWeight")
     public AjaxResult saveCustomIndexWeight(@RequestBody SaveCustomIndexWeightBo saveCustomIndexWeightBo) throws BusinessException {
         Map<String, String> map = restService.saveCustomIndexWeight(saveCustomIndexWeightBo);
-        if ("500".equals(map.get("code"))){
+        if ("500".equals(map.get("code"))) {
             return AjaxResult.error(map.get("msg"));
         }
         tjTaskService.saveCustomIndexWeight(saveCustomIndexWeightBo);
         return AjaxResult.success();
     }
+
     @ApiOperationSort(12)
     @ApiOperation(value = "12.测试任务用例列表")
     @GetMapping("/getTaskCaseList")
@@ -255,14 +256,16 @@ public class TaskController extends BaseController {
     public AjaxResult getStatus(@RequestBody TjTaskCase param) throws BusinessException {
         return AjaxResult.success(taskCaseService.getStatus(param));
     }
-//
+
+    //
     @ApiOperationSort(16)
     @ApiOperation(value = "16.准备")
     @PostMapping("/prepare")
     public AjaxResult prepare(@RequestBody TjTaskCase param) throws BusinessException {
         return AjaxResult.success(taskCaseService.prepare(param));
     }
-//
+
+    //
     @ApiOperationSort(17)
     @ApiOperation(value = "17.任务控制")
     @GetMapping("/controlTask")
@@ -271,16 +274,16 @@ public class TaskController extends BaseController {
     }
 
     @ApiOperationSort(18)
-    @ApiOperation(value = "测试用例开始结束控制接口")
+    @ApiOperation(value = "18.测试用例开始结束控制接口")
     @PostMapping("/caseStartEnd")
     public AjaxResult caseStartEnd(@RequestBody PlatformSSDto platformSSDto) throws BusinessException, IOException {
         if (platformSSDto.getState() == -1) {
             log.error("用例异常结束原因：{}", platformSSDto.getMessage());
         }
-        if (platformSSDto.getTaskId()==0) {
-            if(platformSSDto.getState()==1) {
-                testingService.start(platformSSDto.getCaseId(), platformSSDto.getState(), (String) platformSSDto.getContext().get("key"),(String) platformSSDto.getContext().get("username"));
-            }else {
+        if (platformSSDto.getTaskId() == 0) {
+            if (platformSSDto.getState() == 1) {
+                testingService.start(platformSSDto.getCaseId(), platformSSDto.getState(), (String) platformSSDto.getContext().get("key"), (String) platformSSDto.getContext().get("username"));
+            } else {
                 testingService.end(platformSSDto.getCaseId(), (String) platformSSDto.getContext().get("channel"), platformSSDto.getState());
             }
         } else {
@@ -288,7 +291,7 @@ public class TaskController extends BaseController {
                     platformSSDto.getCaseId(), platformSSDto.getState(),
                     platformSSDto.isTaskEnd(), platformSSDto.getContext());
         }
-      return null;
+        return null;
     }
 
     @ApiOperationSort(19)
@@ -301,7 +304,7 @@ public class TaskController extends BaseController {
     public AjaxResult getResult(Integer taskId, Integer recordId) throws BusinessException {
         return AjaxResult.success(taskCaseService.getResult(taskId, recordId));
     }
-//
+
     @ApiOperationSort(20)
     @ApiOperation(value = "20.图形列表")
     @GetMapping("/communicationDelay")
@@ -313,16 +316,19 @@ public class TaskController extends BaseController {
         return AjaxResult.success(taskCaseService.communicationDelayVo(taskId, recordId));
     }
 
-
+    @ApiOperationSort(21)
+    @ApiOperation(value = "21.删除任务")
     @DeleteMapping("/{id}")
-    public AjaxResult remove(@PathVariable Long id){
+    public AjaxResult remove(@PathVariable Long id) {
         return tjTaskService.removeById(id)
                 ? AjaxResult.success("删除成功")
                 : AjaxResult.error("删除失败");
     }
 
+    @ApiOperationSort(22)
+    @ApiOperation(value = "22.删除待提交任务")
     @PostMapping("/remove")
-    public AjaxResult removeEnity(){
+    public AjaxResult removeEnity() {
         LambdaQueryWrapper<TjTask> wrapper = new LambdaQueryWrapper<TjTask>();
         wrapper.eq(TjTask::getStatus, "save");
         return tjTaskService.remove(wrapper)
@@ -330,22 +336,24 @@ public class TaskController extends BaseController {
                 : AjaxResult.error("失败");
     }
 
+    @ApiOperationSort(23)
+    @ApiOperation(value = "23.查询任务信息")
     @GetMapping("/taskinfo")
     public AjaxResult taskinfo(@RequestParam Integer taskId) throws BusinessException {
         return AjaxResult.success(taskCaseService.gettaskInfo(taskId));
     }
 
 
-    @ApiOperationSort(21)
-    @ApiOperation(value = "停止任务")
+    @ApiOperationSort(24)
+    @ApiOperation(value = "24.停止任务")
     @GetMapping("/stop")
     public AjaxResult stop(Integer taskId, Integer id, Integer action) throws BusinessException {
         taskCaseService.stop(taskId, id);
         return AjaxResult.success();
     }
 
-    @ApiOperationSort(22)
-    @ApiOperation(value = "22.查询测试用例树")
+    @ApiOperationSort(25)
+    @ApiOperation(value = "25.查询任务用例树")
     @GetMapping("/selectTree")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "type", value = "类型", required = true, dataType = "String", paramType = "query", example = "virtualRealFusion"),
@@ -355,8 +363,8 @@ public class TaskController extends BaseController {
         return AjaxResult.success(taskCaseService.selectTree(type, taskId));
     }
 
-    @ApiOperationSort(23)
-    @ApiOperation(value = "23.选择测试用例")
+    @ApiOperationSort(26)
+    @ApiOperation(value = "26.选择任务用例")
     @GetMapping("/choiceCase")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "taskId", value = "任务ID", required = true, dataType = "Integer", paramType = "query", example = "1"),
