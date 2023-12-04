@@ -239,33 +239,6 @@ public class TaskController extends BaseController {
         return AjaxResult.success();
     }
 
-
-//    @ApiOperationSort(1)
-//    @ApiOperation(value = "创建任务")
-//    @PostMapping("/create")
-//    @ApiImplicitParam(name = "caseIds", value = "用例ID集合", required = true, dataType = "List", paramType = "query", example = "[1,2,3]")
-//    public AjaxResult create(@RequestParam("caseIds") List<Integer> caseIds) {
-//        TaskVo taskVo = null;
-//        try {
-//            taskVo = tjTaskService.createTask(caseIds);
-//        } catch (BusinessException | ExecutionException | InterruptedException e) {
-//            throw new RuntimeException(e);
-//        }
-//        return AjaxResult.success(taskVo);
-//    }
-//
-//    @ApiOperationSort(2)
-//    @ApiOperation(value = "任务列表")
-//    @GetMapping("/pageList")
-//    public TableDataInfo pageList(TaskDto bo) {
-//        TableDataInfo tableDataInfo = tjTaskService.pageList(bo);
-//        tableDataInfo.setCode(200);
-//        tableDataInfo.setMsg("操作成功");
-//        return tableDataInfo;
-//    }
-//
-//
-
     @ApiOperationSort(14)
     @ApiOperation(value = "14.重置状态")
     @PostMapping("/resetStatus")
