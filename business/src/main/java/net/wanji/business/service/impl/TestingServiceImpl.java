@@ -202,7 +202,9 @@ public class TestingServiceImpl implements TestingService {
         try {
             participantTrajectories = routeService.readOriRouteFile(caseInfoBo.getRouteFile());
             participantTrajectories = participantTrajectories.stream().filter(
-                    item -> !ObjectUtils.isEmpty(item.getValue())).collect(Collectors.toList());
+                    item -> !ObjectUtils.isEmpty(item.getValue())
+                            && item.getValue().stream().anyMatch(p -> "1".equals(p.getId())))
+                    .collect(Collectors.toList());
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -71,7 +71,7 @@ public class TestingController extends BaseController {
 //        return  AjaxResult.success(testingService.hjktest(recordId));
 //    }
 
-    @ApiOperationSort(5.)
+    @ApiOperationSort(5)
     @ApiOperation(value = "5.回放")
     @GetMapping("/playback")
     @ApiImplicitParams({
@@ -84,7 +84,7 @@ public class TestingController extends BaseController {
         return AjaxResult.success();
     }
 
-    @ApiOperationSort(6.)
+    @ApiOperationSort(6)
     @ApiOperation(value = "6.获取测试结果")
     @GetMapping("/getResult")
     @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499")
