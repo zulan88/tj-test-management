@@ -137,6 +137,8 @@ public class TaskController extends BaseController {
         tableDataInfo.setData(list);
         tableDataInfo.setTotal(new PageInfo(list).getTotal());
         result.put("tableData", tableDataInfo);
+        // 添加测试报告的跳转外链
+        result.put("testReportOuterChain", tjTaskService.getTestReportOuterChain());
         return result;
     }
 

@@ -89,6 +89,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -609,7 +610,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 }
                 if (TestType.VIRTUAL_REAL_FUSION.equals(tjTask.getTestType())) {
                     if (CollectionUtils.isEmpty(in.getCases())) {
-                       throw new BusinessException("请选择用例");
+                        throw new BusinessException("请选择用例");
                     }
                     if (StringUtils.isEmpty(in.getRouteFile())) {
                         throw new BusinessException("请进行路径规划");
@@ -788,6 +789,13 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
     public void saveCustomIndexWeight(SaveCustomIndexWeightBo saveCustomIndexWeightBo) {
         String weights = JSON.toJSONString(saveCustomIndexWeightBo.getList());
         tjTaskMapper.saveCustomScenarioWeight(saveCustomIndexWeightBo.getTask_id(), weights, "1");
+    }
+
+    @Value("${tess.testReportOuterChain}")
+    private String testReportOuterChain;
+
+    public String getTestReportOuterChain() {
+        return StringUtils.isEmpty(testReportOuterChain) ? "" : testReportOuterChain;
     }
 
     public class ExcelMergeCustomerCellHandler implements CellWriteHandler {

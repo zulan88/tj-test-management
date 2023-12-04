@@ -106,4 +106,6 @@ public interface TjTaskService extends IService<TjTask> {
      */
     void saveCustomIndexWeight(SaveCustomIndexWeightBo saveCustomIndexWeightBo);
 
+
+    String getTestReportOuterChain();
 }
