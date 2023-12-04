@@ -98,14 +98,14 @@ public class RedisTrajectory2Consumer {
         String channel = WebSocketManage.buildKey(SecurityUtils.getUsername(), sceneDebugDto.getNumber(),
                 WebSocketManage.SIMULATION, null);
         if (this.runningChannel.containsKey(channel)) {
-            log.info("通道已存在");
+            log.info("通道 {} 已存在", channel);
             return;
         }
         MessageListener listener = createListener(channel, sceneDebugDto);
         this.runningChannel.put(channel, new ChannelListener(sceneDebugDto.getNumber(), channel, SecurityUtils.getUsername(),
                 System.currentTimeMillis(), listener));
         redisMessageListenerContainer.addMessageListener(listener, new ChannelTopic(channel));
-        log.info("添加监听器成功:{}", channel);
+        log.info("添加监听器 {} 成功", channel);
     }
 
 
@@ -126,7 +126,7 @@ public class RedisTrajectory2Consumer {
                 SimulationMessage simulationMessage = objectMapper.readValue(
                         message.toString(),
                         SimulationMessage.class);
-                log.info(StringUtils.format("{}收到消息：{}", methodLog, JSONObject.toJSONString(simulationMessage)));
+//                log.info(StringUtils.format("{}收到消息：{}", methodLog, JSONObject.toJSONString(simulationMessage)));
                 // 计时
                 String duration = DateUtils.secondsToDuration(
                         (int) Math.ceil((double) (getDataSize(channel)) / 10));

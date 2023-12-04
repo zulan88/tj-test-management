@@ -126,7 +126,7 @@ public class TaskRedisTrajectoryConsumer {
 
     public void addRunningChannel(String key, Integer taskId, Integer taskCaseId, List<TaskCaseInfoBo> taskCaseInfos) throws IOException {
         if (this.runningChannel.containsKey(key)) {
-            log.info("通道已存在");
+            log.info("通道 {} 已存在", key);
             return;
         }
         List<TaskCaseConfigBo> taskCaseConfigs = taskCaseInfos.stream().map(TaskCaseInfoBo::getDataConfigs)
@@ -148,7 +148,7 @@ public class TaskRedisTrajectoryConsumer {
         }
         this.runningChannel.put(key, listeners);
         redisMessageListenerContainer.addMessageListener(listener, topics);
-        log.info("添加监听器成功:{}", JSON.toJSONString(topics));
+        log.info("添加监听器 {} 成功", JSON.toJSONString(topics));
     }
 
 

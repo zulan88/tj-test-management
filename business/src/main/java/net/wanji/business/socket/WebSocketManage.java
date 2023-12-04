@@ -6,9 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.validation.annotation.Validated;
 
-import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -57,18 +55,13 @@ public class WebSocketManage {
             return;
         }
         String key = webSocketProperties.getKey();
-//        if (CLIENTS.containsKey(key)) {
-//            log.info(StringUtils.format("{}客户端{}已加入", CLIENT_TYPE.get(webSocketHandle.getProperties().getClientType()), key));
-//            CLIENTS.get(key).closeSession();
-//            return;
-//        }
         CLIENTS.put(key, webSocketProperties);
         log.info(StringUtils.format("客户端{}加入，当前在线数量：{}", key, getOnlineCount()));
     }
 
     public static void remove(String key) {
         if (!CLIENTS.containsKey(key)) {
-            log.error(StringUtils.format("remove:客户端{}不存在", key));
+//            log.error(StringUtils.format("remove:客户端{}不存在", key));
             return;
         }
         CLIENTS.remove(key);
@@ -76,7 +69,7 @@ public class WebSocketManage {
 
     public static void sendInfo(String key, String message) {
         if (!CLIENTS.containsKey(key)) {
-            log.error(StringUtils.format("sendInfo:客户端{}不存在", key));
+//            log.error(StringUtils.format("sendInfo:客户端{}不存在", key));
             return;
         }
         CLIENTS.get(key).sendMessage(message);

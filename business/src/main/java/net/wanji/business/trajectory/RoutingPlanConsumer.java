@@ -89,21 +89,22 @@ public class RoutingPlanConsumer {
 
     /**
      * 添加监听器
-     *
-     * @param sceneDebugDto
+     * @param routingChannel
+     * @param taskId
+     * @param taskCode
      */
     public void addRunningChannel(String routingChannel, Integer taskId, String taskCode) {
         String wsChannel = WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(taskId),
                 WebSocketManage.PLAN, null);
         if (this.runningChannel.containsKey(wsChannel)) {
-            log.info("通道已存在");
+            log.info("通道 {} 已存在", wsChannel);
             return;
         }
         MessageListener listener = createListener(routingChannel, wsChannel, taskId, taskCode);
         this.runningChannel.put(wsChannel, new ChannelListener(routingChannel, wsChannel, SecurityUtils.getUsername(),
                 System.currentTimeMillis(), listener));
         redisMessageListenerContainer.addMessageListener(listener, new ChannelTopic(routingChannel));
-        log.info("添加监听器成功:{}", wsChannel);
+        log.info("添加监听器 {} 成功", wsChannel);
     }
 
 
