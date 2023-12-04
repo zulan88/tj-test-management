@@ -267,6 +267,8 @@
         <module>DataSet</module>
         <module>business</module>
         <module>DataOpenX</module>
+        <module>MakeAnAppointment</module>
+        <module>ExamineAndApprove</module>
     </modules>
     <packaging>pom</packaging>
 
