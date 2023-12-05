@@ -5,18 +5,18 @@ import com.baomidou.mybatisplus.generator.engine.FreemarkerTemplateEngine;
 
 public class MybatisPlusGenerator {
     //    private static final String PROJECT_PATH = System.getProperty("user.dir");
-    private static final String OUTPUT_DIR = "business/src/main/java";
+    private static final String OUTPUT_DIR = "ExamineAndApprove/src/main/java";
     private static final String AUTHOR = "wj";
-    private static final String URL = "jdbc:mysql://10.102.1.157:3306/wanji_tj_test_management_local?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8";
+    private static final String URL = "jdbc:mysql://10.102.1.157:3306/wanji_tj_test_management?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8";
     //    private static final String DRIVER_NAME = "com.mysql.cj.jdbc.Driver";
     private static final String USERNAME = "root";
     private static final String PASSWORD = "Wanji123456";
     private static final String[] TABLES = {
-            "tj_device"
+            "appointment_record","tj_workers"
     };
     //    private static final String TEMPLATE_PATH = "/templates/mapper.xml.ftl";
-    private static final String MAPPER_PATH = "business/src/main/resources/mapper/business";
-    private static final String PARENT = "net.wanji.business";
+    private static final String MAPPER_PATH = "ExamineAndApprove/src/main/resources/mapper";
+    private static final String PARENT = "net.wanji.approve";
 
 
     public static void main(String[] args) {

@@ -114,10 +114,10 @@
             <artifactId>DataSystem</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>net.wanji</groupId>
-            <artifactId>DataSet</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>net.wanji</groupId>-->
+<!--            <artifactId>DataSet</artifactId>-->
+<!--        </dependency>-->
 
         <dependency>
             <groupId>net.wanji</groupId>
