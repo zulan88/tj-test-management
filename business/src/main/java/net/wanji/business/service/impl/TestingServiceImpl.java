@@ -141,8 +141,12 @@ public class TestingServiceImpl implements TestingService {
         List<SimulationTrajectoryDto> participantTrajectories = null;
         try {
             participantTrajectories = routeService.readOriRouteFile(caseInfoBo.getRouteFile());
-            participantTrajectories = participantTrajectories.stream().filter(
-                    item -> !ObjectUtils.isEmpty(item.getValue())).collect(Collectors.toList());
+            participantTrajectories = participantTrajectories.stream()
+                    .filter(item -> !ObjectUtils.isEmpty(item.getValue())
+                            && item.getValue().stream().anyMatch(p -> "1".equals(p.getId())))
+                    .peek(s -> s.setValue(s.getValue().stream().filter(p -> "1".equals(p.getId()))
+                            .collect(Collectors.toList())))
+                    .collect(Collectors.toList());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -201,9 +205,11 @@ public class TestingServiceImpl implements TestingService {
         List<SimulationTrajectoryDto> participantTrajectories = null;
         try {
             participantTrajectories = routeService.readOriRouteFile(caseInfoBo.getRouteFile());
-            participantTrajectories = participantTrajectories.stream().filter(
-                    item -> !ObjectUtils.isEmpty(item.getValue())
+            participantTrajectories = participantTrajectories.stream()
+                    .filter(item -> !ObjectUtils.isEmpty(item.getValue())
                             && item.getValue().stream().anyMatch(p -> "1".equals(p.getId())))
+                    .peek(s -> s.setValue(s.getValue().stream().filter(p -> "1".equals(p.getId()))
+                            .collect(Collectors.toList())))
                     .collect(Collectors.toList());
         } catch (IOException e) {
             e.printStackTrace();
