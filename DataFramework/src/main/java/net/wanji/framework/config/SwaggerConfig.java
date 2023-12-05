@@ -154,7 +154,7 @@ public class SwaggerConfig {
                 .apiInfo(apiInfo())
                 .groupName("Business")
                 .select()
-                .apis(RequestHandlerSelectors.basePackage("net.wanji.web.controller.business"))
+                .apis(RequestHandlerSelectors.withMethodAnnotation(ApiOperation.class))
                 .paths(PathSelectors.any())
                 .build()
                 .securitySchemes(securitySchemes())

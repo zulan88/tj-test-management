@@ -120,7 +120,12 @@
 	<!-- Spring日志级别控制  -->
 	<logger name="org.springframework" level="warn" />
 
-    <logger name="com.baomidou.mybatisplus" level="debug" />
+    <logger name="com.baomidou.mybatisplus" level="error" />
+
+    <logger name="springfox.documentation.swagger.readers.operation" level="error" />
+    <logger name="springfox.documentation.builders.BodyParameterSpecificationProvider" level="error" />
+    <logger name="org.mybatis.spring.mapper.ClassPathMapperScanner" level="error" />
+
 
 	<root level="info">
 		<appender-ref ref="console" />
