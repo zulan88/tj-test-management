@@ -39,7 +39,7 @@ public class TjWorkersServiceImpl extends ServiceImpl<TjWorkersMapper, TjWorkers
     }
 
     // 根据id查询
-    public TjWorkers getWorkerById(Long id) {
+    public TjWorkers getWorkerById(Integer id) {
         return getById(id);
     }
 

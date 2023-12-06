@@ -39,8 +39,8 @@ public class TjWorkersController {
     // 根据id查询
     @GetMapping("/{id}")
     @ApiOperation("根据ID查询工作人员")
-    @ApiImplicitParam(name = "id", value = "工作人员ID", dataType = "Long", paramType = "path")
-    public AjaxResult getWorkerById(@PathVariable Long id) {
+    @ApiImplicitParam(name = "id", value = "工作人员ID", dataType = "Integer", paramType = "path")
+    public AjaxResult getWorkerById(@PathVariable Integer id) {
         return AjaxResult.success(workersService.getWorkerById(id));
     }
 
@@ -67,7 +67,7 @@ public class TjWorkersController {
     // 根据id删除
     @DeleteMapping("/delete/{id}")
     @ApiOperation("根据ID删除工作人员")
-    @ApiImplicitParam(name = "id", value = "工作人员ID", dataType = "Long", paramType = "path")
+    @ApiImplicitParam(name = "id", value = "工作人员ID", dataType = "Integer", paramType = "path")
     public AjaxResult deleteWorkerById(@PathVariable Integer id) {
         return workersService.deleteWorkerById(id) ?
                 AjaxResult.success("删除成功")
@@ -77,7 +77,7 @@ public class TjWorkersController {
     // 批量删除
     @DeleteMapping("/deleteBatch")
     @ApiOperation("批量删除工作人员")
-    @ApiImplicitParam(name = "ids", value = "工作人员ID列表", dataType = "List<Long>", paramType = "body")
+    @ApiImplicitParam(name = "ids", value = "工作人员ID列表", dataType = "List<Integer>", paramType = "body")
     public AjaxResult deleteWorkersByIds(@RequestBody List<Integer> ids) {
         return workersService.deleteWorkersByIds(ids) ?
                 AjaxResult.success("删除成功")

@@ -48,3 +48,5 @@ spring:
           - application-${spring.profiles.active}.${spring.cloud.nacos.config.file-extension}
     inetutils:
       preferred-networks: 10
+wanji:
+  version: 1.0
