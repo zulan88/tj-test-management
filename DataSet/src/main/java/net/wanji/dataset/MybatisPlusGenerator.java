@@ -12,7 +12,7 @@ public class MybatisPlusGenerator {
     private static final String USERNAME = "root";
     private static final String PASSWORD = "Wanji123456";
     private static final String[] TABLES = {
-            "appointment_record","tj_workers"
+            "tj_testee_object_info"
     };
     //    private static final String TEMPLATE_PATH = "/templates/mapper.xml.ftl";
     private static final String MAPPER_PATH = "ExamineAndApprove/src/main/resources/mapper";

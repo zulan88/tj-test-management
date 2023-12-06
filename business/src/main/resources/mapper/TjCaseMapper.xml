@@ -111,6 +111,40 @@
         order by c.updated_date desc
     </select>
 
+    <select id="selectCasesByIds" resultMap="CasePageResult">
+        select
+        c.id,
+        c.tree_id,
+        c.case_number,
+        c.test_target,
+        c.detail_info,
+        c.route_file,
+        c.status,
+        c.remark,
+        c.updated_date,
+        sd.id as scene_detail_id,
+        sd.number as scene_number,
+        sd.img_url,
+        sd.test_scene_desc,
+        sd.label
+
+        from tj_case c
+        inner join tj_fragmented_scene_detail sd on sd.id = c.scene_detail_id
+        where c.id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        order by c.updated_date desc
+    </select>
+
+    <select id="takeExpense" resultType="java.lang.Long">
+        select sum(c.remark)
+        where c.id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
     <select id="selectCasesConfig" resultMap="PartConfigResult">
         select ps.id as config_id,
                ps.participant_role,

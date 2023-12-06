@@ -26,6 +26,10 @@ public interface TjCaseMapper extends BaseMapper<TjCase> {
 
     List<CaseDetailVo> selectCases(CaseQueryDto caseQueryDto);
 
+    List<CaseDetailVo> selectCasesByIds(List<Integer> ids);
+
+    Long takeExpense(List<Integer> ids);
+
     int updateCaseStatus(@Param("ids") List<Integer> ids, @Param("status") String status);
 
     int selectCountBySceneDetailIds(@Param("sceneDetailIds") List<Integer> sceneDetailIds);

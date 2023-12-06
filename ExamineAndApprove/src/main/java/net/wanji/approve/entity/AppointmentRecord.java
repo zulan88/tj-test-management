@@ -95,7 +95,7 @@ public class AppointmentRecord implements Serializable {
     private String testSchedule;
 
     /**
-     * 状态
+     * 状态  0-待审批 1-审批通过 2-驳回 3-已取消
      */
     @TableField("status")
     private Integer status;
@@ -118,5 +118,10 @@ public class AppointmentRecord implements Serializable {
     @TableField("last_approval_time")
     private LocalDateTime lastApprovalTime;
 
+    /**
+     * 驳回理由
+     */
+    @TableField("rejection_mes")
+    private String rejectionMes;
 
 }

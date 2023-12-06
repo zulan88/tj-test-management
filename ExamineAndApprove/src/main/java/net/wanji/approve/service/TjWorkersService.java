@@ -19,7 +19,7 @@ public interface TjWorkersService extends IService<TjWorkers> {
     IPage<TjWorkers> listWorkers(int pageNum, int pageSize, String type, String name);
 
     // 根据id查询
-    TjWorkers getWorkerById(Long id);
+    TjWorkers getWorkerById(Integer id);
 
     // 插入
     boolean addWorker(TjWorkers worker);

@@ -236,6 +236,74 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     }
 
     @Override
+    public List<CasePageVo> pageListByIds(List<Integer> ids) {
+        List<CaseDetailVo> caseVos = caseMapper.selectCasesByIds(ids);
+        handleLabels(caseVos);
+        List<TjDeviceDetail> deviceDetails = deviceDetailService.list();
+        Map<Integer, TjDeviceDetail> deviceMap = CollectionUtils.emptyIfNull(deviceDetails).stream()
+                .collect(Collectors.toMap(TjDeviceDetail::getDeviceId, value -> value));
+        return CollectionUtils.emptyIfNull(caseVos).stream().map(t -> {
+            CasePageVo casePageVo = new CasePageVo();
+            BeanUtils.copyBeanProp(casePageVo, t);
+            // 状态名称
+            casePageVo.setStatusName(dictDataService.selectDictLabel(SysType.CASE_STATUS, casePageVo.getStatus()));
+            // 场景分类
+            if (StringUtils.isNotEmpty(casePageVo.getLabel())) {
+                StringBuilder labelSort = new StringBuilder();
+                for (String str : casePageVo.getLabel().split(",")) {
+                    try {
+                        long intValue = Long.parseLong(str);
+                        String labelName = sceneLabelMap.getSceneLabel(intValue);
+                        if (StringUtils.isNotEmpty(labelName)) {
+                            if (labelSort.length() > 0) {
+                                labelSort.append(",").append(labelName);
+                            } else {
+                                labelSort.append(labelName);
+                            }
+                        }
+                    } catch (NumberFormatException e) {
+                        // 处理无效的整数字符串
+                    }
+                }
+                casePageVo.setSceneSort(labelSort.toString());
+            }
+            if (CollectionUtils.isNotEmpty(casePageVo.getPartConfigs())) {
+                TreeMap<String, List<String>> roleConfigDetail = new TreeMap<>();
+                StringBuilder roleConfigSort = new StringBuilder();
+                TreeMap<String, List<TjCasePartConfig>> roleGroupMap = casePageVo.getPartConfigs().stream()
+                        .collect(Collectors.groupingBy(TjCasePartConfig::getParticipantRole, TreeMap::new,
+                                Collectors.toList()));
+                for (Entry<String, List<TjCasePartConfig>> roleItem : roleGroupMap.entrySet()) {
+                    String roleName = dictDataService.selectDictLabel(SysType.PART_ROLE, roleItem.getKey());
+                    // 角色配置详情
+                    roleConfigDetail.put(roleName, roleItem.getValue().stream().map(TjCasePartConfig::getName).collect(Collectors.toList()));
+                    // 角色配置简述
+                    if (roleItem.getValue().stream().anyMatch(item -> !ObjectUtils.isEmpty(item.getDeviceId()))) {
+                        Map<Integer, List<TjCasePartConfig>> deviceGroup = roleItem.getValue().stream().collect(Collectors.groupingBy(TjCasePartConfig::getDeviceId));
+                        for (Entry<Integer, List<TjCasePartConfig>> deviceEntry : deviceGroup.entrySet()) {
+                            if (!ObjectUtils.isEmpty(deviceEntry.getKey()) && deviceMap.containsKey(deviceEntry.getKey())) {
+                                roleConfigSort.append(StringUtils.format(ContentTemplate.CASE_ROLE_DEVICE_TEMPLATE, deviceMap.get(deviceEntry.getKey()).getDeviceName(), roleName, deviceEntry.getValue().size()));
+                            } else {
+                                roleConfigSort.append(StringUtils.format(ContentTemplate.CASE_ROLE_TEMPLATE, roleName, deviceEntry.getValue().size()));
+                            }
+                        }
+                    } else {
+                        roleConfigSort.append(StringUtils.format(ContentTemplate.CASE_ROLE_TEMPLATE, roleName, roleItem.getValue().size()));
+                    }
+                }
+                casePageVo.setRoleConfigDetail(roleConfigDetail);
+                casePageVo.setRoleConfigSort(roleConfigSort.toString());
+            }
+            return casePageVo;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public Long takeExpense(List<Integer> ids) {
+        return caseMapper.takeExpense(ids);
+    }
+
+    @Override
     public CaseDetailVo selectCaseDetail(Integer caseId) {
         CaseQueryDto caseQueryDto = new CaseQueryDto();
         caseQueryDto.setId(caseId);
