@@ -15,7 +15,6 @@ import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.business.entity.TjCaseRealRecord;
-import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjCaseRealRecordMapper;
 import net.wanji.business.service.RouteService;
 import net.wanji.business.socket.WebSocketManage;
@@ -79,13 +78,11 @@ public class ImitateRedisTrajectoryConsumer {
     private RouteService routeService;
 
     @Autowired
-    private TjCaseMapper caseMapper;
-
-    @Autowired
     private TjCaseRealRecordMapper caseRealRecordMapper;
 
     @Autowired
     private DeviceStateListener deviceStateListener;
+
     @Value("${redis.channel.device.state}")
     private String deviceStateChannel;
 
@@ -95,8 +92,7 @@ public class ImitateRedisTrajectoryConsumer {
                 new DefaultThreadFactory("ImitateRedisTrajectoryConsumer-removeListeners"));
         scheduledExecutorService.scheduleAtFixedRate(
                 this::removeListeners, 0, 20, TimeUnit.SECONDS);
-        // 开启监听设备状态
-        deviceStateListener();
+        deviceStateListener(null);
     }
 
     private ChannelListener<SimulationTrajectoryDto> getListener(String key, String channel) {
@@ -377,9 +373,9 @@ public class ImitateRedisTrajectoryConsumer {
         redisMessageListenerContainer.removeMessageListener(channelListeners.get(0).getListener(), topics);
     }
 
-    private void deviceStateListener() {
+    public void deviceStateListener(String stateChannel) {
         redisMessageListenerContainer.addMessageListener(deviceStateListener,
-                new ChannelTopic(deviceStateChannel));
+                new ChannelTopic(StringUtils.isNotEmpty(stateChannel) ? stateChannel : deviceStateChannel));
     }
 
     public static class ChannelListener<T> {

@@ -402,8 +402,7 @@ public class TjFragmentedSceneDetailServiceImpl
                 }
             }
         }
-        return new TestStartParam(1,
-                WebSocketManage.buildKey(SecurityUtils.getUsername(), sceneDebugDto.getNumber(),
+        return new TestStartParam(WebSocketManage.buildKey(SecurityUtils.getUsername(), sceneDebugDto.getNumber(),
                         WebSocketManage.SIMULATION, null), (int) avNum, (int) simulationNum,
                 (int) pedestrianNum, sceneTrajectoryBo.getParticipantTrajectories());
     }

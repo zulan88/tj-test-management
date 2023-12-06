@@ -13,19 +13,15 @@ import java.util.List;
 @Data
 public class TestStartParam {
 
-    private Integer caseId;
-
     private String channel;
-
     private int avNum;
     private int simulationNum;
     private int pedestrianNum;
     private List<ParticipantTrajectoryBo> participantTrajectories;
     private int frequency;
 
-    public TestStartParam(Integer caseId, String channel, int avNum, int simulationNum, int pedestrianNum,
+    public TestStartParam(String channel, int avNum, int simulationNum, int pedestrianNum,
                           List<ParticipantTrajectoryBo> participantTrajectories) {
-        this.caseId = caseId;
         this.channel = channel;
         this.avNum = avNum;
         this.simulationNum = simulationNum;

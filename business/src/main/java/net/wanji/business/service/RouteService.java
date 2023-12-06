@@ -161,22 +161,6 @@ public class RouteService {
         }
     }
 
-    public static void main(String[] args) {
-        int numerator = 5;
-        int denominator = 9;
-
-        // 将分数转换为浮点数
-        double fraction = (double) numerator / denominator * 100;
-
-        // 创建DecimalFormat对象，指定保留两位小数的格式
-        DecimalFormat decimalFormat = new DecimalFormat("#.00");
-
-        // 使用DecimalFormat格式化浮点数
-        String formattedFraction = decimalFormat.format(fraction);
-
-        System.out.println("Formatted fraction: " + formattedFraction + "%");
-    }
-
 
     /**
      * 仿真轨迹点位检查

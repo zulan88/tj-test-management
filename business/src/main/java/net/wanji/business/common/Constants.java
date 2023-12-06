@@ -44,6 +44,13 @@ public interface Constants {
         }
     }
 
+    class TessType {
+        public static final String SIMULATION = "2";
+        public static final String REAL = "3";
+        public static final String PLAN = "4";
+        public static final String TASK = "5";
+    }
+
     /**
      * 内容模板
      */
@@ -60,6 +67,12 @@ public interface Constants {
         public static final String SCENE_FORM_TEMPLATE = "该场景包含 AV车数量：{}；仿真车数量：{}；行人数量：{}；仿真频率：10HZ；";
         public static final String CASE_ROLE_TEMPLATE = "{}*{} ";
         public static final String CASE_ROLE_DEVICE_TEMPLATE = "{}-{}*{} ";
+        /**
+         * 实车试验状态通道模板：用户名_任务ID_用例ID
+         */
+        public static final String TESTING_STATUS_CHANNEL_TEMPLATE = "{}_{}_{} ";
+        public static final String TESTING_CONTROL_CHANNEL_TEMPLATE = "{}_{}_{} ";
+        public static final String TESTING_RESULT_CHANNEL_TEMPLATE = "{}_{}_{} ";
     }
 
     class FileExtension {

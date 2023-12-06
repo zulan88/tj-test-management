@@ -25,6 +25,7 @@ import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.TaskCaseStatusEnum;
 import net.wanji.business.common.Constants.TaskProcessNode;
 import net.wanji.business.common.Constants.TaskStatusEnum;
+import net.wanji.business.common.Constants.TessType;
 import net.wanji.business.common.Constants.TestType;
 import net.wanji.business.common.Constants.TestingStatusEnum;
 import net.wanji.business.common.Constants.YN;
@@ -65,6 +66,7 @@ import net.wanji.business.service.TjCaseService;
 import net.wanji.business.service.TjTaskCaseService;
 import net.wanji.business.service.TjTaskDataConfigService;
 import net.wanji.business.service.TjTaskService;
+import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.trajectory.RoutingPlanConsumer;
 import net.wanji.business.util.CustomMergeStrategy;
 import net.wanji.common.common.RealTestTrajectoryDto;
@@ -654,20 +656,40 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
 
     @Override
     public boolean routingPlan(RoutingPlanDto routingPlanDto) throws BusinessException {
-        CaseQueryDto param = new CaseQueryDto();
-        param.setSelectedIds(CollectionUtils.emptyIfNull(routingPlanDto.getCases()).stream().map(CaseContinuousVo::getCaseId).collect(Collectors.toList()));
-        param.setUserName(SecurityUtils.getUsername());
-        List<CaseDetailVo> caseDetails = caseMapper.selectCases(param);
-        Map<Integer, CaseDetailVo> caseDetailMap = CollectionUtils.emptyIfNull(caseDetails).stream().collect(Collectors.toMap(CaseDetailVo::getId, Function.identity()));
 
         TjTask task = getById(routingPlanDto.getTaskId());
         if (ObjectUtil.isEmpty(task)) {
             throw new BusinessException("任务不存在");
         }
-        List<CaseContinuousVo> caseContinuousInfo = routingPlanDto.getCases();
+
+        List<TjTaskDataConfig> configs = tjTaskDataConfigService.list(new QueryWrapper<TjTaskDataConfig>().eq(ColumnName.TASK_ID, routingPlanDto.getTaskId())).stream()
+                .filter(t -> t.getType().equals(PartRole.MV_SIMULATION)).collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(configs)) {
+            throw new BusinessException("请先创建任务信息");
+        }
+        TjDeviceDetail deviceDetail = deviceDetailMapper.selectById(configs.get(0).getDeviceId());
+        routingPlanConsumer.subscribeAndSend(deviceDetail.getAttribute1(), task.getId(), task.getTaskCode());
+        boolean b = restService.startRoutingPlan(deviceDetail.getIp(), Integer.valueOf(deviceDetail.getServiceAddress()), buildRoutingPlanParam(task.getId(), routingPlanDto.getCases()));
+        if (!b) {
+            String repeatKey = "ROUTING_TASK_" + routingPlanDto.getTaskId();
+            redisCache.deleteObject(repeatKey);
+            throw new BusinessException("路径规划失败");
+        }
+        return b;
+    }
+
+    private Map<String, Object> buildRoutingPlanParam(Integer taskId, List<CaseContinuousVo> caseContinuousInfo) {
+        CaseQueryDto param = new CaseQueryDto();
+        param.setSelectedIds(CollectionUtils.emptyIfNull(caseContinuousInfo).stream()
+                .map(CaseContinuousVo::getCaseId)
+                .collect(Collectors.toList()));
+        param.setUserName(SecurityUtils.getUsername());
+        List<CaseDetailVo> caseDetails = caseMapper.selectCases(param);
+        Map<Integer, CaseDetailVo> caseDetailMap = CollectionUtils.emptyIfNull(caseDetails).stream()
+                .collect(Collectors.toMap(CaseDetailVo::getId, Function.identity()));
         for (int i = 0; i < caseContinuousInfo.size(); i++) {
             CaseContinuousVo caseContinuousVo = caseContinuousInfo.get(i);
-            caseContinuousVo.setTaskId(routingPlanDto.getTaskId());
+            caseContinuousVo.setTaskId(taskId);
             caseContinuousVo.setSort(i + 1);
             CaseDetailVo caseDetail = caseDetailMap.get(caseContinuousVo.getCaseId());
             // 主车轨迹
@@ -685,20 +707,11 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                         caseDetail.getRouteFile()));
             }
         }
-        List<TjTaskDataConfig> configs = tjTaskDataConfigService.list(new QueryWrapper<TjTaskDataConfig>().eq(ColumnName.TASK_ID, routingPlanDto.getTaskId())).stream()
-                .filter(t -> t.getType().equals(PartRole.MV_SIMULATION)).collect(Collectors.toList());
-        if (CollectionUtils.isEmpty(configs)) {
-            throw new BusinessException("请先创建任务信息");
-        }
-        TjDeviceDetail deviceDetail = deviceDetailMapper.selectById(configs.get(0).getDeviceId());
-        routingPlanConsumer.subscribeAndSend(deviceDetail.getAttribute1(), task.getId(), task.getTaskCode());
-        boolean b = restService.startRoutingPlan(deviceDetail.getIp(), Integer.valueOf(deviceDetail.getServiceAddress()), caseContinuousInfo);
-        if (!b) {
-            String repeatKey = "ROUTING_TASK_" + routingPlanDto.getTaskId();
-            redisCache.deleteObject(repeatKey);
-            throw new BusinessException("路径规划失败");
-        }
-        return b;
+        Map<String, Object> result = new HashMap<>(2);
+        result.put("channel", WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(taskId),
+                TessType.PLAN, null));
+        result.put("cases", caseContinuousInfo);
+        return result;
     }
 
     private Map<String, Object> updateMap(Map<String, Object> ori) {

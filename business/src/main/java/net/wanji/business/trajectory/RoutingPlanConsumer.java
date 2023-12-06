@@ -9,7 +9,6 @@ import net.wanji.business.domain.WebsocketMessage;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.entity.TjTask;
 import net.wanji.business.mapper.TjTaskMapper;
-import net.wanji.business.service.RouteService;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.common.common.SimulationMessage;
 import net.wanji.common.common.SimulationTrajectoryDto;

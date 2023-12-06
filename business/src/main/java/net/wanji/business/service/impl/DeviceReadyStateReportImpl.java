@@ -5,7 +5,6 @@ import net.wanji.business.annotion.DeviceReport;
 import net.wanji.business.component.DeviceStateToRedis;
 import net.wanji.business.domain.dto.device.DeviceReadyStateDto;
 import net.wanji.business.service.DeviceReportService;
-import net.wanji.business.service.StatusManage;
 import org.springframework.stereotype.Service;
 
 /**

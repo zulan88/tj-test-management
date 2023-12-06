@@ -125,14 +125,14 @@ public class RestServiceImpl implements RestService {
     }
 
     @Override
-    public boolean startRoutingPlan(String ip, Integer port, List<CaseContinuousVo> caseContinuousVos) {
+    public boolean startRoutingPlan(String ip, Integer port, Map<String, Object> params) {
         try {
             String resultUrl = ip + ":" + port + routingPlanUrl;
             log.info("============================== tess routing plan ：{}", resultUrl);
             HttpHeaders httpHeaders = new HttpHeaders();
             httpHeaders.setContentType(MediaType.APPLICATION_JSON);
             Map<String, Object> param = new HashMap<>();
-            param.put("params", caseContinuousVos);
+            param.put("params", params);
             HttpEntity<Map<String, Object>> resultHttpEntity = new HttpEntity<>(param, httpHeaders);
             log.info("============================== tess routing plan param：{}", JSONObject.toJSONString(param));
             ResponseEntity<String> response =

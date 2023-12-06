@@ -37,8 +37,6 @@ public class DeviceStateListener implements MessageListener {
       }
       return;
     }
-    // todo redis反序列化方式待调整
-//    DeviceStateDto deviceStateDto = JSONObject.parseObject(String.valueOf(object), DeviceStateDto.class);
     JSONObject jsonObject = (JSONObject) object;
     DeviceReportService<Object> deviceReportService = deviceReportFactory.create(jsonObject.getInteger("type"));
     deviceReportService.dataProcess(jsonObject);

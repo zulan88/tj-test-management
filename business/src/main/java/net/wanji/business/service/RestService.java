@@ -37,7 +37,7 @@ public interface RestService {
     /**
      * 多场景路径规划
      */
-    boolean startRoutingPlan(String ip, Integer port, List<CaseContinuousVo> caseContinuousVos);
+    boolean startRoutingPlan(String ip, Integer port, Map<String, Object> params);
 
     /**
      * 查询设备信息

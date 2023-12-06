@@ -300,7 +300,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         // 6.查询主车轨迹
         if (ObjectUtils.isEmpty(param.getId())) {
             try {
-                List<SimulationTrajectoryDto> main = routeService.readOriTrajectoryFromRouteFile(tjTask.getMainPlanFile(), "1");
+                List<SimulationTrajectoryDto> main = routeService.readOriRouteFile(tjTask.getMainPlanFile());
                 mainTrajectoryMap.put("main", main);
             } catch (IOException e) {
                 log.error("主车规划路径文件读取失败：{}", e);

@@ -121,8 +121,13 @@ public class TestingServiceImpl implements TestingService {
 
     @Override
     public void resetStatus(Integer caseId) throws BusinessException {
+        StopWatch stopWatch = new StopWatch("实车试验 - 重置状态");
+        stopWatch.start("1.先停止");
         // 先发个停止
         stop(caseId);
+        stopWatch.stop();
+
+        stopWatch.start("2.校验用例详情并准备数据");
         // 1.查询用例详情
         CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
         // 2.数据校验
@@ -136,6 +141,9 @@ public class TestingServiceImpl implements TestingService {
         Map<String, String> businessIdAndRoleMap = caseInfoBo.getCaseConfigs().stream().collect(Collectors.toMap(
                 CaseConfigBo::getBusinessId,
                 CaseConfigBo::getParticipantRole));
+        stopWatch.stop();
+
+        stopWatch.start("3.查询主车轨迹");
         // 7.主车轨迹
         // av车需要主车全部轨迹
         List<SimulationTrajectoryDto> participantTrajectories = null;
@@ -153,6 +161,9 @@ public class TestingServiceImpl implements TestingService {
         if (CollectionUtils.isEmpty(participantTrajectories)) {
             throw new BusinessException("查询主车轨迹失败");
         }
+        stopWatch.stop();
+
+        stopWatch.start("4.查询状态");
         // 7.状态查询
         for (CaseConfigBo caseConfigBo : caseConfigs) {
             // 查询设备状态
@@ -172,10 +183,14 @@ public class TestingServiceImpl implements TestingService {
             }
             restService.selectDeviceReadyState(stateParam);
         }
+        stopWatch.stop();
+        log.info(stopWatch.prettyPrint());
     }
 
     @Override
     public RealVehicleVerificationPageVo getStatus(Integer caseId) throws BusinessException {
+        StopWatch stopWatch = new StopWatch("实车试验 - 轮询状态");
+        stopWatch.start("1.校验用例详情并准备数据");
         // 1.查询用例详情
         CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
         // 2.数据校验
@@ -200,6 +215,9 @@ public class TestingServiceImpl implements TestingService {
         Map<String, String> businessIdAndRoleMap = caseInfoBo.getCaseConfigs().stream().collect(Collectors.toMap(
                 CaseConfigBo::getBusinessId,
                 CaseConfigBo::getParticipantRole));
+        stopWatch.stop();
+
+        stopWatch.start("2.查询轨迹");
         // 7.主车轨迹
         // av车需要主车全部轨迹
         List<SimulationTrajectoryDto> participantTrajectories = null;
@@ -217,6 +235,15 @@ public class TestingServiceImpl implements TestingService {
         if (CollectionUtils.isEmpty(participantTrajectories)) {
             throw new BusinessException("查询主车轨迹失败");
         }
+        stopWatch.stop();
+
+        stopWatch.start("3.查询状态");
+        // 创建仿真服务状态监听器
+//        String statusChannel = StringUtils.format(ContentTemplate.TESTING_STATUS_CHANNEL_TEMPLATE, SecurityUtils.getUsername(), caseId);
+//        imitateRedisTrajectoryConsumer.deviceStateListener(statusChannel);
+        // todo http请求tess：发送通道
+        // todo
+
         // 7.状态查询
         for (CaseConfigBo caseConfigBo : caseConfigs) {
             String start = partStartMap.get(caseConfigBo.getBusinessId());
@@ -242,6 +269,9 @@ public class TestingServiceImpl implements TestingService {
             }
             caseConfigBo.setPositionStatus(deviceDetailService.selectDeviceReadyState(caseConfigBo.getDeviceId(), stateParam, false));
         }
+        stopWatch.stop();
+
+        stopWatch.start("4.组装返回结果");
         RealVehicleVerificationPageVo result = new RealVehicleVerificationPageVo();
         result.setCaseId(caseId);
         result.setFilePath(caseInfoBo.getFilePath());
@@ -250,6 +280,8 @@ public class TestingServiceImpl implements TestingService {
                 Collectors.groupingBy(CaseConfigBo::getParticipantRole)));
         result.setChannels(caseConfigs.stream().map(CaseConfigBo::getDataChannel).collect(Collectors.toSet()));
         result.setMessage(validStatus(caseConfigs));
+        stopWatch.stop();
+        log.info(stopWatch.prettyPrint());
         return result;
     }
 
