@@ -35,6 +35,11 @@
         </dependency>
 
         <dependency>
+            <groupId>net.wanji</groupId>
+            <artifactId>business</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>1.7.2</version>
