@@ -60,7 +60,7 @@ public interface TjCaseService extends IService<TjCase> {
      */
     List<CasePageVo> pageList(CaseQueryDto caseQueryDto);
 
-    List<CasePageVo> pageListByIds(List<Integer> ids);
+    List<CasePageVo> pageListByIds(List<Integer> ids, Integer treeId);
 
     Long takeExpense(List<Integer> ids);
 

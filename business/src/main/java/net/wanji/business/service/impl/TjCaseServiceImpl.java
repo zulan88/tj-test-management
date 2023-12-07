@@ -236,8 +236,8 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     }
 
     @Override
-    public List<CasePageVo> pageListByIds(List<Integer> ids) {
-        List<CaseDetailVo> caseVos = caseMapper.selectCasesByIds(ids);
+    public List<CasePageVo> pageListByIds(List<Integer> ids, Integer treeId) {
+        List<CaseDetailVo> caseVos = caseMapper.selectCasesByIds(ids,treeId);
         handleLabels(caseVos);
         List<TjDeviceDetail> deviceDetails = deviceDetailService.list();
         Map<Integer, TjDeviceDetail> deviceMap = CollectionUtils.emptyIfNull(deviceDetails).stream()

@@ -26,7 +26,7 @@ public interface TjCaseMapper extends BaseMapper<TjCase> {
 
     List<CaseDetailVo> selectCases(CaseQueryDto caseQueryDto);
 
-    List<CaseDetailVo> selectCasesByIds(List<Integer> ids);
+    List<CaseDetailVo> selectCasesByIds(List<Integer> ids, Integer treeId);
 
     Long takeExpense(List<Integer> ids);
 

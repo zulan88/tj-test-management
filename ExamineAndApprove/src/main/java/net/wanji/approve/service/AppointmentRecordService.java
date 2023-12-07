@@ -23,7 +23,7 @@ public interface AppointmentRecordService extends IService<AppointmentRecord> {
 
     AppointmentRecordVo getInfoById(Integer id) throws BusinessException;
 
-    List<CasePageVo> pageList(Integer id);
+    List<CasePageVo> pageList(Integer id, Integer treeId);
 
     Long getExpense(Integer id);
 

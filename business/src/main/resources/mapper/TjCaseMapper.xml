@@ -134,6 +134,9 @@
         <foreach collection="ids" item="id" open="(" separator="," close=")">
             #{id}
         </foreach>
+        <if test="treeId != null and treeId > 0 ">
+            and c.tree_id = #{treeId}
+        </if>
         order by c.updated_date desc
     </select>
 

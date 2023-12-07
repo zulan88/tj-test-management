@@ -93,12 +93,12 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
     }
 
     @Override
-    public List<CasePageVo> pageList(Integer id) {
+    public List<CasePageVo> pageList(Integer id, Integer treeId) {
         AppointmentRecord appointmentRecord = this.getById(id);
         List<Integer> ids = Arrays.stream(appointmentRecord.getCaseIds().split(","))
                 .map(Integer::parseInt)
                 .collect(Collectors.toList());
-        List<CasePageVo> casePageVos = tjCaseService.pageListByIds(ids);
+        List<CasePageVo> casePageVos = tjCaseService.pageListByIds(ids, treeId);
         return casePageVos;
     }
 
