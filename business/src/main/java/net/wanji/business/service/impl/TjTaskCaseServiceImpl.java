@@ -602,9 +602,11 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         // 6.向主控发送控制请求
         Optional<TaskCaseConfigBo> first = taskCaseInfoBo.getDataConfigs()
                 .stream().filter(e -> PartRole.AV.equals(e.getType())).findFirst();
+        if (!first.isPresent()) {
+            throw new BusinessException("未查询到主车配置信息");
+        }
         if (!restService.sendRuleUrl(
-                new CaseRuleControl(System.currentTimeMillis(),
-                        String.valueOf(taskCaseInfoBo.getTaskId()), action > 0 ? action : 0,
+                new CaseRuleControl(System.currentTimeMillis(), taskId, caseId, action > 0 ? action : 0,
                         generateDeviceConnRules(taskCaseInfoBo),
                         first.get().getCommandChannel(), taskEnd))) {
             throw new BusinessException("主控响应异常");
@@ -828,13 +830,23 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
     public void stop(Integer taskId, Integer taskCaseId) throws BusinessException {
         TjTaskCase taskCase = new TjTaskCase();
         taskCase.setTaskId(taskId);
-        TaskCaseInfoBo taskCaseInfoBo = taskCaseMapper.selectTaskCaseByCondition(taskCase).get(0);
-
+        taskCase.setId(taskCaseId);
+        List<TaskCaseInfoBo> taskCaseInfoBos = taskCaseMapper.selectTaskCaseByCondition(taskCase);
+        if (CollectionUtils.isEmpty(taskCaseInfoBos)) {
+            throw new BusinessException("未查询到任务信息");
+        }
+        TaskCaseInfoBo taskCaseInfoBo = taskCaseInfoBos.get(taskCaseInfoBos.size() - 1);
+        if (CollectionUtils.isEmpty(taskCaseInfoBo.getDataConfigs())) {
+            throw new BusinessException("未查询到配置信息");
+        }
         Optional<TaskCaseConfigBo> first = taskCaseInfoBo.getDataConfigs()
                 .stream().filter(e -> PartRole.AV.equals(e.getType())).findFirst();
+        if (!first.isPresent()) {
+            throw new BusinessException("未查询到主车配置信息");
+        }
         if (!restService.sendRuleUrl(
                 new CaseRuleControl(System.currentTimeMillis(),
-                        String.valueOf(taskId), 0,
+                        taskId, taskCaseInfoBo.getCaseId(), 0,
                         generateDeviceConnRules(taskCaseInfoBo),
                         first.get().getCommandChannel(), true))) {
             throw new BusinessException("主控响应异常");

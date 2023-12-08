@@ -405,7 +405,7 @@ public class TestingServiceImpl implements TestingService {
         stopWatch.start("4.向主控发送规则");
         // 5.向主控发送规则
         if (!restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(),
-                String.valueOf(caseId), action,
+                0, caseId, action,
                 generateDeviceConnRules(caseInfoBo), null, true))) {
             throw new BusinessException("主控响应异常");
         }
@@ -454,8 +454,7 @@ public class TestingServiceImpl implements TestingService {
                 PartRole.AV.equals(t.getParticipantRole())).findFirst().orElseThrow(() ->
                 new BusinessException("用例主车配置信息异常"));
         if (!restService.sendRuleUrl(
-                new CaseRuleControl(System.currentTimeMillis(),
-                        String.valueOf(caseId), 0,
+                new CaseRuleControl(System.currentTimeMillis(), 0, caseId, 0,
                         generateDeviceConnRules(caseInfoBo),
                         mainConfig.getCommandChannel(), true))) {
             throw new BusinessException("主控响应异常");
@@ -532,8 +531,7 @@ public class TestingServiceImpl implements TestingService {
         CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
         String commandChannel = caseInfoBo.getCaseConfigs().stream().filter(t -> PartRole.AV.equals(t.getParticipantRole())).findFirst().get().getCommandChannel();
         if (!restService.sendRuleUrl(
-                new CaseRuleControl(System.currentTimeMillis(),
-                        String.valueOf(caseId), 0,
+                new CaseRuleControl(System.currentTimeMillis(), 0, caseId, 0,
                         generateDeviceConnRules(caseInfoBo),
                         commandChannel, true))) {
             throw new BusinessException("主控响应异常");
