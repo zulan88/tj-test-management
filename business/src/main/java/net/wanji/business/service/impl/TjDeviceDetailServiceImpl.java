@@ -91,7 +91,11 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
             deviceDetail.setStatus(YN.Y_INT);
             deviceDetail.setLastOnlineDate(LocalDateTime.now());
             deviceDetail.setCreatedBy(SecurityUtils.getUsername());
+            deviceDetail.setAttribute2(SecurityUtils.getUsername());
             deviceDetail.setCreatedDate(LocalDateTime.now());
+            if (ObjectUtils.isEmpty(deviceDetailDto.getAttribute2())) {
+                deviceDetail.setUpdatedBy(deviceDetailDto.getAttribute2());
+            }
             return this.save(deviceDetail);
         }
         deviceDetail.setDeviceId(deviceDetailDto.getDeviceId());
@@ -101,7 +105,9 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
         deviceDetail.setServiceAddress(deviceDetailDto.getServiceAddress());
         deviceDetail.setDataChannel(deviceDetailDto.getDataChannel());
         deviceDetail.setCommandChannel(deviceDetailDto.getCommandChannel());
-        deviceDetail.setUpdatedBy(SecurityUtils.getUsername());
+        if (ObjectUtils.isEmpty(deviceDetailDto.getAttribute2())) {
+            deviceDetail.setUpdatedBy(deviceDetailDto.getAttribute2());
+        }
         deviceDetail.setUpdatedDate(LocalDateTime.now());
         return this.updateById(deviceDetail);
     }

@@ -1,10 +1,15 @@
 package net.wanji.approve.service.impl;
 
+import net.wanji.approve.entity.AppointmentRecord;
 import net.wanji.approve.entity.RecordRe;
 import net.wanji.approve.mapper.RecordReMapper;
+import net.wanji.approve.service.AppointmentRecordService;
 import net.wanji.approve.service.RecordReService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 /**
  * <p>
@@ -17,4 +22,18 @@ import org.springframework.stereotype.Service;
 @Service
 public class RecordReServiceImpl extends ServiceImpl<RecordReMapper, RecordRe> implements RecordReService {
 
+    @Autowired
+    AppointmentRecordService appointmentRecordService;
+
+    @Override
+    public List<AppointmentRecord> getrecordBydevice(Integer deviceId) {
+        List<Integer> ids = baseMapper.selectBydevice(deviceId);
+        return appointmentRecordService.getByids(ids);
+    }
+
+    @Override
+    public List<AppointmentRecord> getrecordByperson(Integer personId) {
+        List<Integer> ids = baseMapper.selectByperson(personId);
+        return appointmentRecordService.getByids(ids);
+    }
 }

@@ -27,4 +27,6 @@ public interface AppointmentRecordService extends IService<AppointmentRecord> {
 
     Long getExpense(Integer id);
 
+    List<AppointmentRecord> getByids(List<Integer> ids);
+
 }
