@@ -2,6 +2,10 @@ package net.wanji.approve.service;
 
 import net.wanji.approve.entity.TjDeviceDetail;
 import com.baomidou.mybatisplus.extension.service.IService;
+import net.wanji.approve.entity.vo.DeviceListVo;
+
+import java.util.List;
+import java.util.Set;
 
 /**
  * <p>
@@ -12,5 +16,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * @since 2023-12-07
  */
 public interface TjDeviceDetailApService extends IService<TjDeviceDetail> {
+
+    List<DeviceListVo> getDevices(Set<Integer> set);
 
 }

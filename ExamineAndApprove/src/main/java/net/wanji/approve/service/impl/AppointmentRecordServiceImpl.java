@@ -93,6 +93,13 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
     }
 
     @Override
+    public List<AppointmentRecord> getByids(List<Integer> ids) {
+        QueryWrapper<AppointmentRecord> queryWrapper = new QueryWrapper<>();
+        queryWrapper.in("id", ids);
+        return this.list(queryWrapper);
+    }
+
+    @Override
     public List<CasePageVo> pageList(Integer id, Integer treeId) {
         AppointmentRecord appointmentRecord = this.getById(id);
         List<Integer> ids = Arrays.stream(appointmentRecord.getCaseIds().split(","))

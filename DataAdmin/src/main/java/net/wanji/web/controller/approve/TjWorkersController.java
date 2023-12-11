@@ -4,8 +4,11 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
+import net.wanji.approve.entity.AppointmentRecord;
 import net.wanji.approve.entity.TjWorkers;
+import net.wanji.approve.service.RecordReService;
 import net.wanji.approve.service.TjWorkersService;
+import net.wanji.business.exception.BusinessException;
 import net.wanji.common.core.domain.AjaxResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +22,9 @@ public class TjWorkersController {
 
     @Autowired
     private TjWorkersService workersService;
+
+    @Autowired
+    RecordReService recordReService;
 
     // 分页查询，带条件
     @GetMapping("/list")
@@ -82,5 +88,11 @@ public class TjWorkersController {
         return workersService.deleteWorkersByIds(ids) ?
                 AjaxResult.success("删除成功")
                 : AjaxResult.error("删除失败");
+    }
+
+    @GetMapping("/persontoschedule")
+    public AjaxResult devicetoschedule(Integer personId) throws BusinessException {
+        List<AppointmentRecord> list = recordReService.getrecordByperson(personId);
+        return AjaxResult.success(list);
     }
 }
