@@ -172,4 +172,16 @@ public class TjTask implements Serializable {
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
+
+    @TableField("apprecord_id")
+    private Integer apprecordId;
+
+    @TableField("measurand_id")
+    private Integer measurandId;
+
+    @TableField("op_status")
+    private Integer opStatus;
+
+    @TableField("is_inner")
+    private Integer isInner;
 }

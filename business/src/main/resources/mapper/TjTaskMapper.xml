@@ -139,7 +139,11 @@
         a.sign,
         tt.test_total_time,
         tt.status,
-        tt.route_file
+        tt.route_file,
+        tt.apprecord_id,
+        tt.measurand_id,
+        tt.op_status,
+        tt.is_inner
         FROM tj_task tt
         LEFT JOIN (
             SELECT
