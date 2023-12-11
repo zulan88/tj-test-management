@@ -184,4 +184,7 @@ public class TjTask implements Serializable {
 
     @TableField("is_inner")
     private Integer isInner;
+
+    @TableField("remark")
+    private String remark;
 }
