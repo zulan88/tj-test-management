@@ -9,6 +9,7 @@ import net.wanji.approve.service.TjWorkersService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.List;
 
@@ -45,6 +46,8 @@ public class TjWorkersServiceImpl extends ServiceImpl<TjWorkersMapper, TjWorkers
 
     // 插入
     public boolean addWorker(TjWorkers worker) {
+        String workerId = generateRandomString(10);
+        worker.setWorkerId(workerId);
         return save(worker);
     }
 
@@ -62,4 +65,18 @@ public class TjWorkersServiceImpl extends ServiceImpl<TjWorkersMapper, TjWorkers
     public boolean deleteWorkersByIds(List<Integer> ids) {
         return removeByIds(ids);
     }
+
+    public static String generateRandomString(int length) {
+        String characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        StringBuilder sb = new StringBuilder(length);
+        SecureRandom secureRandom = new SecureRandom();
+
+        for (int i = 0; i < length; i++) {
+            int index = secureRandom.nextInt(characters.length());
+            sb.append(characters.charAt(index));
+        }
+
+        return sb.toString();
+    }
+
 }
