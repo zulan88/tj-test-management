@@ -261,6 +261,18 @@
                 <version>${data.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>net.wanji</groupId>
+                <artifactId>MakeAnAppointment</artifactId>
+                <version>${data.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>net.wanji</groupId>
+                <artifactId>ExamineAndApprove</artifactId>
+                <version>${data.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 

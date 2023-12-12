@@ -127,13 +127,11 @@
         <dependency>
             <groupId>net.wanji</groupId>
             <artifactId>ExamineAndApprove</artifactId>
-            <version>1.0.1</version>
         </dependency>
 
         <dependency>
             <groupId>net.wanji</groupId>
             <artifactId>MakeAnAppointment</artifactId>
-            <version>1.0.1</version>
         </dependency>
 
         <dependency>
