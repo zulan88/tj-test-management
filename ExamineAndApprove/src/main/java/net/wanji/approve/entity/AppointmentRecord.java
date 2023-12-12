@@ -70,6 +70,9 @@ public class AppointmentRecord implements Serializable {
     @TableField("measurand_type")
     private String measurandType;
 
+    @TableField("measurand_name")
+    private String measurandName;
+
     /**
      * 用例id
      */
