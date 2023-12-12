@@ -122,5 +122,11 @@ public class TjTesteeObjectInfo implements Serializable {
     @TableField("updateBy")
     private String updateBy;
 
+    @TableField("data_channel")
+    private String dataChannel;
+
+    @TableField("command_channel")
+    private String commandChannel;
+
 
 }

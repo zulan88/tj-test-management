@@ -179,6 +179,9 @@ public class TjTask implements Serializable {
     @TableField("measurand_id")
     private Integer measurandId;
 
+    /**
+     * 运营平台状态： 0：待测试，1：进行中，2：已完成，4：逾期，5：复审通过，6：复审失败，7：已取消
+     */
     @TableField("op_status")
     private Integer opStatus;
 

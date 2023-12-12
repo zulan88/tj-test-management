@@ -66,4 +66,6 @@ public class TaskDto {
     private Integer id;
 
     private String createdBy;
+
+    private Integer isInner;
 }

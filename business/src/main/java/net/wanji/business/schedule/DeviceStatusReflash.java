@@ -1,11 +1,15 @@
 package net.wanji.business.schedule;
 
 import net.wanji.business.entity.TjDeviceDetail;
+import net.wanji.business.entity.TjTask;
 import net.wanji.business.service.TjDeviceDetailService;
+import net.wanji.business.service.TjTaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 @Component
@@ -14,7 +18,10 @@ public class DeviceStatusReflash {
     @Autowired
     TjDeviceDetailService tjDeviceDetailService;
 
-    @Scheduled(cron = "0 */5 * * * *")
+    @Autowired
+    private TjTaskService tjTaskService;
+
+    @Scheduled(cron = "0 */5 * * * ?")
     public void reflash() {
         List<TjDeviceDetail> list = tjDeviceDetailService.list();
         for (TjDeviceDetail tjDeviceDetail : list) {
@@ -22,6 +29,20 @@ public class DeviceStatusReflash {
             tjDeviceDetail.setStatus(status);
         }
         tjDeviceDetailService.updateBatchById(list);
+    }
+
+    /**
+     * 判断任务是否逾期
+     */
+    @Scheduled(cron = "0 0 0 * * ?")
+    public void editstatus(){
+        List<TjTask> list = tjTaskService.list();
+        for (TjTask tjTask : list) {
+            Date date = new Date();
+            if(date.compareTo(tjTask.getEndTime())>0){
+                tjTask.setOpStatus(4);
+            }
+        }
     }
 
 }

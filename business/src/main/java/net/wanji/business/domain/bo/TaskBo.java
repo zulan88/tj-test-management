@@ -1,5 +1,6 @@
 package net.wanji.business.domain.bo;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -43,6 +44,13 @@ public class TaskBo {
 
     @ApiModelProperty(value = "测试设备ID集合（创建任务信息）", example = "[1,2,3]")
     private List<Integer> avDeviceIds;
+
+    public List<Integer> getAvDeviceIds() {
+        if (avDeviceIds == null) {
+            avDeviceIds = new ArrayList<>();
+        }
+        return avDeviceIds;
+    }
 
     @ApiModelProperty(value = "开始时间（创建任务信息）", example = "2023-10-19 18:40:55")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")

@@ -1,6 +1,8 @@
 package net.wanji.web.controller.approve;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import net.wanji.approve.entity.AppointmentRecord;
+import net.wanji.approve.entity.dto.AppointmentRecordDto;
 import net.wanji.approve.service.AppointmentRecordService;
 import net.wanji.approve.service.RecordReService;
 import net.wanji.approve.utils.CacheTools;
@@ -34,9 +36,9 @@ public class AppointmentRecordController extends BaseController {
     }
 
     @GetMapping("/list")
-    public TableDataInfo list(AppointmentRecord appointmentRecord) {
+    public TableDataInfo list(AppointmentRecordDto dto) {
         startPage();
-        List<AppointmentRecord> list = appointmentRecordService.list();
+        List<AppointmentRecord> list = appointmentRecordService.listByEntity(dto);
         return getDataTable(list);
     }
 

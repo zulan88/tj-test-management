@@ -198,6 +198,9 @@
             <if test="createdBy != null and createdBy != ''">
                 AND tt.created_by = #{createdBy}
             </if>
+            <if test="isInner != null">
+                AND tt.is_inner = #{isInner}
+            </if>
         </where>
         order by tt.plan_date desc, tt.create_time desc
     </select>
