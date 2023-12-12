@@ -13,6 +13,7 @@ import com.alibaba.excel.write.metadata.style.WriteCellStyle;
 import com.alibaba.excel.write.style.HorizontalCellStyleStrategy;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
@@ -714,17 +715,11 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         return result;
     }
 
-    private Map<String, Object> updateMap(Map<String, Object> ori) {
-        Map<String, Object> startPoint = new HashMap<>();
-        startPoint.putAll(ori);
-        return startPoint;
-    }
-
     @Override
     public TjTask hasUnSubmitTask() {
-        QueryWrapper<TjTask> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq(ColumnName.STATUS_COLUMN, TaskStatusEnum.NO_SUBMIT.getCode());
-        List<TjTask> list = list(queryWrapper);
+        List<TjTask> list = list(new LambdaQueryWrapper<TjTask>()
+                .eq(TjTask::getStatus, TaskStatusEnum.NO_SUBMIT.getCode())
+                .eq(TjTask::getCreatedBy, SecurityUtils.getUsername()));
         return CollectionUtils.isEmpty(list) ? null : list.get(0);
     }
 

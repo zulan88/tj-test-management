@@ -9,6 +9,7 @@ import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiOperationSort;
 import lombok.extern.slf4j.Slf4j;
+import net.wanji.business.common.Constants.TaskStatusEnum;
 import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.bo.SaveTaskSchemeBo;
@@ -330,7 +331,7 @@ public class TaskController extends BaseController {
     @PostMapping("/remove")
     public AjaxResult removeEnity() {
         LambdaQueryWrapper<TjTask> wrapper = new LambdaQueryWrapper<TjTask>();
-        wrapper.eq(TjTask::getStatus, "save");
+        wrapper.eq(TjTask::getStatus, TaskStatusEnum.NO_SUBMIT.getCode()).eq(TjTask::getStatus, SecurityUtils.getUsername());
         return tjTaskService.remove(wrapper)
                 ? AjaxResult.success("成功")
                 : AjaxResult.error("失败");
