@@ -2,9 +2,11 @@ package net.wanji.web.controller.approve;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import net.wanji.approve.entity.AppointmentRecord;
+import net.wanji.approve.entity.TjDeviceDetail;
 import net.wanji.approve.entity.dto.AppointmentRecordDto;
 import net.wanji.approve.service.AppointmentRecordService;
 import net.wanji.approve.service.RecordReService;
+import net.wanji.approve.service.TjDeviceDetailApService;
 import net.wanji.approve.utils.CacheTools;
 import net.wanji.business.common.Constants;
 import net.wanji.business.domain.vo.CasePageVo;
@@ -13,6 +15,7 @@ import net.wanji.business.exception.BusinessException;
 import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
+import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,6 +29,9 @@ public class AppointmentRecordController extends BaseController {
 
     @Autowired
     private AppointmentRecordService appointmentRecordService;
+
+    @Autowired
+    TjDeviceDetailApService tjDeviceDetailApService;
 
     @Autowired
     RecordReService recordReService;
@@ -93,6 +99,15 @@ public class AppointmentRecordController extends BaseController {
             roleList.add(new RoleVo("域控制器", "域控制器"));
         }
         return AjaxResult.success(roleList);
+    }
+
+    @GetMapping("/pageForDevice")
+    public TableDataInfo pageForDevice() throws BusinessException {
+        startPage();
+        QueryWrapper<TjDeviceDetail> queryWrapper = new QueryWrapper<>();
+        queryWrapper.ne("is_inner", 1);
+        List<TjDeviceDetail> list = tjDeviceDetailApService.list(queryWrapper);
+        return getDataTable(list);
     }
 
 }
