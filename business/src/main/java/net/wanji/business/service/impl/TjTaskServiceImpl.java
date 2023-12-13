@@ -100,6 +100,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
 import java.io.File;
@@ -815,8 +816,19 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
     @Value("${tess.testReportOuterChain}")
     private String testReportOuterChain;
 
-    public String getTestReportOuterChain() {
-        return StringUtils.isEmpty(testReportOuterChain) ? "" : testReportOuterChain;
+    @Override
+    public String getTestReportOuterChain(HttpServletRequest request) {
+        String requestUrl = StringUtils.isEmpty(testReportOuterChain) ? "" : testReportOuterChain;
+
+        String url = request.getHeader("X-Forwarded-Host").split(":")[0];
+        if(url == null) {
+            url = request.getHeader("X-Forwarded-For").split(",")[0];
+            if (url == null) {
+                url = request.getRemoteAddr();
+            }
+        }
+
+        return requestUrl;
     }
 
     public class ExcelMergeCustomerCellHandler implements CellWriteHandler {

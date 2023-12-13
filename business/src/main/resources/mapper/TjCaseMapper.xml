@@ -141,8 +141,9 @@
     </select>
 
     <select id="takeExpense" resultType="java.lang.Long">
-        select sum(c.remark)
-        where c.id in
+        select sum(remark)
+        from tj_case
+        where id in
         <foreach collection="ids" item="id" open="(" separator="," close=")">
             #{id}
         </foreach>

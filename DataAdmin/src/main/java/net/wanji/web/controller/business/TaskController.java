@@ -44,6 +44,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.HashMap;
@@ -124,7 +125,7 @@ public class TaskController extends BaseController {
     @ApiOperationSort(5)
     @ApiOperation(value = "5.列表")
     @PostMapping("/pageList")
-    public Map<String, Object> pageList(@Validated @RequestBody TaskDto taskDto) throws BusinessException {
+    public Map<String, Object> pageList(@Validated @RequestBody TaskDto taskDto, HttpServletRequest request) throws BusinessException {
         taskDto.setCreatedBy(SecurityUtils.getUsername());
         Map<String, Object> result = new HashMap<>();
         Map<String, Long> countMap = tjTaskService.selectCount(taskDto);
@@ -139,7 +140,7 @@ public class TaskController extends BaseController {
         tableDataInfo.setTotal(new PageInfo(list).getTotal());
         result.put("tableData", tableDataInfo);
         // 添加测试报告的跳转外链
-        result.put("testReportOuterChain", tjTaskService.getTestReportOuterChain());
+        result.put("testReportOuterChain", tjTaskService.getTestReportOuterChain(request));
         return result;
     }
 
