@@ -98,6 +98,9 @@ public class TjTesteeObjectInfo implements Serializable {
     @TableField("status")
     private String status;
 
+    @TableField("testee_object_pic")
+    private String testeeObjectPic;
+
     /**
      * 创建时间
      */

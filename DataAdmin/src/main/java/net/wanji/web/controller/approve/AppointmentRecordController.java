@@ -48,14 +48,14 @@ public class AppointmentRecordController extends BaseController {
     }
 
     @GetMapping("/getinfo/{id}")
-    public AjaxResult getinfo(@RequestParam Integer id) throws BusinessException {
+    public AjaxResult getinfo(@PathVariable Integer id) throws BusinessException {
         return AjaxResult.success(appointmentRecordService.getInfoById(id));
     }
 
     @GetMapping("/getcase")
-    public TableDataInfo getcase(Integer id, Integer treeId) throws BusinessException {
+    public TableDataInfo getcase(Integer id) throws BusinessException {
         startPage();
-        List<CasePageVo> list = appointmentRecordService.pageList(id, treeId);
+        List<CasePageVo> list = appointmentRecordService.pageList(id, -1);
         return getDataTable(list);
     }
 

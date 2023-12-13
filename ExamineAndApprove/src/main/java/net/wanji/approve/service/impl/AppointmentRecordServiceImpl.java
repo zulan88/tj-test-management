@@ -55,6 +55,9 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
             if (appointmentRecord.dateExists()) {
                 queryWrapper.between("commit_date", appointmentRecord.getStartDate(), appointmentRecord.getEndDate());
             }
+            if (appointmentRecord.getCreateBy() != null &&!appointmentRecord.getCreateBy().isEmpty()){
+                queryWrapper.eq("create_by", appointmentRecord.getCreateBy());
+            }
             return this.list(queryWrapper);
         }
     }
@@ -79,7 +82,11 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
                 .collect(Collectors.toList());
 
         Long expense = tjCaseService.takeExpense(ids);
-        appointmentRecordVo.setExpense(Math.toIntExact(expense));
+        if (expense != null){
+            appointmentRecordVo.setExpense(Math.toIntExact(expense));
+        }else {
+            appointmentRecordVo.setExpense(0);
+        }
         return appointmentRecordVo;
     }
 

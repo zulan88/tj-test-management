@@ -131,4 +131,10 @@ public class AppointmentRecord implements Serializable {
     @TableField("rejection_mes")
     private String rejectionMes;
 
+    /**
+     * 创建者
+     */
+    @TableField("createBy")
+    private String createBy;
+
 }
