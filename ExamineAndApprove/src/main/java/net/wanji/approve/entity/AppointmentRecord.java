@@ -149,4 +149,10 @@ public class AppointmentRecord implements Serializable {
     @ApiModelProperty(notes = "驳回理由")
     private String rejectionMes;
 
+    /**
+     * 创建者
+     */
+    @TableField("create_by")
+    private String createBy;
+
 }
