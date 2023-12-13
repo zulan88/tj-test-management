@@ -6,7 +6,9 @@ import net.wanji.approve.entity.dto.AppointmentRecordDto;
 import net.wanji.approve.service.AppointmentRecordService;
 import net.wanji.approve.service.RecordReService;
 import net.wanji.approve.utils.CacheTools;
+import net.wanji.business.common.Constants;
 import net.wanji.business.domain.vo.CasePageVo;
+import net.wanji.business.domain.vo.RoleVo;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
@@ -15,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.PostConstruct;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -74,6 +77,22 @@ public class AppointmentRecordController extends BaseController {
     public AjaxResult devicetoschedule(Integer deviceId) throws BusinessException {
         List<AppointmentRecord> list = recordReService.getrecordBydevice(deviceId);
         return AjaxResult.success(list);
+    }
+
+    /**
+     * 获取字典
+     * 获取测试类型和被测对象类型的字典数据
+     */
+    @GetMapping("/getdict")
+    public AjaxResult getdict(String type) throws BusinessException {
+        List<RoleVo> roleList = new ArrayList<>();
+        if(type.equals("task")){
+            roleList.add(new RoleVo("虚实融合", Constants.TestType.VIRTUAL_REAL_FUSION));
+        }else if(type.equals("measurand")){
+            roleList.add(new RoleVo("自动驾驶车辆", "自动驾驶车辆"));
+            roleList.add(new RoleVo("域控制器", "域控制器"));
+        }
+        return AjaxResult.success(roleList);
     }
 
 }

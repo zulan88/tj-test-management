@@ -63,6 +63,9 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
             if (appointmentRecord.getCreateBy() != null &&!appointmentRecord.getCreateBy().isEmpty()){
                 queryWrapper.eq("create_by", appointmentRecord.getCreateBy());
             }
+            if (appointmentRecord.getStatus()!=null){
+                queryWrapper.eq("status", appointmentRecord.getStatus());
+            }
             return this.list(queryWrapper);
         }
     }
