@@ -43,7 +43,7 @@ public class AppointmentRecordController extends BaseController {
     }
 
     @PutMapping("/edit")
-    public AjaxResult edit(AppointmentRecord appointmentRecord) {
+    public AjaxResult edit(@RequestBody AppointmentRecord appointmentRecord) {
         return toAjax(appointmentRecordService.updateById(appointmentRecord));
     }
 

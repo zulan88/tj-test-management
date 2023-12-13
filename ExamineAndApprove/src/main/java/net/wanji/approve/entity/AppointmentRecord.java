@@ -134,7 +134,7 @@ public class AppointmentRecord implements Serializable {
     /**
      * 创建者
      */
-    @TableField("createBy")
+    @TableField("create_by")
     private String createBy;
 
 }
