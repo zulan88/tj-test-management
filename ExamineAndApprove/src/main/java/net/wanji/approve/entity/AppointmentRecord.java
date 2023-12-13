@@ -122,6 +122,7 @@ public class AppointmentRecord implements Serializable {
      * 最后审批时间
      */
     @TableField("last_approval_time")
+    @JsonFormat(shape= JsonFormat.Shape.STRING, pattern="yyyy-MM-dd HH:mm:ss")
     private LocalDateTime lastApprovalTime;
 
     /**
