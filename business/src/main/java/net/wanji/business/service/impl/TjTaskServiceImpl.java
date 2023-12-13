@@ -34,6 +34,7 @@ import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.bo.TaskBo;
+import net.wanji.business.domain.bo.TaskCaseConfigBo;
 import net.wanji.business.domain.dto.CaseQueryDto;
 import net.wanji.business.domain.dto.RoutingPlanDto;
 import net.wanji.business.domain.dto.TaskDto;
@@ -71,6 +72,7 @@ import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.trajectory.RoutingPlanConsumer;
 import net.wanji.business.util.CustomMergeStrategy;
 import net.wanji.common.common.RealTestTrajectoryDto;
+import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.core.domain.SimpleSelect;
 import net.wanji.common.core.domain.entity.SysDictData;
@@ -113,6 +115,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -686,27 +689,37 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 .collect(Collectors.toList()));
         param.setUserName(SecurityUtils.getUsername());
         List<CaseDetailVo> caseDetails = caseMapper.selectCases(param);
-        Map<Integer, CaseDetailVo> caseDetailMap = CollectionUtils.emptyIfNull(caseDetails).stream()
-                .collect(Collectors.toMap(CaseDetailVo::getId, Function.identity()));
+        Map<Integer, CasePageVo> caseDetailMap = CollectionUtils.emptyIfNull(caseDetails).stream()
+                .collect(Collectors.toMap(CaseDetailVo::getId, v -> {
+                    CasePageVo casePageVo = new CasePageVo();
+                    BeanUtils.copyBeanProp(casePageVo, v);
+                    return casePageVo;
+                }));
         for (int i = 0; i < caseContinuousInfo.size(); i++) {
             CaseContinuousVo caseContinuousVo = caseContinuousInfo.get(i);
             caseContinuousVo.setTaskId(taskId);
             caseContinuousVo.setSort(i + 1);
-            CaseDetailVo caseDetail = caseDetailMap.get(caseContinuousVo.getCaseId());
+            CasePageVo caseDetail = caseDetailMap.get(caseContinuousVo.getCaseId());
+
             // 主车轨迹
-            try {
-                List<List<TrajectoryValueDto>> mainSimulations = routeService.readTrajectoryFromRouteFile(caseDetail.getRouteFile(), "1");
-                List<TrajectoryValueDto> valueDtos = mainSimulations.stream()
-                        .map(item -> item.get(0)).collect(Collectors.toList());
-                caseContinuousVo.setMainTrajectory(valueDtos);
-                caseContinuousVo.setStartPoint(valueDtos.get(0));
-                caseContinuousVo.setEndPoint(valueDtos.get(valueDtos.size() - 1));
-            } catch (IOException e) {
-                log.error(StringUtils.format("读取{}路线文件失败:{}", caseContinuousVo.getCaseNumber(), e));
-            } catch (IndexOutOfBoundsException e1) {
-                log.error(StringUtils.format("{}主车轨迹信息异常，请检查{}", caseContinuousVo.getCaseNumber(),
-                        caseDetail.getRouteFile()));
-            }
+            CollectionUtils.emptyIfNull(caseDetail.getCaseRealRecords()).stream()
+                    .filter(p -> TestingStatusEnum.PASS.getCode().equals(p.getStatus()))
+                    .max(Comparator.comparing(TjCaseRealRecord::getEndTime))
+                    .ifPresent(p -> {
+                        try {
+                            List<RealTestTrajectoryDto> realTestTrajectoryDtos =
+                                    routeService.readRealTrajectoryFromRouteFile(p.getRouteFile());
+                            realTestTrajectoryDtos.stream().filter(RealTestTrajectoryDto::isMain).findFirst().ifPresent(r -> {
+                                List<TrajectoryValueDto> valueDtos = r.getData().stream().map(SimulationTrajectoryDto::getValue).flatMap(List::stream).collect(Collectors.toList());
+                                caseContinuousVo.setMainTrajectory(valueDtos);
+                                caseContinuousVo.setStartPoint(valueDtos.get(0));
+                                caseContinuousVo.setEndPoint(valueDtos.get(valueDtos.size() - 1));
+                            });
+                        } catch (IndexOutOfBoundsException e1) {
+                            log.error(StringUtils.format("{}主车轨迹信息异常，请检查{}", caseContinuousVo.getCaseNumber(),
+                                    caseDetail.getRouteFile()));
+                        }
+                    });
         }
         Map<String, Object> result = new HashMap<>(2);
         result.put("channel", WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(taskId),
