@@ -29,4 +29,7 @@ public interface AppointmentRecordService extends IService<AppointmentRecord> {
 
     List<AppointmentRecord> getByids(List<Integer> ids);
 
+    AppointmentRecord addApprove(AppointmentRecord appointmentRecord);
+
+    Long getExpenseByCaseIds(String caseIds);
 }

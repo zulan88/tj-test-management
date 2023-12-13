@@ -13,6 +13,7 @@ import net.wanji.business.entity.TjTask;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.common.core.domain.SimpleSelect;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
@@ -107,5 +108,5 @@ public interface TjTaskService extends IService<TjTask> {
     void saveCustomIndexWeight(SaveCustomIndexWeightBo saveCustomIndexWeightBo);
 
 
-    String getTestReportOuterChain();
+    String getTestReportOuterChain(HttpServletRequest request);
 }

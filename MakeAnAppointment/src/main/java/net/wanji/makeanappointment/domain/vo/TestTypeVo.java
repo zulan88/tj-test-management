@@ -1,5 +1,7 @@
 package net.wanji.makeanappointment.domain.vo;
 
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.util.Date;
@@ -12,6 +14,7 @@ import java.util.Date;
  * @Version 1.0
  **/
 @Data
+@TableName("tj_test_type_info")
 public class TestTypeVo {
 
     /**
@@ -19,6 +22,8 @@ public class TestTypeVo {
      */
     private Integer id;
 
+    @TableField(exist = false)
+    private String dictName;
     /**
      * 测试类型
      */
@@ -47,6 +52,7 @@ public class TestTypeVo {
     /**
      * 创建人
      */
+    @TableField("createBy")
     private String createBy;
 
     /**
@@ -57,6 +63,7 @@ public class TestTypeVo {
     /**
      * 更新人
      */
+    @TableField("updateBy")
     private String updateBy;
 
 }

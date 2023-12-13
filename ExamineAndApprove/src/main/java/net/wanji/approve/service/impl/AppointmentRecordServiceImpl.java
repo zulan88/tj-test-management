@@ -3,15 +3,18 @@ package net.wanji.approve.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import net.wanji.approve.entity.AppointmentRecord;
 import net.wanji.approve.entity.TjTesteeObjectInfo;
+import net.wanji.approve.entity.TjWorkers;
 import net.wanji.approve.entity.dto.AppointmentRecordDto;
 import net.wanji.approve.entity.vo.AppointmentRecordVo;
 import net.wanji.approve.mapper.AppointmentRecordMapper;
 import net.wanji.approve.service.AppointmentRecordService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import net.wanji.approve.service.TjTesteeObjectInfoService;
+import net.wanji.approve.service.TjWorkersService;
 import net.wanji.business.domain.vo.CasePageVo;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.TjCaseService;
+import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.bean.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,10 +35,12 @@ import java.util.stream.Collectors;
 public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordMapper, AppointmentRecord> implements AppointmentRecordService {
 
     @Autowired
-    TjTesteeObjectInfoService tjTesteeObjectInfoService;;
+    TjTesteeObjectInfoService tjTesteeObjectInfoService;
+    ;
 
     @Autowired
     TjCaseService tjCaseService;
+
 
     @Override
     public List<AppointmentRecord> listByEntity(AppointmentRecordDto appointmentRecord) {
@@ -68,9 +73,9 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
         } else {
             throw new BusinessException("没传ID");
         }
-        if (appointmentRecordVo.getMeasurandId() != null){
+        if (appointmentRecordVo.getMeasurandId() != null) {
             appointmentRecordVo.setTjTesteeObjectInfo(tjTesteeObjectInfoService.getById(appointmentRecordVo.getMeasurandId()));
-        }else {
+        } else {
             throw new BusinessException("没传测量对象ID");
         }
 
@@ -84,7 +89,7 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
     }
 
     @Override
-    public Long getExpense(Integer id){
+    public Long getExpense(Integer id) {
         AppointmentRecord appointmentRecord = this.getById(id);
         List<Integer> ids = Arrays.stream(appointmentRecord.getCaseIds().split(","))
                 .map(Integer::parseInt)
@@ -107,6 +112,34 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
                 .collect(Collectors.toList());
         List<CasePageVo> casePageVos = tjCaseService.pageListByIds(ids, treeId);
         return casePageVos;
+    }
+
+    @Override
+    public AppointmentRecord addApprove(AppointmentRecord appointmentRecord) {
+        AppointmentRecord byId = getById(appointmentRecord.getId());
+
+        // 新增
+        if (byId == null) {
+            String recordId = StringUtils.generateRandomString(12);
+            appointmentRecord.setRecordId(recordId);
+            save(appointmentRecord);
+
+            QueryWrapper<AppointmentRecord> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("record_id", recordId);
+            return getOne(queryWrapper);
+        } else {
+            // 修改
+            updateById(appointmentRecord);
+            return getById(appointmentRecord.getRecordId());
+        }
+    }
+
+    @Override
+    public Long getExpenseByCaseIds(String caseIds){
+        List<Integer> ids = Arrays.stream(caseIds.split(","))
+                .map(Integer::parseInt)
+                .collect(Collectors.toList());
+        return tjCaseService.takeExpense(ids);
     }
 
 
