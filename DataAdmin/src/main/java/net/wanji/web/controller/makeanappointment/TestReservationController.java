@@ -1,17 +1,28 @@
 package net.wanji.web.controller.makeanappointment;
 
+import com.github.pagehelper.PageHelper;
 import io.swagger.annotations.*;
 import net.wanji.approve.entity.AppointmentRecord;
 import net.wanji.approve.service.AppointmentRecordService;
+import net.wanji.business.domain.dto.CaseQueryDto;
+import net.wanji.business.domain.vo.SceneDetailVo;
+import net.wanji.business.service.TjFragmentedSceneDetailService;
 import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
+import net.wanji.common.core.page.TableDataInfo;
 import net.wanji.makeanappointment.domain.vo.TestObjectVo;
 import net.wanji.makeanappointment.domain.vo.TestTypeVo;
 import net.wanji.makeanappointment.service.TestReservationService;
+import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.ObjectUtils;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @ClassName TestReservationController
@@ -32,6 +43,9 @@ public class TestReservationController extends BaseController {
 
     @Autowired
     private AppointmentRecordService appointmentRecordService;
+
+    @Autowired
+    private TjFragmentedSceneDetailService sceneDetailService;
 
     /**
      * 获取测试类型
@@ -74,6 +88,38 @@ public class TestReservationController extends BaseController {
             logger.error("新增预约失败", e);
             return AjaxResult.error("新增预约失败!");
         }
+    }
+
+    @ApiOperation(value = "4.查询任务用例树")
+    @GetMapping("/selectTree")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "type", value = "类型", required = true, dataType = "String", paramType = "query", example = "virtualRealFusion"),
+            @ApiImplicitParam(name = "id", value = "任务ID", required = true, dataType = "Integer", paramType = "query", example = "1")
+    })
+    public AjaxResult selectTree(String type, Integer id) {
+        return AjaxResult.success(testReservationService.selectTree(type, id));
+    }
+
+    @ApiOperationSort(5)
+    @ApiOperation(value = "5.测试用例列表页查询")
+    @PostMapping("/pageForCase")
+    public TableDataInfo pageForCase(@Validated @RequestBody CaseQueryDto caseQueryDto) {
+        if (CollectionUtils.isNotEmpty(caseQueryDto.getLabelList())) {
+            List<SceneDetailVo> sceneDetails;
+            if (ObjectUtils.isEmpty(caseQueryDto) || 0 == caseQueryDto.getChoice()) {
+                sceneDetails = sceneDetailService.selectTjSceneDetailListOr(caseQueryDto.getLabelList(), null);
+            } else {
+                sceneDetails = sceneDetailService.selectTjSceneDetailListAnd(caseQueryDto.getLabelList(), null);
+            }
+            List<Integer> sceneDetailIds = CollectionUtils.emptyIfNull(sceneDetails).stream().map(SceneDetailVo::getId)
+                    .collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(sceneDetailIds)) {
+                return getDataTable(sceneDetailIds);
+            }
+            caseQueryDto.setSceneDetailIds(sceneDetailIds);
+        }
+        PageHelper.startPage(caseQueryDto.getPageNum(), caseQueryDto.getPageSize());
+        return getDataTable(testReservationService.pageList(caseQueryDto));
     }
 
 

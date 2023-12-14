@@ -60,7 +60,7 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
             if (appointmentRecord.dateExists()) {
                 queryWrapper.between("commit_date", appointmentRecord.getStartDate(), appointmentRecord.getEndDate());
             }
-            if (appointmentRecord.getCreateBy() != null &&!appointmentRecord.getCreateBy().isEmpty()){
+            if (appointmentRecord.getCreateBy() != null && !appointmentRecord.getCreateBy().isEmpty()) {
                 queryWrapper.eq("create_by", appointmentRecord.getCreateBy());
             }
             if (appointmentRecord.getStatus()!=null){
@@ -90,9 +90,9 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
                 .collect(Collectors.toList());
 
         Long expense = tjCaseService.takeExpense(ids);
-        if (expense != null){
+        if (expense != null) {
             appointmentRecordVo.setExpense(Math.toIntExact(expense));
-        }else {
+        } else {
             appointmentRecordVo.setExpense(0);
         }
         return appointmentRecordVo;
@@ -101,6 +101,10 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
     @Override
     public Long getExpense(Integer id) {
         AppointmentRecord appointmentRecord = this.getById(id);
+        if (appointmentRecord == null) {
+            return 0L;
+        }
+
         List<Integer> ids = Arrays.stream(appointmentRecord.getCaseIds().split(","))
                 .map(Integer::parseInt)
                 .collect(Collectors.toList());
@@ -145,7 +149,7 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
     }
 
     @Override
-    public Long getExpenseByCaseIds(String caseIds){
+    public Long getExpenseByCaseIds(String caseIds) {
         List<Integer> ids = Arrays.stream(caseIds.split(","))
                 .map(Integer::parseInt)
                 .collect(Collectors.toList());

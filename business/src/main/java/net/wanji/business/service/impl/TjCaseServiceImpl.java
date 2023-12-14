@@ -172,8 +172,12 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     }
 
     @Override
-    public List<CasePageVo> pageList(CaseQueryDto caseQueryDto) {
-        caseQueryDto.setUserName(SecurityUtils.getUsername());
+    public List<CasePageVo> pageList(CaseQueryDto caseQueryDto, String selectType) {
+        // gdj:添加 selectType 作为是否按照用户查询标记
+        if("byUsername".equals(selectType)){
+            caseQueryDto.setUserName(SecurityUtils.getUsername());
+        }
+
         List<CaseDetailVo> caseVos = caseMapper.selectCases(caseQueryDto);
         handleLabels(caseVos);
         List<TjDeviceDetail> deviceDetails = deviceDetailService.list();

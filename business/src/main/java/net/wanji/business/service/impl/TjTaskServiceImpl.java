@@ -292,7 +292,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         CaseQueryDto param = new CaseQueryDto();
         param.setSelectedIds(taskCaseVos.stream().map(TaskCaseVo::getCaseId).collect(Collectors.toList()));
         param.setUserName(SecurityUtils.getUsername());
-        return tjCaseService.pageList(param);
+        return tjCaseService.pageList(param, "byUsername");
     }
 
     @Override
@@ -381,7 +381,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 List<CasePageVo> casePageVos = null;
                 if (ObjectUtils.isEmpty(caseQueryDto.getShowType()) || 0 == caseQueryDto.getShowType()) {
                     caseQueryDto.setSelectedIds(null);
-                    casePageVos = tjCaseService.pageList(caseQueryDto);
+                    casePageVos = tjCaseService.pageList(caseQueryDto, "byUsername");
                     for (CasePageVo casePageVo : CollectionUtils.emptyIfNull(casePageVos)) {
                         if (CollectionUtils.isNotEmpty(taskCaseVos) && choiceCaseIds.contains(casePageVo.getId())) {
                             casePageVo.setSelected(Boolean.TRUE);
@@ -390,7 +390,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 } else {
                     // 仅查看选中用例
                     caseQueryDto.setSelectedIds(choiceCaseIds);
-                    casePageVos = tjCaseService.pageList(caseQueryDto);
+                    casePageVos = tjCaseService.pageList(caseQueryDto, "byUsername");
                     CollectionUtils.emptyIfNull(casePageVos).forEach(t -> t.setSelected(Boolean.TRUE));
                 }
                 // 列表数据+已选择的用例
