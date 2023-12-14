@@ -613,10 +613,13 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             taskRedisTrajectoryConsumer.updateRunningCase(String.valueOf(context.get("key")), caseId);
         } else {
             String key = (String) context.get("key");
-            List<SimulationTrajectoryDto> trajectories = kafkaCollector.take(key);
+
+            // todo 有问题
+            List<SimulationTrajectoryDto> data = kafkaCollector.take(key, caseId);
+
             String duration = DateUtils.secondsToDuration(
-                    (int) Math.floor((double) (trajectories.size())) / 10);
-            routeService.saveTaskRouteFile2(taskCaseInfoBo.getRecordId(), trajectories, duration, action);
+                    (int) Math.floor((double) (data.size())) / 10);
+            routeService.saveTaskRouteFile2(taskCaseInfoBo.getRecordId(), data, duration, action);
             RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null, null,
                     duration);
             WebSocketManage.sendInfo(key, JSON.toJSONString(endMsg));

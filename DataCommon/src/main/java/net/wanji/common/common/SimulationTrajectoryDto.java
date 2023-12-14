@@ -9,6 +9,8 @@ import java.util.List;
  */
 public class SimulationTrajectoryDto {
 
+    private String source;
+
     /**
      * 时间戳类型（创建时间：CREATE_TIME）
      */
@@ -26,6 +28,14 @@ public class SimulationTrajectoryDto {
 
     public String getTimestampType() {
         return timestampType;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
     }
 
     public void setTimestampType(String timestampType) {
