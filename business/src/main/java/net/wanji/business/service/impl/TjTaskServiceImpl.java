@@ -18,6 +18,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import net.wanji.business.common.Constants.ChannelBuilder;
 import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.business.common.Constants.PartRole;
@@ -666,18 +667,17 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         if (ObjectUtil.isEmpty(task)) {
             throw new BusinessException("任务不存在");
         }
-
         List<TjTaskDataConfig> configs = tjTaskDataConfigService.list(new QueryWrapper<TjTaskDataConfig>()
                         .eq(ColumnName.TASK_ID, routingPlanDto.getTaskId())).stream()
                 .filter(t -> t.getType().equals(PartRole.MV_SIMULATION)).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(configs)) {
             throw new BusinessException("请先创建任务信息");
         }
+
         TjDeviceDetail deviceDetail = deviceDetailMapper.selectById(configs.get(0).getDeviceId());
-        routingPlanConsumer.subscribeAndSend(deviceDetail.getAttribute1(), task.getId(), task.getTaskCode());
-        String channel = WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(task.getId()),
-                TessType.PLAN, null);
+        String channel = ChannelBuilder.buildRoutingPlanChannel(SecurityUtils.getUsername(), task.getId());
         Map<String, Object> params = buildRoutingPlanParam(task.getId(), routingPlanDto.getCases());
+        routingPlanConsumer.subscribeAndSend(channel, task.getId(), task.getTaskCode());
         boolean start = restService.startServer(deviceDetail.getIp(), Integer.valueOf(deviceDetail.getServiceAddress()),
                 new TessParam().buildRoutingPlanParam(1, channel, params));
         if (!start) {
@@ -728,8 +728,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                     });
         }
         Map<String, Object> result = new HashMap<>(2);
-        result.put("channel", WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(taskId),
-                TessType.PLAN, null));
+        result.put("taskId", taskId);
         result.put("cases", caseContinuousInfo);
         return result;
     }

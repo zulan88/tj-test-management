@@ -16,8 +16,8 @@ import java.util.List;
  */
 public interface RecordReService extends IService<RecordRe> {
 
-    List<AppointmentRecord> getrecordBydevice(Integer deviceId);
+    List<Integer> getrecordBydevice(Integer deviceId);
 
-    List<AppointmentRecord> getrecordByperson(Integer deviceId);
+    List<Integer> getrecordByperson(Integer deviceId);
 
 }

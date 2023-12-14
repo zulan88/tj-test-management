@@ -1,8 +1,10 @@
 package net.wanji.web.controller.approve;
 
+import net.wanji.approve.entity.AppointmentRecord;
 import net.wanji.approve.entity.dto.ScheduleDto;
 import net.wanji.approve.entity.vo.DateScheduleVo;
 import net.wanji.approve.entity.vo.DeviceListVo;
+import net.wanji.approve.service.AppointmentRecordService;
 import net.wanji.approve.service.TjDateScheduleService;
 import net.wanji.approve.service.TjDeviceDetailApService;
 import net.wanji.common.core.domain.AjaxResult;
@@ -23,6 +25,9 @@ public class DateScheduleController {
     @Autowired
     private TjDeviceDetailApService tjDeviceDetailApService;
 
+    @Autowired
+    private AppointmentRecordService appointmentRecordService;
+
     @GetMapping("/getschedule")
     public AjaxResult getSchedule(String year, Integer quarter){
         List<DateScheduleVo> list = dateScheduleService.takeDateScheduleByDate(year,quarter);
@@ -32,7 +37,10 @@ public class DateScheduleController {
     @PostMapping("/getdevice")
     public AjaxResult getDevice(@RequestBody ScheduleDto scheduleDto){
         Set<Integer> set = dateScheduleService.takeDeviceIds(scheduleDto);
-        List<DeviceListVo> list = tjDeviceDetailApService.getDevices(set);
+        List<DeviceListVo> devices = tjDeviceDetailApService.getDevices(set,scheduleDto.getRecordId());
+        List<Integer> deviceIds = appointmentRecordService.getdeviceIdsByCase(scheduleDto.getRecordId());
+        AppointmentRecord appointmentRecord = appointmentRecordService.getById(scheduleDto.getRecordId());
+        List<DeviceListVo> list = tjDeviceDetailApService.addInfo(devices,deviceIds,appointmentRecord);
         return AjaxResult.success(list);
     }
 

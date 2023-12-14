@@ -22,18 +22,15 @@ import java.util.List;
 @Service
 public class RecordReServiceImpl extends ServiceImpl<RecordReMapper, RecordRe> implements RecordReService {
 
-    @Autowired
-    AppointmentRecordService appointmentRecordService;
-
     @Override
-    public List<AppointmentRecord> getrecordBydevice(Integer deviceId) {
+    public List<Integer> getrecordBydevice(Integer deviceId) {
         List<Integer> ids = baseMapper.selectBydevice(deviceId);
-        return appointmentRecordService.getByids(ids);
+        return ids;
     }
 
     @Override
-    public List<AppointmentRecord> getrecordByperson(Integer personId) {
+    public List<Integer> getrecordByperson(Integer personId) {
         List<Integer> ids = baseMapper.selectByperson(personId);
-        return appointmentRecordService.getByids(ids);
+        return ids;
     }
 }

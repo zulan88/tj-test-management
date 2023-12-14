@@ -1,6 +1,7 @@
 package net.wanji.approve.entity.dto;
 
 import lombok.Data;
+import net.wanji.approve.entity.TjApprecordPerson;
 
 import java.util.List;
 
@@ -14,5 +15,7 @@ public class ScheduleDto {
     String deviceIds;
 
     String personIds;
+
+    List<TjApprecordPerson> personList;
 
 }
