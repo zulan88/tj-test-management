@@ -1,5 +1,7 @@
 package net.wanji.business.domain.vo;
 
+import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -26,10 +28,13 @@ public class CaseContinuousVo {
     @ApiModelProperty("场景分类")
     private String sceneSort;
     @ApiModelProperty("主车轨迹")
+    @JSONField(serialzeFeatures = {SerializerFeature.DisableCircularReferenceDetect})
     private Object mainTrajectory;
     @ApiModelProperty("开始点")
+    @JSONField(serialzeFeatures = {SerializerFeature.DisableCircularReferenceDetect})
     private Object startPoint;
     @ApiModelProperty("结束点")
+    @JSONField(serialzeFeatures = {SerializerFeature.DisableCircularReferenceDetect})
     private Object endPoint;
     @ApiModelProperty("连接线")
     private Object connectInfo;

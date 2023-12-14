@@ -23,18 +23,13 @@ import java.util.Map;
 public interface TjTaskCaseService extends IService<TjTaskCase> {
 
     /**
-     * 重置状态
-     * @param param
-     * @throws BusinessException
-     */
-    void resetStatus(TjTaskCase param) throws BusinessException;
-    /**
      * 获取任务用例中参与者状态
      *
      * @param param
+     * @param hand 是否手动
      * @return
      */
-    TaskCaseVerificationPageVo getStatus(TjTaskCase param) throws BusinessException;
+    TaskCaseVerificationPageVo getStatus(TjTaskCase param, boolean hand) throws BusinessException;
 
     /**
      * 准备（开始倒计时）
@@ -55,7 +50,7 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
      */
     CaseRealTestVo controlTask(Integer taskId, Integer taskCaseId, Integer action) throws BusinessException, IOException;
 
-    CaseRealTestVo gettaskInfo(Integer taskId) throws BusinessException;
+    CaseRealTestVo getTaskInfo(Integer taskId) throws BusinessException;
 
     /**
      * 开始/结束
@@ -70,7 +65,7 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
      * @throws IOException
      */
     CaseRealTestVo caseStartEnd(Integer taskId, Integer caseId, Integer action,
-                                boolean taskEnd, Map<String, Object> context) throws BusinessException, IOException;
+                                boolean taskEnd, Map<String, Object> context) throws BusinessException;
 
     void playback(Integer recordId, Integer action) throws BusinessException, IOException;
 

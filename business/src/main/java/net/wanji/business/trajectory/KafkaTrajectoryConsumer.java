@@ -1,18 +1,28 @@
 package net.wanji.business.trajectory;
 
-import net.wanji.common.config.KafkaConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
+import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import net.wanji.business.common.Constants.ColumnName;
+import net.wanji.business.common.Constants.TestingStatusEnum;
+import net.wanji.business.entity.TjCase;
+import net.wanji.business.entity.TjCaseRealRecord;
+import net.wanji.business.entity.TjTask;
+import net.wanji.business.listener.KafkaCollector;
+import net.wanji.business.mapper.TjCaseMapper;
+import net.wanji.business.mapper.TjTaskMapper;
+import net.wanji.business.service.TjCaseRealRecordService;
+import net.wanji.business.service.TjTaskCaseService;
+import net.wanji.business.service.TjTaskService;
+import net.wanji.business.socket.WebSocketManage;
+import net.wanji.common.common.SimulationTrajectoryDto;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.TopicPartition;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ObjectUtils;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
+import javax.annotation.Resource;
 import java.util.List;
-import java.util.Properties;
 
 /**
  * @Auther: guanyuduo
@@ -22,60 +32,49 @@ import java.util.Properties;
 @Component
 public class KafkaTrajectoryConsumer {
 
-    private KafkaConsumerConfig kafkaConsumerConfig;
+    @Resource
+    private TjTaskMapper taskMapper;
 
-    public KafkaTrajectoryConsumer(KafkaConsumerConfig kafkaConsumerConfig) {
-        this.kafkaConsumerConfig = kafkaConsumerConfig;
+    @Resource
+    private TjCaseMapper caseMapper;
+
+    @Resource
+    private TjCaseRealRecordService caseRealRecordService;
+
+    @Resource
+    private KafkaCollector kafkaCollector;
+
+    @KafkaListener(id = "singleTrajectory", topics = {"tj_master_fusion_data"}, groupId = "${kafka.groupId}")
+    public void listen(ConsumerRecord<?, ?> record) {
+        System.out.println("topic = " + record.topic() + ", offset = " + record.offset() + ", value = " + record.value());
+
+        JSONObject jsonObject = JSONObject.parseObject(record.value().toString());
+        Integer taskId = jsonObject.getInteger("taskId");
+        Integer caseId = jsonObject.getInteger("caseId");
+        String userName = selectUserOfTask(taskId, caseId);
+        String key = taskId > 0
+                ? WebSocketManage.buildKey(userName, String.valueOf(getCaseRealRecordId(caseId)), WebSocketManage.REAL, null)
+                : WebSocketManage.buildKey(userName, String.valueOf(taskId), WebSocketManage.TASK, null);
+        kafkaCollector.collector(key, jsonObject.getObject("participantTrajectories", SimulationTrajectoryDto.class));
     }
 
-    /**
-     * 消费已上传的消息（固定offset范围）
-     *
-     * @param topic
-     * @return
-     */
-    public List<byte[]> consumeMessages(String topic) {
-        Properties props = new Properties();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConsumerConfig.getServers());
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, kafkaConsumerConfig.getGroupId());
-        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, kafkaConsumerConfig.getAutoCommit());
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, kafkaConsumerConfig.getKeyDeserializer());
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, kafkaConsumerConfig.getValueDeserializer());
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-
-        KafkaConsumer<String, byte[]> consumer = new KafkaConsumer<>(props);
-        TopicPartition partition0 = new TopicPartition(topic, 0);
-        consumer.assign(Collections.singletonList(partition0));
-        long startOffset = 0;
-        long endOffset = consumer.endOffsets(Collections.singletonList(partition0)).get(partition0);
-
-        System.out.println(startOffset + "  " + endOffset);
-        consumer.seek(partition0, 0);
-
-        List<byte[]> list = new ArrayList<>();
-        boolean read = true;
-        while (read) {
-            ConsumerRecords<String, byte[]> records = consumer.poll(Duration.ofMillis(100));
-            for (ConsumerRecord<String, byte[]> record : records) {
-                System.out.printf("offset = %d, key = %s, value = %s, timestamp = %s%n", record.offset(), record.key(),
-                        record.value(), System.currentTimeMillis());
-                list.add(record.value());
-                if (record.offset() == endOffset - 1) {
-                    consumer.close();
-                    read = false;
-                }
+    private String selectUserOfTask(Integer taskId, Integer caseId) {
+        if (0 < taskId) {
+            TjTask task = taskMapper.selectById(taskId);
+            if (!ObjectUtils.isEmpty(task)) {
+                return task.getCreatedBy();
             }
         }
-        return list;
+        TjCase tjCase = caseMapper.selectById(caseId);
+        if (!ObjectUtils.isEmpty(tjCase)) {
+            return tjCase.getCreatedBy();
+        }
+        return null;
     }
 
-
-    public void verifyTrajectory() {
-
-    }
-
-    public void extractingTrajectories() {
-
-
+    private Integer getCaseRealRecordId(Integer caseId) {
+        List<TjCaseRealRecord> records = caseRealRecordService.list(new QueryWrapper<TjCaseRealRecord>()
+                .eq(ColumnName.CASE_ID_COLUMN, caseId).eq(ColumnName.STATUS_COLUMN, TestingStatusEnum.NO_PASS));
+        return CollectionUtils.isEmpty(records) ? 0 : records.get(0).getId();
     }
 }

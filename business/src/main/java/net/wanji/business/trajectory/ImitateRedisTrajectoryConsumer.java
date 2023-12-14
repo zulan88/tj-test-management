@@ -92,7 +92,6 @@ public class ImitateRedisTrajectoryConsumer {
                 new DefaultThreadFactory("ImitateRedisTrajectoryConsumer-removeListeners"));
         scheduledExecutorService.scheduleAtFixedRate(
                 this::removeListeners, 0, 20, TimeUnit.SECONDS);
-        deviceStateListener(null);
     }
 
     private ChannelListener<SimulationTrajectoryDto> getListener(String key, String channel) {
@@ -371,11 +370,6 @@ public class ImitateRedisTrajectoryConsumer {
                 .collect(Collectors.toList());
         log.info("removeMessageListeners:{}", JSON.toJSONString(topics));
         redisMessageListenerContainer.removeMessageListener(channelListeners.get(0).getListener(), topics);
-    }
-
-    public void deviceStateListener(String stateChannel) {
-        redisMessageListenerContainer.addMessageListener(deviceStateListener,
-                new ChannelTopic(StringUtils.isNotEmpty(stateChannel) ? stateChannel : deviceStateChannel));
     }
 
     public static class ChannelListener<T> {

@@ -11,6 +11,7 @@ import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.TaskSaveDto;
 import net.wanji.business.domain.param.CaseRuleControl;
 import net.wanji.business.domain.param.CaseTrajectoryParam;
+import net.wanji.business.domain.param.TessParam;
 import net.wanji.business.domain.param.TestStartParam;
 import net.wanji.business.domain.vo.CaseContinuousVo;
 import net.wanji.business.domain.vo.IndexCustomWeightVo;
@@ -68,11 +69,8 @@ public class RestServiceImpl implements RestService {
     @Value("${masterControl.sendRule}")
     private String sendRuleUrl;
 
-    @Value("${masterControl.sendCaseTrajectoryInfo}")
-    private String sendCaseTrajectoryInfoUrl;
-
-    @Value("${imitate.client}")
-    private String imitateClientUrl;
+    @Value("${tess.server}")
+    private String tessServerUrl;
 
     @Value("${tess.sceneIndexScheme}")
     private String sceneIndexSchemeUrl;
@@ -95,8 +93,37 @@ public class RestServiceImpl implements RestService {
     @Value("${tess.downloadTestReport}")
     private String downloadTestReportUrl;
 
+    @Value("${masterControl.sendCaseTrajectoryInfo}")
+    private String sendCaseTrajectoryInfoUrl;
+
     @Autowired
     private RedisCache redisCache;
+
+    @Override
+    public boolean startServer(String ip, Integer port, TessParam tessParam) {
+        try {
+            String resultUrl = ip + ":" + port + tessServerUrl;
+            log.info("============================== tessServerUrl：{}", resultUrl);
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<TessParam> resultHttpEntity = new HttpEntity<>(tessParam, httpHeaders);
+            log.info("============================== tessServerUrl：{}", JSONObject.toJSONString(tessParam));
+            ResponseEntity<String> response =
+                    restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);
+            if (response.getStatusCodeValue() == 200) {
+                JSONObject result = JSONObject.parseObject(response.getBody(), JSONObject.class);
+                log.info("============================== tess server start result:{}", JSONObject.toJSONString(result));
+                if (Objects.isNull(result) || !"success".equals(result.get("status"))) {
+                    log.error("远程服务调用失败:{}", result.get("msg"));
+                    return false;
+                }
+                return true;
+            }
+        } catch (Exception e) {
+            log.error("远程服务调用失败:{}", e);
+        }
+        return false;
+    }
 
     @Override
     public boolean start(String ip, Integer port, TestStartParam startParam) {

@@ -17,15 +17,13 @@ import java.io.IOException;
 
 public interface TestingService {
 
-    void resetStatus(Integer caseId) throws BusinessException;
-
     /**
      * 获取用例中参与者状态
      *
      * @param caseId
      * @return
      */
-    RealVehicleVerificationPageVo getStatus(Integer caseId) throws BusinessException;
+    RealVehicleVerificationPageVo getStatus(Integer caseId, boolean hand) throws BusinessException;
 
     /**
      * 准备（开始倒计时）

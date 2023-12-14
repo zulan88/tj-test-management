@@ -1,7 +1,9 @@
 package net.wanji.business.domain.bo;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 import net.wanji.common.utils.StringUtils;
+import org.apache.commons.collections4.CollectionUtils;
 
 import java.io.Serializable;
 import java.util.List;
@@ -13,6 +15,7 @@ import java.util.Map;
  * @Descriptoin:
  */
 @Data
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class ParticipantTrajectoryBo implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -48,7 +51,14 @@ public class ParticipantTrajectoryBo implements Serializable {
 
     Boolean isHide;
 
-    public String getDuration() {
-        return StringUtils.isEmpty(duration) ? "00:00" : duration;
+    /**
+     * 发送至其他端时，清空不必要的属性
+     */
+    public void clearProperties() {
+        this.duration = null;
+        this.isHide = null;
+        if (!CollectionUtils.isEmpty(trajectory)) {
+            trajectory.forEach(TrajectoryDetailBo::clearProperties);
+        }
     }
 }

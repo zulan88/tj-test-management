@@ -248,7 +248,7 @@ public class TaskController extends BaseController {
     @ApiOperation(value = "14.重置状态")
     @PostMapping("/resetStatus")
     public AjaxResult resetStatus(@RequestBody TjTaskCase param) throws BusinessException {
-        taskCaseService.resetStatus(param);
+        taskCaseService.getStatus(param, true);
         return AjaxResult.success();
     }
 
@@ -256,7 +256,7 @@ public class TaskController extends BaseController {
     @ApiOperation(value = "15.获取状态")
     @PostMapping("/getStatus")
     public AjaxResult getStatus(@RequestBody TjTaskCase param) throws BusinessException {
-        return AjaxResult.success(taskCaseService.getStatus(param));
+        return AjaxResult.success(taskCaseService.getStatus(param, false));
     }
 
     //
@@ -342,7 +342,7 @@ public class TaskController extends BaseController {
     @ApiOperation(value = "23.查询任务信息")
     @GetMapping("/taskinfo")
     public AjaxResult taskinfo(@RequestParam Integer taskId) throws BusinessException {
-        return AjaxResult.success(taskCaseService.gettaskInfo(taskId));
+        return AjaxResult.success(taskCaseService.getTaskInfo(taskId));
     }
 
 

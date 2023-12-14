@@ -34,12 +34,12 @@ import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.bo.TaskBo;
-import net.wanji.business.domain.bo.TaskCaseConfigBo;
 import net.wanji.business.domain.dto.CaseQueryDto;
 import net.wanji.business.domain.dto.RoutingPlanDto;
 import net.wanji.business.domain.dto.TaskDto;
 import net.wanji.business.domain.dto.TjDeviceDetailDto;
 import net.wanji.business.domain.dto.device.TaskSaveDto;
+import net.wanji.business.domain.param.TessParam;
 import net.wanji.business.domain.vo.CaseContinuousVo;
 import net.wanji.business.domain.vo.CaseDetailVo;
 import net.wanji.business.domain.vo.CasePageVo;
@@ -93,6 +93,8 @@ import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
@@ -102,7 +104,6 @@ import org.springframework.util.ObjectUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.validation.constraints.NotNull;
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
@@ -116,8 +117,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.TreeSet;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -129,6 +128,8 @@ import java.util.stream.IntStream;
 @Service
 public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         implements TjTaskService {
+
+    private static final Logger log = LoggerFactory.getLogger("business");
 
     @Autowired
     private ISysDictTypeService dictTypeService;
@@ -661,29 +662,33 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
 
     @Override
     public boolean routingPlan(RoutingPlanDto routingPlanDto) throws BusinessException {
-
         TjTask task = getById(routingPlanDto.getTaskId());
         if (ObjectUtil.isEmpty(task)) {
             throw new BusinessException("任务不存在");
         }
 
-        List<TjTaskDataConfig> configs = tjTaskDataConfigService.list(new QueryWrapper<TjTaskDataConfig>().eq(ColumnName.TASK_ID, routingPlanDto.getTaskId())).stream()
+        List<TjTaskDataConfig> configs = tjTaskDataConfigService.list(new QueryWrapper<TjTaskDataConfig>()
+                        .eq(ColumnName.TASK_ID, routingPlanDto.getTaskId())).stream()
                 .filter(t -> t.getType().equals(PartRole.MV_SIMULATION)).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(configs)) {
             throw new BusinessException("请先创建任务信息");
         }
         TjDeviceDetail deviceDetail = deviceDetailMapper.selectById(configs.get(0).getDeviceId());
         routingPlanConsumer.subscribeAndSend(deviceDetail.getAttribute1(), task.getId(), task.getTaskCode());
-        boolean b = restService.startRoutingPlan(deviceDetail.getIp(), Integer.valueOf(deviceDetail.getServiceAddress()), buildRoutingPlanParam(task.getId(), routingPlanDto.getCases()));
-        if (!b) {
+        String channel = WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(task.getId()),
+                TessType.PLAN, null);
+        Map<String, Object> params = buildRoutingPlanParam(task.getId(), routingPlanDto.getCases());
+        boolean start = restService.startServer(deviceDetail.getIp(), Integer.valueOf(deviceDetail.getServiceAddress()),
+                new TessParam().buildRoutingPlanParam(1, channel, params));
+        if (!start) {
             String repeatKey = "ROUTING_TASK_" + routingPlanDto.getTaskId();
             redisCache.deleteObject(repeatKey);
             throw new BusinessException("路径规划失败");
         }
-        return b;
+        return start;
     }
 
-    private Map<String, Object> buildRoutingPlanParam(Integer taskId, List<CaseContinuousVo> caseContinuousInfo) {
+    private Map<String, Object> buildRoutingPlanParam(Integer taskId, List<CaseContinuousVo> caseContinuousInfo) throws BusinessException {
         CaseQueryDto param = new CaseQueryDto();
         param.setSelectedIds(CollectionUtils.emptyIfNull(caseContinuousInfo).stream()
                 .map(CaseContinuousVo::getCaseId)
@@ -821,7 +826,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         String requestUrl = StringUtils.isEmpty(testReportOuterChain) ? "" : testReportOuterChain;
 
         String url = request.getHeader("X-Forwarded-Host").split(":")[0];
-        if(url == null) {
+        if (url == null) {
             url = request.getHeader("X-Forwarded-For").split(",")[0];
             if (url == null) {
                 url = request.getRemoteAddr();

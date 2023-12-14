@@ -5,6 +5,7 @@ import net.wanji.business.annotion.DeviceReport;
 import net.wanji.business.component.DeviceStateToRedis;
 import net.wanji.business.domain.dto.device.DeviceReadyStateDto;
 import net.wanji.business.service.DeviceReportService;
+import net.wanji.business.service.StatusManage;
 import org.springframework.stereotype.Service;
 
 /**
@@ -28,9 +29,10 @@ public class DeviceReadyStateReportImpl
   @Override
   public void dataProcess(JSONObject jsonObject) {
     DeviceReadyStateDto deviceReadyStateDto = JSONObject.parseObject(String.valueOf(jsonObject), DeviceReadyStateDto.class);
-    deviceStateToRedis.save(deviceReadyStateDto.getDeviceId(), jsonObject.getInteger("state"), DeviceStateToRedis.DEVICE_READY_STATE_PREFIX);
-//    deviceStateToRedis.save(deviceReadyStateDto.getDeviceId(), DeviceStateToRedis.DEVICE_READY_STATE_PREFIX);
-//    String key =  DeviceStateToRedis.DEVICE_READY_STATE_PREFIX + "_" + deviceReadyStateDto.getDeviceId();
-//    StatusManage.countDown(key, deviceReadyStateDto.getState());
+    deviceStateToRedis.save(deviceReadyStateDto.getDeviceId(), deviceReadyStateDto.getState(),
+            DeviceStateToRedis.DEVICE_READY_STATE_PREFIX, jsonObject.getString("channel"));
+
+    String key =  DeviceStateToRedis.DEVICE_READY_STATE_PREFIX + "_" + deviceReadyStateDto.getDeviceId() + "_" + jsonObject.getString("channel");
+    StatusManage.countDown(key, deviceReadyStateDto.getState());
   }
 }

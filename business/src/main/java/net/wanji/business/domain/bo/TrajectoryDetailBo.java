@@ -1,5 +1,6 @@
 package net.wanji.business.domain.bo;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 import net.wanji.common.utils.StringUtils;
 import org.springframework.util.ObjectUtils;
@@ -13,6 +14,7 @@ import java.util.Objects;
  * @Descriptoin:
  */
 @Data
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class TrajectoryDetailBo implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -26,7 +28,7 @@ public class TrajectoryDetailBo implements Serializable {
     private String lane;
     private Double speed;
     private String speedUnit;
-    private boolean pass;
+    private Boolean pass;
     private String reason = "等待校验";
 
     private String date;
@@ -40,6 +42,15 @@ public class TrajectoryDetailBo implements Serializable {
                 this.latitude = pos[1];
             }
         }
+    }
+
+    /**
+     * 发送至其他端时，清空不必要的属性
+     */
+    public void clearProperties() {
+        this.reason = null;
+        this.pass = null;
+        this.date = null;
     }
 
     @Override

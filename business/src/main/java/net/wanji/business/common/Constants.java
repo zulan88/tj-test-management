@@ -1,6 +1,7 @@
 package net.wanji.business.common;
 
 import net.wanji.common.core.domain.SimpleSelect;
+import net.wanji.common.utils.StringUtils;
 import org.springframework.util.ObjectUtils;
 
 import java.util.ArrayList;
@@ -67,12 +68,133 @@ public interface Constants {
         public static final String SCENE_FORM_TEMPLATE = "该场景包含 AV车数量：{}；仿真车数量：{}；行人数量：{}；仿真频率：10HZ；";
         public static final String CASE_ROLE_TEMPLATE = "{}*{} ";
         public static final String CASE_ROLE_DEVICE_TEMPLATE = "{}-{}*{} ";
+    }
+
+    class ChannelBuilder {
         /**
          * 实车试验状态通道模板：用户名_任务ID_用例ID
          */
-        public static final String TESTING_STATUS_CHANNEL_TEMPLATE = "{}_{}_{} ";
-        public static final String TESTING_CONTROL_CHANNEL_TEMPLATE = "{}_{}_{} ";
-        public static final String TESTING_RESULT_CHANNEL_TEMPLATE = "{}_{}_{} ";
+        public static final String TESTING_CHANNEL_TEMPLATE = "{}_{}_{}_{}_{}";
+        public static final String SIMULATION_CHANNEL_TEMPLATE = "{}_{}_{}";
+        public static final int SIMULATION = 2;
+        public static final int REAL = 3;
+        public static final int PLAN = 4;
+        public static final int TASK = 5;
+        public static final String STATUS_SUFFIX = "status";
+        public static final String CONTROL_SUFFIX = "control";
+        public static final String DATA_SUFFIX = "data";
+        public static final String EVALUATE_SUFFIX = "evaluate";
+        public static final String DEFAULT_STATUS_CHANNEL = "STATUSResult";
+
+        /**
+         * 创建仿真验证时使用的channel
+         * -- 2_用户名_场景编号
+         * @param username
+         * @param number
+         * @return
+         */
+        public static String buildSimulationChannel(String username, String number) {
+            return String.format(SIMULATION_CHANNEL_TEMPLATE, SIMULATION, username, number);
+        }
+
+        /**
+         * 创建路径规划时使用的channel
+         * -- 4_用户名_任务ID
+         * @param username
+         * @param taskId
+         * @return
+         */
+        public static String buildRoutingPlanChannel(String username, Integer taskId) {
+            return String.format(SIMULATION_CHANNEL_TEMPLATE, PLAN, username, taskId);
+        }
+
+        /**
+         * 创建实车试验状态channel
+         * -- 3_用户名_任务ID(0)_用例ID_status
+         * @param username
+         * @param caseId
+         * @return
+         */
+        public static String buildTestingStatusChannel(String username, Integer caseId) {
+            return StringUtils.format(TESTING_CHANNEL_TEMPLATE, REAL, username, 0, caseId, STATUS_SUFFIX);
+        }
+
+        /**
+         * 创建任务测试状态channel
+         * -- 5_用户名_任务ID_用例ID(0)_status
+         * @param username
+         * @param taskId
+         * @return
+         */
+        public static String buildTaskStatusChannel(String username, Integer taskId) {
+            return StringUtils.format(TESTING_CHANNEL_TEMPLATE, TASK, username, taskId, 0, STATUS_SUFFIX);
+        }
+
+        /**
+         * 创建实车试验控制channel
+         * -- 3_用户名_任务ID(0)_用例ID_control
+         * @param username
+         * @param caseId
+         * @return
+         */
+        public static String buildTestingControlChannel(String username, Integer caseId) {
+            return StringUtils.format(TESTING_CHANNEL_TEMPLATE, REAL, username, 0, caseId, CONTROL_SUFFIX);
+        }
+
+        /**
+         * 创建任务测试控制channel
+         * -- 5_用户名_任务ID_用例ID(0)_control
+         * @param username
+         * @param taskId
+         * @return
+         */
+        public static String buildTaskControlChannel(String username, Integer taskId) {
+            return StringUtils.format(TESTING_CHANNEL_TEMPLATE, TASK, username, taskId, 0, CONTROL_SUFFIX);
+        }
+
+        /**
+         * 创建实车试验数据channel
+         * -- 3_用户名_任务ID(0)_用例ID_data
+         * @param username
+         * @param caseId
+         * @return
+         */
+        public static String buildTestingDataChannel(String username, Integer caseId) {
+            return StringUtils.format(TESTING_CHANNEL_TEMPLATE, REAL, username, 0, caseId, DATA_SUFFIX);
+        }
+
+        /**
+         * 创建任务测试数据channel
+         * -- 5_用户名_任务ID_用例ID(0)_data
+         * @param username
+         * @param taskId
+         * @return
+         */
+        public static String buildTaskDataChannel(String username, Integer taskId) {
+            return StringUtils.format(TESTING_CHANNEL_TEMPLATE, TASK, username, taskId, 0, DATA_SUFFIX);
+        }
+
+        /**
+         * 创建实车试验指标channel
+         * -- 3_用户名_任务ID(0)_用例ID_evaluate
+         * @param username
+         * @param caseId
+         * @return
+         */
+        public static String buildTestingEvaluateChannel(String username, Integer caseId) {
+            return StringUtils.format(TESTING_CHANNEL_TEMPLATE, REAL, username, 0, caseId, EVALUATE_SUFFIX);
+        }
+
+        /**
+         * 创建任务测试指标channel
+         * -- 5_用户名_任务ID_用例ID(0)_evaluate
+         * @param username
+         * @param taskId
+         * @return
+         */
+        public static String buildTaskEvaluateChannel(String username, Integer taskId) {
+            return StringUtils.format(TESTING_CHANNEL_TEMPLATE, TASK, username, taskId, 0, EVALUATE_SUFFIX);
+        }
     }
 
     class FileExtension {

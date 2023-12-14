@@ -121,9 +121,11 @@ public class RouteService {
         TjTaskCaseRecord taskCaseRecord = taskCaseRecordMapper.selectById(recordId);
         // 保存本地文件
         try {
+            String duration = DateUtils.secondsToDuration(
+                    (int) Math.floor((double) (data.size()) / 10));
+            originalTrajectory.setDuration(duration);
+
             String path = FileUtils.writeRoute(data, WanjiConfig.getRoutePath(), Extension.TXT);
-
-
             log.info("save task case record routePath:{}", path);
             taskCaseRecord.setRouteFile(path);
             taskCaseRecord.setStatus(0 == action ? TestingStatusEnum.PASS.getCode() : TestingStatusEnum.NO_PASS.getCode());
@@ -161,6 +163,54 @@ public class RouteService {
         }
     }
 
+
+    public void saveTaskRouteFile2(Integer recordId, List<SimulationTrajectoryDto> data, String duration, Integer action) {
+        log.info(StringUtils.format("保存任务用例测试{}路径文件", recordId));
+        TjTaskCaseRecord taskCaseRecord = taskCaseRecordMapper.selectById(recordId);
+        // 保存本地文件
+        try {
+            String path = FileUtils.writeRoute(data, WanjiConfig.getRoutePath(), Extension.TXT);
+
+
+            log.info("save task case record routePath:{}", path);
+            CaseTrajectoryDetailBo trajectoryDetailBo = JSONObject.parseObject(taskCaseRecord.getDetailInfo(), CaseTrajectoryDetailBo.class);
+            trajectoryDetailBo.setDuration(duration);
+            taskCaseRecord.setDetailInfo(JSONObject.toJSONString(trajectoryDetailBo));
+            taskCaseRecord.setRouteFile(path);
+            taskCaseRecord.setStatus(0 == action ? TestingStatusEnum.PASS.getCode() : TestingStatusEnum.NO_PASS.getCode());
+            taskCaseRecord.setEndTime(LocalDateTime.now());
+            taskCaseRecordMapper.updateById(taskCaseRecord);
+
+            log.info("save task case info");
+            TjTaskCase taskCase = new TjTaskCase();
+            taskCase.setTestTotalTime(String.valueOf(DateUtils.durationToSeconds(duration)));
+            taskCase.setEndTime(new Date());
+            taskCase.setStatus(TaskCaseStatusEnum.FINISHED.getCode());
+            taskCase.setPassingRate(0 == action ? "100%" : "0%");
+            QueryWrapper<TjTaskCase> updateMapper = new QueryWrapper<>();
+            updateMapper.eq(ColumnName.TASK_ID, taskCaseRecord.getTaskId()).eq(ColumnName.CASE_ID_COLUMN,
+                    taskCaseRecord.getCaseId());
+            taskCaseMapper.update(taskCase, updateMapper);
+
+            QueryWrapper<TjTaskCase> queryMapper = new QueryWrapper<>();
+            queryMapper.eq(ColumnName.TASK_ID, taskCaseRecord.getTaskId());
+            List<TjTaskCase> tjTaskCases = taskCaseMapper.selectList(queryMapper);
+            if (CollectionUtils.emptyIfNull(tjTaskCases).stream().allMatch(item ->
+                    TaskCaseStatusEnum.FINISHED.getCode().equals(item.getStatus()))) {
+                log.info("任务{}下所有用例已完成", taskCaseRecord.getTaskId());
+                TjTask tjTask = new TjTask();
+                tjTask.setId(tjTaskCases.get(0).getTaskId());
+                tjTask.setEndTime(new Date());
+                tjTask.setTestTotalTime(DateUtils.secondsToDuration(tjTaskCases.stream().mapToInt(caseObj ->
+                        Integer.parseInt(caseObj.getTestTotalTime())).sum()));
+                tjTask.setStatus(TaskStatusEnum.FINISHED.getCode());
+                taskMapper.updateById(tjTask);
+            }
+            log.info("更新完成");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     /**
      * 仿真轨迹点位检查
@@ -208,7 +258,7 @@ public class RouteService {
                         restime = 0D;
                     }
                 }
-                TrajectoryDetailVo trajectoryDetailVo = new TrajectoryDetailVo(trajectoryDetailBo.getFrameId(), trajectoryDetailBo.isPass(), trajectoryDetailBo.getSpeed(), String.valueOf(restime));
+                TrajectoryDetailVo trajectoryDetailVo = new TrajectoryDetailVo(trajectoryDetailBo.getFrameId(), trajectoryDetailBo.getPass(), trajectoryDetailBo.getSpeed(), String.valueOf(restime));
                 participantTrajectoryVo.addtrajectory(trajectoryDetailVo);
             }
             res.add(participantTrajectoryVo);
@@ -251,7 +301,7 @@ public class RouteService {
                 }
                 List<TrajectoryDetailBo> points = trajectoryBo.getTrajectory();
                 for (TrajectoryDetailBo trajectoryDetailBo : points) {
-                    if (trajectoryDetailBo.isPass()) {
+                    if (trajectoryDetailBo.getPass()) {
                         continue;
                     }
                     String[] positionArray = trajectoryDetailBo.getPosition().split(",");
@@ -276,7 +326,7 @@ public class RouteService {
 
     public boolean verifyRoute(List<TrajectoryDetailBo> points) {
         // todo anyMatch -> allMatch
-        return CollectionUtils.emptyIfNull(points).stream().anyMatch(TrajectoryDetailBo::isPass);
+        return CollectionUtils.emptyIfNull(points).stream().anyMatch(TrajectoryDetailBo::getPass);
     }
 
     public Map<String, List<Map<String, Double>>> extractRoute(List<List<TrajectoryValueDto>> data) {

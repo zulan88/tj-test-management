@@ -21,10 +21,10 @@ public class StatusManage {
 
     public static Map<String, CountDownValueDto> countDownLatchMap = new HashMap<>();
 
-    public static void addCountDownLatch(String key) throws InterruptedException {
+    public static void addCountDownLatch(String key, long time) throws InterruptedException {
         CountDownValueDto countDownValueDto = new CountDownValueDto();
         countDownLatchMap.put(key, countDownValueDto);
-        boolean await = countDownValueDto.getCountDownLatch().await(200, TimeUnit.MILLISECONDS);
+        boolean await = countDownValueDto.getCountDownLatch().await(time, TimeUnit.MILLISECONDS);
     }
 
     public static void countDown(String key, Object value) {

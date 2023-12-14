@@ -10,7 +10,6 @@ import net.wanji.business.common.Constants.PlaybackAction;
 import net.wanji.business.common.Constants.PointTypeEnum;
 import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.YN;
-import net.wanji.business.domain.bo.CaseInfoBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
@@ -18,6 +17,7 @@ import net.wanji.business.domain.dto.SceneDebugDto;
 import net.wanji.business.domain.dto.SceneQueryDto;
 import net.wanji.business.domain.dto.TjDeviceDetailDto;
 import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
+import net.wanji.business.domain.param.TessParam;
 import net.wanji.business.domain.param.TestStartParam;
 import net.wanji.business.domain.vo.DeviceDetailVo;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
@@ -31,7 +31,11 @@ import net.wanji.business.mapper.TjDeviceDetailMapper;
 import net.wanji.business.mapper.TjFragmentedSceneDetailMapper;
 import net.wanji.business.mapper.TjFragmentedScenesMapper;
 import net.wanji.business.schedule.PlaybackSchedule;
-import net.wanji.business.service.*;
+import net.wanji.business.service.RestService;
+import net.wanji.business.service.RouteService;
+import net.wanji.business.service.TjFragmentedSceneDetailService;
+import net.wanji.business.service.TjFragmentedScenesService;
+import net.wanji.business.service.TjResourcesDetailService;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.trajectory.RedisTrajectory2Consumer;
 import net.wanji.common.common.TrajectoryValueDto;
@@ -54,7 +58,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -213,8 +216,10 @@ public class TjFragmentedSceneDetailServiceImpl
         if (StringUtils.isNotEmpty(sceneDetailDto.getRouteFile()) && !ObjectUtils.isEmpty(sceneDetailDto.getTrajectoryJson())) {
             List<ParticipantTrajectoryBo> list = sceneDetailDto.getTrajectoryJson().getParticipantTrajectories().stream()
                     .filter(t -> PartType.MAIN.equals(t.getType()))
-                    .filter(p -> !p.getTrajectory().get(0).isPass()
-                            || !p.getTrajectory().get(p.getTrajectory().size() - 1).isPass())
+                    .filter(p -> ObjectUtils.isEmpty(p.getTrajectory().get(0).getPass())
+                            || ObjectUtils.isEmpty(p.getTrajectory().get(p.getTrajectory().size() - 1).getPass())
+                            || !p.getTrajectory().get(0).getPass()
+                            || !p.getTrajectory().get(p.getTrajectory().size() - 1).getPass())
                     .collect(Collectors.toList());
             if (CollectionUtils.isNotEmpty(list)) {
                 throw new BusinessException("主车起止点校验失败，请检查主车起止点或重新进行仿真验证！");
@@ -235,12 +240,12 @@ public class TjFragmentedSceneDetailServiceImpl
 //            detail.setFinished(true);
 //        }
         List<String> labellist = new ArrayList<>();
-        if(CollectionUtils.isNotEmpty(sceneDetailDto.getLabelList())) {
+        if (CollectionUtils.isNotEmpty(sceneDetailDto.getLabelList())) {
             for (String id : sceneDetailDto.getLabelList()) {
                 labellist.addAll(this.getalllabel(id));
             }
         }
-        if(Integer.valueOf(1).equals(sceneDetailDto.getFinished())){
+        if (Integer.valueOf(1).equals(sceneDetailDto.getFinished())) {
             detail.setFinished(true);
         }
         detail.setLabel(CollectionUtils.isNotEmpty(sceneDetailDto.getLabelList())
@@ -328,12 +333,13 @@ public class TjFragmentedSceneDetailServiceImpl
                     throw new BusinessException("当前无可用仿真程序");
                 }
                 sceneDebugDto.getTrajectoryJson().setSceneDesc(scenes.getName());
-                sceneDebugDto.getTrajectoryJson().setSceneForm(StringUtils.format(ContentTemplate.SCENE_FORM_TEMPLATE, testStartParam.getAvNum(),
-                        testStartParam.getSimulationNum(), testStartParam.getPedestrianNum()));
+                sceneDebugDto.getTrajectoryJson().setSceneForm(StringUtils.format(ContentTemplate.SCENE_FORM_TEMPLATE,
+                        testStartParam.getAvNum(), testStartParam.getSimulationNum(), testStartParam.getPedestrianNum()));
                 redisTrajectoryConsumer.subscribeAndSend(sceneDebugDto);
 
                 DeviceDetailVo detailVo = deviceDetailVos.get(0);
-                boolean start = restService.start(detailVo.getIp(), Integer.valueOf(detailVo.getServiceAddress()), testStartParam);
+                boolean start = restService.startServer(detailVo.getIp(), Integer.valueOf(detailVo.getServiceAddress()),
+                        new TessParam().buildSimulationParam(1, testStartParam.getChannel(), testStartParam));
                 if (!start) {
                     String repeatKey = "DEBUGGING_SCENE_" + sceneDebugDto.getNumber();
                     redisCache.deleteObject(repeatKey);
@@ -347,7 +353,6 @@ public class TjFragmentedSceneDetailServiceImpl
                 PlaybackSchedule.goOn(key);
                 break;
             case PlaybackAction.STOP:
-//                WebSocketManage.remove(key);
                 redisTrajectoryConsumer.removeListener(key);
                 break;
             default:
@@ -403,12 +408,12 @@ public class TjFragmentedSceneDetailServiceImpl
             }
         }
         return new TestStartParam(WebSocketManage.buildKey(SecurityUtils.getUsername(), sceneDebugDto.getNumber(),
-                        WebSocketManage.SIMULATION, null), (int) avNum, (int) simulationNum,
+                WebSocketManage.SIMULATION, null), (int) avNum, (int) simulationNum,
                 (int) pedestrianNum, sceneTrajectoryBo.getParticipantTrajectories());
     }
 
     @Override
-    public List<SceneDetailVo> selectTjFragmentedSceneDetailList(SceneDetailVo sceneDetailVo){
+    public List<SceneDetailVo> selectTjFragmentedSceneDetailList(SceneDetailVo sceneDetailVo) {
         return sceneDetailMapper.selectTjFragmentedSceneDetailList(sceneDetailVo);
     }
 
@@ -422,7 +427,7 @@ public class TjFragmentedSceneDetailServiceImpl
     }
 
     @Override
-    public boolean updateOne(TjFragmentedSceneDetail sceneDetail){
+    public boolean updateOne(TjFragmentedSceneDetail sceneDetail) {
         return this.update().update(sceneDetail);
     }
 

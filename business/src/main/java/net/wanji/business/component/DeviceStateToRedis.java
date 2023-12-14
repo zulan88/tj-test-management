@@ -27,20 +27,20 @@ public class DeviceStateToRedis {
     this.redisTemplate = redisTemplate;
   }
 
-  public void save(Integer deviceId, Integer state, String prefix) {
-    redisTemplate.opsForValue().set(getKey(deviceId, prefix), state,
+  public void save(Integer deviceId, Integer state, String prefix, String suffix) {
+    redisTemplate.opsForValue().set(getKey(deviceId, prefix, suffix), state,
         Duration.of(2, ChronoUnit.SECONDS));
   }
 
-  public void save(Integer deviceId, String prefix) {
-    save(deviceId, 1, prefix);
+  public void save(Integer deviceId, String prefix, String suffix) {
+    save(deviceId, 1, prefix, suffix);
   }
 
-  public Integer query(Integer deviceId, String prefix) {
-    return redisTemplate.opsForValue().get(getKey(deviceId, prefix));
+  public Integer query(Integer deviceId, String prefix, String suffix) {
+    return redisTemplate.opsForValue().get(getKey(deviceId, prefix, suffix));
   }
 
-  private static String getKey(Integer deviceId, String prefix) {
-    return prefix + "_" + deviceId;
+  private static String getKey(Integer deviceId, String prefix, String suffix) {
+    return prefix + "_" + deviceId + "_" + suffix;
   }
 }

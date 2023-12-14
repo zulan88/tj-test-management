@@ -1,16 +1,14 @@
 package net.wanji.business.service;
 
-import net.wanji.business.domain.bo.CaseConfigBo;
 import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.bo.SaveTaskSchemeBo;
-import net.wanji.business.domain.bo.TaskCaseConfigBo;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.TaskSaveDto;
 import net.wanji.business.domain.param.CaseRuleControl;
 import net.wanji.business.domain.param.CaseTrajectoryParam;
+import net.wanji.business.domain.param.TessParam;
 import net.wanji.business.domain.param.TestStartParam;
-import net.wanji.business.domain.vo.CaseContinuousVo;
 import net.wanji.business.domain.vo.IndexCustomWeightVo;
 import net.wanji.business.domain.vo.IndexWeightDetailsVo;
 import net.wanji.business.domain.vo.SceneIndexSchemeVo;
@@ -29,23 +27,34 @@ import java.util.Map;
 
 public interface RestService {
 
+    // ========================= TESSNG =========================
+
+    /**
+     * 启动tess服务
+     * @param ip
+     * @param port
+     * @param tessParam
+     * @return
+     */
+    boolean startServer(String ip, Integer port, TessParam tessParam);
+
     /**
      * 开始仿真
+     * @param ip
+     * @param port
+     * @param startParam
+     * @return
      */
     boolean start(String ip, Integer port, TestStartParam startParam);
 
     /**
      * 多场景路径规划
-     */
-    boolean startRoutingPlan(String ip, Integer port, Map<String, Object> params);
-
-    /**
-     * 查询设备信息
      * @param ip
-     * @param method
+     * @param port
+     * @param params
      * @return
      */
-    Map<String, Object> searchDeviceInfo(String ip, HttpMethod method);
+    boolean startRoutingPlan(String ip, Integer port, Map<String, Object> params);
 
     /**
      * 查询设备准备状态
@@ -53,20 +62,6 @@ public interface RestService {
      * @return
      */
     boolean selectDeviceReadyState(DeviceReadyStateParam deviceReadyStateParam);
-
-    /**
-     * 主控交互
-     * @param caseRuleControl
-     * @return
-     */
-    boolean sendRuleUrl(CaseRuleControl caseRuleControl);
-
-    /**
-     * 向主控发送用例轨迹信息
-     * @param param
-     * @return
-     */
-    boolean sendCaseTrajectoryInfo(CaseTrajectoryParam param);
 
     /**
      * 获取济达场景&指标方案列表
@@ -107,7 +102,7 @@ public interface RestService {
     /**
      * 创建任务和方案关联
      * @param saveTaskSchemeBo
-     * @return {@link boolean}
+     * @return {@link Map}
      * @author liruitao
      * @date 2023-11-15
      */
@@ -116,7 +111,7 @@ public interface RestService {
     /**
      * 自定义-场景权重创建
      * @param saveCustomScenarioWeightBo
-     * @return {@link boolean}
+     * @return {@link Map}
      * @author liruitao
      * @date 2023-11-15
      */
@@ -138,4 +133,31 @@ public interface RestService {
      * @date 2023-11-22
      */
     void downloadTestReport(HttpServletResponse response, int taskId);
+
+
+    // ========================= 主控 =========================
+    /**
+     * 向主控发送规则
+     * @param caseRuleControl
+     * @return
+     */
+    boolean sendRuleUrl(CaseRuleControl caseRuleControl);
+
+    /**
+     * 向主控发送用例轨迹信息
+     * @param param
+     * @return
+     */
+    boolean sendCaseTrajectoryInfo(CaseTrajectoryParam param);
+
+
+
+    // ========================= 设备 =========================
+    /**
+     * 查询设备信息
+     * @param ip
+     * @param method
+     * @return
+     */
+    Map<String, Object> searchDeviceInfo(String ip, HttpMethod method);
 }

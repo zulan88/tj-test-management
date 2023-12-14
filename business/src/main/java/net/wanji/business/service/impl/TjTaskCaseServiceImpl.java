@@ -1,9 +1,12 @@
 package net.wanji.business.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
+import net.wanji.business.common.Constants.ChannelBuilder;
 import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.business.common.Constants.PartRole;
@@ -16,6 +19,7 @@ import net.wanji.business.common.Constants.TaskCaseStatusEnum;
 import net.wanji.business.common.Constants.TestingStatusEnum;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.Label;
+import net.wanji.business.domain.RealWebsocketMessage;
 import net.wanji.business.domain.bo.CaseInfoBo;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
@@ -24,13 +28,13 @@ import net.wanji.business.domain.bo.TaskCaseConfigBo;
 import net.wanji.business.domain.bo.TaskCaseInfoBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
-import net.wanji.business.domain.dto.device.DeviceStateDto;
 import net.wanji.business.domain.dto.device.ParamsDto;
 import net.wanji.business.domain.param.CaseRuleControl;
 import net.wanji.business.domain.param.CaseSSInfo;
 import net.wanji.business.domain.param.CaseTrajectoryParam;
 import net.wanji.business.domain.param.DeviceConnInfo;
 import net.wanji.business.domain.param.DeviceConnRule;
+import net.wanji.business.domain.param.TessParam;
 import net.wanji.business.domain.vo.CaseRealTestVo;
 import net.wanji.business.domain.vo.CaseTreeVo;
 import net.wanji.business.domain.vo.CommunicationDelayVo;
@@ -42,6 +46,8 @@ import net.wanji.business.entity.TjTask;
 import net.wanji.business.entity.TjTaskCase;
 import net.wanji.business.entity.TjTaskCaseRecord;
 import net.wanji.business.exception.BusinessException;
+import net.wanji.business.listener.KafkaCollector;
+import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjTaskCaseMapper;
 import net.wanji.business.mapper.TjTaskCaseRecordMapper;
 import net.wanji.business.mapper.TjTaskMapper;
@@ -56,9 +62,9 @@ import net.wanji.business.service.TjDeviceDetailService;
 import net.wanji.business.service.TjTaskCaseRecordService;
 import net.wanji.business.service.TjTaskCaseService;
 import net.wanji.business.socket.WebSocketManage;
+import net.wanji.business.trajectory.KafkaTrajectoryConsumer;
 import net.wanji.business.trajectory.TaskRedisTrajectoryConsumer;
 import net.wanji.common.common.RealTestTrajectoryDto;
-import net.wanji.common.common.SimulationMessage;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.utils.DateUtils;
@@ -129,13 +135,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
     private ISysDictDataService dictDataService;
 
     @Autowired
-    private DeviceStateSendService deviceStateSendService;
-
-    @Autowired
     private TjCaseTreeService caseTreeService;
-
-    @Autowired
-    private RedisTemplate<String, Object> noClassRedisTemplate;
 
     @Autowired
     private TjTaskMapper taskMapper;
@@ -149,9 +149,14 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
     @Autowired
     private TaskRedisTrajectoryConsumer taskRedisTrajectoryConsumer;
 
+    @Autowired
+    private KafkaTrajectoryConsumer kafkaTrajectoryConsumer;
+
+    @Autowired
+    private KafkaCollector kafkaCollector;
 
     @Override
-    public void resetStatus(TjTaskCase param) throws BusinessException {
+    public TaskCaseVerificationPageVo getStatus(TjTaskCase param, boolean hand) throws BusinessException {
         if (ObjectUtils.isEmpty(param.getId()) && ObjectUtils.isEmpty(param.getTaskId())) {
             throw new BusinessException("参数异常");
         }
@@ -166,98 +171,146 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         if (ObjectUtils.isEmpty(tjTask)) {
             throw new BusinessException("查询失败，请检查任务是否存在");
         }
-
-        // 先停止
-        stop(param.getTaskId(), param.getId());
-
-        List<TaskCaseConfigBo> taskCaseConfigs = taskCaseInfos.stream().flatMap(t -> t.getDataConfigs().stream()).filter(distinctByKey(TaskCaseConfigBo::getDeviceId)).collect(Collectors.toList());
-        Map<Integer, Map<String, String>> caseBusinessIdAndRoleMap = new HashMap<>();
-        Map<Integer, Integer> caseMainSize = new HashMap<>();
-        Map<String, List<SimulationTrajectoryDto>> mainTrajectoryMap = new HashMap<>();
-        for (TaskCaseInfoBo taskCaseInfoBo : taskCaseInfos) {
-            // 1.数据校验
-            validConfig(taskCaseInfoBo);
-
-            // 2.用例配置
-            if (CollectionUtils.isNotEmpty(taskCaseInfoBo.getDataConfigs())) {
-                taskCaseConfigs.addAll(taskCaseInfoBo.getDataConfigs());
-            }
-            // 3.参与者ID和参与者名称匹配map
-            Map<String, String> businessIdAndRoleMap = taskCaseInfoBo.getDataConfigs().stream().collect(Collectors.toMap(
-                    TaskCaseConfigBo::getParticipatorId,
-                    TaskCaseConfigBo::getType));
-            caseBusinessIdAndRoleMap.put(taskCaseInfoBo.getCaseId(), businessIdAndRoleMap);
-            // 4.用例对应主车轨迹长度(使用实车试验的轨迹)
-            List<RealTestTrajectoryDto> realTestTrajectoryDtos = routeService.readRealTrajectoryFromRouteFile(taskCaseInfoBo.getRealRouteFile());
-            realTestTrajectoryDtos.stream().filter(RealTestTrajectoryDto::isMain).findFirst().ifPresent(t -> {
-                if (!ObjectUtils.isEmpty(param.getId())) {
-                    mainTrajectoryMap.put("main", t.getData());
-                }
-                caseMainSize.put(taskCaseInfoBo.getCaseId(), t.getData().size());
-            });
+        if (hand) {
+            // 先停止
+            stop(param.getTaskId(), param.getId());
         }
-        // 查询主车轨迹
-        if (ObjectUtils.isEmpty(param.getId())) {
-            try {
-                List<SimulationTrajectoryDto> main = routeService.readOriTrajectoryFromRouteFile(tjTask.getMainPlanFile(), "1");
-                mainTrajectoryMap.put("main", main);
-            } catch (IOException e) {
-                log.error("主车规划路径文件读取失败：{}", e);
-                throw new BusinessException("读取主车已规划路径文件失败");
-            } catch (NullPointerException v2) {
-                throw new BusinessException("主车轨迹未规划");
-            }
-        }
-        // 5.重复设备过滤
-        taskCaseConfigs = taskCaseConfigs.stream().filter(info ->
-                !ObjectUtils.isEmpty(info.getDeviceId())).collect(Collectors.collectingAndThen(
-                Collectors.toCollection(() ->
-                        new TreeSet<>(Comparator.comparing(TaskCaseConfigBo::getDeviceId))), ArrayList::new));
-
-        Map<Integer, TaskCaseInfoBo> taskCaseInfoMap = taskCaseInfos.stream().collect(Collectors.toMap(TaskCaseInfoBo::getCaseId, Function.identity()));
-        // 6.状态查询
-        for (TaskCaseConfigBo taskCaseConfigBo : taskCaseConfigs) {
-            // 查询设备状态
-            DeviceStateDto deviceStateDto = new DeviceStateDto();
-            deviceStateDto.setDeviceId(taskCaseConfigBo.getDeviceId());
-            deviceStateDto.setType(0);
-            deviceStateDto.setTimestamp(System.currentTimeMillis());
-            deviceStateSendService.sendData(taskCaseConfigBo.getCommandChannel(), deviceStateDto);
-            // 查询设备准备状态
-            DeviceReadyStateParam stateParam = new DeviceReadyStateParam(taskCaseConfigBo.getDeviceId(), taskCaseConfigBo.getCommandChannel());
-            if (PartRole.AV.equals(taskCaseConfigBo.getType())) {
-                // av车需要主车全部轨迹
-                stateParam.setParams(new ParamsDto(mainTrajectoryMap.get("main")));
-            }
-            if (PartRole.MV_SIMULATION.equals(taskCaseConfigBo.getType())) {
-                stateParam.setParams(buildTessStateParam(param.getTaskId(), taskCaseInfoMap, caseBusinessIdAndRoleMap, caseMainSize));
-            }
-            restService.selectDeviceReadyState(stateParam);
-        }
-
-    }
-
-    @Override
-    public TaskCaseVerificationPageVo getStatus(TjTaskCase param) throws BusinessException {
-        if (ObjectUtils.isEmpty(param.getId()) && ObjectUtils.isEmpty(param.getTaskId())) {
-            throw new BusinessException("参数异常");
-        }
-        // 1.查询用例详情
-        // taskId为空时 单个用例测试
-        // caseId为空时 连续性测试
-        List<TaskCaseInfoBo> taskCaseInfos = taskCaseMapper.selectTaskCaseByCondition(param);
-        if (CollectionUtils.isEmpty(taskCaseInfos)) {
-            throw new BusinessException("查询失败，请检查用例是否存在");
-        }
-        TjTask tjTask = taskMapper.selectById(param.getTaskId());
-        if (ObjectUtils.isEmpty(tjTask)) {
-            throw new BusinessException("查询失败，请检查任务是否存在");
-        }
+        // 2.数据填充
         List<TaskCaseConfigBo> taskCaseConfigs = new ArrayList<>();
         Map<Integer, Map<String, String>> caseBusinessIdAndRoleMap = new HashMap<>();
         Map<Integer, Integer> caseMainSize = new HashMap<>();
         Map<String, String> startMap = new HashMap<>();
         Map<String, List<SimulationTrajectoryDto>> mainTrajectoryMap = new HashMap<>();
+        Map<Integer, TaskCaseInfoBo> taskCaseInfoMap = new HashMap<>();
+        fillStatusParam(param.getId(), taskCaseInfos, taskCaseConfigs, caseBusinessIdAndRoleMap, caseMainSize, startMap,
+                tjTask.getMainPlanFile(), mainTrajectoryMap, taskCaseInfoMap);
+        // 3.重复设备过滤
+        taskCaseConfigs = filterConfigs(taskCaseConfigs);
+        TaskCaseConfigBo simulationConfig = taskCaseConfigs.stream()
+                .filter(t -> PartRole.MV_SIMULATION.equals(t.getType()))
+                .findFirst()
+                .orElseThrow(() -> new BusinessException("未找到仿真设备"));
+        // 4.唤醒仿真服务
+        TessParam tessParam = buildTessServerParam(1, param.getTaskId());
+        restService.startServer(simulationConfig.getIp(), Integer.valueOf(simulationConfig.getServiceAddress()),
+                tessParam);
+        // 5.状态查询
+        for (TaskCaseConfigBo taskCaseConfigBo : taskCaseConfigs) {
+            // 查询设备状态
+            Integer status = hand
+                    ? deviceDetailService.handDeviceState(taskCaseConfigBo.getDeviceId(), getCommandChannelByRole(taskCaseConfigBo), false)
+                    : deviceDetailService.selectDeviceState(taskCaseConfigBo.getDeviceId(), getCommandChannelByRole(taskCaseConfigBo), false);
+            taskCaseConfigBo.setStatus(status);
+            // 查询设备准备状态
+            DeviceReadyStateParam stateParam = new DeviceReadyStateParam(taskCaseConfigBo.getDeviceId(), getCommandChannelByRole(taskCaseConfigBo));
+            if (PartRole.AV.equals(taskCaseConfigBo.getType())) {
+                // av车需要主车全部轨迹
+                stateParam.setParams(new ParamsDto("1", mainTrajectoryMap.get("main")));
+            }
+            if (PartRole.MV_SIMULATION.equals(taskCaseConfigBo.getType())) {
+                stateParam.setParams(buildTessStateParam(param.getTaskId(), taskCaseInfoMap, caseBusinessIdAndRoleMap, caseMainSize));
+            }
+            Integer readyStatus = hand
+                    ? deviceDetailService.handDeviceReadyState(taskCaseConfigBo.getDeviceId(),
+                    getReadyStatusChannelByType(taskCaseConfigBo), stateParam, false)
+                    : deviceDetailService.selectDeviceReadyState(taskCaseConfigBo.getDeviceId(),
+                    getReadyStatusChannelByType(taskCaseConfigBo), stateParam, false);
+            taskCaseConfigBo.setPositionStatus(readyStatus);
+        }
+        // 6.构建页面结果集
+        return buildPageVo(param, startMap, taskCaseConfigs);
+    }
+
+    private String getCommandChannelByRole(TaskCaseConfigBo taskCaseConfigBo) {
+        return PartRole.MV_SIMULATION.equals(taskCaseConfigBo.getSupportRoles())
+                ? ChannelBuilder.buildTaskControlChannel(SecurityUtils.getUsername(), taskCaseConfigBo.getTaskId())
+                : taskCaseConfigBo.getCommandChannel();
+    }
+
+    private String getReadyStatusChannelByType(TaskCaseConfigBo taskCaseConfigBo) {
+        return PartRole.MV_SIMULATION.equals(taskCaseConfigBo.getSupportRoles())
+                ? ChannelBuilder.buildTaskStatusChannel(SecurityUtils.getUsername(), taskCaseConfigBo.getTaskId())
+                : ChannelBuilder.DEFAULT_STATUS_CHANNEL;
+    }
+
+    /**
+     * 构建唤醒tess服务的参数
+     *
+     * @param roadNum
+     * @param taskId
+     * @return
+     */
+    private TessParam buildTessServerParam(Integer roadNum, Integer taskId) {
+        return new TessParam().buildTaskParam(roadNum,
+                ChannelBuilder.buildTaskDataChannel(SecurityUtils.getUsername(), taskId),
+                ChannelBuilder.buildTaskControlChannel(SecurityUtils.getUsername(), taskId),
+                ChannelBuilder.buildTaskEvaluateChannel(SecurityUtils.getUsername(), taskId),
+                ChannelBuilder.buildTaskStatusChannel(SecurityUtils.getUsername(), taskId));
+    }
+
+    /**
+     * 构建页面结果集数据
+     *
+     * @param taskCase
+     * @param startMap
+     * @param taskCaseConfigs
+     * @return
+     */
+    private TaskCaseVerificationPageVo buildPageVo(TjTaskCase taskCase, Map<String, String> startMap, List<TaskCaseConfigBo> taskCaseConfigs) {
+        for (TaskCaseConfigBo taskCaseConfigBo : taskCaseConfigs) {
+            if (PartRole.AV.equals(taskCaseConfigBo.getType()) && !ObjectUtils.isEmpty(startMap)) {
+                String[] position = startMap.get(taskCaseConfigBo.getParticipatorId()).split(",");
+                taskCaseConfigBo.setStartLongitude(Double.parseDouble(position[0]));
+                taskCaseConfigBo.setStartLatitude(Double.parseDouble(position[1]));
+            }
+        }
+        Map<String, List<TaskCaseConfigBo>> statusMap = taskCaseConfigs.stream().collect(
+                Collectors.groupingBy(TaskCaseConfigBo::getType));
+        TaskCaseVerificationPageVo result = new TaskCaseVerificationPageVo();
+        result.setTaskId(taskCase.getTaskId());
+        result.setTaskCaseId(taskCase.getId());
+        result.setStatusMap(statusMap);
+        result.setChannels(taskCaseConfigs.stream().map(TaskCaseConfigBo::getDataChannel).collect(Collectors.toSet()));
+        validStatus(result);
+        return result;
+    }
+
+    /**
+     * 筛选重复设备
+     *
+     * @param taskCaseConfigs
+     * @return
+     */
+    private List<TaskCaseConfigBo> filterConfigs(List<TaskCaseConfigBo> taskCaseConfigs) {
+        return taskCaseConfigs.stream().filter(info ->
+                !ObjectUtils.isEmpty(info.getDeviceId())).collect(Collectors.collectingAndThen(
+                Collectors.toCollection(() ->
+                        new TreeSet<>(Comparator.comparing(TaskCaseConfigBo::getDeviceId))), ArrayList::new));
+    }
+
+    /**
+     * 获取状态接口的数据填充
+     *
+     * @param taskCaseId
+     * @param taskCaseInfos
+     * @param taskCaseConfigs
+     * @param caseBusinessIdAndRoleMap
+     * @param caseMainSize
+     * @param startMap
+     * @param mainPlanFile
+     * @param mainTrajectoryMap
+     * @param taskCaseInfoMap
+     * @throws BusinessException
+     */
+    private void fillStatusParam(Integer taskCaseId,
+                                 List<TaskCaseInfoBo> taskCaseInfos,
+                                 List<TaskCaseConfigBo> taskCaseConfigs,
+                                 Map<Integer, Map<String, String>> caseBusinessIdAndRoleMap,
+                                 Map<Integer, Integer> caseMainSize,
+                                 Map<String, String> startMap,
+                                 String mainPlanFile,
+                                 Map<String, List<SimulationTrajectoryDto>> mainTrajectoryMap,
+                                 Map<Integer, TaskCaseInfoBo> taskCaseInfoMap) throws BusinessException {
         for (TaskCaseInfoBo taskCaseInfoBo : taskCaseInfos) {
             // 2.数据校验
             validConfig(taskCaseInfoBo);
@@ -266,85 +319,47 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                     SceneTrajectoryBo.class);
             if (taskCaseInfoBo.getSort() == 1) {
                 // 4.参与者开始点位
-                startMap = CollectionUtils.emptyIfNull(trajectoryDetail.getParticipantTrajectories()).stream().collect(
-                        Collectors.toMap(
-                                ParticipantTrajectoryBo::getId,
-                                item -> CollectionUtils.emptyIfNull(item.getTrajectory()).stream()
-                                        .filter(t -> PointTypeEnum.START.getPointType().equals(t.getType())).findFirst()
-                                        .orElse(new TrajectoryDetailBo()).getPosition()));
+                for (ParticipantTrajectoryBo trajectoryBo : CollectionUtils.emptyIfNull(trajectoryDetail.getParticipantTrajectories())) {
+                    startMap.put(trajectoryBo.getId(), CollectionUtils.emptyIfNull(trajectoryBo.getTrajectory()).stream()
+                            .filter(t -> PointTypeEnum.START.getPointType().equals(t.getType())).findFirst()
+                            .orElse(new TrajectoryDetailBo()).getPosition());
+                }
+            }
+            if (CollectionUtils.isNotEmpty(taskCaseInfoBo.getDataConfigs())) {
+                // 5.用例配置
+                taskCaseConfigs.addAll(taskCaseInfoBo.getDataConfigs());
+                // 6.参与者ID和参与者名称匹配map
+                Map<String, String> businessIdAndRoleMap = taskCaseInfoBo.getDataConfigs().stream().collect(Collectors.toMap(
+                        TaskCaseConfigBo::getParticipatorId,
+                        TaskCaseConfigBo::getType));
+                caseBusinessIdAndRoleMap.put(taskCaseInfoBo.getCaseId(), businessIdAndRoleMap);
             }
 
-            // 5.用例配置
-            if (CollectionUtils.isNotEmpty(taskCaseInfoBo.getDataConfigs())) {
-                taskCaseConfigs.addAll(taskCaseInfoBo.getDataConfigs());
-            }
-            // 6.参与者ID和参与者名称匹配map
-            Map<String, String> businessIdAndRoleMap = taskCaseInfoBo.getDataConfigs().stream().collect(Collectors.toMap(
-                    TaskCaseConfigBo::getParticipatorId,
-                    TaskCaseConfigBo::getType));
-            caseBusinessIdAndRoleMap.put(taskCaseInfoBo.getCaseId(), businessIdAndRoleMap);
             // 7.用例对应主车轨迹长度(使用实车试验的轨迹)
             List<RealTestTrajectoryDto> realTestTrajectoryDtos = routeService.readRealTrajectoryFromRouteFile(taskCaseInfoBo.getRealRouteFile());
             realTestTrajectoryDtos.stream().filter(RealTestTrajectoryDto::isMain).findFirst().ifPresent(t -> {
-                if (!ObjectUtils.isEmpty(param.getId())) {
+                if (!ObjectUtils.isEmpty(taskCaseId)) {
                     mainTrajectoryMap.put("main", t.getData());
                 }
                 caseMainSize.put(taskCaseInfoBo.getCaseId(), t.getData().size());
             });
         }
-        // 5.重复设备过滤
-        taskCaseConfigs = taskCaseConfigs.stream().filter(info ->
-                !ObjectUtils.isEmpty(info.getDeviceId())).collect(Collectors.collectingAndThen(
-                Collectors.toCollection(() ->
-                        new TreeSet<>(Comparator.comparing(TaskCaseConfigBo::getDeviceId))), ArrayList::new));
+
         // 6.查询主车轨迹
-        if (ObjectUtils.isEmpty(param.getId())) {
+        if (ObjectUtils.isEmpty(taskCaseId)) {
             try {
-                List<SimulationTrajectoryDto> main = routeService.readOriRouteFile(tjTask.getMainPlanFile());
+                List<SimulationTrajectoryDto> main = routeService.readOriRouteFile(mainPlanFile);
                 mainTrajectoryMap.put("main", main);
             } catch (IOException e) {
-                log.error("主车规划路径文件读取失败：{}", e);
+                log.error("主车规划路径文件读取失败：{}", e.getMessage());
                 throw new BusinessException("读取主车已规划路径文件失败");
             } catch (NullPointerException v2) {
                 throw new BusinessException("主车轨迹未规划");
             }
         }
-        Map<Integer, TaskCaseInfoBo> taskCaseInfoMap = taskCaseInfos.stream().collect(Collectors.toMap(TaskCaseInfoBo::getCaseId, Function.identity()));
-        // 7.状态查询
-        for (TaskCaseConfigBo taskCaseConfigBo : taskCaseConfigs) {
-            if (PartRole.AV.equals(taskCaseConfigBo.getType()) && !ObjectUtils.isEmpty(startMap)) {
-
-                String[] position = startMap.get(taskCaseConfigBo.getParticipatorId()).split(",");
-                taskCaseConfigBo.setStartLongitude(Double.parseDouble(position[0]));
-                taskCaseConfigBo.setStartLatitude(Double.parseDouble(position[1]));
-            }
-            // 查询设备状态
-            Integer status = deviceDetailService.selectDeviceState(taskCaseConfigBo.getDeviceId(), taskCaseConfigBo.getCommandChannel(), false);
-            taskCaseConfigBo.setStatus(status);
-            if (ObjectUtils.isEmpty(status) || status == 0) {
-                // 不在线无需确认准备状态
-                continue;
-            }
-            // 查询设备准备状态
-            DeviceReadyStateParam stateParam = new DeviceReadyStateParam(taskCaseConfigBo.getDeviceId(), taskCaseConfigBo.getCommandChannel());
-            if (PartRole.AV.equals(taskCaseConfigBo.getType())) {
-                // av车需要主车全部轨迹
-                stateParam.setParams(new ParamsDto(mainTrajectoryMap.get("main")));
-            }
-            if (PartRole.MV_SIMULATION.equals(taskCaseConfigBo.getType())) {
-                stateParam.setParams(buildTessStateParam(param.getTaskId(), taskCaseInfoMap, caseBusinessIdAndRoleMap, caseMainSize));
-            }
-            taskCaseConfigBo.setPositionStatus(deviceDetailService.selectDeviceReadyState(taskCaseConfigBo.getDeviceId(), stateParam, false));
+        for (TaskCaseInfoBo caseInfoBo : taskCaseInfos) {
+            taskCaseInfoMap.put(caseInfoBo.getCaseId(), caseInfoBo);
         }
-        Map<String, List<TaskCaseConfigBo>> statusMap = taskCaseConfigs.stream().collect(
-                Collectors.groupingBy(TaskCaseConfigBo::getType));
-        TaskCaseVerificationPageVo result = new TaskCaseVerificationPageVo();
-        result.setTaskId(param.getTaskId());
-        result.setTaskCaseId(param.getId());
-        result.setStatusMap(statusMap);
-        result.setChannels(taskCaseConfigs.stream().map(TaskCaseConfigBo::getDataChannel).collect(Collectors.toSet()));
-        validStatus(result);
-        return result;
     }
 
     /**
@@ -542,7 +557,8 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         String key = WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(taskId),
                 WebSocketManage.TASK, null);
         context.put("key", key);
-        taskRedisTrajectoryConsumer.subscribeAndSend(key, taskId, taskCaseId, taskCaseInfos);
+//        taskRedisTrajectoryConsumer.subscribeAndSend(key, taskId, taskCaseId, taskCaseInfos);
+
         caseTrajectoryParam.setContext(context);
         // 向主控发送主车信息
         restService.sendCaseTrajectoryInfo(caseTrajectoryParam);
@@ -564,21 +580,19 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
     }
 
     @Override
-    public CaseRealTestVo gettaskInfo(Integer taskId) throws BusinessException {
-        String key = WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(taskId),
-                WebSocketManage.TASK, null);
-        Integer caseId = taskRedisTrajectoryConsumer.getRunningCase(key);
+    public CaseRealTestVo getTaskInfo(Integer taskId) throws BusinessException {
+        TjTaskCase taskCase = taskCaseMapper.selectOne(new LambdaQueryWrapper<TjTaskCase>().eq(TjTaskCase::getTaskId, taskId).eq(TjTaskCase::getStatus, TaskCaseStatusEnum.RUNNING.getCode()));
         CaseRealTestVo caseRealTestVo = new CaseRealTestVo();
         caseRealTestVo.setTaskId(taskId);
-        caseRealTestVo.setTaskCaseId(caseId);
-        CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
+        caseRealTestVo.setTaskCaseId(taskCase.getCaseId());
+        CaseInfoBo caseInfoBo = caseService.getCaseDetail(taskCase.getCaseId());
         caseRealTestVo.setTestTypeName(caseInfoBo.getTestScene());
         return caseRealTestVo;
     }
 
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public CaseRealTestVo caseStartEnd(Integer taskId, Integer caseId, Integer action, boolean taskEnd, Map<String, Object> context) throws BusinessException, IOException {
+    public CaseRealTestVo caseStartEnd(Integer taskId, Integer caseId, Integer action, boolean taskEnd, Map<String, Object> context) throws BusinessException {
         log.info("任务{} 用例{} ,action:{}, 上下文：{}, 任务终止:{}", taskId, caseId, action, JSONObject.toJSONString(context), taskEnd);
         // 1.任务用例测试记录详情
         TjTaskCaseRecord taskCaseRecord = ssGetTjTaskCaseRecord(taskId, caseId, action);
@@ -591,13 +605,21 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         ssCaseResultUpdate(action, taskCaseRecord, taskCase);
         // 5.记录redis中正在运行的用例
         if (1 == action) {
+            taskCase.setStartTime(new Date());
+            taskCase.setStatus(TaskCaseStatusEnum.RUNNING.getValue());
+            this.updateById(taskCase);
+            taskCaseRecord.setStartTime(LocalDateTime.now());
+            taskCaseRecordMapper.updateById(taskCaseRecord);
             taskRedisTrajectoryConsumer.updateRunningCase(String.valueOf(context.get("key")), caseId);
         } else {
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.put("taskEnd", taskEnd);
-            jsonObject.put("action", action);
-            SimulationMessage endMsg = new SimulationMessage(RedisMessageType.END, jsonObject);
-            noClassRedisTemplate.convertAndSend(String.valueOf(context.get("dataChannel")), endMsg);
+            String key = (String) context.get("key");
+            List<SimulationTrajectoryDto> trajectories = kafkaCollector.take(key);
+            String duration = DateUtils.secondsToDuration(
+                    (int) Math.floor((double) (trajectories.size())) / 10);
+            routeService.saveTaskRouteFile2(taskCaseInfoBo.getRecordId(), trajectories, duration, action);
+            RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null, null,
+                    duration);
+            WebSocketManage.sendInfo(key, JSON.toJSONString(endMsg));
         }
         // 6.向主控发送控制请求
         Optional<TaskCaseConfigBo> first = taskCaseInfoBo.getDataConfigs()
@@ -605,9 +627,10 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         if (!first.isPresent()) {
             throw new BusinessException("未查询到主车配置信息");
         }
+        TessParam tessParam = buildTessServerParam(1, taskId);
         if (!restService.sendRuleUrl(
                 new CaseRuleControl(System.currentTimeMillis(), taskId, caseId, action > 0 ? action : 0,
-                        generateDeviceConnRules(taskCaseInfoBo),
+                        generateDeviceConnRules(taskCaseInfoBo, tessParam.getCommandChannel(), tessParam.getDataChannel()),
                         first.get().getCommandChannel(), taskEnd))) {
             throw new BusinessException("主控响应异常");
         }
@@ -844,10 +867,11 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         if (!first.isPresent()) {
             throw new BusinessException("未查询到主车配置信息");
         }
+        TessParam tessParam = buildTessServerParam(1, taskId);
         if (!restService.sendRuleUrl(
                 new CaseRuleControl(System.currentTimeMillis(),
                         taskId, taskCaseInfoBo.getCaseId(), 0,
-                        generateDeviceConnRules(taskCaseInfoBo),
+                        generateDeviceConnRules(taskCaseInfoBo, tessParam.getCommandChannel(), tessParam.getDataChannel()),
                         first.get().getCommandChannel(), true))) {
             throw new BusinessException("主控响应异常");
         }
@@ -943,7 +967,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         }
     }
 
-    private List<DeviceConnRule> generateDeviceConnRules(TaskCaseInfoBo caseInfoBo) {
+    private List<DeviceConnRule> generateDeviceConnRules(TaskCaseInfoBo caseInfoBo, String commandChannel, String dataChannel) {
         List<TaskCaseConfigBo> caseConfigs = caseInfoBo.getDataConfigs().stream().filter(config ->
                 !ObjectUtils.isEmpty(config.getDeviceId())).collect(Collectors.toList());
 
@@ -971,21 +995,25 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
                 DeviceConnRule rule = new DeviceConnRule();
 
-                rule.setSource(createConnInfo(sourceDevice, sourceParams));
-                rule.setTarget(createConnInfo(targetDevice, targetParams));
+                rule.setSource(createConnInfo(sourceDevice, commandChannel, dataChannel, sourceParams));
+                rule.setTarget(createConnInfo(targetDevice, commandChannel, dataChannel, targetParams));
                 rules.add(rule);
             }
         }
         return rules;
     }
 
-    private static DeviceConnInfo createConnInfo(TaskCaseConfigBo config, Map<String, Object> params) {
-        DeviceConnInfo deviceConnInfo = new DeviceConnInfo();
-        deviceConnInfo.setChannel(config.getDataChannel());
-        deviceConnInfo.setControlChannel(config.getCommandChannel());
-        deviceConnInfo.setId(String.valueOf(config.getDeviceId()));
-        deviceConnInfo.setParams(params);
-        return deviceConnInfo;
+    private static DeviceConnInfo createConnInfo(TaskCaseConfigBo config, String commandChannel, String dataChannel,
+                                                 Map<String, Object> params) {
+        return PartRole.MV_SIMULATION.equals(config.getSupportRoles())
+                ? createSimulationConnInfo(String.valueOf(config.getDeviceId()), commandChannel, dataChannel, params)
+                : new DeviceConnInfo(String.valueOf(config.getDeviceId()), config.getCommandChannel(),
+                config.getDataChannel(), params);
+    }
+
+    private static DeviceConnInfo createSimulationConnInfo(String deviceId, String commandChannel, String dataChannel,
+                                                           Map<String, Object> params) {
+        return new DeviceConnInfo(deviceId, commandChannel, dataChannel, params);
     }
 
     private static List<String> delayTimes(Date startTime, Date endTime) {

@@ -2,8 +2,10 @@ package net.wanji.business.domain.param;
 
 import lombok.Data;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
+import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @Auther: guanyuduo
@@ -26,6 +28,9 @@ public class TestStartParam {
         this.avNum = avNum;
         this.simulationNum = simulationNum;
         this.pedestrianNum = pedestrianNum;
+        if (CollectionUtils.isNotEmpty(participantTrajectories)) {
+            participantTrajectories.forEach(ParticipantTrajectoryBo::clearProperties);
+        }
         this.participantTrajectories = participantTrajectories;
         this.frequency = 10;
     }

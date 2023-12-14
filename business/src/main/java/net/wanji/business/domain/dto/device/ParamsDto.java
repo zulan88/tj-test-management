@@ -14,6 +14,8 @@ import java.util.List;
 @Data
 public class ParamsDto {
 
+    private String id;
+
     private Object participantTrajectories;
 
 }

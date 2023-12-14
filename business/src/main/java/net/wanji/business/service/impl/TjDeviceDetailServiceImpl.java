@@ -3,6 +3,7 @@ package net.wanji.business.service.impl;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
+import net.wanji.business.common.Constants.ChannelBuilder;
 import net.wanji.business.common.Constants.DeviceStatusEnum;
 import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.YN;
@@ -17,6 +18,7 @@ import net.wanji.business.service.DeviceStateSendService;
 import net.wanji.business.service.RestService;
 import net.wanji.business.service.StatusManage;
 import net.wanji.business.service.TjDeviceDetailService;
+import net.wanji.business.trajectory.DeviceStateListener;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.system.service.ISysDictDataService;
 import org.apache.commons.collections4.CollectionUtils;
@@ -53,6 +55,9 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
 
     @Autowired
     private RestService restService;
+
+    @Autowired
+    private DeviceStateListener deviceStateListener;
 
     @PostConstruct
     public void initDeviceState() {
@@ -123,23 +128,28 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
     }
 
     @Override
-    public Integer selectDeviceState(Integer deviceId, String channel, boolean wait) {
-        Integer state = deviceStateToRedis.query(deviceId, DeviceStateToRedis.DEVICE_STATE_PREFIX);
+    public Integer selectDeviceState(Integer deviceId, String commandChannel, boolean wait) {
+        Integer state = deviceStateToRedis.query(deviceId, ChannelBuilder.DEFAULT_STATUS_CHANNEL, DeviceStateToRedis.DEVICE_STATE_PREFIX);
         if (!ObjectUtils.isEmpty(state)) {
             return state;
         }
+        return handDeviceState(deviceId, commandChannel, wait);
+    }
+
+    @Override
+    public Integer handDeviceState(Integer deviceId, String commandChannel, boolean wait) {
         DeviceStateDto deviceStateDto = new DeviceStateDto();
         deviceStateDto.setDeviceId(deviceId);
         deviceStateDto.setType(0);
         deviceStateDto.setTimestamp(System.currentTimeMillis());
         log.info("发送数据：查询设备{}状态  {}", deviceId, JSONObject.toJSONString(deviceStateDto));
-        deviceStateSendService.sendData(channel, deviceStateDto);
+        deviceStateSendService.sendData(commandChannel, deviceStateDto);
         if (!wait) {
-            return deviceStateToRedis.query(deviceId, DeviceStateToRedis.DEVICE_STATE_PREFIX);
+            return deviceStateToRedis.query(deviceId, ChannelBuilder.DEFAULT_STATUS_CHANNEL, DeviceStateToRedis.DEVICE_STATE_PREFIX);
         }
-        String key =  DeviceStateToRedis.DEVICE_STATE_PREFIX + "_" + deviceId;
+        String key =  DeviceStateToRedis.DEVICE_STATE_PREFIX + "_" + deviceId + "_" + ChannelBuilder.DEFAULT_STATUS_CHANNEL;
         try {
-            StatusManage.addCountDownLatch(key);
+            StatusManage.addCountDownLatch(key, 50);
         } catch (InterruptedException e) {
             log.error("查询设备状态异常", e);
         }
@@ -147,20 +157,27 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
     }
 
     @Override
-    public Integer selectDeviceReadyState(Integer deviceId, DeviceReadyStateParam stateParam, boolean wait) {
-        Integer state = deviceStateToRedis.query(deviceId, DeviceStateToRedis.DEVICE_READY_STATE_PREFIX);
-        if (ObjectUtils.isEmpty(state) || state == 2) {
-            restService.selectDeviceReadyState(stateParam);
-        } else {
+    public Integer selectDeviceReadyState(Integer deviceId, String statusChannel, DeviceReadyStateParam stateParam, boolean wait) {
+        Integer state = deviceStateToRedis.query(deviceId, statusChannel, DeviceStateToRedis.DEVICE_READY_STATE_PREFIX);
+        if (!ObjectUtils.isEmpty(state) && state == 1) {
             return state;
         }
+        return handDeviceReadyState(deviceId, statusChannel, stateParam, wait);
+    }
+
+    @Override
+    public Integer handDeviceReadyState(Integer deviceId, String statusChannel, DeviceReadyStateParam stateParam, boolean wait) {
+        if (!ChannelBuilder.DEFAULT_STATUS_CHANNEL.equals(statusChannel)) {
+            deviceStateListener.addDeviceStateListener(statusChannel);
+        }
+        restService.selectDeviceReadyState(stateParam);
         if (!wait) {
-            Integer readyState = deviceStateToRedis.query(deviceId, DeviceStateToRedis.DEVICE_READY_STATE_PREFIX);
+            Integer readyState = deviceStateToRedis.query(deviceId, statusChannel, DeviceStateToRedis.DEVICE_READY_STATE_PREFIX);
             return ObjectUtils.isEmpty(readyState) ? 0 : readyState;
         }
-        String key =  DeviceStateToRedis.DEVICE_READY_STATE_PREFIX + "_" + deviceId;
+        String key =  DeviceStateToRedis.DEVICE_READY_STATE_PREFIX + "_" + deviceId + "_" + statusChannel;
         try {
-            StatusManage.addCountDownLatch(key);
+            StatusManage.addCountDownLatch(key, 50);
         } catch (InterruptedException e) {
             log.error("查询设备准备状态异常", e);
         }

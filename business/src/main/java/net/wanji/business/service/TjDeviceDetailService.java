@@ -58,21 +58,42 @@ public interface TjDeviceDetailService extends IService<TjDeviceDetail> {
 
     /**
      * 查询设备状态
-     *
-     * @param deviceId
-     * @param channel  控制通道
+     * @param deviceId 设备id
+     * @param commandChannel 控制通道
+     * @param wait 是否等待
      * @return
      */
-    Integer selectDeviceState(Integer deviceId, String channel, boolean wait);
+    Integer selectDeviceState(Integer deviceId, String commandChannel, boolean wait);
+
+    /**
+     * 手动查询设备状态
+     * @param deviceId
+     * @param commandChannel
+     * @param wait
+     * @return
+     */
+    Integer handDeviceState(Integer deviceId, String commandChannel, boolean wait);
 
 
     /**
      * 查询设备准备状态
      *
      * @param deviceId
+     * @param statusChannel
      * @param stateParam
+     * @param wait
      * @return
      */
-    Integer selectDeviceReadyState(Integer deviceId, DeviceReadyStateParam stateParam, boolean wait);
+    Integer selectDeviceReadyState(Integer deviceId, String statusChannel, DeviceReadyStateParam stateParam, boolean wait);
+
+    /**
+     * 手动查询设备准备状态
+     * @param deviceId
+     * @param statusChannel
+     * @param stateParam
+     * @param wait
+     * @return
+     */
+    Integer handDeviceReadyState(Integer deviceId, String statusChannel, DeviceReadyStateParam stateParam, boolean wait);
 
 }

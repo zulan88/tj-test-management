@@ -35,7 +35,7 @@ public class TestingController extends BaseController {
     @GetMapping("/resetStatus")
     @ApiImplicitParam(name = "caseId", value = "用例ID", required = true, dataType = "Integer", paramType = "query", example = "278")
     public AjaxResult resetStatus(Integer caseId) throws BusinessException {
-        testingService.resetStatus(caseId);
+        testingService.getStatus(caseId, true);
         return AjaxResult.success();
     }
 
@@ -44,7 +44,7 @@ public class TestingController extends BaseController {
     @GetMapping("/getStatus")
     @ApiImplicitParam(name = "caseId", value = "用例ID", required = true, dataType = "Integer", paramType = "query", example = "278")
     public AjaxResult getStatus(Integer caseId) throws BusinessException {
-        return AjaxResult.success(testingService.getStatus(caseId));
+        return AjaxResult.success(testingService.getStatus(caseId, false));
     }
 
     @ApiOperationSort(3)
