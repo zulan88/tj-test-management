@@ -21,6 +21,7 @@ import net.wanji.common.utils.bean.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -130,6 +131,9 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
     @Override
     public List<CasePageVo> pageList(Integer id, Integer treeId) {
         AppointmentRecord appointmentRecord = this.getById(id);
+        if(appointmentRecord.getCaseIds() == null){
+            return new ArrayList<>();
+        }
         List<Integer> ids = Arrays.stream(appointmentRecord.getCaseIds().split(","))
                 .map(Integer::parseInt)
                 .collect(Collectors.toList());

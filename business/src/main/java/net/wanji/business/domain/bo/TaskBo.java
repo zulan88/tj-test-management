@@ -68,4 +68,6 @@ public class TaskBo {
 
     @ApiModelProperty(value = "任务指标")
     private List<TjTaskDc> diadynamicCriterias;
+
+    private Integer isInner;
 }

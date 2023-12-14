@@ -534,6 +534,9 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                     tjTask.setEndTime(in.getEndTime());
                     tjTask.setUpdatedBy(SecurityUtils.getUsername());
                     tjTask.setUpdatedDate(LocalDateTime.now());
+                    if(in.getIsInner()!=null){
+                        tjTask.setIsInner(in.getIsInner());
+                    }
                     this.updateById(tjTask);
                     tjTaskDataConfigService.remove(new QueryWrapper<TjTaskDataConfig>().eq(ColumnName.TASK_ID, tjTask.getId()));
                 } else {

@@ -9,7 +9,6 @@ import net.wanji.approve.service.TjDateScheduleService;
 import net.wanji.approve.service.TjDeviceDetailApService;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.common.core.domain.AjaxResult;
-import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
