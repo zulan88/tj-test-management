@@ -1,7 +1,9 @@
 package net.wanji.web.controller.approve;
 
 import net.wanji.approve.entity.AppointmentRecord;
+import net.wanji.approve.entity.TjTesteeObjectInfo;
 import net.wanji.approve.service.AppointmentRecordService;
+import net.wanji.approve.service.TjTesteeObjectInfoService;
 import net.wanji.business.domain.bo.TaskBo;
 import net.wanji.business.entity.TjTask;
 import net.wanji.business.exception.BusinessException;
@@ -33,11 +35,15 @@ public class TaskOpController extends BaseController {
     @Autowired
     private TjTaskCaseService taskCaseService;
 
+    @Autowired
+    TjTesteeObjectInfoService tjTesteeObjectInfoService;
+
     @PostMapping("/prestore/{id}")
     public AjaxResult prestore(@RequestParam("id")Integer id) throws ParseException, BusinessException {
         AppointmentRecord record = appointmentRecordService.getById(id);
+        TjTesteeObjectInfo tjTesteeObjectInfo = tjTesteeObjectInfoService.getById(record.getMeasurandId());
         TaskBo taskBo = new TaskBo();
-        taskBo.getAvDeviceIds().add(record.getMeasurandId());
+        taskBo.getAvDeviceIds().add(tjTesteeObjectInfo.getDeviceId());
         taskBo.setClient(record.getUnitName());
         taskBo.setConsigner(record.getContactPerson());
         taskBo.setContract(record.getPhoneNumber());

@@ -122,5 +122,7 @@ public class TjDeviceDetail implements Serializable {
     @TableField("updated_date")
     private LocalDateTime updatedDate;
 
+    @TableField("is_inner")
+    private Integer isInner;
 
 }

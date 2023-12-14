@@ -58,7 +58,7 @@ public interface TjCaseService extends IService<TjCase> {
      * @return
      * @throws BusinessException
      */
-    List<CasePageVo> pageList(CaseQueryDto caseQueryDto);
+    List<CasePageVo> pageList(CaseQueryDto caseQueryDto, String selectType);
 
     List<CasePageVo> pageListByIds(List<Integer> ids, Integer treeId);
 
@@ -173,6 +173,7 @@ public interface TjCaseService extends IService<TjCase> {
 
     /**
      * 删除实车测试记录
+     *
      * @param recordId
      * @return
      * @throws BusinessException

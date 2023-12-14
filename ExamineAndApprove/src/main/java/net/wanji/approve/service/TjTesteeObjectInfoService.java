@@ -13,4 +13,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface TjTesteeObjectInfoService extends IService<TjTesteeObjectInfo> {
 
+    void adddevice(Integer id, String dataChannel, String commandChannel);
+
+    boolean deletedevice(Integer id);
+
 }
