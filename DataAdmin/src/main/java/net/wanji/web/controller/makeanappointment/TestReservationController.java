@@ -123,4 +123,15 @@ public class TestReservationController extends BaseController {
     }
 
 
+    @ApiOperation(value = "6.选择任务用例")
+    @GetMapping("/choiceCase")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "id", value = "预约ID", required = true, dataType = "Integer", paramType = "query", example = "1"),
+            @ApiImplicitParam(name = "caseIds", value = "用例ID", required = true, dataType = "List", paramType = "query", example = "1,2,3"),
+    })
+    public AjaxResult choiceCase(@RequestParam("id") Integer id,
+                                 @RequestParam("caseIds") List<Integer> caseIds) {
+        return AjaxResult.success(testReservationService.choiceCase(id, caseIds));
+    }
+
 }

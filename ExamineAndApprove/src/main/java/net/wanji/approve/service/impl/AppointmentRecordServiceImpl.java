@@ -105,6 +105,10 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
             return 0L;
         }
 
+        if(StringUtils.isEmpty(appointmentRecord.getCaseIds())){
+            return 0L;
+        }
+
         List<Integer> ids = Arrays.stream(appointmentRecord.getCaseIds().split(","))
                 .map(Integer::parseInt)
                 .collect(Collectors.toList());
