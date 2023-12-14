@@ -3,6 +3,7 @@ package net.wanji.approve.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import net.wanji.approve.entity.AppointmentRecord;
 import net.wanji.approve.entity.RecordRe;
+import net.wanji.approve.entity.TjApprecordPerson;
 import net.wanji.approve.entity.TjDateSchedule;
 import net.wanji.approve.entity.dto.ScheduleDto;
 import net.wanji.approve.entity.vo.DateScheduleVo;
@@ -10,6 +11,7 @@ import net.wanji.approve.entity.vo.ScheduleVo;
 import net.wanji.approve.mapper.TjDateScheduleMapper;
 import net.wanji.approve.service.AppointmentRecordService;
 import net.wanji.approve.service.RecordReService;
+import net.wanji.approve.service.TjApprecordPersonService;
 import net.wanji.approve.service.TjDateScheduleService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import net.wanji.approve.utils.CacheTools;
@@ -39,6 +41,9 @@ public class TjDateScheduleServiceImpl extends ServiceImpl<TjDateScheduleMapper,
 
     @Autowired
     AppointmentRecordService appointmentRecordService;
+
+    @Autowired
+    TjApprecordPersonService tjApprecordPersonService;
 
     @Override
     public List<DateScheduleVo> takeDateScheduleByDate(String year, Integer quarter) {
@@ -77,7 +82,11 @@ public class TjDateScheduleServiceImpl extends ServiceImpl<TjDateScheduleMapper,
         set.remove(scheduleDto.getRecordId());
         List<Integer> ids = new ArrayList<>(set);
         QueryWrapper<RecordRe> queryWrapperre = new QueryWrapper<>();
-        queryWrapperre.in("id", ids);
+        if(ids.size()>0) {
+            queryWrapperre.in("id", ids);
+        }else {
+            queryWrapperre.eq("id", -1);
+        }
         List<RecordRe> recordRes = recordReService.list(queryWrapperre);
         Set<Integer> res = new HashSet<>();
         for (RecordRe recordRe : recordRes) {
@@ -88,6 +97,12 @@ public class TjDateScheduleServiceImpl extends ServiceImpl<TjDateScheduleMapper,
 
     @Override
     public void commitSchedule(ScheduleDto scheduleDto){
+        List<TjApprecordPerson> pensonalList = scheduleDto.getPersonList();
+        List<String> personIds = new ArrayList<>();
+        pensonalList.forEach(item -> {
+            personIds.add(String.valueOf(item.getId()));
+        });
+        scheduleDto.setPersonIds(String.join(",", personIds));
         QueryWrapper<TjDateSchedule> queryWrapper = new QueryWrapper<>();
         queryWrapper.in("date", scheduleDto.getDates());
         List<TjDateSchedule> tjDateSchedules = this.list(queryWrapper);
@@ -122,6 +137,10 @@ public class TjDateScheduleServiceImpl extends ServiceImpl<TjDateScheduleMapper,
         recordRe.setDeviceIds(scheduleDto.getDeviceIds());
         recordRe.setPersonIds(scheduleDto.getPersonIds());
         recordReService.saveOrUpdate(recordRe);
+        QueryWrapper<TjApprecordPerson> queryWrapper1 = new QueryWrapper<>();
+        queryWrapper1.eq("record_id", scheduleDto.getRecordId());
+        tjApprecordPersonService.remove(queryWrapper1);
+        tjApprecordPersonService.saveBatch(pensonalList);
     }
 
     private static String getQuarter(LocalDate date) {

@@ -12,7 +12,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import net.wanji.approve.service.TjTesteeObjectInfoService;
 import net.wanji.approve.service.TjWorkersService;
 import net.wanji.business.domain.vo.CasePageVo;
+import net.wanji.business.entity.TjCasePartConfig;
 import net.wanji.business.exception.BusinessException;
+import net.wanji.business.service.TjCasePartConfigService;
 import net.wanji.business.service.TjCaseService;
 import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.bean.BeanUtils;
@@ -40,6 +42,9 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
 
     @Autowired
     TjCaseService tjCaseService;
+
+    @Autowired
+    TjCasePartConfigService tjCasePartConfigService;
 
 
     @Override
@@ -154,6 +159,23 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
                 .map(Integer::parseInt)
                 .collect(Collectors.toList());
         return tjCaseService.takeExpense(ids);
+    }
+
+    @Override
+    public List<Integer> getdeviceIdsByCase(Integer id) {
+        AppointmentRecord appointmentRecord = this.getById(id);
+        List<Integer> caseIds = Arrays.stream(appointmentRecord.getCaseIds().split(","))
+               .map(Integer::parseInt)
+               .collect(Collectors.toList());
+        if(caseIds.size() > 0) {
+            QueryWrapper<TjCasePartConfig> queryWrapper = new QueryWrapper<>();
+            queryWrapper.in("case_id", caseIds);
+            List<Integer> deviceIds = tjCasePartConfigService.list(queryWrapper).stream().map(TjCasePartConfig::getDeviceId).collect(Collectors.toList());
+            List<Integer> distinctDeviceIds = deviceIds.stream().distinct().collect(Collectors.toList());
+            return distinctDeviceIds;
+        }else {
+            return null;
+        }
     }
 
 
