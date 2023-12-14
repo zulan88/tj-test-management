@@ -2,6 +2,7 @@ package net.wanji.business.trajectory;
 
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import net.wanji.business.common.Constants.ChannelBuilder;
 import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.TestingStatusEnum;
 import net.wanji.business.entity.TjCase;
@@ -53,8 +54,9 @@ public class KafkaTrajectoryConsumer {
         Integer caseId = jsonObject.getInteger("caseId");
         String userName = selectUserOfTask(taskId, caseId);
         String key = taskId > 0
-                ? WebSocketManage.buildKey(userName, String.valueOf(getCaseRealRecordId(caseId)), WebSocketManage.REAL, null)
+                ? ChannelBuilder.buildTestingDataChannel(userName, caseId)
                 : WebSocketManage.buildKey(userName, String.valueOf(taskId), WebSocketManage.TASK, null);
+
         kafkaCollector.collector(key, jsonObject.getObject("participantTrajectories", SimulationTrajectoryDto.class));
     }
 

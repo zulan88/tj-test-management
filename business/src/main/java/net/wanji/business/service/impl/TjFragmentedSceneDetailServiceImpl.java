@@ -2,6 +2,7 @@ package net.wanji.business.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import net.wanji.business.common.Constants.ChannelBuilder;
 import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.business.common.Constants.PartRole;
@@ -320,7 +321,6 @@ public class TjFragmentedSceneDetailServiceImpl
             case PlaybackAction.START:
                 validDebugParam(sceneDebugDto);
                 sceneDebugDto.getTrajectoryJson().buildId();
-                TestStartParam testStartParam = buildStartParam(sceneDebugDto);
                 TjFragmentedScenes scenes = scenesService.getById(sceneDebugDto.getFragmentedSceneId());
                 if (ObjectUtils.isEmpty(scenes)) {
                     throw new BusinessException("场景节点不存在");
@@ -333,6 +333,8 @@ public class TjFragmentedSceneDetailServiceImpl
                     throw new BusinessException("当前无可用仿真程序");
                 }
                 sceneDebugDto.getTrajectoryJson().setSceneDesc(scenes.getName());
+
+                TestStartParam testStartParam = buildStartParam(sceneDebugDto);
                 sceneDebugDto.getTrajectoryJson().setSceneForm(StringUtils.format(ContentTemplate.SCENE_FORM_TEMPLATE,
                         testStartParam.getAvNum(), testStartParam.getSimulationNum(), testStartParam.getPedestrianNum()));
                 redisTrajectoryConsumer.subscribeAndSend(sceneDebugDto);
@@ -361,7 +363,12 @@ public class TjFragmentedSceneDetailServiceImpl
         }
     }
 
-    public void validDebugParam(SceneDebugDto sceneDebugDto) throws BusinessException {
+    /**
+     * 参数校验
+     * @param sceneDebugDto
+     * @throws BusinessException
+     */
+    private void validDebugParam(SceneDebugDto sceneDebugDto) throws BusinessException {
         List<ParticipantTrajectoryBo> participantTrajectories = sceneDebugDto.getTrajectoryJson().getParticipantTrajectories();
         if (CollectionUtils.isEmpty(participantTrajectories)) {
             throw new BusinessException("参与者轨迹不能为空");
@@ -384,11 +391,14 @@ public class TjFragmentedSceneDetailServiceImpl
                 throw new BusinessException("参与者轨迹点位置不能为空");
             }
         }
-
     }
 
-
-    public TestStartParam buildStartParam(SceneDebugDto sceneDebugDto) {
+    /**
+     * 构建仿真验证实际参数
+     * @param sceneDebugDto
+     * @return
+     */
+    private TestStartParam buildStartParam(SceneDebugDto sceneDebugDto) {
         SceneTrajectoryBo sceneTrajectoryBo = sceneDebugDto.getTrajectoryJson();
         // 计算caseInfo.getCaseConfigs()中各个角色的数量
         long avNum = (int) sceneTrajectoryBo.getParticipantTrajectories().stream().filter(trajectoryBo ->
@@ -397,7 +407,6 @@ public class TjFragmentedSceneDetailServiceImpl
                 PartType.SLAVE.equals(trajectoryBo.getType())).count();
         long pedestrianNum = (int) sceneTrajectoryBo.getParticipantTrajectories().stream().filter(trajectoryBo ->
                 PartType.PEDESTRIAN.equals(trajectoryBo.getType())).count();
-
         for (ParticipantTrajectoryBo participantTrajectory : sceneTrajectoryBo.getParticipantTrajectories()) {
             for (TrajectoryDetailBo trajectoryDetailBo : participantTrajectory.getTrajectory()) {
                 String[] pos = trajectoryDetailBo.getPosition().split(",");
@@ -407,9 +416,9 @@ public class TjFragmentedSceneDetailServiceImpl
                 }
             }
         }
-        return new TestStartParam(WebSocketManage.buildKey(SecurityUtils.getUsername(), sceneDebugDto.getNumber(),
-                WebSocketManage.SIMULATION, null), (int) avNum, (int) simulationNum,
-                (int) pedestrianNum, sceneTrajectoryBo.getParticipantTrajectories());
+        return new TestStartParam(
+                ChannelBuilder.buildSimulationChannel(SecurityUtils.getUsername(), sceneDebugDto.getNumber()),
+                (int) avNum, (int) simulationNum, (int) pedestrianNum, sceneTrajectoryBo.getParticipantTrajectories());
     }
 
     @Override

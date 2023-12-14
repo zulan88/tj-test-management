@@ -41,6 +41,7 @@ import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjCaseRealRecord;
 import net.wanji.business.entity.TjTaskCase;
 import net.wanji.business.exception.BusinessException;
+import net.wanji.business.listener.KafkaCollector;
 import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjCaseRealRecordMapper;
 import net.wanji.business.schedule.RealPlaybackSchedule;
@@ -54,6 +55,7 @@ import net.wanji.business.service.TjDeviceDetailService;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.trajectory.DeviceStateListener;
 import net.wanji.business.trajectory.ImitateRedisTrajectoryConsumer;
+import net.wanji.business.trajectory.KafkaTrajectoryConsumer;
 import net.wanji.common.common.RealTestTrajectoryDto;
 import net.wanji.common.common.SimulationMessage;
 import net.wanji.common.common.SimulationTrajectoryDto;
@@ -123,6 +125,9 @@ public class TestingServiceImpl implements TestingService {
 
     @Autowired
     private ImitateRedisTrajectoryConsumer imitateRedisTrajectoryConsumer;
+
+    @Autowired
+    private KafkaCollector kafkaCollector;
 
     @Autowired
     private RedisTemplate<String, Object> noClassRedisTemplate;
@@ -432,6 +437,7 @@ public class TestingServiceImpl implements TestingService {
         stopWatch.start("3.创建监听器");
         // 4.开始监听所有数据通道
 //        imitateRedisTrajectoryConsumer.subscribeAndSend(caseInfoBo, key, username);
+//        kafkaCollector.take()
         stopWatch.stop();
 
         stopWatch.start("4.向主控发送规则");

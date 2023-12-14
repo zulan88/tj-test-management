@@ -88,112 +88,112 @@ public interface Constants {
 
         /**
          * 创建仿真验证时使用的channel
-         * -- 2_用户名_场景编号
+         * -- 用户名_场景编号_2
          * @param username
          * @param number
          * @return
          */
         public static String buildSimulationChannel(String username, String number) {
-            return String.format(SIMULATION_CHANNEL_TEMPLATE, SIMULATION, username, number);
+            return String.format(SIMULATION_CHANNEL_TEMPLATE, username, number, SIMULATION);
         }
 
         /**
          * 创建路径规划时使用的channel
-         * -- 4_用户名_任务ID
+         * -- 用户名_任务ID_4
          * @param username
          * @param taskId
          * @return
          */
         public static String buildRoutingPlanChannel(String username, Integer taskId) {
-            return String.format(SIMULATION_CHANNEL_TEMPLATE, PLAN, username, taskId);
+            return String.format(SIMULATION_CHANNEL_TEMPLATE, username, taskId, PLAN);
         }
 
         /**
          * 创建实车试验状态channel
-         * -- 3_用户名_任务ID(0)_用例ID_status
+         * -- 用户名_任务ID(0)_用例ID_3_status
          * @param username
          * @param caseId
          * @return
          */
         public static String buildTestingStatusChannel(String username, Integer caseId) {
-            return StringUtils.format(TESTING_CHANNEL_TEMPLATE, REAL, username, 0, caseId, STATUS_SUFFIX);
+            return StringUtils.format(TESTING_CHANNEL_TEMPLATE, username, 0, caseId, REAL, STATUS_SUFFIX);
         }
 
         /**
          * 创建任务测试状态channel
-         * -- 5_用户名_任务ID_用例ID(0)_status
+         * -- 用户名_任务ID_用例ID(0)_5_status
          * @param username
          * @param taskId
          * @return
          */
         public static String buildTaskStatusChannel(String username, Integer taskId) {
-            return StringUtils.format(TESTING_CHANNEL_TEMPLATE, TASK, username, taskId, 0, STATUS_SUFFIX);
+            return StringUtils.format(TESTING_CHANNEL_TEMPLATE,  username, taskId, 0, TASK, STATUS_SUFFIX);
         }
 
         /**
          * 创建实车试验控制channel
-         * -- 3_用户名_任务ID(0)_用例ID_control
+         * -- 用户名_任务ID(0)_用例ID_3_control
          * @param username
          * @param caseId
          * @return
          */
         public static String buildTestingControlChannel(String username, Integer caseId) {
-            return StringUtils.format(TESTING_CHANNEL_TEMPLATE, REAL, username, 0, caseId, CONTROL_SUFFIX);
+            return StringUtils.format(TESTING_CHANNEL_TEMPLATE, username, 0, caseId, REAL, CONTROL_SUFFIX);
         }
 
         /**
          * 创建任务测试控制channel
-         * -- 5_用户名_任务ID_用例ID(0)_control
+         * -- 用户名_任务ID_用例ID(0)_5_control
          * @param username
          * @param taskId
          * @return
          */
         public static String buildTaskControlChannel(String username, Integer taskId) {
-            return StringUtils.format(TESTING_CHANNEL_TEMPLATE, TASK, username, taskId, 0, CONTROL_SUFFIX);
+            return StringUtils.format(TESTING_CHANNEL_TEMPLATE, username, taskId, 0, TASK, CONTROL_SUFFIX);
         }
 
         /**
          * 创建实车试验数据channel
-         * -- 3_用户名_任务ID(0)_用例ID_data
+         * -- 用户名_任务ID(0)_用例ID_3_data
          * @param username
          * @param caseId
          * @return
          */
         public static String buildTestingDataChannel(String username, Integer caseId) {
-            return StringUtils.format(TESTING_CHANNEL_TEMPLATE, REAL, username, 0, caseId, DATA_SUFFIX);
+            return StringUtils.format(TESTING_CHANNEL_TEMPLATE, username, 0, caseId, REAL, DATA_SUFFIX);
         }
 
         /**
          * 创建任务测试数据channel
-         * -- 5_用户名_任务ID_用例ID(0)_data
+         * -- 用户名_任务ID_用例ID(0)_5_data
          * @param username
          * @param taskId
          * @return
          */
         public static String buildTaskDataChannel(String username, Integer taskId) {
-            return StringUtils.format(TESTING_CHANNEL_TEMPLATE, TASK, username, taskId, 0, DATA_SUFFIX);
+            return StringUtils.format(TESTING_CHANNEL_TEMPLATE, username, taskId, 0, TASK, DATA_SUFFIX);
         }
 
         /**
          * 创建实车试验指标channel
-         * -- 3_用户名_任务ID(0)_用例ID_evaluate
+         * -- 用户名_任务ID(0)_用例ID_3_evaluate
          * @param username
          * @param caseId
          * @return
          */
         public static String buildTestingEvaluateChannel(String username, Integer caseId) {
-            return StringUtils.format(TESTING_CHANNEL_TEMPLATE, REAL, username, 0, caseId, EVALUATE_SUFFIX);
+            return StringUtils.format(TESTING_CHANNEL_TEMPLATE, username, 0, caseId, REAL, EVALUATE_SUFFIX);
         }
 
         /**
          * 创建任务测试指标channel
-         * -- 5_用户名_任务ID_用例ID(0)_evaluate
+         * -- 用户名_任务ID_用例ID(0)_5_evaluate
          * @param username
          * @param taskId
          * @return
          */
         public static String buildTaskEvaluateChannel(String username, Integer taskId) {
-            return StringUtils.format(TESTING_CHANNEL_TEMPLATE, TASK, username, taskId, 0, EVALUATE_SUFFIX);
+            return StringUtils.format(TESTING_CHANNEL_TEMPLATE, username, taskId, 0, TASK, EVALUATE_SUFFIX);
         }
     }
 
