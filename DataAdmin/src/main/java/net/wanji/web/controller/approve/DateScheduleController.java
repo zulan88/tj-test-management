@@ -7,6 +7,7 @@ import net.wanji.approve.entity.vo.DeviceListVo;
 import net.wanji.approve.service.AppointmentRecordService;
 import net.wanji.approve.service.TjDateScheduleService;
 import net.wanji.approve.service.TjDeviceDetailApService;
+import net.wanji.business.exception.BusinessException;
 import net.wanji.common.core.domain.AjaxResult;
 import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,8 +30,8 @@ public class DateScheduleController {
     private AppointmentRecordService appointmentRecordService;
 
     @GetMapping("/getschedule")
-    public AjaxResult getSchedule(String year, Integer quarter){
-        List<DateScheduleVo> list = dateScheduleService.takeDateScheduleByDate(year,quarter);
+    public AjaxResult getSchedule(String year){
+        List<DateScheduleVo> list = dateScheduleService.takeDateScheduleByDate(year,null);
         return AjaxResult.success(list);
     }
 
@@ -45,7 +46,8 @@ public class DateScheduleController {
     }
 
     @PostMapping("/commit")
-    public AjaxResult commit(@RequestBody ScheduleDto scheduleDto){
+    public AjaxResult commit(@RequestBody ScheduleDto scheduleDto) throws BusinessException {
+        dateScheduleService.deleteSchedule(scheduleDto.getRecordId());
         dateScheduleService.commitSchedule(scheduleDto);
         return AjaxResult.success();
     }

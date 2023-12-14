@@ -49,7 +49,7 @@ public class TjDateScheduleServiceImpl extends ServiceImpl<TjDateScheduleMapper,
     public List<DateScheduleVo> takeDateScheduleByDate(String year, Integer quarter) {
         QueryWrapper<TjDateSchedule> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("year", year);
-        queryWrapper.eq("quarter", quarter);
+//        queryWrapper.eq("quarter", quarter);
         List<TjDateSchedule> tjDateSchedules = this.list(queryWrapper);
         List<ScheduleVo> result = tjDateSchedules.stream().map(item -> {
             ScheduleVo dateScheduleVo = new ScheduleVo();
@@ -100,7 +100,7 @@ public class TjDateScheduleServiceImpl extends ServiceImpl<TjDateScheduleMapper,
         List<TjApprecordPerson> pensonalList = scheduleDto.getPersonList();
         List<String> personIds = new ArrayList<>();
         pensonalList.forEach(item -> {
-            personIds.add(String.valueOf(item.getId()));
+            personIds.add(String.valueOf(item.getPersonId()));
         });
         scheduleDto.setPersonIds(String.join(",", personIds));
         QueryWrapper<TjDateSchedule> queryWrapper = new QueryWrapper<>();
@@ -124,7 +124,8 @@ public class TjDateScheduleServiceImpl extends ServiceImpl<TjDateScheduleMapper,
                 tjDateSchedule.setDate(date);
                 tjDateSchedule.setAppointmentIds(String.valueOf(scheduleDto.getRecordId()));
                 LocalDate dateLocal = LocalDate.parse(date, formatter);
-                tjDateSchedule.setYear(String.valueOf(dateLocal.getYear()));
+                String mouth = dateLocal.getMonthValue()<10?"0"+dateLocal.getMonthValue():dateLocal.getMonthValue()+"";
+                tjDateSchedule.setYear(dateLocal.getYear()+"-"+mouth);
                 tjDateSchedule.setQuarter(getQuarter(dateLocal));
                 this.save(tjDateSchedule);
             }
@@ -141,6 +142,26 @@ public class TjDateScheduleServiceImpl extends ServiceImpl<TjDateScheduleMapper,
         queryWrapper1.eq("record_id", scheduleDto.getRecordId());
         tjApprecordPersonService.remove(queryWrapper1);
         tjApprecordPersonService.saveBatch(pensonalList);
+    }
+
+    @Override
+    public void deleteSchedule(Integer recordId) throws BusinessException {
+        List<TjDateSchedule> tjDateSchedules = baseMapper.selectObjByAppId(recordId);
+        if(tjDateSchedules.size()>0){
+            for(TjDateSchedule tjDateSchedule : tjDateSchedules){
+                List<Integer> ids = Arrays.stream(tjDateSchedule.getAppointmentIds().split(",")).map(Integer::parseInt).collect(Collectors.toList());
+                if(ids.size()>1){
+                    ids.remove(recordId);
+                }else {
+                    this.removeById(tjDateSchedule.getDate());
+                    continue;
+                }
+                tjDateSchedule.setAppointmentIds(ids.stream().map(String::valueOf).collect(Collectors.joining(",")));
+                this.updateById(tjDateSchedule);
+            }
+        }else {
+            throw new BusinessException("该记录不存在");
+        }
     }
 
     private static String getQuarter(LocalDate date) {

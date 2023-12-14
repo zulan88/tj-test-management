@@ -25,4 +25,6 @@ public interface TjDateScheduleService extends IService<TjDateSchedule> {
 
     void commitSchedule(ScheduleDto scheduleDto);
 
+    void deleteSchedule(Integer recordId) throws BusinessException;
+
 }
