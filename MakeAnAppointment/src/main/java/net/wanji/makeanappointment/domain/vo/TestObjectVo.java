@@ -100,4 +100,8 @@ public class TestObjectVo extends PageDomain {
      */
     private String updateBy;
 
+    // 数据通道
+    private String dataChannel;
+    // 指令通道
+    private String commandChannel;
 }
