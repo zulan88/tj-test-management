@@ -100,6 +100,7 @@ public class TjDateScheduleServiceImpl extends ServiceImpl<TjDateScheduleMapper,
         List<TjApprecordPerson> pensonalList = scheduleDto.getPersonList();
         List<String> personIds = new ArrayList<>();
         pensonalList.forEach(item -> {
+            item.setRecordId(scheduleDto.getRecordId());
             personIds.add(String.valueOf(item.getPersonId()));
         });
         scheduleDto.setPersonIds(String.join(",", personIds));
