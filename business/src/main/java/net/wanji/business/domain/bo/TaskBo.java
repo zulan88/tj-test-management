@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -68,4 +69,10 @@ public class TaskBo {
 
     @ApiModelProperty(value = "任务指标")
     private List<TjTaskDc> diadynamicCriterias;
+
+    private Integer isInner;
+
+    private Integer apprecordId;
+
+    private Integer measurandId;
 }

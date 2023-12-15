@@ -1,5 +1,6 @@
 package net.wanji.approve.mapper;
 
+import io.lettuce.core.dynamic.annotation.Param;
 import net.wanji.approve.entity.RecordRe;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
@@ -15,8 +16,8 @@ import java.util.List;
  */
 public interface RecordReMapper extends BaseMapper<RecordRe> {
 
-    List<Integer> selectBydevice(Integer deviceId);
+    List<Integer> selectBydevice(@Param("deviceId") Integer deviceId);
 
-    List<Integer> selectByperson(Integer personId);
+    List<Integer> selectByperson(@Param("personId") Integer personId);
 
 }

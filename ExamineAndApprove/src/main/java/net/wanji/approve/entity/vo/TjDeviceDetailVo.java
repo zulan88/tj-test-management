@@ -11,4 +11,6 @@ public class TjDeviceDetailVo extends TjDeviceDetail {
      */
     Integer occstatus;
 
+    Integer isSelect;
+
 }

@@ -81,7 +81,7 @@ public class AppointmentRecordController extends BaseController {
 
     @GetMapping("/devicetoschedule")
     public AjaxResult devicetoschedule(Integer deviceId) throws BusinessException {
-        List<AppointmentRecord> list = recordReService.getrecordBydevice(deviceId);
+        List<AppointmentRecord> list = appointmentRecordService.getByids(recordReService.getrecordBydevice(deviceId));
         return AjaxResult.success(list);
     }
 

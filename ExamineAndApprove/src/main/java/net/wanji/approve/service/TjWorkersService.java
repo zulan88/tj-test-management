@@ -3,6 +3,7 @@ package net.wanji.approve.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import net.wanji.approve.entity.TjWorkers;
 import com.baomidou.mybatisplus.extension.service.IService;
+import net.wanji.approve.entity.vo.TjWorkersVo;
 
 import java.util.List;
 
@@ -32,4 +33,6 @@ public interface TjWorkersService extends IService<TjWorkers> {
 
     // 批量删除
     boolean deleteWorkersByIds(List<Integer> ids);
+
+    List<TjWorkersVo> listbyrecord(Integer recordId);
 }

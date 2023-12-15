@@ -27,10 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -82,7 +79,7 @@ public class TestReservationServiceImpl implements TestReservationService {
 
         AppointmentRecord appointmentRecord = appointmentRecordService.getById(id);
         String caseIds = appointmentRecord.getCaseIds();
-
+        Map<Integer, Long> caseCountMap = new HashMap<>();
         // 获取所有用例的 treeId
         if (caseIds != null && !type.isEmpty()) {
             List<Integer> typeList = Arrays.stream(caseIds.split(",")).map(Integer::parseInt).collect(Collectors.toList());
@@ -91,12 +88,14 @@ public class TestReservationServiceImpl implements TestReservationService {
             caseQueryDto.setSelectedIds(typeList);
             List<CasePageVo> notByUsername = tjCaseService.pageList(caseQueryDto, "notByUsername");
 
-            Map<Integer, Long> caseCountMap = CollectionUtils.emptyIfNull(notByUsername).stream()
+            caseCountMap = CollectionUtils.emptyIfNull(notByUsername).stream()
                     .collect(Collectors.groupingBy(CasePageVo::getTreeId, Collectors.counting()));
-            for (CaseTreeVo treeVo : CollectionUtils.emptyIfNull(caseTree)) {
-                treeVo.setNumber(caseCountMap.containsKey(treeVo.getId()) ? caseCountMap.get(treeVo.getId()).intValue() : 0);
-            }
         }
+
+        for (CaseTreeVo treeVo : CollectionUtils.emptyIfNull(caseTree)) {
+            treeVo.setNumber(caseCountMap.containsKey(treeVo.getId()) ? caseCountMap.get(treeVo.getId()).intValue() : 0);
+        }
+
         return caseTree;
     }
 
@@ -104,5 +103,16 @@ public class TestReservationServiceImpl implements TestReservationService {
     @Override
     public List<CasePageVo> pageList(CaseQueryDto caseQueryDto) {
         return tjCaseService.pageList(caseQueryDto, "notByUsername");
+    }
+
+    @Override
+    public boolean choiceCase(Integer id, List<Integer> caseIds) {
+        AppointmentRecord appointmentRecord = new AppointmentRecord();
+        appointmentRecord.setId(id);
+
+        String caseIdsStr = caseIds.stream().map(Object::toString).collect(Collectors.joining(","));
+        appointmentRecord.setCaseIds(caseIdsStr);
+
+        return appointmentRecordService.updateById(appointmentRecord);
     }
 }

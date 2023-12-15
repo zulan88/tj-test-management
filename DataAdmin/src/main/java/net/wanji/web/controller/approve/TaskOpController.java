@@ -39,7 +39,7 @@ public class TaskOpController extends BaseController {
     TjTesteeObjectInfoService tjTesteeObjectInfoService;
 
     @PostMapping("/prestore/{id}")
-    public AjaxResult prestore(@RequestParam("id")Integer id) throws ParseException, BusinessException {
+    public AjaxResult prestore(@PathVariable Integer id) throws ParseException, BusinessException {
         AppointmentRecord record = appointmentRecordService.getById(id);
         TjTesteeObjectInfo tjTesteeObjectInfo = tjTesteeObjectInfoService.getById(record.getMeasurandId());
         TaskBo taskBo = new TaskBo();
@@ -54,6 +54,9 @@ public class TaskOpController extends BaseController {
         taskBo.setEndTime(dateFormat.parse(dates.get(dates.size() - 1)));
         taskBo.setProcessNode(1);
         taskBo.setTestType("virtualRealFusion"); // 先写死
+        taskBo.setIsInner(1);
+        taskBo.setApprecordId(record.getId());
+        taskBo.setMeasurandId(record.getMeasurandId());
         int taskId = tjTaskService.saveTask(taskBo);
         List<Integer> caseIds = Arrays.stream(record.getCaseIds().split(",")).map(Integer::parseInt).collect(Collectors.toList());
         taskCaseService.addTaskCase(taskId, caseIds);

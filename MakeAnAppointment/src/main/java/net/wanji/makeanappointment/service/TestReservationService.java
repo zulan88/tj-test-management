@@ -21,4 +21,7 @@ public interface TestReservationService {
 
 
     List<CasePageVo> pageList(CaseQueryDto caseQueryDto);
+
+    boolean choiceCase(Integer id, List<Integer> caseIds);
+
 }

@@ -6,6 +6,8 @@ import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import net.wanji.approve.entity.AppointmentRecord;
 import net.wanji.approve.entity.TjWorkers;
+import net.wanji.approve.entity.vo.TjWorkersVo;
+import net.wanji.approve.service.AppointmentRecordService;
 import net.wanji.approve.service.RecordReService;
 import net.wanji.approve.service.TjWorkersService;
 import net.wanji.business.exception.BusinessException;
@@ -25,6 +27,9 @@ public class TjWorkersController {
 
     @Autowired
     RecordReService recordReService;
+
+    @Autowired
+    private AppointmentRecordService appointmentRecordService;
 
     // 分页查询，带条件
     @GetMapping("/list")
@@ -92,7 +97,13 @@ public class TjWorkersController {
 
     @GetMapping("/persontoschedule")
     public AjaxResult devicetoschedule(Integer personId) throws BusinessException {
-        List<AppointmentRecord> list = recordReService.getrecordByperson(personId);
+        List<AppointmentRecord> list = appointmentRecordService.getByids(recordReService.getrecordByperson(personId));
+        return AjaxResult.success(list);
+    }
+
+    @GetMapping("/listbyrecord")
+    public AjaxResult listbyrecord(Integer recordId) throws BusinessException {
+        List<TjWorkersVo> list = workersService.listbyrecord(recordId);
         return AjaxResult.success(list);
     }
 }
