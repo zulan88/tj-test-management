@@ -383,6 +383,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
             Map<String, Object> caseParam = new HashMap<>();
             caseParam.put("caseId", caseId);
+            caseParam.put("sort", taskCaseInfoBo.getSort());
             caseParam.put("avPassTime", caseMainSize.get(caseId));
             Label label = new Label();
             label.setParentId(2L);
@@ -427,6 +428,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             caseParam.put("participantTrajectories", simulationTrajectories);
             param1.add(caseParam);
         }
+        param1.sort(Comparator.comparingInt(t -> (int) t.get("sort")));
         tessParams.put("param1", param1);
         tessParams.put("taskId", taskId);
         return tessParams;
@@ -613,10 +615,13 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             taskRedisTrajectoryConsumer.updateRunningCase(String.valueOf(context.get("key")), caseId);
         } else {
             String key = (String) context.get("key");
-            List<SimulationTrajectoryDto> trajectories = kafkaCollector.take(key);
+
+            // todo 有问题
+            List<SimulationTrajectoryDto> data = kafkaCollector.take(key, caseId);
+
             String duration = DateUtils.secondsToDuration(
-                    (int) Math.floor((double) (trajectories.size())) / 10);
-            routeService.saveTaskRouteFile2(taskCaseInfoBo.getRecordId(), trajectories, duration, action);
+                    (int) Math.floor((double) (data.size())) / 10);
+            routeService.saveTaskRouteFile2(taskCaseInfoBo.getRecordId(), data, duration, action);
             RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null, null,
                     duration);
             WebSocketManage.sendInfo(key, JSON.toJSONString(endMsg));

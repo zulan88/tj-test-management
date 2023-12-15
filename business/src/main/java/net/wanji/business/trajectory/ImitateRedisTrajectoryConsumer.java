@@ -270,7 +270,7 @@ public class ImitateRedisTrajectoryConsumer {
                         break;
                 }
             } catch (Exception e) {
-                log.error("{} 实车试验数据接收异常：{}", key, e.getMessage());
+                log.error("{} 实车试验数据接收异常：{}", key, e);
                 removeListener(key, true, originalTrajectory);
             }
         };

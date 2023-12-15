@@ -332,7 +332,7 @@ public class TaskController extends BaseController {
     @PostMapping(" /remove")
     public AjaxResult removeEnity() {
         LambdaQueryWrapper<TjTask> wrapper = new LambdaQueryWrapper<TjTask>();
-        wrapper.eq(TjTask::getStatus, TaskStatusEnum.NO_SUBMIT.getCode()).eq(TjTask::getStatus, SecurityUtils.getUsername());
+        wrapper.eq(TjTask::getStatus, TaskStatusEnum.NO_SUBMIT.getCode()).eq(TjTask::getCreatedBy, SecurityUtils.getUsername());
         return tjTaskService.remove(wrapper)
                 ? AjaxResult.success("成功")
                 : AjaxResult.error("失败");

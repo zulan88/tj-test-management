@@ -536,6 +536,9 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                     tjTask.setUpdatedDate(LocalDateTime.now());
                     if(in.getIsInner()!=null){
                         tjTask.setIsInner(in.getIsInner());
+                        tjTask.setOpStatus(0);
+                        tjTask.setMeasurandId(in.getMeasurandId());
+                        tjTask.setApprecordId(in.getApprecordId());
                     }
                     this.updateById(tjTask);
                     tjTaskDataConfigService.remove(new QueryWrapper<TjTaskDataConfig>().eq(ColumnName.TASK_ID, tjTask.getId()));
@@ -633,13 +636,17 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                     // 修改任务用例信息
                     List<TjTaskCase> tjTaskCases = tjTaskCaseService.listByIds(in.getCases().stream()
                             .map(CaseContinuousVo::getId).collect(Collectors.toList()));
-
-                    Map<Integer, Object> map = in.getCases().stream().collect(Collectors.toMap(CaseContinuousVo::getId,
+                    IntStream.range(0, in.getCases().size()).forEach(i -> {
+                        in.getCases().get(i).setSort(i + 1);
+                    });
+                    Map<Integer, Object> connectMap = in.getCases().stream().collect(Collectors.toMap(CaseContinuousVo::getId,
                             CaseContinuousVo::getConnectInfo));
+                    Map<Integer, Integer> sortMap = in.getCases().stream().collect(Collectors.toMap(CaseContinuousVo::getId,
+                            CaseContinuousVo::getSort));
                     for (int i = 0; i < tjTaskCases.size(); i++) {
                         TjTaskCase taskCase = tjTaskCases.get(i);
-                        taskCase.setSort(i + 1);
-                        Object obj = map.get(taskCase.getId());
+                        taskCase.setSort(sortMap.get(taskCase.getId()));
+                        Object obj = connectMap.get(taskCase.getId());
                         taskCase.setConnectInfo(ObjectUtil.isEmpty(obj) ? null : JSONObject.toJSONString(obj));
                         tjTaskCaseMapper.updateByCondition(taskCase);
                     }
@@ -732,7 +739,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         }
         Map<String, Object> result = new HashMap<>(2);
         result.put("taskId", taskId);
-        result.put("cases", caseContinuousInfo);
+        result.put("params", caseContinuousInfo);
         return result;
     }
 
