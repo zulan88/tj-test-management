@@ -827,13 +827,13 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
     public String getTestReportOuterChain(HttpServletRequest request) {
         String requestUrl = StringUtils.isEmpty(testReportOuterChain) ? "" : testReportOuterChain;
 
-        String url = request.getHeader("X-Forwarded-Host").split(":")[0];
-        if (url == null) {
-            url = request.getHeader("X-Forwarded-For").split(",")[0];
-            if (url == null) {
-                url = request.getRemoteAddr();
-            }
-        }
+//        String url = request.getHeader("X-Forwarded-Host").split(":")[0];
+//        if (url == null) {
+//            url = request.getHeader("X-Forwarded-For").split(",")[0];
+//            if (url == null) {
+//                url = request.getRemoteAddr();
+//            }
+//        }
 
         return requestUrl;
     }

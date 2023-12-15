@@ -3,21 +3,15 @@ package net.wanji.makeanappointment.service.impl;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import net.wanji.approve.entity.AppointmentRecord;
-import net.wanji.approve.entity.TjWorkers;
 import net.wanji.approve.service.AppointmentRecordService;
 import net.wanji.business.domain.dto.CaseQueryDto;
-import net.wanji.business.domain.vo.CaseDetailVo;
 import net.wanji.business.domain.vo.CasePageVo;
 import net.wanji.business.domain.vo.CaseTreeVo;
-import net.wanji.business.domain.vo.TaskCaseVo;
-import net.wanji.business.entity.TjDeviceDetail;
-import net.wanji.business.entity.TjTaskCase;
-import net.wanji.business.mapper.TjCaseMapper;
-import net.wanji.business.mapper.TjTaskCaseMapper;
+
 import net.wanji.business.service.TjCaseService;
 import net.wanji.business.service.TjCaseTreeService;
-import net.wanji.business.service.TjDeviceDetailService;
 import net.wanji.common.core.domain.entity.SysDictData;
+import net.wanji.common.utils.StringUtils;
 import net.wanji.makeanappointment.domain.vo.TestTypeVo;
 import net.wanji.makeanappointment.mapper.TestReservationMapper;
 import net.wanji.makeanappointment.service.TestReservationService;
@@ -102,7 +96,36 @@ public class TestReservationServiceImpl implements TestReservationService {
 
     @Override
     public List<CasePageVo> pageList(CaseQueryDto caseQueryDto) {
-        return tjCaseService.pageList(caseQueryDto, "notByUsername");
+        // 借用 CaseQueryDto id属性代替 AppointmentRecord id
+        Integer id = caseQueryDto.getId();
+        if (id == null) {
+            return null;
+        }
+        AppointmentRecord byId = appointmentRecordService.getById(id);
+        List<String> caseIdArray = new ArrayList<>();
+        String caseIds = byId.getCaseIds();
+        if (StringUtils.isNotEmpty(caseIds)) {
+            caseIdArray = Arrays.asList(caseIds.split(","));
+        }
+
+        // 借用后 制空
+        caseQueryDto.setId(null);
+
+        // 用例状态必须有效
+        caseQueryDto.setStatus("effective");
+        List<CasePageVo> allCasePage = tjCaseService.pageList(caseQueryDto, "notByUsername");
+
+        if (CollectionUtils.isEmpty(caseIdArray)) {
+            return allCasePage;
+        }
+
+        for (CasePageVo casePageVo : CollectionUtils.emptyIfNull(allCasePage)) {
+            if (caseIdArray.contains(String.valueOf(casePageVo.getId()))) {
+                casePageVo.setSelected(true);
+            }
+        }
+
+        return allCasePage;
     }
 
     @Override

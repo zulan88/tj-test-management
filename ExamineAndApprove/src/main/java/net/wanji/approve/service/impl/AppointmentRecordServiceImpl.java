@@ -157,7 +157,7 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
         } else {
             // 修改
             updateById(appointmentRecord);
-            return getById(appointmentRecord.getRecordId());
+            return getById(appointmentRecord.getId());
         }
     }
 
