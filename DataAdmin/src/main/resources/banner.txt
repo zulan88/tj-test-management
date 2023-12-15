@@ -1,2 +1,0 @@
-Application Version: ${wanji.version}
-Spring Boot Version: ${spring-boot.version}
