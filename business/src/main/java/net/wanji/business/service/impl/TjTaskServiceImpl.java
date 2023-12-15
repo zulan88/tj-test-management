@@ -733,7 +733,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         }
         Map<String, Object> result = new HashMap<>(2);
         result.put("taskId", taskId);
-        result.put("cases", caseContinuousInfo);
+        result.put("params", caseContinuousInfo);
         return result;
     }
 

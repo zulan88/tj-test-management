@@ -383,6 +383,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
             Map<String, Object> caseParam = new HashMap<>();
             caseParam.put("caseId", caseId);
+            caseParam.put("sort", taskCaseInfoBo.getSort());
             caseParam.put("avPassTime", caseMainSize.get(caseId));
             Label label = new Label();
             label.setParentId(2L);
@@ -427,6 +428,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             caseParam.put("participantTrajectories", simulationTrajectories);
             param1.add(caseParam);
         }
+        param1.sort(Comparator.comparingInt(t -> (int) t.get("sort")));
         tessParams.put("param1", param1);
         tessParams.put("taskId", taskId);
         return tessParams;

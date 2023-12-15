@@ -94,7 +94,7 @@ public interface Constants {
          * @return
          */
         public static String buildSimulationChannel(String username, String number) {
-            return String.format(SIMULATION_CHANNEL_TEMPLATE, username, number, SIMULATION);
+            return StringUtils.format(SIMULATION_CHANNEL_TEMPLATE, username, number, SIMULATION);
         }
 
         /**
@@ -105,7 +105,7 @@ public interface Constants {
          * @return
          */
         public static String buildRoutingPlanChannel(String username, Integer taskId) {
-            return String.format(SIMULATION_CHANNEL_TEMPLATE, username, taskId, PLAN);
+            return StringUtils.format(SIMULATION_CHANNEL_TEMPLATE, username, taskId, PLAN);
         }
 
         /**
