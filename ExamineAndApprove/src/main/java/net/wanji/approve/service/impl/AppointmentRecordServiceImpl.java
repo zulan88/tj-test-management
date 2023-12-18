@@ -130,6 +130,9 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
 
     @Override
     public List<AppointmentRecord> getByids(List<Integer> ids) {
+        if(ids == null||ids.size() == 0){
+            return new ArrayList<>();
+        }
         QueryWrapper<AppointmentRecord> queryWrapper = new QueryWrapper<>();
         queryWrapper.in("id", ids);
         return this.list(queryWrapper);
