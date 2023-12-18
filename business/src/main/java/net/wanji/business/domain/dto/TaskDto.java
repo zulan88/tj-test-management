@@ -68,4 +68,6 @@ public class TaskDto {
     private String createdBy;
 
     private Integer isInner;
+
+    private Integer opStatus;
 }

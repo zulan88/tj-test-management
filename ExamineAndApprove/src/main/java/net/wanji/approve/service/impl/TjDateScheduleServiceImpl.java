@@ -99,6 +99,9 @@ public class TjDateScheduleServiceImpl extends ServiceImpl<TjDateScheduleMapper,
     public Set<Integer> takeDeviceIds(ScheduleDto scheduleDto) {
         QueryWrapper<TjDateSchedule> queryWrapper = new QueryWrapper<>();
         queryWrapper.in("date", scheduleDto.getDates());
+        if(scheduleDto.getDates().size()==0){
+            return new HashSet<>();
+        }
         List<TjDateSchedule> tjDateSchedules = this.list(queryWrapper);
         Set<Integer> set = new HashSet<>();
         for (TjDateSchedule tjDateSchedule : tjDateSchedules) {
