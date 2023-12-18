@@ -552,6 +552,12 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                     tjTask.setStatus(TaskStatusEnum.NO_SUBMIT.getCode());
                     tjTask.setCreatedBy(SecurityUtils.getUsername());
                     tjTask.setCreatedDate(LocalDateTime.now());
+                    if(in.getIsInner()!=null){
+                        tjTask.setIsInner(in.getIsInner());
+                        tjTask.setOpStatus(0);
+                        tjTask.setMeasurandId(in.getMeasurandId());
+                        tjTask.setApprecordId(in.getApprecordId());
+                    }
                     this.save(tjTask);
                 }
                 List<TjTaskDataConfig> dataConfigs = new ArrayList<>();

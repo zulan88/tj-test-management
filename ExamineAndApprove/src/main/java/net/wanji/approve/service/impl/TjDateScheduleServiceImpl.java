@@ -71,6 +71,31 @@ public class TjDateScheduleServiceImpl extends ServiceImpl<TjDateScheduleMapper,
     }
 
     @Override
+    public List<DateScheduleVo> takeDateScheduleByDateOld(String year, Integer quarter) {
+        QueryWrapper<TjDateSchedule> queryWrapper = new QueryWrapper<>();
+        queryWrapper.like("year", year);
+        queryWrapper.eq("quarter", quarter);
+        List<TjDateSchedule> tjDateSchedules = this.list(queryWrapper);
+        List<ScheduleVo> result = tjDateSchedules.stream().map(item -> {
+            ScheduleVo dateScheduleVo = new ScheduleVo();
+            BeanUtils.copyBeanProp(dateScheduleVo, item);
+            for (String id : item.getAppointmentIds().split(",")){
+                dateScheduleVo.getRecordList().add(CacheTools.get(Integer.valueOf(id)));
+            }
+            return dateScheduleVo;
+        }).collect(Collectors.toList());
+        Map<String, List<ScheduleVo>> map = result.stream().collect(Collectors.groupingBy(ScheduleVo::getMouth));
+        List<DateScheduleVo> dateScheduleVos = new ArrayList<>();
+        for (Map.Entry<String, List<ScheduleVo>> entry : map.entrySet()) {
+            DateScheduleVo dateScheduleVo = new DateScheduleVo();
+            dateScheduleVo.setDate(entry.getKey());
+            dateScheduleVo.setScheduleList(entry.getValue());
+            dateScheduleVos.add(dateScheduleVo);
+        }
+        return dateScheduleVos;
+    }
+
+    @Override
     public Set<Integer> takeDeviceIds(ScheduleDto scheduleDto) {
         QueryWrapper<TjDateSchedule> queryWrapper = new QueryWrapper<>();
         queryWrapper.in("date", scheduleDto.getDates());

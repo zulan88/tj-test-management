@@ -34,6 +34,12 @@ public class DateScheduleController {
         return AjaxResult.success(list);
     }
 
+    @GetMapping("/getscheduleQuarter")
+    public AjaxResult getScheduleQuarter(String year, Integer quarter){
+        List<DateScheduleVo> list = dateScheduleService.takeDateScheduleByDateOld(year,quarter);
+        return AjaxResult.success(list);
+    }
+
     @PostMapping("/getdevice")
     public AjaxResult getDevice(@RequestBody ScheduleDto scheduleDto){
         Set<Integer> set = dateScheduleService.takeDeviceIds(scheduleDto);
