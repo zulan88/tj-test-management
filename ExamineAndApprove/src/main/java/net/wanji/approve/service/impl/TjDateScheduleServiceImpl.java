@@ -188,9 +188,10 @@ public class TjDateScheduleServiceImpl extends ServiceImpl<TjDateScheduleMapper,
                 tjDateSchedule.setAppointmentIds(ids.stream().map(String::valueOf).collect(Collectors.joining(",")));
                 this.updateById(tjDateSchedule);
             }
-        }else {
-            throw new BusinessException("该记录不存在");
         }
+//        else {
+//            throw new BusinessException("该记录不存在");
+//        }
     }
 
     private static String getQuarter(LocalDate date) {
