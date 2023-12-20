@@ -471,7 +471,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         List<TaskCaseVo> taskCaseVos = tjTaskCaseMapper.selectByCondition(taskCase);
         CaseQueryDto param = new CaseQueryDto();
         param.setSelectedIds(CollectionUtils.emptyIfNull(taskCaseVos).stream().map(TaskCaseVo::getCaseId).collect(Collectors.toList()));
-        param.setUserName(SecurityUtils.getUsername());
+//        param.setUserName(SecurityUtils.getUsername());
         List<CaseDetailVo> caseDetails = caseMapper.selectCases(param);
         Map<Integer, CasePageVo> caseDetailMap = CollectionUtils.emptyIfNull(caseDetails).stream().collect(Collectors.toMap(CaseDetailVo::getId, v -> {
             CasePageVo casePageVo = new CasePageVo();
