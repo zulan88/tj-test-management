@@ -2,6 +2,8 @@ package net.wanji.business.schedule;
 
 import com.alibaba.fastjson.JSONObject;
 import lombok.Data;
+import net.wanji.business.common.Constants.PartRole;
+import net.wanji.business.common.Constants.PartType;
 import net.wanji.business.common.Constants.RedisMessageType;
 import net.wanji.business.component.CountDown;
 import net.wanji.business.component.PathwayPoints;
@@ -25,6 +27,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -38,116 +41,106 @@ import java.util.stream.Collectors;
 @Data
 public class RealPlaybackDomain {
 
-    private List<ScheduledFuture<?>> future;
+    private ScheduledFuture<?> future;
     private String key;
-    private List<RealTestTrajectoryDto> realTestTrajectories;
+    private String mainChannel;
+    private List<List<SimulationTrajectoryDto>> trajectories;
     private boolean running;
     private int index;
     private int length;
 
-    public RealPlaybackDomain(String key, List<RealTestTrajectoryDto> realTestTrajectories) {
+    public RealPlaybackDomain(String key, String mainChannel, List<List<SimulationTrajectoryDto>> trajectories) {
         this.key = key;
-        this.realTestTrajectories = realTestTrajectories;
+        this.trajectories = trajectories;
+        this.mainChannel = mainChannel;
         this.running = true;
         this.index = 0;
-        this.length = realTestTrajectories.stream().map(RealTestTrajectoryDto::getData)
-                .mapToInt(List::size)
-                .max()
-                .orElse(0);
-        this.future = new ArrayList<>(realTestTrajectories.size());
-        for (RealTestTrajectoryDto realTestTrajectory : realTestTrajectories) {
-            // 实际轨迹
-            List<SimulationTrajectoryDto> trajectories = realTestTrajectory.getData();
-            List<List<TrajectoryValueDto>> actualTrajectories = trajectories.stream().map(SimulationTrajectoryDto::getValue)
-                    .collect(Collectors.toList());
-            // 所有点位
-            List<TrajectoryDetailBo> points = StringUtils.isEmpty(realTestTrajectory.getPoints()) ? new ArrayList<>()
-                    : JSONObject.parseArray(realTestTrajectory.getPoints(), TrajectoryDetailBo.class);
-            // 主车全程、剩余时间、到达时间
-            ArrayList<Point2D.Double> doubles = new ArrayList<>();
-            for (TrajectoryDetailBo trajectoryDetailBo : points) {
-                String[] pos = trajectoryDetailBo.getPosition().split(",");
-                doubles.add(new Point2D.Double(Double.parseDouble(pos[0]), Double.parseDouble(pos[1])));
-            }
-            CountDown countDown = new CountDown(doubles);
-            // 主车途径点提示
-            PathwayPoints pathwayPoints = new PathwayPoints(points);
-            // 仿真车轨迹
-            List<TrajectoryValueDto> mainSimuTrajectories = realTestTrajectory.getMainSimuTrajectories();
-            // wskey
-            String wsKey = key.concat("_").concat(realTestTrajectory.getChannel());
-            Map<String, Object> realMap = new HashMap<>();
-            ScheduledFuture<?> scheduledFuture = AsyncManager.me().execute(() -> {
-                // send data
-                try {
-                    if (!running) {
-                        return;
-                    }
-                    if (index >= length) {
-                        if (realTestTrajectory.isMain()) {
-                            RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null,
-                                    null, "00:00");
-                            WebSocketManage.sendInfo(wsKey, JSONObject.toJSONString(endMsg));
-                            RealPlaybackSchedule.stopSendingData(key);
-                            return;
-                        }
-                    }
-                    String duration = DateUtils.secondsToDuration(
-                            (int) Math.floor((double) (length - index) / 10));
-                    List<TrajectoryValueDto> data = actualTrajectories.get(index >= actualTrajectories.size() ? actualTrajectories.size() - 1 : index);
-                    if (realTestTrajectory.isMain()) {
-                        if (CollectionUtils.isNotEmpty(data)) {
-                            CountDownDto countDownDto = countDown.countDown(data.get(0).getSpeed(),
-                                    new Point2D.Double(data.get(0).getLongitude(), data.get(0).getLatitude()));
-                            if (!ObjectUtils.isEmpty(countDownDto)) {
-                                double mileage = countDownDto.getFullLength();
-                                double remainLength = countDownDto.getRemainLength();
-                                realMap.put("mileage", String.format("%.2f", mileage));
-                                realMap.put("duration", countDownDto.getTimeRemaining());
-                                realMap.put("arriveTime", DateUtils.dateToString(countDownDto.getArrivalTime(), DateUtils.HH_MM_SS));
-                                double percent = mileage > 0 ? 1 - (remainLength / mileage) : 1;
-                                realMap.put("percent", percent * 100);
-                            }
-                            PathwayPoints nearestPoint = pathwayPoints.findNearestPoint(data.get(0).getLongitude(),
-                                    data.get(0).getLatitude());
-                            Map<String, Object> tipsMap = new HashMap<>();
-                            if (nearestPoint.hasTips()) {
-                                tipsMap.put("name", realTestTrajectory.getName());
-                                tipsMap.put("pointName", nearestPoint.getPointName());
-                                tipsMap.put("pointDistance", nearestPoint.getDistance());
-                                tipsMap.put("pointSpeed", nearestPoint.getPointSpeed());
-                            }
-                            realMap.put("tips", tipsMap);
+        this.length = trajectories.size();
+        // 主车轨迹
+//        List<List<SimulationTrajectoryDto>> mainTrajectories = trajectories.stream()
+//                .map(m -> m.stream()
+//                        .filter(n -> mainChannel.equals(n.getSource()) && CollectionUtils.isNotEmpty(n.getValue()))
+//                        .collect(Collectors.toList()))
+//                .filter(CollectionUtils::isNotEmpty)
+//                .collect(Collectors.toList());
+        // 所有点位
+//        List<TrajectoryDetailBo> points = new ArrayList<>();
+        // 主车全程、剩余时间、到达时间
+//        ArrayList<Point2D.Double> doubles = new ArrayList<>();
+//        for (TrajectoryDetailBo trajectoryDetailBo : points) {
+//            String[] pos = trajectoryDetailBo.getPosition().split(",");
+//            doubles.add(new Point2D.Double(Double.parseDouble(pos[0]), Double.parseDouble(pos[1])));
+//        }
+//        CountDown countDown = new CountDown(doubles);
+        // 主车途径点提示
+//        PathwayPoints pathwayPoints = new PathwayPoints(points);
+        // 提示板
+        Map<String, Object> realMap = new HashMap<>();
 
-                            // 仿真车未来轨迹
-                            List<Map<String, Double>> futureList = new ArrayList<>();
-                            if (!CollectionUtils.isEmpty(mainSimuTrajectories)) {
-                                // 仿真验证中当前主车位置
-                                data.add(mainSimuTrajectories.remove(0));
-                                // 仿真验证中主车剩余轨迹
-                                futureList = mainSimuTrajectories.stream().map(item -> {
-                                    Map<String, Double> posMap = new HashMap<>();
-                                    posMap.put("longitude", item.getLongitude());
-                                    posMap.put("latitude", item.getLatitude());
-                                    return posMap;
-                                }).collect(Collectors.toList());
-                            }
-                            realMap.put("simuFuture", futureList);
-                            realMap.put("speed", data.get(0).getSpeed());
-                        }
-                        RealWebsocketMessage msg = new RealWebsocketMessage(RedisMessageType.TRAJECTORY, realMap, data, duration);
-                        WebSocketManage.sendInfo(wsKey, JSONObject.toJSONString(msg));
-                    } else {
-                        index ++;
-                        RealWebsocketMessage msg = new RealWebsocketMessage(RedisMessageType.TRAJECTORY, null, data, duration);
-                        WebSocketManage.sendInfo(wsKey, JSONObject.toJSONString(msg));
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
+        this.future = AsyncManager.me().execute(() -> {
+            // send data
+            try {
+                if (!running) {
+                    return;
                 }
-            }, 0, 100);
-            future.add(scheduledFuture);
-        }
+                if (index >= length) {
+                    RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null,
+                            null, "00:00");
+                    WebSocketManage.sendInfo(key, JSONObject.toJSONString(endMsg));
+                    RealPlaybackSchedule.stopSendingData(key);
+                    return;
+                }
+                String duration = DateUtils.secondsToDuration((int) Math.floor((double) (length - index) / 10));
+                if (CollectionUtils.isNotEmpty(trajectories)) {
+                    List<SimulationTrajectoryDto> data = trajectories.get(index);
+//                    CountDownDto countDownDto = countDown.countDown(data.get(0).getSpeed(),
+//                            new Point2D.Double(data.get(0).getLongitude(), data.get(0).getLatitude()));
+//                    if (!ObjectUtils.isEmpty(countDownDto)) {
+//                        double mileage = countDownDto.getFullLength();
+//                        double remainLength = countDownDto.getRemainLength();
+//                        realMap.put("mileage", String.format("%.2f", mileage));
+//                        realMap.put("duration", countDownDto.getTimeRemaining());
+//                        realMap.put("arriveTime", DateUtils.dateToString(countDownDto.getArrivalTime(), DateUtils.HH_MM_SS));
+//                        double percent = mileage > 0 ? 1 - (remainLength / mileage) : 1;
+//                        realMap.put("percent", percent * 100);
+//                    }
+//                    PathwayPoints nearestPoint = pathwayPoints.findNearestPoint(data.get(0).getLongitude(),
+//                            data.get(0).getLatitude());
+                    Map<String, Object> tipsMap = new HashMap<>();
+//                    if (nearestPoint.hasTips()) {
+//                        tipsMap.put("name", realTestTrajectory.getName());
+//                        tipsMap.put("pointName", nearestPoint.getPointName());
+//                        tipsMap.put("pointDistance", nearestPoint.getDistance());
+//                        tipsMap.put("pointSpeed", nearestPoint.getPointSpeed());
+//                    }
+                    realMap.put("tips", tipsMap);
+
+                    // 仿真车未来轨迹
+                    List<Map<String, Double>> futureList = new ArrayList<>();
+//                    if (!CollectionUtils.isEmpty(mainSimuTrajectories)) {
+//                        // 仿真验证中当前主车位置
+//                        data.add(mainSimuTrajectories.remove(0));
+//                        // 仿真验证中主车剩余轨迹
+//                        futureList = mainSimuTrajectories.stream().map(item -> {
+//                            Map<String, Double> posMap = new HashMap<>();
+//                            posMap.put("longitude", item.getLongitude());
+//                            posMap.put("latitude", item.getLatitude());
+//                            return posMap;
+//                        }).collect(Collectors.toList());
+//                    }
+                    realMap.put("simuFuture", futureList);
+                    Optional<TrajectoryValueDto> main = data.stream()
+                            .filter(n -> mainChannel.equals(n.getSource()) && CollectionUtils.isNotEmpty(n.getValue()))
+                            .map(m -> m.getValue().get(0)).findFirst();
+                    realMap.put("speed", main.isPresent() ? main.get().getSpeed() : 0);
+                }
+                RealWebsocketMessage msg = new RealWebsocketMessage(RedisMessageType.TRAJECTORY, realMap, trajectories, duration);
+                WebSocketManage.sendInfo(key, JSONObject.toJSONString(msg));
+                index ++;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }, 0, 100);
     }
 
 
@@ -167,14 +160,12 @@ public class RealPlaybackDomain {
     public synchronized void stopSendingData() throws BusinessException, IOException {
         this.validFuture();
         this.running = false;
-        for (ScheduledFuture<?> scheduledFuture : this.future) {
-            scheduledFuture.cancel(true);
-        }
+        this.future.cancel(false);
         WebSocketManage.remove(this.key);
     }
 
     private void validFuture() throws BusinessException {
-        if (CollectionUtils.isEmpty(this.future)) {
+        if (ObjectUtils.isEmpty(this.future) || this.future.isCancelled()) {
             throw new BusinessException("任务不存在");
         }
     }

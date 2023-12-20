@@ -19,6 +19,7 @@ import net.wanji.business.service.RestService;
 import net.wanji.business.service.StatusManage;
 import net.wanji.business.service.TjDeviceDetailService;
 import net.wanji.business.trajectory.DeviceStateListener;
+import net.wanji.common.core.redis.RedisCache;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.system.service.ISysDictDataService;
 import org.apache.commons.collections4.CollectionUtils;
@@ -30,6 +31,7 @@ import org.springframework.util.ObjectUtils;
 import javax.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -58,6 +60,9 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
 
     @Autowired
     private DeviceStateListener deviceStateListener;
+
+    @Autowired
+    private RedisCache redisCache;
 
     @PostConstruct
     public void initDeviceState() {
@@ -147,7 +152,7 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
         if (!wait) {
             return deviceStateToRedis.query(deviceId, ChannelBuilder.DEFAULT_STATUS_CHANNEL, DeviceStateToRedis.DEVICE_STATE_PREFIX);
         }
-        String key =  DeviceStateToRedis.DEVICE_STATE_PREFIX + "_" + deviceId + "_" + ChannelBuilder.DEFAULT_STATUS_CHANNEL;
+        String key = DeviceStateToRedis.DEVICE_STATE_PREFIX + "_" + deviceId + "_" + ChannelBuilder.DEFAULT_STATUS_CHANNEL;
         try {
             StatusManage.addCountDownLatch(key, 50);
         } catch (InterruptedException e) {
@@ -170,12 +175,19 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
         if (!ChannelBuilder.DEFAULT_STATUS_CHANNEL.equals(statusChannel)) {
             deviceStateListener.addDeviceStateListener(statusChannel);
         }
+        String lock = "READY_STATE_" + statusChannel;
+        if (redisCache.hasKey(statusChannel)) {
+            Integer readyState = deviceStateToRedis.query(deviceId, statusChannel, DeviceStateToRedis.DEVICE_READY_STATE_PREFIX);
+            return ObjectUtils.isEmpty(readyState) ? 0 : readyState;
+        }
+        redisCache.setCacheObject(lock, lock, 60, TimeUnit.SECONDS);
+
         restService.selectDeviceReadyState(stateParam);
         if (!wait) {
             Integer readyState = deviceStateToRedis.query(deviceId, statusChannel, DeviceStateToRedis.DEVICE_READY_STATE_PREFIX);
             return ObjectUtils.isEmpty(readyState) ? 0 : readyState;
         }
-        String key =  DeviceStateToRedis.DEVICE_READY_STATE_PREFIX + "_" + deviceId + "_" + statusChannel;
+        String key = DeviceStateToRedis.DEVICE_READY_STATE_PREFIX + "_" + deviceId + "_" + statusChannel;
         try {
             StatusManage.addCountDownLatch(key, 50);
         } catch (InterruptedException e) {

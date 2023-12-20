@@ -45,13 +45,6 @@ public interface Constants {
         }
     }
 
-    class TessType {
-        public static final String SIMULATION = "2";
-        public static final String REAL = "3";
-        public static final String PLAN = "4";
-        public static final String TASK = "5";
-    }
-
     /**
      * 内容模板
      */
@@ -76,25 +69,72 @@ public interface Constants {
          */
         public static final String TESTING_CHANNEL_TEMPLATE = "{}_{}_{}_{}_{}";
         public static final String SIMULATION_CHANNEL_TEMPLATE = "{}_{}_{}";
+        public static final int SCENE_PREVIEW = 1;
         public static final int SIMULATION = 2;
         public static final int REAL = 3;
         public static final int PLAN = 4;
         public static final int TASK = 5;
+        public static final int TASK_PREVIEW = 6;
+        public static final int TESTING_PREVIEW = 7;
         public static final String STATUS_SUFFIX = "status";
         public static final String CONTROL_SUFFIX = "control";
         public static final String DATA_SUFFIX = "data";
         public static final String EVALUATE_SUFFIX = "evaluate";
         public static final String DEFAULT_STATUS_CHANNEL = "STATUSResult";
 
+        public static boolean validClientType(Integer clientType) {
+            return !ObjectUtils.isEmpty(clientType) && (clientType == SCENE_PREVIEW || clientType == SIMULATION
+                    || clientType == REAL || clientType == PLAN || clientType == TASK || clientType == TASK_PREVIEW
+                    || clientType == TESTING_PREVIEW);
+        }
+
+
         /**
-         * 创建仿真验证时使用的channel
-         * -- 用户名_场景编号_2
+         * 创建场景预览使用的channel
+         * -- 用户名_场景详情ID_1
          * @param username
-         * @param number
+         * @param sceneDetailId
          * @return
          */
-        public static String buildSimulationChannel(String username, String number) {
-            return StringUtils.format(SIMULATION_CHANNEL_TEMPLATE, username, number, SIMULATION);
+        public static String buildScenePreviewChannel(String username, Integer sceneDetailId) {
+            return StringUtils.format(SIMULATION_CHANNEL_TEMPLATE, username, sceneDetailId, SCENE_PREVIEW);
+        }
+
+
+        /**
+         * 创建任务回放使用的channel
+         * -- 用户名_任务ID_6
+         * @param username
+         * @param taskId
+         * @return
+         */
+        public static String buildTaskPreviewChannel(String username, Integer taskId) {
+            return StringUtils.format(SIMULATION_CHANNEL_TEMPLATE, username, taskId, TASK_PREVIEW);
+        }
+
+
+
+        /**
+         * 创建实车试验回放使用的channel
+         * -- 用户名_任务ID_7
+         * @param username
+         * @param caseRecordId
+         * @return
+         */
+        public static String buildTestingPreviewChannel(String username, Integer caseRecordId) {
+            return StringUtils.format(SIMULATION_CHANNEL_TEMPLATE, username, caseRecordId, TESTING_PREVIEW);
+        }
+
+
+        /**
+         * 创建仿真验证时使用的channel
+         * -- 用户名_场景详情ID_2
+         * @param username
+         * @param sceneDetailId
+         * @return
+         */
+        public static String buildSimulationChannel(String username, String sceneNumber) {
+            return StringUtils.format(SIMULATION_CHANNEL_TEMPLATE, username, sceneNumber, SIMULATION);
         }
 
         /**

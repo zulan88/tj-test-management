@@ -25,4 +25,6 @@ public class CaseInfoBo extends TjCase {
     private TjCaseRealRecord caseRealRecord;
 
     private List<CaseConfigBo> caseConfigs;
+
+    private String number;
 }

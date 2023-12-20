@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import net.wanji.business.common.Constants.CaseStatusEnum;
+import net.wanji.business.common.Constants.ChannelBuilder;
 import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.business.common.Constants.ModelEnum;
@@ -631,7 +632,8 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     @Override
     public void playback(Integer id, String participantId, int action) throws BusinessException, IOException {
         CaseInfoBo caseInfoBo = this.getCaseDetail(id);
-        String key = WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(id), WebSocketManage.SIMULATION, null);
+        // 格式需要修改
+        String key = ChannelBuilder.buildScenePreviewChannel(SecurityUtils.getUsername(), caseInfoBo.getSceneDetailId());
         switch (action) {
             case PlaybackAction.START:
                 if (StringUtils.isEmpty(caseInfoBo.getRouteFile())) {
@@ -656,9 +658,7 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
                 break;
             default:
                 break;
-
         }
-
     }
 
     @Transactional(rollbackFor = Exception.class)

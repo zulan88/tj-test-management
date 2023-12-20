@@ -194,6 +194,20 @@ public class FileUtils {
         return list;
     }
 
+    public static List<List<SimulationTrajectoryDto>> readRealRouteFile2(String filePath) {
+        List<List<SimulationTrajectoryDto>> list = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                List<SimulationTrajectoryDto> data = JSONObject.parseArray(line, SimulationTrajectoryDto.class);
+                list.add(data);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
     /**
      * 删除文件
      *

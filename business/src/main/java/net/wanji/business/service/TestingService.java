@@ -34,17 +34,31 @@ public interface TestingService {
     CaseTestPrepareVo prepare(Integer caseId) throws BusinessException;
 
     /**
-     * 开始/结束/回放
+     * 开始（实车试验倒计时结束）
+     * @param caseId
+     * @return
+     * @throws BusinessException
+     */
+    CaseTestStartVo controlTask(Integer caseId) throws BusinessException;
+
+    /**
+     * 开始（与主控交互）
      *
      * @param caseId
      * @param action
      * @return
      */
-    CaseTestStartVo start(Integer caseId, Integer action,String key,String username) throws BusinessException, IOException;
+    CaseTestStartVo start(Integer caseId, Integer action, String username) throws BusinessException, IOException;
 
-    void end(Integer caseId, String channel, int action) throws BusinessException;
+    /**
+     * 结束（与主控交互）
+     * @param caseId
+     * @param action
+     * @throws BusinessException
+     */
+    void end(Integer caseId, int action, String username) throws BusinessException;
 
-    CaseTestStartVo controlTask(Integer caseId) throws BusinessException;
+
 
     CaseTestStartVo hjktest(Integer caseId) throws BusinessException;
 

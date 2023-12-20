@@ -130,15 +130,15 @@ public class TjFragmentedSceneDetailServiceImpl
 
     @Override
     public void playback(Integer id, String participantId, int action) throws BusinessException, IOException {
-        FragmentedScenesDetailVo caseInfoBo = this.getDetailVo(id);
-        String key = WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(id), WebSocketManage.SIMULATION, null);
+        FragmentedScenesDetailVo scenesDetailVo = this.getDetailVo(id);
+        String key = ChannelBuilder.buildScenePreviewChannel(SecurityUtils.getUsername(), id);
         switch (action) {
             case PlaybackAction.START:
-                if (StringUtils.isEmpty(caseInfoBo.getRouteFile())) {
+                if (StringUtils.isEmpty(scenesDetailVo.getRouteFile())) {
                     throw new BusinessException("未进行仿真验证");
                 }
                 List<List<TrajectoryValueDto>> routeList = routeService.readTrajectoryFromRouteFile(
-                        caseInfoBo.getRouteFile(), participantId);
+                        scenesDetailVo.getRouteFile(), participantId);
                 if (CollectionUtils.isEmpty(routeList)) {
                     throw new BusinessException("轨迹文件读取异常");
                 }
@@ -314,9 +314,8 @@ public class TjFragmentedSceneDetailServiceImpl
     }
 
     @Override
-    public void debugging(SceneDebugDto sceneDebugDto) throws BusinessException, IOException {
-        String key = WebSocketManage.buildKey(SecurityUtils.getUsername(), sceneDebugDto.getNumber(),
-                WebSocketManage.SIMULATION, null);
+    public void debugging(SceneDebugDto sceneDebugDto) throws BusinessException {
+        String key = ChannelBuilder.buildSimulationChannel(SecurityUtils.getUsername(), sceneDebugDto.getNumber());
         switch (sceneDebugDto.getAction()) {
             case PlaybackAction.START:
                 validDebugParam(sceneDebugDto);

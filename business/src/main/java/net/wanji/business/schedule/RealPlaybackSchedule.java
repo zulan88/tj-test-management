@@ -3,6 +3,7 @@ package net.wanji.business.schedule;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.common.common.RealTestTrajectoryDto;
+import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.utils.StringUtils;
 import org.slf4j.Logger;
@@ -28,9 +29,9 @@ public class RealPlaybackSchedule {
     static Map<String, RealPlaybackDomain> futureMap = new HashMap<>(16);
 
 
-    public static void startSendingData(String key, List<RealTestTrajectoryDto> realTestTrajectories) throws BusinessException, IOException {
+    public static void startSendingData(String key, String mainChannel, List<List<SimulationTrajectoryDto>> trajectories) throws BusinessException, IOException {
         stopSendingData(key);
-        RealPlaybackDomain realPlaybackDomain = new RealPlaybackDomain(key, realTestTrajectories);
+        RealPlaybackDomain realPlaybackDomain = new RealPlaybackDomain(key, mainChannel, trajectories);
         futureMap.put(key, realPlaybackDomain);
         log.info("创建实车回放任务{}完成", key);
     }

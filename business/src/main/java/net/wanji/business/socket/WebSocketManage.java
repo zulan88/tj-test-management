@@ -1,5 +1,6 @@
 package net.wanji.business.socket;
 
+import net.wanji.business.common.Constants.ChannelBuilder;
 import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.common.utils.StringUtils;
 import org.slf4j.Logger;
@@ -7,8 +8,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.validation.annotation.Validated;
 
 import javax.validation.constraints.NotNull;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -32,16 +31,6 @@ public class WebSocketManage {
     public static final String PLAN = "4";
     public static final String TASK = "5";
 
-    public static Map<String, String> CLIENT_TYPE = new HashMap<>();
-
-    static {
-        CLIENT_TYPE.put(SIMULATION, "仿真验证");
-        CLIENT_TYPE.put(REAL, "实车验证");
-        CLIENT_TYPE.put(PLAN, "路径规划");
-        CLIENT_TYPE.put(TASK, "任务测试");
-    }
-
-
     public static String buildKey(String userName, String id, String clientType, String signId) {
         return StringUtils.isEmpty(signId)
                 ? StringUtils.format(ContentTemplate.SIMULATION_KEY_TEMPLATE, userName, id, clientType)
@@ -49,7 +38,7 @@ public class WebSocketManage {
     }
 
     public static void join(@NotNull WebSocketProperties webSocketProperties) {
-        if (!CLIENT_TYPE.containsKey(webSocketProperties.getClientType())) {
+        if (!ChannelBuilder.validClientType(webSocketProperties.getClientType())) {
             log.error(StringUtils.format("客户端类型{}不合法", webSocketProperties.getClientType()));
             webSocketProperties.closeSession();
             return;

@@ -3,6 +3,7 @@ package net.wanji.business.trajectory;
 import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.util.concurrent.DefaultThreadFactory;
+import net.wanji.business.common.Constants.ChannelBuilder;
 import net.wanji.business.common.Constants.Extension;
 import net.wanji.business.common.Constants.RedisMessageType;
 import net.wanji.business.domain.WebsocketMessage;
@@ -95,8 +96,7 @@ public class RedisTrajectory2Consumer {
      * @param sceneDebugDto
      */
     public void addRunningChannel(SceneDebugDto sceneDebugDto) {
-        String channel = WebSocketManage.buildKey(SecurityUtils.getUsername(), sceneDebugDto.getNumber(),
-                WebSocketManage.SIMULATION, null);
+        String channel = ChannelBuilder.buildSimulationChannel(SecurityUtils.getUsername(), sceneDebugDto.getNumber());
         if (this.runningChannel.containsKey(channel)) {
             log.info("通道 {} 已存在", channel);
             return;

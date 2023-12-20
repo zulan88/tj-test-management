@@ -93,30 +93,27 @@ public class RoutingPlanConsumer {
      * @param taskCode
      */
     public void addRunningChannel(String routingChannel, Integer taskId, String taskCode) {
-        String wsChannel = WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(taskId),
-                WebSocketManage.PLAN, null);
-        if (this.runningChannel.containsKey(wsChannel)) {
-            log.info("通道 {} 已存在", wsChannel);
+        if (this.runningChannel.containsKey(routingChannel)) {
+            log.info("通道 {} 已存在", routingChannel);
             return;
         }
-        MessageListener listener = createListener(routingChannel, wsChannel, taskId, taskCode);
-        this.runningChannel.put(wsChannel, new ChannelListener(routingChannel, wsChannel, SecurityUtils.getUsername(),
+        MessageListener listener = createListener(routingChannel, taskId, taskCode);
+        this.runningChannel.put(routingChannel, new ChannelListener(routingChannel, SecurityUtils.getUsername(),
                 System.currentTimeMillis(), listener));
         redisMessageListenerContainer.addMessageListener(listener, new ChannelTopic(routingChannel));
-        log.info("添加监听器 {} 成功", wsChannel);
+        log.info("添加监听器 {} 成功", routingChannel);
     }
 
 
     /**
      * 创建监听器
      *
-     * @param routingChannel  路径规划redis通道名称
-     * @param channel  ws通道名称
+     * @param routingChannel  通道名称
      * @param taskId   调试参数
      * @param taskCode 调试参数
      * @return
      */
-    public MessageListener createListener(String routingChannel, String channel, Integer taskId, String taskCode) {
+    public MessageListener createListener(String routingChannel, Integer taskId, String taskCode) {
         ObjectMapper objectMapper = new ObjectMapper();
         String methodLog = StringUtils.format("{}多场景路径优化 - ", taskCode);
         TjTask task = taskMapper.selectById(taskId);
@@ -129,8 +126,8 @@ public class RoutingPlanConsumer {
 //                log.info(StringUtils.format("{}收到消息：{}", methodLog, JSONObject.toJSONString(simulationMessage)));
                 // 计时
                 String duration = DateUtils.secondsToDuration(
-                        (int) Math.ceil((double) (getDataSize(channel)) / 10));
-                ChannelListener<SimulationTrajectoryDto> channelListener = this.runningChannel.get(channel);
+                        (int) Math.ceil((double) (getDataSize(routingChannel)) / 10));
+                ChannelListener<SimulationTrajectoryDto> channelListener = this.runningChannel.get(routingChannel);
                 switch (simulationMessage.getType()) {
                     // 开始消息
                     case RedisMessageType.START:
@@ -148,13 +145,13 @@ public class RoutingPlanConsumer {
                             // 实际轨迹消息
                             List<TrajectoryValueDto> data = simulationTrajectory.getValue();
                             // 保存轨迹(本地)
-                            receiveData(channel, simulationTrajectory);
+                            receiveData(routingChannel, simulationTrajectory);
                             // send ws
                             WebsocketMessage msg = new WebsocketMessage(
                                     RedisMessageType.TRAJECTORY,
                                     duration,
                                     data);
-                            WebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));
+                            WebSocketManage.sendInfo(routingChannel, JSONObject.toJSONString(msg));
                         }
                         break;
                     // 结束消息
@@ -167,7 +164,7 @@ public class RoutingPlanConsumer {
                         }
                         Map<String, Object> result = new HashMap<>();
                         try {
-                            String path = FileUtils.writeRoute(getData(channel), WanjiConfig.getRoutePath(), Extension.TXT);
+                            String path = FileUtils.writeRoute(getData(routingChannel), WanjiConfig.getRoutePath(), Extension.TXT);
                             log.info("routeFile:{}", path);
                             result.put("routeFile", path);
                         } catch (Exception e) {
@@ -186,7 +183,7 @@ public class RoutingPlanConsumer {
                         result.put("message", "无异常");
                         // send ws
                         WebsocketMessage msg = new WebsocketMessage(RedisMessageType.END, null, result);
-                        WebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));
+                        WebSocketManage.sendInfo(routingChannel, JSONObject.toJSONString(msg));
                         break;
                     default:
                         break;
@@ -276,17 +273,15 @@ public class RoutingPlanConsumer {
      */
     public static class ChannelListener<T> implements MessageListener {
         private final String routingChannel;
-        private final String channel;
         private boolean started;
         private final String userName;
         private Long timestamp;
         private final MessageListener listener;
         private final List<T> data;
 
-        public ChannelListener(String routingChannel, String channel, String userName, Long timestamp,
+        public ChannelListener(String routingChannel, String userName, Long timestamp,
                                MessageListener listener) {
             this.routingChannel = routingChannel;
-            this.channel = channel;
             this.started = false;
             this.userName = userName;
             this.timestamp = timestamp;
@@ -311,20 +306,13 @@ public class RoutingPlanConsumer {
             return routingChannel;
         }
 
-        public String getChannel() {
-            return channel;
-        }
-
-
         public String getUserName() {
             return userName;
         }
 
-
         public Long getTimestamp() {
             return timestamp;
         }
-
 
         public MessageListener getListener() {
             return listener;

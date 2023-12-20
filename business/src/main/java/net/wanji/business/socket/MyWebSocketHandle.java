@@ -1,9 +1,12 @@
 package net.wanji.business.socket;
 
+import net.wanji.business.common.Constants.ChannelBuilder;
+import net.wanji.business.exception.BusinessException;
 import net.wanji.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -32,14 +35,15 @@ public class MyWebSocketHandle extends TextWebSocketHandler {
         String userName = (String) session.getAttributes().get("userName");
         String token = (String) session.getAttributes().get("token");
         String id = (String) session.getAttributes().get("id");
-        String clientType = (String) session.getAttributes().get("clientType");
+        Integer clientType = Integer.parseInt((String) session.getAttributes().get("clientType"));
         String signId = (String) session.getAttributes().get("signId");
         long createTime = (long) session.getAttributes().get("createTime");
-        if (StringUtils.isEmpty(id)) {
+        if (ObjectUtils.isEmpty(id)) {
             session.close();
             return;
         }
-        WebSocketManage.join(new WebSocketProperties(userName, token, id, clientType, signId, createTime, session));
+        WebSocketManage.join(new WebSocketProperties(userName, token, id, clientType, signId,
+                buildKey(userName, id, clientType, signId), createTime, session));
     }
 
     /**
@@ -69,8 +73,33 @@ public class MyWebSocketHandle extends TextWebSocketHandler {
         System.out.println("断开连接 ");
         String userName = (String) session.getAttributes().get("userName");
         String id = (String) session.getAttributes().get("id");
-        String clientType = (String) session.getAttributes().get("clientType");
+        Integer clientType = Integer.parseInt((String) session.getAttributes().get("clientType")) ;
         String signId = (String) session.getAttributes().get("signId");
-        WebSocketManage.remove(WebSocketManage.buildKey(userName, id, clientType, signId));
+        WebSocketManage.remove(buildKey(userName, id, clientType, signId));
+    }
+
+    private String buildKey(String userName, String id, int clientType, String signId) throws BusinessException {
+        if (ChannelBuilder.SCENE_PREVIEW == clientType) {
+            return ChannelBuilder.buildScenePreviewChannel(userName, Integer.valueOf(id));
+        }
+        if (ChannelBuilder.SIMULATION == clientType) {
+            return ChannelBuilder.buildSimulationChannel(userName, id);
+        }
+        if (ChannelBuilder.REAL == clientType) {
+            return ChannelBuilder.buildTestingDataChannel(userName, Integer.valueOf(id));
+        }
+        if (ChannelBuilder.PLAN == clientType) {
+            return ChannelBuilder.buildRoutingPlanChannel(userName, Integer.valueOf(id));
+        }
+        if (ChannelBuilder.TASK == clientType) {
+            return ChannelBuilder.buildTaskDataChannel(userName, Integer.valueOf(id));
+        }
+        if (ChannelBuilder.TASK_PREVIEW == clientType) {
+            return ChannelBuilder.buildTaskPreviewChannel(userName, Integer.valueOf(id));
+        }
+        if (ChannelBuilder.TESTING_PREVIEW == clientType) {
+            return ChannelBuilder.buildTestingPreviewChannel(userName, Integer.valueOf(id));
+        }
+        throw new BusinessException("无法创建ws连接：客户端类型异常");
     }
 }

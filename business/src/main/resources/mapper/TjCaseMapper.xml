@@ -230,6 +230,8 @@
         <result property="detailInfo" column="detail_info"/>
         <result property="routeFile" column="route_file"/>
         <result property="status" column="status"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="number" column="number"/>
         <association property="caseRealRecord" javaType="net.wanji.business.entity.TjCaseRealRecord">
             <id property="id" column="r_id"/>
             <result property="caseId" column="case_id"/>
@@ -265,11 +267,13 @@
     <select id="selectCaseInfo" resultMap="CaseInfoResult">
         SELECT tc.id,
                tc.case_number,
+               tc.scene_detail_id,
                tc.test_target,
                tc.test_scene,
                tc.`status`,
                tc.detail_info,
                tc.route_file,
+               tc.created_by,
                sd.number,
                sd.img_url,
                sd.test_scene_desc,

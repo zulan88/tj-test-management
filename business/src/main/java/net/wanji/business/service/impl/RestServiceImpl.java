@@ -13,13 +13,11 @@ import net.wanji.business.domain.param.CaseRuleControl;
 import net.wanji.business.domain.param.CaseTrajectoryParam;
 import net.wanji.business.domain.param.TessParam;
 import net.wanji.business.domain.param.TestStartParam;
-import net.wanji.business.domain.vo.CaseContinuousVo;
 import net.wanji.business.domain.vo.IndexCustomWeightVo;
 import net.wanji.business.domain.vo.IndexWeightDetailsVo;
 import net.wanji.business.domain.vo.SceneIndexSchemeVo;
 import net.wanji.business.domain.vo.SceneWeightDetailsVo;
 import net.wanji.business.service.RestService;
-import net.wanji.common.core.redis.RedisCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +39,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -95,9 +92,6 @@ public class RestServiceImpl implements RestService {
 
     @Value("${masterControl.sendCaseTrajectoryInfo}")
     private String sendCaseTrajectoryInfoUrl;
-
-    @Autowired
-    private RedisCache redisCache;
 
     @Override
     public boolean startServer(String ip, Integer port, TessParam tessParam) {
@@ -191,11 +185,6 @@ public class RestServiceImpl implements RestService {
 
     @Override
     public boolean selectDeviceReadyState(DeviceReadyStateParam deviceReadyStateParam) {
-        String key = "READY_STATE_" + "_" + deviceReadyStateParam.getDeviceId();
-        if (redisCache.hasKey(key)) {
-            return false;
-        }
-        redisCache.setCacheObject(key, key, 5, TimeUnit.SECONDS);
         try {
             String resultUrl = queryDeviceReadyStateUrl;
             log.info("============================== queryDeviceReadyStateUrl：{}", queryDeviceReadyStateUrl);

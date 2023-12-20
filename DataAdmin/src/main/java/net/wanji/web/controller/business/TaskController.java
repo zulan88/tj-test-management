@@ -284,9 +284,9 @@ public class TaskController extends BaseController {
         }
         if (platformSSDto.getTaskId() == 0) {
             if (platformSSDto.getState() == 1) {
-                testingService.start(platformSSDto.getCaseId(), platformSSDto.getState(), (String) platformSSDto.getContext().get("key"), (String) platformSSDto.getContext().get("username"));
+                testingService.start(platformSSDto.getCaseId(), platformSSDto.getState(), (String) platformSSDto.getContext().get("username"));
             } else {
-                testingService.end(platformSSDto.getCaseId(), (String) platformSSDto.getContext().get("channel"), platformSSDto.getState());
+                testingService.end(platformSSDto.getCaseId(), platformSSDto.getState(), (String) platformSSDto.getContext().get("username"));
             }
         } else {
             taskCaseService.caseStartEnd(platformSSDto.getTaskId(),

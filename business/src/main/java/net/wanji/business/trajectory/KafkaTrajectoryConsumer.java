@@ -15,8 +15,6 @@ import net.wanji.business.listener.KafkaCollector;
 import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjTaskMapper;
 import net.wanji.business.service.TjCaseRealRecordService;
-import net.wanji.business.service.TjTaskCaseService;
-import net.wanji.business.service.TjTaskService;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.utils.DateUtils;
@@ -50,12 +48,11 @@ public class KafkaTrajectoryConsumer {
     @Resource
     private KafkaCollector kafkaCollector;
 
-    @KafkaListener(id = "singleTrajectory", topics = {"tj_master_fusion_data"}, groupId = "${kafka.groupId}")
-    public void listen(ConsumerRecord<?, ?> record) {
-        System.out.println("topic = " + record.topic() + ", offset = " + record.offset() + ", value = " + record.value());
-
-        JSONObject jsonObject = JSONObject.parseObject(record.value().toString());
-        Integer taskId = jsonObject.getInteger("taskId");
+    @KafkaListener(id = "singleTrajectory", topics = {"tj_master_fusion_data"}, groupId = "trajectory3")
+    public void listen(ConsumerRecord<String, String> record) {
+        JSONObject jsonObject = JSONObject.parseObject(record.value());
+//        Integer taskId = jsonObject.getInteger("taskId");
+        Integer taskId = 245;
         Integer caseId = jsonObject.getInteger("caseId");
         String userName = selectUserOfTask(taskId, caseId);
         String key = taskId > 0

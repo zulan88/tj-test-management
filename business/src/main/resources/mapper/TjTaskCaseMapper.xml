@@ -64,6 +64,8 @@
         <result property="caseNumber" column="case_number"/>
         <result property="realDetailInfo" column="real_detail_info"/>
         <result property="realRouteFile" column="real_route_file"/>
+        <result property="caseDetailInfo" column="case_detail_info"/>
+        <result property="caseRouteFile" column="case_route_file"/>
         <result property="recordId" column="record_id"/>
         <result property="detailInfo" column="detail_info"/>
         <result property="routeFile" column="route_file"/>
@@ -151,6 +153,8 @@
             a.case_number,
             a.scene_name,
             a.all_stage_label,
+            a.case_detail_info,
+            a.case_route_file,
             a.real_detail_info,
             a.real_route_file,
             tcr.id as record_id,
@@ -163,6 +167,8 @@
             SELECT
                 tc.id,
                 tc.case_number,
+                tc.route_file as case_route_file,
+                tc.detail_info as case_detail_info,
                 sd.`name` AS scene_name,
                 sd.all_stage_label,
                 rr.detail_info AS real_detail_info,

@@ -1,13 +1,16 @@
 package net.wanji.business.service;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import net.wanji.business.common.Constants;
+import net.wanji.business.common.Constants.ChannelBuilder;
 import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.Extension;
 import net.wanji.business.common.Constants.TaskCaseStatusEnum;
 import net.wanji.business.common.Constants.TaskStatusEnum;
 import net.wanji.business.common.Constants.TestingStatusEnum;
+import net.wanji.business.domain.bo.CaseInfoBo;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
@@ -18,6 +21,7 @@ import net.wanji.business.entity.TjCaseRealRecord;
 import net.wanji.business.entity.TjTask;
 import net.wanji.business.entity.TjTaskCase;
 import net.wanji.business.entity.TjTaskCaseRecord;
+import net.wanji.business.listener.KafkaCollector;
 import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjCaseRealRecordMapper;
 import net.wanji.business.mapper.TjTaskCaseMapper;
@@ -39,6 +43,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.StopWatch;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
@@ -78,6 +83,9 @@ public class RouteService {
     @Autowired
     private TjTaskCaseRecordMapper taskCaseRecordMapper;
 
+    @Autowired
+    private KafkaCollector kafkaCollector;
+
     @Async
     public void saveRouteFile(Integer caseId, List<SimulationTrajectoryDto> data) throws ExecutionException, InterruptedException {
         log.info(StringUtils.format("保存{}路径文件", caseId));
@@ -111,6 +119,24 @@ public class RouteService {
             log.info("更新完成");
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public void saveRealRouteFile2(TjCaseRealRecord caseRealRecord, List<List<SimulationTrajectoryDto>> data) {
+        // 保存本地文件
+        try {
+            String path = FileUtils.writeRoute(data, WanjiConfig.getRoutePath(), Extension.TXT);
+            log.info("保存用例 {} 实车测试记录 {} 路径文件 : {}, 轨迹长度：{}", caseRealRecord.getCaseId(), caseRealRecord.getId(), path, data.size());
+            caseRealRecord.setRouteFile(path);
+            caseRealRecord.setStatus(TestingStatusEnum.PASS.getCode());
+            caseRealRecord.setEndTime(LocalDateTime.now());
+            CaseTrajectoryDetailBo originalTrajectory = JSONObject.parseObject(caseRealRecord.getDetailInfo(), CaseTrajectoryDetailBo.class);
+            originalTrajectory.setDuration(DateUtils.secondsToDuration((int) Math.floor((double) data.size() / 10)));
+            caseRealRecord.setDetailInfo(JSON.toJSONString(originalTrajectory));
+            caseRealRecordMapper.updateById(caseRealRecord);
+            log.info("更新完成");
+        } catch (Exception e) {
+            log.error("更新失败:{}", e);
         }
     }
 
@@ -164,16 +190,13 @@ public class RouteService {
     }
 
 
-    public void saveTaskRouteFile2(Integer recordId, List<SimulationTrajectoryDto> data, String duration, Integer action) {
-        log.info(StringUtils.format("保存任务用例测试{}路径文件", recordId));
-        TjTaskCaseRecord taskCaseRecord = taskCaseRecordMapper.selectById(recordId);
-        // 保存本地文件
+    public void saveTaskRouteFile2(Integer recordId, List<List<SimulationTrajectoryDto>> data, Integer action) {
         try {
+            TjTaskCaseRecord taskCaseRecord = taskCaseRecordMapper.selectById(recordId);
             String path = FileUtils.writeRoute(data, WanjiConfig.getRoutePath(), Extension.TXT);
-
-
-            log.info("save task case record routePath:{}", path);
+            log.info("保存任务 {} 用例 {} 测试记录 {} 路径文件 : {}, 轨迹长度：{}", taskCaseRecord.getTaskId(), taskCaseRecord.getCaseId(), recordId, path, data.size());
             CaseTrajectoryDetailBo trajectoryDetailBo = JSONObject.parseObject(taskCaseRecord.getDetailInfo(), CaseTrajectoryDetailBo.class);
+            String duration = DateUtils.secondsToDuration((int) Math.floor((data.size())) / 10);
             trajectoryDetailBo.setDuration(duration);
             taskCaseRecord.setDetailInfo(JSONObject.toJSONString(trajectoryDetailBo));
             taskCaseRecord.setRouteFile(path);
@@ -181,34 +204,10 @@ public class RouteService {
             taskCaseRecord.setEndTime(LocalDateTime.now());
             taskCaseRecordMapper.updateById(taskCaseRecord);
 
-            log.info("save task case info");
-            TjTaskCase taskCase = new TjTaskCase();
-            taskCase.setTestTotalTime(String.valueOf(DateUtils.durationToSeconds(duration)));
-            taskCase.setEndTime(new Date());
-            taskCase.setStatus(TaskCaseStatusEnum.FINISHED.getCode());
-            taskCase.setPassingRate(0 == action ? "100%" : "0%");
-            QueryWrapper<TjTaskCase> updateMapper = new QueryWrapper<>();
-            updateMapper.eq(ColumnName.TASK_ID, taskCaseRecord.getTaskId()).eq(ColumnName.CASE_ID_COLUMN,
-                    taskCaseRecord.getCaseId());
-            taskCaseMapper.update(taskCase, updateMapper);
 
-            QueryWrapper<TjTaskCase> queryMapper = new QueryWrapper<>();
-            queryMapper.eq(ColumnName.TASK_ID, taskCaseRecord.getTaskId());
-            List<TjTaskCase> tjTaskCases = taskCaseMapper.selectList(queryMapper);
-            if (CollectionUtils.emptyIfNull(tjTaskCases).stream().allMatch(item ->
-                    TaskCaseStatusEnum.FINISHED.getCode().equals(item.getStatus()))) {
-                log.info("任务{}下所有用例已完成", taskCaseRecord.getTaskId());
-                TjTask tjTask = new TjTask();
-                tjTask.setId(tjTaskCases.get(0).getTaskId());
-                tjTask.setEndTime(new Date());
-                tjTask.setTestTotalTime(DateUtils.secondsToDuration(tjTaskCases.stream().mapToInt(caseObj ->
-                        Integer.parseInt(caseObj.getTestTotalTime())).sum()));
-                tjTask.setStatus(TaskStatusEnum.FINISHED.getCode());
-                taskMapper.updateById(tjTask);
-            }
             log.info("更新完成");
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("");
         }
     }
 
@@ -301,7 +300,7 @@ public class RouteService {
                 }
                 List<TrajectoryDetailBo> points = trajectoryBo.getTrajectory();
                 for (TrajectoryDetailBo trajectoryDetailBo : points) {
-                    if (trajectoryDetailBo.getPass()) {
+                    if (!ObjectUtils.isEmpty(trajectoryDetailBo.getPass()) && trajectoryDetailBo.getPass()) {
                         continue;
                     }
                     String[] positionArray = trajectoryDetailBo.getPosition().split(",");
@@ -315,6 +314,7 @@ public class RouteService {
                         trajectoryDetailBo.setDate(trajectory.getTimestamp());
                         trajectoryDetailBo.setSpeed(Double.valueOf(trajectory.getSpeed()));
                     } else {
+                        trajectoryDetailBo.setPass(false);
                         trajectoryDetailBo.setReason("未经过该点位3米范围区域");
                     }
                     update = true;
@@ -432,5 +432,23 @@ public class RouteService {
     public List<RealTestTrajectoryDto> readRealRouteFile(String fileName) {
         String routeFile = FileUploadUtils.getAbsolutePathFileName(fileName);
         return FileUtils.readRealRouteFile(routeFile);
+    }
+
+
+
+    /**
+     * 读取实车验证轨迹文件
+     *
+     * @param fileName
+     * @return
+     * @throws IOException
+     */
+    public List<List<SimulationTrajectoryDto>> readRealTrajectoryFromRouteFile2(String fileName) {
+        return readRealRouteFile2(fileName);
+    }
+
+    public List<List<SimulationTrajectoryDto>> readRealRouteFile2(String fileName) {
+        String routeFile = FileUploadUtils.getAbsolutePathFileName(fileName);
+        return FileUtils.readRealRouteFile2(routeFile);
     }
 }

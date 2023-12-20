@@ -208,7 +208,7 @@ public class CaseController extends BaseController {
     }
 
     @ApiOperationSort(16)
-    @ApiOperation(value = "16.预览")
+    @ApiOperation(value = "16.预览(未使用)")
     @GetMapping("/preview")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "id", value = "用例ID", required = true, dataType = "Integer", paramType = "query", example = "280"),

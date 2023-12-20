@@ -48,6 +48,17 @@ public class TaskCaseInfoBo extends TjTaskCase {
      */
     private String realRouteFile;
 
+
+    /**
+     * 用例原点位详情
+     */
+    private String caseDetailInfo;
+
+    /**
+     * 用例原轨迹文件
+     */
+    private String caseRouteFile;
+
     private Integer recordStatus;
 
     private List<TaskCaseConfigBo> dataConfigs;
