@@ -16,6 +16,7 @@ import net.wanji.business.entity.TjCasePartConfig;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.TjCasePartConfigService;
 import net.wanji.business.service.TjCaseService;
+import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.bean.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,8 +64,14 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
             if (appointmentRecord.getMeasurandType() != null && !appointmentRecord.getMeasurandType().isEmpty()) {
                 queryWrapper.eq("measurand_type", appointmentRecord.getMeasurandType());
             }
+            if (appointmentRecord.getMeasurandName()!= null &&!appointmentRecord.getMeasurandName().isEmpty()) {
+                queryWrapper.eq("measurand_name", appointmentRecord.getMeasurandName());
+            }
             if (appointmentRecord.dateExists()) {
                 queryWrapper.between("commit_date", appointmentRecord.getStartDate(), appointmentRecord.getEndDate());
+            }
+            if (appointmentRecord.appDateExists()){
+                queryWrapper.between("last_approval_time", appointmentRecord.getAppstartDate(), appointmentRecord.getAppendDate());
             }
             if (appointmentRecord.getCreateBy() != null && !appointmentRecord.getCreateBy().isEmpty()) {
                 queryWrapper.eq("create_by", appointmentRecord.getCreateBy());
@@ -123,6 +130,9 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
 
     @Override
     public List<AppointmentRecord> getByids(List<Integer> ids) {
+        if(ids == null||ids.size() == 0){
+            return new ArrayList<>();
+        }
         QueryWrapper<AppointmentRecord> queryWrapper = new QueryWrapper<>();
         queryWrapper.in("id", ids);
         return this.list(queryWrapper);
@@ -149,6 +159,7 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
         if (byId == null) {
             String recordId = StringUtils.generateRandomString(12);
             appointmentRecord.setRecordId(recordId);
+            appointmentRecord.setCreateBy(SecurityUtils.getUsername());
             save(appointmentRecord);
 
             QueryWrapper<AppointmentRecord> queryWrapper = new QueryWrapper<>();
@@ -157,7 +168,7 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
         } else {
             // 修改
             updateById(appointmentRecord);
-            return getById(appointmentRecord.getRecordId());
+            return getById(appointmentRecord.getId());
         }
     }
 

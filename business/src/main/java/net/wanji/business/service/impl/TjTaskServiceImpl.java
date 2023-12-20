@@ -195,6 +195,30 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
     }
 
     @Override
+    public Map<String, List<SimpleSelect>> initPageOp() {
+        Map<String, List<SimpleSelect>> result = new HashMap<>();
+        List<SysDictData> testType = dictTypeService.selectDictDataByType(SysType.TEST_TYPE);
+        result.put(SysType.TEST_TYPE, CollectionUtils.emptyIfNull(testType).stream()
+                .map(SimpleSelect::new).collect(Collectors.toList()));
+        // todo 被测对象类型
+        SimpleSelect simpleSelect = new SimpleSelect();
+        simpleSelect.setDictValue("域控制器");
+        simpleSelect.setDictLabel("域控制器");
+        result.put("object_type", Collections.singletonList(simpleSelect));
+        // 任务状态
+        List<SimpleSelect> taskStatus = new ArrayList<>();
+        taskStatus.add(new SimpleSelect("待测试", "0"));
+        taskStatus.add(new SimpleSelect("进行中", "1"));
+        taskStatus.add(new SimpleSelect("已完成", "2"));
+        taskStatus.add(new SimpleSelect("逾期", "4"));
+        taskStatus.add(new SimpleSelect("复审通过", "5"));
+        taskStatus.add(new SimpleSelect("复审失败", "6"));
+        taskStatus.add(new SimpleSelect("已取消", "7"));
+        result.put("task_status", taskStatus);
+        return result;
+    }
+
+    @Override
     public Map<String, Long> selectCount(TaskDto taskDto) {
         List<Map<String, String>> statusMaps = tjTaskMapper.selectCountByStatus(taskDto);
         Map<String, Long> statusCountMap = CollectionUtils.emptyIfNull(statusMaps).stream().map(t -> t.get("status"))
@@ -445,7 +469,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         List<TaskCaseVo> taskCaseVos = tjTaskCaseMapper.selectByCondition(taskCase);
         CaseQueryDto param = new CaseQueryDto();
         param.setSelectedIds(CollectionUtils.emptyIfNull(taskCaseVos).stream().map(TaskCaseVo::getCaseId).collect(Collectors.toList()));
-        param.setUserName(SecurityUtils.getUsername());
+//        param.setUserName(SecurityUtils.getUsername());
         List<CaseDetailVo> caseDetails = caseMapper.selectCases(param);
         Map<Integer, CasePageVo> caseDetailMap = CollectionUtils.emptyIfNull(caseDetails).stream().collect(Collectors.toMap(CaseDetailVo::getId, v -> {
             CasePageVo casePageVo = new CasePageVo();
@@ -550,6 +574,12 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                     tjTask.setStatus(TaskStatusEnum.NO_SUBMIT.getCode());
                     tjTask.setCreatedBy(SecurityUtils.getUsername());
                     tjTask.setCreatedDate(LocalDateTime.now());
+                    if(in.getIsInner()!=null){
+                        tjTask.setIsInner(in.getIsInner());
+                        tjTask.setOpStatus(0);
+                        tjTask.setMeasurandId(in.getMeasurandId());
+                        tjTask.setApprecordId(in.getApprecordId());
+                    }
                     this.save(tjTask);
                 }
                 List<TjTaskDataConfig> dataConfigs = new ArrayList<>();
@@ -832,13 +862,13 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
     public String getTestReportOuterChain(HttpServletRequest request) {
         String requestUrl = StringUtils.isEmpty(testReportOuterChain) ? "" : testReportOuterChain;
 
-        String url = request.getHeader("X-Forwarded-Host").split(":")[0];
-        if (url == null) {
-            url = request.getHeader("X-Forwarded-For").split(",")[0];
-            if (url == null) {
-                url = request.getRemoteAddr();
-            }
-        }
+//        String url = request.getHeader("X-Forwarded-Host").split(":")[0];
+//        if (url == null) {
+//            url = request.getHeader("X-Forwarded-For").split(",")[0];
+//            if (url == null) {
+//                url = request.getRemoteAddr();
+//            }
+//        }
 
         return requestUrl;
     }

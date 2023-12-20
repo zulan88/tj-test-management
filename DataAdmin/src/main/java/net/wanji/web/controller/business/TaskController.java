@@ -151,6 +151,11 @@ public class TaskController extends BaseController {
         return AjaxResult.success(tjTaskService.initPage());
     }
 
+    @GetMapping("/initPageOp")
+    public AjaxResult initPageOp() {
+        return AjaxResult.success(tjTaskService.initPageOp());
+    }
+
     @ApiOperationSort(7)
     @ApiOperation(value = "7.判断是否存在待提交的任务")
     @GetMapping("/hasSubmitTask")

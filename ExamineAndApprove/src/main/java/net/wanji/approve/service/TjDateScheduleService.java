@@ -21,6 +21,8 @@ public interface TjDateScheduleService extends IService<TjDateSchedule> {
 
     List<DateScheduleVo> takeDateScheduleByDate(String year, Integer quarter);
 
+    List<DateScheduleVo> takeDateScheduleByDateOld(String year, Integer quarter);
+
     Set<Integer> takeDeviceIds(ScheduleDto scheduleDto);
 
     void commitSchedule(ScheduleDto scheduleDto);

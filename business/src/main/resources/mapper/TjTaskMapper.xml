@@ -201,6 +201,9 @@
             <if test="isInner != null">
                 AND tt.is_inner = #{isInner}
             </if>
+            <if test="opStatus != null">
+                AND tt.op_status = #{opStatus}
+            </if>
         </where>
         order by tt.plan_date desc, tt.create_time desc
     </select>

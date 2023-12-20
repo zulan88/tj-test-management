@@ -85,8 +85,8 @@ public class TestReservationController extends BaseController {
         try {
             return AjaxResult.success(appointmentRecordService.getExpenseByCaseIds(caseIds));
         }catch (Exception e){
-            logger.error("新增预约失败", e);
-            return AjaxResult.error("新增预约失败!");
+            logger.error("计算测试费用失败", e);
+            return AjaxResult.error("计算测试费用失败!");
         }
     }
 

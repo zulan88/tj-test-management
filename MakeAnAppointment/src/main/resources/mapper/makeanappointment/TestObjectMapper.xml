@@ -16,7 +16,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 <!--    </sql>-->
 
 
-    <insert id="addTesteeObject" parameterType="net.wanji.makeanappointment.domain.vo.TestObjectVo">
+    <insert id="addTesteeObject" parameterType="net.wanji.makeanappointment.domain.vo.TestObjectVo" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO tj_testee_object_info
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test='testeeObjectName != null and testeeObjectName != ""'>testee_object_name,</if>
@@ -32,6 +32,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test='testeeObjectPic != null and testeeObjectPic != ""'>testee_object_pic,</if>
             create_time,
             <if test="createBy != null and createBy != ''">createBy,</if>
+            <if test="dataChannel != null and dataChannel != ''">data_channel,</if>
+            <if test="commandChannel != null and commandChannel != ''">command_channel,</if>
          </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test='testeeObjectName != null and testeeObjectName != ""'>#{testeeObjectName},</if>
@@ -47,6 +49,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test='testeeObjectPic != null and testeeObjectPic != ""'>#{testeeObjectPic},</if>
             sysdate(),
             <if test="createBy != null and createBy != ''">#{createBy},</if>
+            <if test="dataChannel != null and dataChannel != ''">#{dataChannel},</if>
+            <if test="commandChannel != null and commandChannel != ''">#{commandChannel},</if>
          </trim>
     </insert>
 

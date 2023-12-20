@@ -33,6 +33,8 @@ public interface TjTaskService extends IService<TjTask> {
      */
     Map<String, List<SimpleSelect>> initPage();
 
+    Map<String, List<SimpleSelect>> initPageOp();
+
     /**
      * 任务数量统计
      * @return

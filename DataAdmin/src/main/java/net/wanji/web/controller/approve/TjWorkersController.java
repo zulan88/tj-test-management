@@ -11,7 +11,9 @@ import net.wanji.approve.service.AppointmentRecordService;
 import net.wanji.approve.service.RecordReService;
 import net.wanji.approve.service.TjWorkersService;
 import net.wanji.business.exception.BusinessException;
+import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
+import net.wanji.common.core.page.TableDataInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,7 +22,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/workers")
 @Api(tags = "工作人员管理")  // 添加Controller的Swagger标签
-public class TjWorkersController {
+public class TjWorkersController extends BaseController {
 
     @Autowired
     private TjWorkersService workersService;
@@ -96,9 +98,11 @@ public class TjWorkersController {
     }
 
     @GetMapping("/persontoschedule")
-    public AjaxResult devicetoschedule(Integer personId) throws BusinessException {
-        List<AppointmentRecord> list = appointmentRecordService.getByids(recordReService.getrecordByperson(personId));
-        return AjaxResult.success(list);
+    public TableDataInfo devicetoschedule(Integer personId) throws BusinessException {
+        List<Integer> ids = recordReService.getrecordByperson(personId);
+        startPage();
+        List<AppointmentRecord> list = appointmentRecordService.getByids(ids);
+        return getDataTable(list);
     }
 
     @GetMapping("/listbyrecord")

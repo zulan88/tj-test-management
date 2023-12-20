@@ -35,6 +35,11 @@ public class SimpleSelect implements Serializable {
         this.dictValue = dictData.getDictValue();
     }
 
+    public SimpleSelect(String dictLabel, String dictValue){
+        this.dictLabel = dictLabel;
+        this.dictValue = dictValue;
+    }
+
     public Long getSort() {
         return sort;
     }
