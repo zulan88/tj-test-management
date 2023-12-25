@@ -649,11 +649,16 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             List<List<SimulationTrajectoryDto>> trajectories = kafkaCollector.take(key, caseId);
             String duration = DateUtils.secondsToDuration((int) Math.floor(
                     (double) (CollectionUtils.isEmpty(trajectories) ? 0 : trajectories.size()) / 10));
-            routeService.saveTaskRouteFile2(taskCaseInfoBo.getRecordId(), trajectories, action);
+            try {
+                routeService.saveTaskRouteFile2(taskCaseInfoBo.getRecordId(), trajectories, action);
+            } catch (Exception e) {
+                log.error("保存轨迹文件异常:{}", e);
+            } finally {
+                kafkaCollector.remove(key);
+            }
             ssCaseResultUpdate(action, taskCaseRecord, taskCase, duration);
             RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null, null, duration);
             WebSocketManage.sendInfo(key, JSON.toJSONString(endMsg));
-            kafkaCollector.remove(key);
         }
         // 8.前端结果集
         CaseRealTestVo caseRealTestVo = ssGetCaseRealTestVo(taskCaseRecord);

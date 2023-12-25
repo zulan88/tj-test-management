@@ -51,8 +51,7 @@ public class KafkaTrajectoryConsumer {
     @KafkaListener(id = "singleTrajectory", topics = {"tj_master_fusion_data"}, groupId = "trajectory3")
     public void listen(ConsumerRecord<String, String> record) {
         JSONObject jsonObject = JSONObject.parseObject(record.value());
-//        Integer taskId = jsonObject.getInteger("taskId");
-        Integer taskId = 245;
+        Integer taskId = jsonObject.getInteger("taskId");
         Integer caseId = jsonObject.getInteger("caseId");
         String userName = selectUserOfTask(taskId, caseId);
         String key = taskId > 0

@@ -404,6 +404,7 @@ public class TestingServiceImpl implements TestingService {
     public CaseTestStartVo start(Integer caseId, Integer action, String username) throws BusinessException, IOException {
         StopWatch stopWatch = new StopWatch(StringUtils.format("开始实车试验 - 用例ID:{}", caseId));
         stopWatch.start("1.查询、校验用例详情");
+        log.info("{} 开始实车试验 用例 ：{}", username, caseId);
         // 1.用例详情
         CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
         validConfig(caseInfoBo);
@@ -449,6 +450,7 @@ public class TestingServiceImpl implements TestingService {
     public void end(Integer caseId, int action, String username) throws BusinessException {
         StopWatch stopWatch = new StopWatch(StringUtils.format("结束实车试验 - 用例ID:{}", caseId));
         stopWatch.start("1.向主控发送结束控制请求");
+        log.info("{} 结束实车试验 用例 ：{}", username, caseId);
         // 向主控发送控制请求
         CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
         validConfig(caseInfoBo);
@@ -467,12 +469,18 @@ public class TestingServiceImpl implements TestingService {
         stopWatch.start("2.保存实车测试记录点位详情信息");
         String key = ChannelBuilder.buildTestingDataChannel(caseInfoBo.getCreatedBy(), caseId);
         List<List<SimulationTrajectoryDto>> trajectories = kafkaCollector.take(key, caseId);
-        routeService.saveRealRouteFile2(caseInfoBo.getCaseRealRecord(), trajectories);
+        try {
+            routeService.saveRealRouteFile2(caseInfoBo.getCaseRealRecord(), trajectories);
+        } catch (Exception e) {
+            log.error("保存实车测试记录点位详情信息异常:{}", e);
+        } finally {
+            kafkaCollector.remove(key);
+        }
         String duration = DateUtils.secondsToDuration((int) Math.floor(
                 (double) (CollectionUtils.isEmpty(trajectories) ? 0 : trajectories.size()) / 10));
         RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null, null, duration);
         WebSocketManage.sendInfo(key, JSON.toJSONString(endMsg));
-        kafkaCollector.remove(key);
+
         stopWatch.stop();
         log.info("耗时：{}", stopWatch.prettyPrint());
     }

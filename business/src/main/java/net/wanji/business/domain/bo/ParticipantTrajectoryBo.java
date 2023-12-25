@@ -29,6 +29,10 @@ public class ParticipantTrajectoryBo implements Serializable {
      */
     private String type;
     /**
+     * 参与者角色(AV：av；MV-实车：mvReal；MV-仿真车：mvSimulation；SP：sp)
+     */
+    private String role;
+    /**
      * 模型（1-小客车；2-大货车；3-大巴车；4-行人；5-自行车；）
      */
     private Integer model;

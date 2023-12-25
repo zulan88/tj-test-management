@@ -71,9 +71,6 @@
         from tj_case c
         inner join tj_fragmented_scene_detail sd on sd.id = c.scene_detail_id
         <where>
-            <if test="userName != null and userName != ''">
-                and c.created_by=#{userName}
-            </if>
             <if test="id != null and id > 0 ">
                 and c.id = #{id}
             </if>

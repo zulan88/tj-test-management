@@ -122,22 +122,18 @@ public class RouteService {
         }
     }
 
-    public void saveRealRouteFile2(TjCaseRealRecord caseRealRecord, List<List<SimulationTrajectoryDto>> data) {
+    public boolean saveRealRouteFile2(TjCaseRealRecord caseRealRecord, List<List<SimulationTrajectoryDto>> data) throws Exception {
         // 保存本地文件
-        try {
-            String path = FileUtils.writeRoute(data, WanjiConfig.getRoutePath(), Extension.TXT);
-            log.info("保存用例 {} 实车测试记录 {} 路径文件 : {}, 轨迹长度：{}", caseRealRecord.getCaseId(), caseRealRecord.getId(), path, data.size());
-            caseRealRecord.setRouteFile(path);
-            caseRealRecord.setStatus(TestingStatusEnum.PASS.getCode());
-            caseRealRecord.setEndTime(LocalDateTime.now());
-            CaseTrajectoryDetailBo originalTrajectory = JSONObject.parseObject(caseRealRecord.getDetailInfo(), CaseTrajectoryDetailBo.class);
-            originalTrajectory.setDuration(DateUtils.secondsToDuration((int) Math.floor((double) data.size() / 10)));
-            caseRealRecord.setDetailInfo(JSON.toJSONString(originalTrajectory));
-            caseRealRecordMapper.updateById(caseRealRecord);
-            log.info("更新完成");
-        } catch (Exception e) {
-            log.error("更新失败:{}", e);
-        }
+        String path = FileUtils.writeRoute(data, WanjiConfig.getRoutePath(), Extension.TXT);
+        log.info("保存用例 {} 实车测试记录 {} 路径文件 : {}, 轨迹长度：{}", caseRealRecord.getCaseId(), caseRealRecord.getId(), path, data.size());
+        caseRealRecord.setRouteFile(path);
+        caseRealRecord.setStatus(TestingStatusEnum.PASS.getCode());
+        caseRealRecord.setEndTime(LocalDateTime.now());
+        CaseTrajectoryDetailBo originalTrajectory = JSONObject.parseObject(caseRealRecord.getDetailInfo(), CaseTrajectoryDetailBo.class);
+        originalTrajectory.setDuration(DateUtils.secondsToDuration((int) Math.floor((double) data.size() / 10)));
+        caseRealRecord.setDetailInfo(JSON.toJSONString(originalTrajectory));
+        int result = caseRealRecordMapper.updateById(caseRealRecord);
+        return result > 0;
     }
 
     public void saveTaskRouteFile(Integer recordId, List<RealTestTrajectoryDto> data,
@@ -190,25 +186,19 @@ public class RouteService {
     }
 
 
-    public void saveTaskRouteFile2(Integer recordId, List<List<SimulationTrajectoryDto>> data, Integer action) {
-        try {
-            TjTaskCaseRecord taskCaseRecord = taskCaseRecordMapper.selectById(recordId);
-            String path = FileUtils.writeRoute(data, WanjiConfig.getRoutePath(), Extension.TXT);
-            log.info("保存任务 {} 用例 {} 测试记录 {} 路径文件 : {}, 轨迹长度：{}", taskCaseRecord.getTaskId(), taskCaseRecord.getCaseId(), recordId, path, data.size());
-            CaseTrajectoryDetailBo trajectoryDetailBo = JSONObject.parseObject(taskCaseRecord.getDetailInfo(), CaseTrajectoryDetailBo.class);
-            String duration = DateUtils.secondsToDuration((int) Math.floor((data.size())) / 10);
-            trajectoryDetailBo.setDuration(duration);
-            taskCaseRecord.setDetailInfo(JSONObject.toJSONString(trajectoryDetailBo));
-            taskCaseRecord.setRouteFile(path);
-            taskCaseRecord.setStatus(0 == action ? TestingStatusEnum.PASS.getCode() : TestingStatusEnum.NO_PASS.getCode());
-            taskCaseRecord.setEndTime(LocalDateTime.now());
-            taskCaseRecordMapper.updateById(taskCaseRecord);
-
-
-            log.info("更新完成");
-        } catch (IOException e) {
-            log.error("");
-        }
+    public boolean saveTaskRouteFile2(Integer recordId, List<List<SimulationTrajectoryDto>> data, Integer action) throws Exception {
+        TjTaskCaseRecord taskCaseRecord = taskCaseRecordMapper.selectById(recordId);
+        String path = FileUtils.writeRoute(data, WanjiConfig.getRoutePath(), Extension.TXT);
+        log.info("保存任务 {} 用例 {} 测试记录 {} 路径文件 : {}, 轨迹长度：{}", taskCaseRecord.getTaskId(), taskCaseRecord.getCaseId(), recordId, path, data.size());
+        CaseTrajectoryDetailBo trajectoryDetailBo = JSONObject.parseObject(taskCaseRecord.getDetailInfo(), CaseTrajectoryDetailBo.class);
+        String duration = DateUtils.secondsToDuration((int) Math.floor((data.size())) / 10);
+        trajectoryDetailBo.setDuration(duration);
+        taskCaseRecord.setDetailInfo(JSONObject.toJSONString(trajectoryDetailBo));
+        taskCaseRecord.setRouteFile(path);
+        taskCaseRecord.setStatus(0 == action ? TestingStatusEnum.PASS.getCode() : TestingStatusEnum.NO_PASS.getCode());
+        taskCaseRecord.setEndTime(LocalDateTime.now());
+        int result = taskCaseRecordMapper.updateById(taskCaseRecord);
+        return result > 0;
     }
 
     /**
