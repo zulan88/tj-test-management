@@ -115,7 +115,7 @@ public class CaseController extends BaseController {
             caseQueryDto.setSceneDetailIds(sceneDetailIds);
         }
         PageHelper.startPage(caseQueryDto.getPageNum(), caseQueryDto.getPageSize());
-        return getDataTable(caseService.pageList(caseQueryDto, "byUsername"));
+        return getDataTable(caseService.pageList(caseQueryDto, "not"));
     }
 
     @ApiOperationSort(6)

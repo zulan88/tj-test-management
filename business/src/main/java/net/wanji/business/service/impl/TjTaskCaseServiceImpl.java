@@ -196,6 +196,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                     buildTessServerParam(1, tjTask.getCreatedBy(), param.getTaskId()))) {
                 throw new BusinessException("唤醒仿真服务失败");
             };
+
         }
         // 5.状态查询
         for (TaskCaseConfigBo taskCaseConfigBo : taskCaseConfigs) {
