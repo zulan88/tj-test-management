@@ -16,10 +16,12 @@ import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjTaskMapper;
 import net.wanji.business.service.TjCaseRealRecordService;
 import net.wanji.business.socket.WebSocketManage;
+import net.wanji.business.util.RedisLock;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.utils.DateUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
@@ -48,6 +50,9 @@ public class KafkaTrajectoryConsumer {
     @Resource
     private KafkaCollector kafkaCollector;
 
+    @Autowired
+    private RedisLock redisLock;
+
     @KafkaListener(id = "singleTrajectory", topics = {"tj_master_fusion_data"}, groupId = "trajectory3")
     public void listen(ConsumerRecord<String, String> record) {
         JSONObject jsonObject = JSONObject.parseObject(record.value());
@@ -62,6 +67,11 @@ public class KafkaTrajectoryConsumer {
         List<SimulationTrajectoryDto> data = participantTrajectories.stream()
                 .map(t -> JSONObject.parseObject(t.toString(), SimulationTrajectoryDto.class))
                 .collect(Collectors.toList());
+        if(taskId > 0){
+            data.forEach(t -> redisLock.renewLock("task_"+t.getSource()));
+        }else {
+            redisLock.renewLock("case_"+caseId);
+        }
         kafkaCollector.collector(key, caseId, data);
         // 发送ws数据
         String duration = DateUtils.secondsToDuration(

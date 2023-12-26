@@ -47,6 +47,7 @@ import net.wanji.business.service.TestingService;
 import net.wanji.business.service.TjCaseService;
 import net.wanji.business.service.TjDeviceDetailService;
 import net.wanji.business.socket.WebSocketManage;
+import net.wanji.business.util.RedisLock;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
@@ -107,6 +108,9 @@ public class TestingServiceImpl implements TestingService {
     @Autowired
     private KafkaCollector kafkaCollector;
 
+    @Autowired
+    private RedisLock redisLock;
+
     @Override
     public RealVehicleVerificationPageVo getStatus(Integer caseId, boolean hand) throws BusinessException {
         StopWatch stopWatch = new StopWatch("实车试验 - 轮询状态");
@@ -136,6 +140,9 @@ public class TestingServiceImpl implements TestingService {
             if (!restService.startServer(simulationConfig.getIp(), Integer.valueOf(simulationConfig.getServiceAddress()),
                     buildTessServerParam(1, caseInfoBo.getCreatedBy(), caseId))) {
                 throw new BusinessException("唤起仿真服务失败");
+            }
+            if(!redisLock.tryLock("case_"+caseId, SecurityUtils.getUsername())){
+                throw new BusinessException("当前用例正在测试中，请稍后再试");
             }
         }
 
@@ -651,6 +658,7 @@ public class TestingServiceImpl implements TestingService {
         realTestResultVo.setId(caseRealRecord.getId());
         realTestResultVo.setStartTime(caseRealRecord.getStartTime());
         realTestResultVo.setEndTime(caseRealRecord.getEndTime());
+        redisLock.releaseLock("case_"+caseRealRecord.getCaseId(), SecurityUtils.getUsername());
         return realTestResultVo;
     }
 
