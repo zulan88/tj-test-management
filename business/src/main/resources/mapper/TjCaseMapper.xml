@@ -164,9 +164,8 @@
                pr.route_file,
                pr.status,
                case pr.status
-                   when 0 then '未开始'
-                   when 1 then '进行中'
-                   when 2 then '已完成'
+                   when 1 then '未通过'
+                   when 2 then '已通过'
                    else '-'
                    end as status_name,
                pr.start_time,
@@ -174,6 +173,7 @@
                IFNULL(TIME_TO_SEC(TIMEDIFF(end_time, start_time)), 0) AS seconds
         from tj_case_real_record pr
         where pr.case_id = #{id}
+        order by pr.start_time desc
     </select>
 
     <select id="selectCountBySceneIds" resultType="java.lang.Integer">

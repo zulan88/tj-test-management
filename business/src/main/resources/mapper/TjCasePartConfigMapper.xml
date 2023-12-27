@@ -15,4 +15,16 @@
         WHERE
             case_id = #{caseId};
     </select>
+
+    <update id="updateRole">
+        update tj_case_part_config
+        set participant_role = #{participantRole},device_id = null
+        where id = #{id}
+    </update>
+
+    <update id="updateDevice">
+        update tj_case_part_config
+        set device_id = #{deviceId}
+        where id = #{id}
+    </update>
 </mapper>

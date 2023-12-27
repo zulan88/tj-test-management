@@ -38,13 +38,6 @@ public class TjCasePartConfig implements Serializable {
     @TableField("case_id")
     private Integer caseId;
 
-
-    /**
-     * 试验记录ID
-     */
-    @TableField("record_id")
-    private Integer recordId;
-
     /**
      * 参与者角色（AV：av；MV-实车：mvReal；MV-仿真车：mvSimulation；SP：sp）
      */
@@ -88,19 +81,4 @@ public class TjCasePartConfig implements Serializable {
 
     @TableField("frist_site")
     private String fristSite;
-
-    /**
-     * 创建人
-     */
-    @TableField("created_by")
-    @Excel(name = "创建人")
-    private String createdBy;
-
-    /**
-     * 创建日期
-     */
-    @TableField("created_date")
-    @Excel(name = "创建日期")
-    @JsonFormat(shape= JsonFormat.Shape.STRING, pattern="yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime createdDate;
 }

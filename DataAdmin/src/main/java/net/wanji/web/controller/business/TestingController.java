@@ -76,7 +76,7 @@ public class TestingController extends BaseController {
     @GetMapping("/playback")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "recordId", value = "测试记录ID", required = true, dataType = "Integer", paramType = "query", example = "499"),
-            @ApiImplicitParam(name = "action", value = "动作（1：开始；2：结束）", required = true, dataType = "Integer", paramType = "query", example = "1")
+            @ApiImplicitParam(name = "action", value = "动作（1：开始；2：暂停；3：继续；4：结束）", required = true, dataType = "Integer", paramType = "query", example = "1")
     })
     public AjaxResult playback(@RequestParam("recordId") Integer recordId, @RequestParam("action") Integer action)
             throws BusinessException, IOException {

@@ -134,8 +134,8 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
 
     @Override
     public Integer selectDeviceState(Integer deviceId, String commandChannel, boolean wait) {
-        Integer state = deviceStateToRedis.query(deviceId, ChannelBuilder.DEFAULT_STATUS_CHANNEL, DeviceStateToRedis.DEVICE_STATE_PREFIX);
-        if (!ObjectUtils.isEmpty(state)) {
+        Integer state = deviceStateToRedis.query(deviceId, DeviceStateToRedis.DEVICE_STATE_PREFIX, ChannelBuilder.DEFAULT_STATUS_CHANNEL);
+        if (!ObjectUtils.isEmpty(state) && state == 1) {
             return state;
         }
         return handDeviceState(deviceId, commandChannel, wait);
@@ -143,6 +143,13 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
 
     @Override
     public Integer handDeviceState(Integer deviceId, String commandChannel, boolean wait) {
+        String lock = "STATE_" + commandChannel;
+        if (redisCache.hasKey(lock)) {
+            Integer state = deviceStateToRedis.query(deviceId, ChannelBuilder.DEFAULT_STATUS_CHANNEL, DeviceStateToRedis.DEVICE_STATE_PREFIX);
+            return ObjectUtils.isEmpty(state) ? 0 : state;
+        }
+        redisCache.setCacheObject(lock, lock, 5, TimeUnit.SECONDS);
+
         DeviceStateDto deviceStateDto = new DeviceStateDto();
         deviceStateDto.setDeviceId(deviceId);
         deviceStateDto.setType(0);
@@ -150,7 +157,8 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
         log.info("发送数据：查询设备{}状态  {}", deviceId, JSONObject.toJSONString(deviceStateDto));
         deviceStateSendService.sendData(commandChannel, deviceStateDto);
         if (!wait) {
-            return deviceStateToRedis.query(deviceId, ChannelBuilder.DEFAULT_STATUS_CHANNEL, DeviceStateToRedis.DEVICE_STATE_PREFIX);
+            Integer state = deviceStateToRedis.query(deviceId, ChannelBuilder.DEFAULT_STATUS_CHANNEL, DeviceStateToRedis.DEVICE_STATE_PREFIX);
+            return ObjectUtils.isEmpty(state) ? 0 : state;
         }
         String key = DeviceStateToRedis.DEVICE_STATE_PREFIX + "_" + deviceId + "_" + ChannelBuilder.DEFAULT_STATUS_CHANNEL;
         try {
@@ -163,7 +171,7 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
 
     @Override
     public Integer selectDeviceReadyState(Integer deviceId, String statusChannel, DeviceReadyStateParam stateParam, boolean wait) {
-        Integer state = deviceStateToRedis.query(deviceId, statusChannel, DeviceStateToRedis.DEVICE_READY_STATE_PREFIX);
+        Integer state = deviceStateToRedis.query(deviceId, DeviceStateToRedis.DEVICE_READY_STATE_PREFIX, statusChannel);
         if (!ObjectUtils.isEmpty(state) && state == 1) {
             return state;
         }
@@ -172,16 +180,15 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
 
     @Override
     public Integer handDeviceReadyState(Integer deviceId, String statusChannel, DeviceReadyStateParam stateParam, boolean wait) {
-        if (!ChannelBuilder.DEFAULT_STATUS_CHANNEL.equals(statusChannel)) {
-            deviceStateListener.addDeviceStateListener(statusChannel);
-        }
         String lock = "READY_STATE_" + statusChannel;
-        if (redisCache.hasKey(statusChannel)) {
+        if (redisCache.hasKey(lock)) {
             Integer readyState = deviceStateToRedis.query(deviceId, statusChannel, DeviceStateToRedis.DEVICE_READY_STATE_PREFIX);
             return ObjectUtils.isEmpty(readyState) ? 0 : readyState;
         }
-        redisCache.setCacheObject(lock, lock, 60, TimeUnit.SECONDS);
-
+        redisCache.setCacheObject(lock, lock, 5, TimeUnit.SECONDS);
+        if (!ChannelBuilder.DEFAULT_STATUS_CHANNEL.equals(statusChannel)) {
+            deviceStateListener.addDeviceStateListener(statusChannel);
+        }
         restService.selectDeviceReadyState(stateParam);
         if (!wait) {
             Integer readyState = deviceStateToRedis.query(deviceId, statusChannel, DeviceStateToRedis.DEVICE_READY_STATE_PREFIX);

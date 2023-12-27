@@ -18,8 +18,11 @@ import net.wanji.business.service.TjCaseRealRecordService;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.utils.DateUtils;
+import net.wanji.common.utils.StringUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
@@ -35,6 +38,8 @@ import java.util.stream.Collectors;
  */
 @Component
 public class KafkaTrajectoryConsumer {
+
+    private static final Logger log = LoggerFactory.getLogger("kafka");
 
     @Resource
     private TjTaskMapper taskMapper;
@@ -62,6 +67,7 @@ public class KafkaTrajectoryConsumer {
         List<SimulationTrajectoryDto> data = participantTrajectories.stream()
                 .map(t -> JSONObject.parseObject(t.toString(), SimulationTrajectoryDto.class))
                 .collect(Collectors.toList());
+        outLog(data);
         kafkaCollector.collector(key, caseId, data);
         // 发送ws数据
         String duration = DateUtils.secondsToDuration(
@@ -89,5 +95,14 @@ public class KafkaTrajectoryConsumer {
         List<TjCaseRealRecord> records = caseRealRecordService.list(new QueryWrapper<TjCaseRealRecord>()
                 .eq(ColumnName.CASE_ID_COLUMN, caseId).eq(ColumnName.STATUS_COLUMN, TestingStatusEnum.NO_PASS));
         return CollectionUtils.isEmpty(records) ? 0 : records.get(0).getId();
+    }
+
+    private void outLog(List<SimulationTrajectoryDto> data) {
+        StringBuilder sb = new StringBuilder();
+        long now = System.currentTimeMillis();
+        for (SimulationTrajectoryDto trajectoryDto : data) {
+            sb.append(StringUtils.format("{}：{}ms；",trajectoryDto.getSource(), now - Long.parseLong(trajectoryDto.getTimestamp())));
+        }
+        log.info(sb.toString());
     }
 }

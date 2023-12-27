@@ -2,10 +2,9 @@ package net.wanji.business.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import net.wanji.business.common.Constants.ChannelBuilder;
-import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.business.common.Constants.PartRole;
 import net.wanji.business.common.Constants.PartType;
@@ -381,10 +380,10 @@ public class TestingServiceImpl implements TestingService {
         int pedestrianNum = partMap.containsKey(PartRole.SP) ? partMap.get(PartRole.SP).size() : 0;
         caseTrajectoryDetailBo.setSceneForm(StringUtils.format(ContentTemplate.SCENE_FORM_TEMPLATE, avNum,
                 simulationNum, pedestrianNum));
-        // 6.删除后新增实车测试记录
-        QueryWrapper<TjCaseRealRecord> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq(ColumnName.CASE_ID_COLUMN, caseId);
-        caseRealRecordMapper.delete(queryWrapper);
+        // 6.删除空记录后新增实车测试记录
+        caseRealRecordMapper.delete(new LambdaQueryWrapper<TjCaseRealRecord>()
+                .eq(TjCaseRealRecord::getCaseId, caseId)
+                .isNull(TjCaseRealRecord::getRouteFile));
 
         TjCaseRealRecord tjCaseRealRecord = new TjCaseRealRecord();
         tjCaseRealRecord.setCaseId(caseId);
@@ -470,7 +469,7 @@ public class TestingServiceImpl implements TestingService {
         String key = ChannelBuilder.buildTestingDataChannel(caseInfoBo.getCreatedBy(), caseId);
         List<List<SimulationTrajectoryDto>> trajectories = kafkaCollector.take(key, caseId);
         try {
-            routeService.saveRealRouteFile2(caseInfoBo.getCaseRealRecord(), trajectories);
+            routeService.saveRealRouteFile2(caseInfoBo.getCaseRealRecord(), action, trajectories);
         } catch (Exception e) {
             log.error("保存实车测试记录点位详情信息异常:{}", e);
         } finally {

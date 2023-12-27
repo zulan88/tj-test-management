@@ -122,12 +122,17 @@ public class RouteService {
         }
     }
 
-    public boolean saveRealRouteFile2(TjCaseRealRecord caseRealRecord, List<List<SimulationTrajectoryDto>> data) throws Exception {
+    public boolean saveRealRouteFile2(TjCaseRealRecord caseRealRecord, int action, List<List<SimulationTrajectoryDto>> data) throws Exception {
         // 保存本地文件
-        String path = FileUtils.writeRoute(data, WanjiConfig.getRoutePath(), Extension.TXT);
-        log.info("保存用例 {} 实车测试记录 {} 路径文件 : {}, 轨迹长度：{}", caseRealRecord.getCaseId(), caseRealRecord.getId(), path, data.size());
+        String path = null;
+        try {
+            path = FileUtils.writeRoute(data, WanjiConfig.getRoutePath(), Extension.TXT);
+            log.info("保存用例 {} 实车测试记录 {} 路径文件 : {}, 轨迹长度：{}", caseRealRecord.getCaseId(), caseRealRecord.getId(), path, data.size());
+        } catch (Exception e) {
+            log.error("保存用例 {} 实车测试记录 {} 路径文件失败", caseRealRecord.getCaseId(), caseRealRecord.getId(), e);
+        }
         caseRealRecord.setRouteFile(path);
-        caseRealRecord.setStatus(TestingStatusEnum.PASS.getCode());
+        caseRealRecord.setStatus(action < 0 ? TestingStatusEnum.NO_PASS.getCode() : TestingStatusEnum.PASS.getCode());
         caseRealRecord.setEndTime(LocalDateTime.now());
         CaseTrajectoryDetailBo originalTrajectory = JSONObject.parseObject(caseRealRecord.getDetailInfo(), CaseTrajectoryDetailBo.class);
         originalTrajectory.setDuration(DateUtils.secondsToDuration((int) Math.floor((double) data.size() / 10)));
@@ -241,9 +246,9 @@ public class RouteService {
             participantTrajectoryVo.setId(trajectoryBo.getId());
             for (TrajectoryDetailBo trajectoryDetailBo : trajectoryBo.getTrajectory()) {
                 Double restime = 0D;
-                if(trajectoryDetailBo.getDate()!=null) {
+                if (trajectoryDetailBo.getDate() != null) {
                     restime = (dateFormat.parse(trajectoryDetailBo.getDate()).getTime() - time) / 1000D;
-                    if (restime<0.9){
+                    if (restime < 0.9) {
                         restime = 0D;
                     }
                 }
@@ -423,7 +428,6 @@ public class RouteService {
         String routeFile = FileUploadUtils.getAbsolutePathFileName(fileName);
         return FileUtils.readRealRouteFile(routeFile);
     }
-
 
 
     /**

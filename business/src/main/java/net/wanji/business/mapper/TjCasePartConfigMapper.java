@@ -21,4 +21,8 @@ public interface TjCasePartConfigMapper extends BaseMapper<TjCasePartConfig> {
      * @return
      */
     CaseConfigDto getCasePartNum(Integer caseId);
+
+    int updateRole(TjCasePartConfig tjCasePartConfig);
+
+    int updateDevice(TjCasePartConfig tjCasePartConfig);
 }
