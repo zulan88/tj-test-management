@@ -14,7 +14,7 @@ public class RedisLock {
     private StringRedisTemplate stringRedisTemplate;
 
     public boolean tryLock(String lockKey, String name) {
-        Boolean result = stringRedisTemplate.opsForValue().setIfAbsent(lockKey, name, 60, TimeUnit.SECONDS);
+        Boolean result = stringRedisTemplate.opsForValue().setIfAbsent(lockKey, name, 30, TimeUnit.SECONDS);
         return result != null && result;
     }
 

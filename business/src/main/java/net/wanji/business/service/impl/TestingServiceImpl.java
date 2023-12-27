@@ -128,6 +128,8 @@ public class TestingServiceImpl implements TestingService {
         fillStatusParam(caseInfoBo, allCaseConfigs, caseBusinessIdAndRoleMap, startMap, mainTrajectories);
         // 3.设备过滤
         List<CaseConfigBo> distCaseConfigs = filterConfigs(allCaseConfigs);
+        List<CaseConfigBo> filteredTaskCaseConfigs = distCaseConfigs.stream()
+                .filter(t -> !PartRole.MV_SIMULATION.equals(t.getParticipantRole())).collect(Collectors.toList());
         CaseConfigBo simulationConfig = distCaseConfigs.stream()
                 .filter(t -> PartRole.MV_SIMULATION.equals(t.getParticipantRole()))
                 .findFirst()
@@ -140,8 +142,13 @@ public class TestingServiceImpl implements TestingService {
                     buildTessServerParam(1, SecurityUtils.getUsername(), caseId))) {
                 throw new BusinessException("唤起仿真服务失败");
             }
-            if(!redisLock.tryLock("case_"+caseId, SecurityUtils.getUsername())){
+            if (!redisLock.tryLock("case_" + caseId, SecurityUtils.getUsername())) {
                 throw new BusinessException("当前用例正在测试中，请稍后再试");
+            }
+            for (CaseConfigBo taskCaseConfigBo : filteredTaskCaseConfigs) {
+                if (!redisLock.tryLock("task_" + taskCaseConfigBo.getDataChannel(), SecurityUtils.getUsername())) {
+                    throw new BusinessException(taskCaseConfigBo.getDeviceName() + "设备正在使用中，请稍后再试");
+                }
             }
         }
         // 5.状态查询
@@ -234,6 +241,7 @@ public class TestingServiceImpl implements TestingService {
         result.setGeoJsonPath(caseInfoBo.getGeoJsonPath());
         result.setStatusMap(caseConfigs.stream().collect(
                 Collectors.groupingBy(CaseConfigBo::getParticipantRole)));
+        result.setChannels(caseConfigs.stream().map(CaseConfigBo::getDataChannel).collect(Collectors.toSet()));
         result.setMessage(validStatus(caseConfigs));
         return result;
     }
@@ -397,6 +405,8 @@ public class TestingServiceImpl implements TestingService {
         // 7.前端结果集
         CaseTestPrepareVo caseTestPrepareVo = new CaseTestPrepareVo();
         BeanUtils.copyProperties(tjCaseRealRecord, caseTestPrepareVo);
+        caseTestPrepareVo.setChannels(caseInfoBo.getCaseConfigs().stream().map(CaseConfigBo::getDataChannel).distinct()
+                .collect(Collectors.toList()));
         return caseTestPrepareVo;
     }
 
@@ -652,7 +662,8 @@ public class TestingServiceImpl implements TestingService {
         realTestResultVo.setId(caseRealRecord.getId());
         realTestResultVo.setStartTime(caseRealRecord.getStartTime());
         realTestResultVo.setEndTime(caseRealRecord.getEndTime());
-        redisLock.releaseLock("case_"+caseRealRecord.getCaseId(), SecurityUtils.getUsername());
+        redisLock.releaseLock("case_" + caseRealRecord.getCaseId(), SecurityUtils.getUsername());
+        unLock(caseRealRecord.getCaseId());
         return realTestResultVo;
     }
 
@@ -792,4 +803,19 @@ public class TestingServiceImpl implements TestingService {
 
         return time;
     }
+
+    private void unLock(Integer caseId) throws BusinessException {
+        CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
+        List<CaseConfigBo> caseConfigs = new ArrayList<>();
+        for (CaseConfigBo caseConfig : CollectionUtils.emptyIfNull(caseInfoBo.getCaseConfigs())) {
+            caseConfigs.add(caseConfig);
+        }
+        caseConfigs = filterConfigs(caseConfigs);
+        List<CaseConfigBo> filteredTaskCaseConfigs = caseConfigs.stream()
+                .filter(t -> !PartRole.MV_SIMULATION.equals(t.getParticipantRole())).collect(Collectors.toList());
+        for (CaseConfigBo taskCaseConfigBo : filteredTaskCaseConfigs) {
+            redisLock.releaseLock("task_" + taskCaseConfigBo.getDataChannel(), SecurityUtils.getUsername());
+        }
+    }
+
 }
