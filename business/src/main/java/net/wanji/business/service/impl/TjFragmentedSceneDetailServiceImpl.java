@@ -237,9 +237,6 @@ public class TjFragmentedSceneDetailServiceImpl
             detail.setUpdatedDate(LocalDateTime.now());
         }
         detail.setResourcesDetailId(sceneDetailDto.getResourcesDetailId());
-//        if (StringUtils.isNotEmpty(sceneDetailDto.getRouteFile())) {
-//            detail.setFinished(true);
-//        }
         List<String> labellist = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(sceneDetailDto.getLabelList())) {
             for (String id : sceneDetailDto.getLabelList()) {
@@ -258,10 +255,8 @@ public class TjFragmentedSceneDetailServiceImpl
         detail.setTrajectoryInfo(!ObjectUtils.isEmpty(sceneDetailDto.getTrajectoryJson())
                 ? sceneDetailDto.getTrajectoryJson().buildId().toJsonString()
                 : null);
-
         boolean flag = this.saveOrUpdate(detail);
         sceneDetailDto.setId(detail.getId());
-
         return flag;
     }
 
@@ -326,7 +321,6 @@ public class TjFragmentedSceneDetailServiceImpl
                 }
                 TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
                 deviceDetailDto.setSupportRoles(PartRole.MV_SIMULATION);
-                deviceDetailDto.setAttribute2(SecurityUtils.getUsername());
                 List<DeviceDetailVo> deviceDetailVos = deviceDetailMapper.selectByCondition(deviceDetailDto);
                 if (CollectionUtils.isEmpty(deviceDetailVos)) {
                     throw new BusinessException("当前无可用仿真程序");

@@ -548,6 +548,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 if (CollectionUtils.isEmpty(in.getAvDeviceIds())) {
                     throw new BusinessException("请选择主车被测设备");
                 }
+                TjTaskDataConfig newAvConfig = new TjTaskDataConfig();
                 if (ObjectUtil.isNotEmpty(in.getId())) {
                     tjTask.setClient(in.getClient());
                     tjTask.setConsigner(in.getConsigner());
@@ -562,8 +563,11 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                         tjTask.setMeasurandId(in.getMeasurandId());
                         tjTask.setApprecordId(in.getApprecordId());
                     }
-                    this.updateById(tjTask);
-                    tjTaskDataConfigService.remove(new QueryWrapper<TjTaskDataConfig>().eq(ColumnName.TASK_ID, tjTask.getId()));
+                    TjTaskDataConfig oldAvConfig = tjTaskDataConfigService.getOne(new LambdaQueryWrapper<TjTaskDataConfig>()
+                            .eq(TjTaskDataConfig::getTaskId, tjTask.getId())
+                            .eq(TjTaskDataConfig::getType, PartRole.AV));
+                    newAvConfig.setId(oldAvConfig.getId());
+                    BeanUtils.copyBeanProp(newAvConfig, oldAvConfig);
                 } else {
                     BeanUtils.copyBeanProp(tjTask, in);
                     tjTask.setTaskCode("task-" + sf.format(new Date()));
@@ -580,26 +584,18 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                         tjTask.setMeasurandId(in.getMeasurandId());
                         tjTask.setApprecordId(in.getApprecordId());
                     }
-                    this.save(tjTask);
                 }
-                List<TjTaskDataConfig> dataConfigs = new ArrayList<>();
-                for (Integer avDeviceId : in.getAvDeviceIds()) {
-                    TjTaskDataConfig config = new TjTaskDataConfig();
-                    config.setTaskId(tjTask.getId());
-                    config.setType(PartRole.AV);
-                    config.setParticipatorId("1");
-                    config.setParticipatorName("主车1");
-                    config.setDeviceId(avDeviceId);
-                    dataConfigs.add(config);
-                }
-                tjTaskDataConfigService.saveBatch(dataConfigs);
+                this.saveOrUpdate(tjTask);
+                in.getAvDeviceIds().stream().findFirst().ifPresent(newAvConfig::setDeviceId);
+                tjTaskDataConfigService.saveOrUpdate(newAvConfig);
                 return tjTask.getId();
             case TaskProcessNode.SELECT_CASE:
                 if (ObjectUtil.isEmpty(in.getId())) {
                     throw new BusinessException("请选择任务");
                 }
-                List<TjTaskCase> taskCaseList = tjTaskCaseService.list(
-                        new QueryWrapper<TjTaskCase>().eq(ColumnName.TASK_ID, in.getId()).orderByDesc(ColumnName.CREATE_TIME_COLUMN));
+                List<TjTaskCase> taskCaseList = tjTaskCaseService.list(new LambdaQueryWrapper<TjTaskCase>()
+                        .eq(TjTaskCase::getTaskId, in.getId())
+                        .orderByDesc(TjTaskCase::getCreateTime));
                 if (CollectionUtils.isEmpty(taskCaseList)) {
                     throw new BusinessException("请选择用例");
                 }
@@ -619,10 +615,9 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                     throw new BusinessException("无可用的从车设备");
                 }
                 // 删除老的任务配置
-                QueryWrapper<TjTaskDataConfig> queryWrapper = new QueryWrapper<TjTaskDataConfig>();
-                queryWrapper.eq(ColumnName.TASK_ID, in.getId());
-                queryWrapper.ne("type", PartRole.AV);
-                tjTaskDataConfigService.remove(queryWrapper);
+                tjTaskDataConfigService.remove(new LambdaQueryWrapper<TjTaskDataConfig>()
+                        .eq(TjTaskDataConfig::getTaskId, in.getId())
+                        .ne(TjTaskDataConfig::getType, PartRole.AV));
                 // 添加新的任务配置
                 List<TjTaskDataConfig> dataConfigList = new ArrayList<>();
                 for (TjCase tjCase : cases) {

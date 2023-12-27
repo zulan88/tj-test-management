@@ -334,7 +334,7 @@ public class TaskController extends BaseController {
 
     @ApiOperationSort(22)
     @ApiOperation(value = "22.删除待提交任务")
-    @PostMapping(" /remove")
+    @GetMapping(" /remove")
     public AjaxResult removeEnity() {
         LambdaQueryWrapper<TjTask> wrapper = new LambdaQueryWrapper<TjTask>();
         wrapper.eq(TjTask::getStatus, TaskStatusEnum.NO_SUBMIT.getCode()).eq(TjTask::getCreatedBy, SecurityUtils.getUsername());

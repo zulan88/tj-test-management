@@ -3,6 +3,7 @@ package net.wanji.business.trajectory;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.google.common.collect.Maps;
 import net.wanji.business.common.Constants.ChannelBuilder;
 import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.RedisMessageType;
@@ -82,7 +83,7 @@ public class KafkaTrajectoryConsumer {
         // 发送ws数据
         String duration = DateUtils.secondsToDuration(
                 (int) Math.floor((double) (kafkaCollector.getSize(key, caseId)) / 10));
-        RealWebsocketMessage msg = new RealWebsocketMessage(RedisMessageType.TRAJECTORY, null, participantTrajectories,
+        RealWebsocketMessage msg = new RealWebsocketMessage(RedisMessageType.TRAJECTORY, Maps.newHashMap(), participantTrajectories,
                 duration);
         WebSocketManage.sendInfo(key, JSONObject.toJSONString(msg));
     }

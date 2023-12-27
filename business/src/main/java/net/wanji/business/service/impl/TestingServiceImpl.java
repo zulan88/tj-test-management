@@ -121,14 +121,14 @@ public class TestingServiceImpl implements TestingService {
 
         stopWatch.start("2.查询状态");
         // 2.数据填充
-        List<CaseConfigBo> caseConfigs = new ArrayList<>();
+        List<CaseConfigBo> allCaseConfigs = new ArrayList<>();
         Map<String, String> caseBusinessIdAndRoleMap = new HashMap<>();
         Map<String, String> startMap = new HashMap<>();
         List<SimulationTrajectoryDto> mainTrajectories = new ArrayList<>();
-        fillStatusParam(caseInfoBo, caseConfigs, caseBusinessIdAndRoleMap, startMap, mainTrajectories);
+        fillStatusParam(caseInfoBo, allCaseConfigs, caseBusinessIdAndRoleMap, startMap, mainTrajectories);
         // 3.设备过滤
-        caseConfigs = filterConfigs(caseConfigs);
-        CaseConfigBo simulationConfig = caseConfigs.stream()
+        List<CaseConfigBo> distCaseConfigs = filterConfigs(allCaseConfigs);
+        CaseConfigBo simulationConfig = distCaseConfigs.stream()
                 .filter(t -> PartRole.MV_SIMULATION.equals(t.getParticipantRole()))
                 .findFirst()
                 .orElseThrow(() -> new BusinessException("未找到仿真设备"));
@@ -137,17 +137,15 @@ public class TestingServiceImpl implements TestingService {
             stop(caseId);
             // 4.唤醒仿真服务
             if (!restService.startServer(simulationConfig.getIp(), Integer.valueOf(simulationConfig.getServiceAddress()),
-                    buildTessServerParam(1, caseInfoBo.getCreatedBy(), caseId))) {
+                    buildTessServerParam(1, SecurityUtils.getUsername(), caseId))) {
                 throw new BusinessException("唤起仿真服务失败");
             }
             if(!redisLock.tryLock("case_"+caseId, SecurityUtils.getUsername())){
                 throw new BusinessException("当前用例正在测试中，请稍后再试");
             }
         }
-
-
         // 5.状态查询
-        for (CaseConfigBo caseConfigBo : caseConfigs) {
+        for (CaseConfigBo caseConfigBo : distCaseConfigs) {
             // 查询设备状态
             Integer status = hand
                     ? deviceDetailService.handDeviceState(caseConfigBo.getDeviceId(), getCommandChannelByRole(caseConfigBo), false)
@@ -169,7 +167,7 @@ public class TestingServiceImpl implements TestingService {
         stopWatch.stop();
 //        log.info(stopWatch.prettyPrint());
         // 6.返回结果集
-        return buildPageVo(caseInfoBo, startMap, caseConfigs);
+        return buildPageVo(caseInfoBo, startMap, allCaseConfigs);
     }
 
     /**
@@ -236,7 +234,6 @@ public class TestingServiceImpl implements TestingService {
         result.setGeoJsonPath(caseInfoBo.getGeoJsonPath());
         result.setStatusMap(caseConfigs.stream().collect(
                 Collectors.groupingBy(CaseConfigBo::getParticipantRole)));
-        result.setChannels(caseConfigs.stream().map(CaseConfigBo::getDataChannel).collect(Collectors.toSet()));
         result.setMessage(validStatus(caseConfigs));
         return result;
     }
@@ -400,8 +397,6 @@ public class TestingServiceImpl implements TestingService {
         // 7.前端结果集
         CaseTestPrepareVo caseTestPrepareVo = new CaseTestPrepareVo();
         BeanUtils.copyProperties(tjCaseRealRecord, caseTestPrepareVo);
-        caseTestPrepareVo.setChannels(caseInfoBo.getCaseConfigs().stream().map(CaseConfigBo::getDataChannel).distinct()
-                .collect(Collectors.toList()));
         return caseTestPrepareVo;
     }
 
