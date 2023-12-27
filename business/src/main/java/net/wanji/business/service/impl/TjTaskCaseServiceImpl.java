@@ -65,6 +65,7 @@ import net.wanji.business.service.TjTaskCaseService;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.trajectory.KafkaTrajectoryConsumer;
 import net.wanji.business.trajectory.TaskRedisTrajectoryConsumer;
+import net.wanji.business.util.RedisLock;
 import net.wanji.common.common.RealTestTrajectoryDto;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
@@ -157,6 +158,9 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
     @Autowired
     private KafkaCollector kafkaCollector;
 
+    @Autowired
+    private RedisLock redisLock;
+
     @Override
     public TaskCaseVerificationPageVo getStatus(TjTaskCase param, boolean hand) throws BusinessException {
         if (ObjectUtils.isEmpty(param.getId()) && ObjectUtils.isEmpty(param.getTaskId())) {
@@ -184,6 +188,8 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 tjTask.getMainPlanFile(), mainTrajectoryMap, taskCaseInfoMap);
         // 3.重复设备过滤
         taskCaseConfigs = filterConfigs(taskCaseConfigs);
+        List<TaskCaseConfigBo> filteredTaskCaseConfigs = taskCaseConfigs.stream()
+                .filter(t -> !PartRole.MV_SIMULATION.equals(t.getType())).collect(Collectors.toList());
         TaskCaseConfigBo simulationConfig = taskCaseConfigs.stream()
                 .filter(t -> PartRole.MV_SIMULATION.equals(t.getType()))
                 .findFirst()
@@ -195,7 +201,12 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             if (!restService.startServer(simulationConfig.getIp(), Integer.valueOf(simulationConfig.getServiceAddress()),
                     buildTessServerParam(1, tjTask.getCreatedBy(), param.getTaskId()))) {
                 throw new BusinessException("唤醒仿真服务失败");
-            };
+            }
+            for(TaskCaseConfigBo taskCaseConfigBo : filteredTaskCaseConfigs){
+                if(!redisLock.tryLock("task_"+taskCaseConfigBo.getDataChannel(),SecurityUtils.getUsername())){
+                    throw new BusinessException(taskCaseConfigBo.getDeviceName()+"设备正在使用中，请稍后再试");
+                }
+            }
         }
         // 5.状态查询
         for (TaskCaseConfigBo taskCaseConfigBo : taskCaseConfigs) {
@@ -766,6 +777,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         realTestResultVo.setId(taskCaseRecord.getId());
         realTestResultVo.setStartTime(taskCaseRecord.getStartTime());
         realTestResultVo.setEndTime(taskCaseRecord.getEndTime());
+        unLock(taskId);
         return realTestResultVo;
     }
 
@@ -1157,6 +1169,22 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
     public static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
         Set<Object> seen = new HashSet<>();
         return t -> seen.add(keyExtractor.apply(t));
+    }
+
+    private void unLock(Integer taskId){
+        TjTaskCase taskCase = new TjTaskCase();
+        taskCase.setTaskId(taskId);
+        List<TaskCaseInfoBo> taskCaseInfos = taskCaseMapper.selectTaskCaseByCondition(taskCase);
+        List<TaskCaseConfigBo> taskCaseConfigs = new ArrayList<>();
+        for(TaskCaseInfoBo taskCaseInfo : taskCaseInfos){
+            taskCaseConfigs.addAll(taskCaseInfo.getDataConfigs());
+        }
+        taskCaseConfigs = filterConfigs(taskCaseConfigs);
+        List<TaskCaseConfigBo> filteredTaskCaseConfigs = taskCaseConfigs.stream()
+                .filter(t -> !PartRole.MV_SIMULATION.equals(t.getType())).collect(Collectors.toList());
+        for(TaskCaseConfigBo taskCaseConfigBo : filteredTaskCaseConfigs){
+            redisLock.releaseLock("task_"+taskCaseConfigBo.getDataChannel(),SecurityUtils.getUsername());
+        }
     }
 }
 
