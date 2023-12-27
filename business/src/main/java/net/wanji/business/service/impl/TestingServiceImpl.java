@@ -15,12 +15,7 @@ import net.wanji.business.common.Constants.TestingStatusEnum;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.Label;
 import net.wanji.business.domain.RealWebsocketMessage;
-import net.wanji.business.domain.bo.CaseConfigBo;
-import net.wanji.business.domain.bo.CaseInfoBo;
-import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
-import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
-import net.wanji.business.domain.bo.SceneTrajectoryBo;
-import net.wanji.business.domain.bo.TrajectoryDetailBo;
+import net.wanji.business.domain.bo.*;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.ParamsDto;
 import net.wanji.business.domain.param.CaseRuleControl;
@@ -128,6 +123,8 @@ public class TestingServiceImpl implements TestingService {
         fillStatusParam(caseInfoBo, caseConfigs, caseBusinessIdAndRoleMap, startMap, mainTrajectories);
         // 3.设备过滤
         caseConfigs = filterConfigs(caseConfigs);
+        List<CaseConfigBo> filteredTaskCaseConfigs = caseConfigs.stream()
+                .filter(t -> !PartRole.MV_SIMULATION.equals(t.getParticipantRole())).collect(Collectors.toList());
         CaseConfigBo simulationConfig = caseConfigs.stream()
                 .filter(t -> PartRole.MV_SIMULATION.equals(t.getParticipantRole()))
                 .findFirst()
@@ -142,6 +139,11 @@ public class TestingServiceImpl implements TestingService {
             }
             if(!redisLock.tryLock("case_"+caseId, SecurityUtils.getUsername())){
                 throw new BusinessException("当前用例正在测试中，请稍后再试");
+            }
+            for(CaseConfigBo taskCaseConfigBo : filteredTaskCaseConfigs){
+                if(!redisLock.tryLock("task_"+taskCaseConfigBo.getDataChannel(),SecurityUtils.getUsername())){
+                    throw new BusinessException(taskCaseConfigBo.getDeviceName()+"设备正在使用中，请稍后再试");
+                }
             }
         }
 
@@ -658,6 +660,7 @@ public class TestingServiceImpl implements TestingService {
         realTestResultVo.setStartTime(caseRealRecord.getStartTime());
         realTestResultVo.setEndTime(caseRealRecord.getEndTime());
         redisLock.releaseLock("case_"+caseRealRecord.getCaseId(), SecurityUtils.getUsername());
+        unLock(caseRealRecord.getCaseId());
         return realTestResultVo;
     }
 
@@ -797,4 +800,19 @@ public class TestingServiceImpl implements TestingService {
 
         return time;
     }
+
+    private void unLock(Integer caseId) throws BusinessException {
+        CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
+        List<CaseConfigBo> caseConfigs = new ArrayList<>();
+        for (CaseConfigBo caseConfig : CollectionUtils.emptyIfNull(caseInfoBo.getCaseConfigs())) {
+            caseConfigs.add(caseConfig);
+        }
+        caseConfigs = filterConfigs(caseConfigs);
+        List<CaseConfigBo> filteredTaskCaseConfigs = caseConfigs.stream()
+                .filter(t -> !PartRole.MV_SIMULATION.equals(t.getParticipantRole())).collect(Collectors.toList());
+        for(CaseConfigBo taskCaseConfigBo : filteredTaskCaseConfigs){
+            redisLock.releaseLock("task_"+taskCaseConfigBo.getDataChannel(),SecurityUtils.getUsername());
+        }
+    }
+
 }
