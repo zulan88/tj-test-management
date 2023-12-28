@@ -115,7 +115,7 @@ public class AppointmentRecord implements Serializable {
     private String testSchedule;
 
     /**
-     * 状态  0-待审批 1-审批通过 2-驳回 3-已取消
+     * 状态  0-待审批 1-审批通过 2-驳回 3-已取消 -1 未提交数据
      */
     @TableField("status")
     @ApiModelProperty(notes = "状态 0-待审批 1-审批通过 2-驳回 3-已取消")
