@@ -1,6 +1,7 @@
 package net.wanji.web.controller.business;
 
 import com.github.pagehelper.PageHelper;
+import net.wanji.approve.service.RecordReService;
 import net.wanji.business.common.Constants.BatchGroup;
 import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.business.common.Constants.DeleteGroup;
@@ -56,6 +57,9 @@ public class DeviceController extends BaseController {
 
     @Autowired
     private TjDeviceDetailService deviceDetailService;
+
+    @Autowired
+    RecordReService recordReService;
 
     //@PreAuthorize("@ss.hasPermi('devices:init')")
     @GetMapping("/init")
@@ -127,6 +131,10 @@ public class DeviceController extends BaseController {
     //@PreAuthorize("@ss.hasPermi('devices:delete')")
     @PostMapping("/delete")
     public AjaxResult delete(@Validated(value = DeleteGroup.class) @RequestBody TjDeviceDetailDto deviceDto) {
+        List<Integer> ids = recordReService.getrecordBydevice(deviceDto.getDeviceId());
+        if (ids.size() > 0) {
+            return AjaxResult.error("该设备已被预约使用，无法删除");
+        }
         return deviceDetailService.deleteDevice(deviceDto.getDeviceId())
                 ? AjaxResult.success("删除成功")
                 : AjaxResult.error("删除失败");
