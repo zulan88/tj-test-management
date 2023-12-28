@@ -108,8 +108,10 @@ public interface Constants {
          * @param taskId
          * @return
          */
-        public static String buildTaskPreviewChannel(String username, Integer taskId) {
-            return StringUtils.format(SIMULATION_CHANNEL_TEMPLATE, username, taskId, TASK_PREVIEW);
+        public static String buildTaskPreviewChannel(String username, Integer taskId, Integer caseId) {
+            return ObjectUtils.isEmpty(caseId)
+                ? StringUtils.format("{}_{}_{}", username, taskId, TASK_PREVIEW)
+                : StringUtils.format("{}_{}_{}_{}", username, taskId, caseId, TASK_PREVIEW);
         }
 
 
@@ -122,7 +124,7 @@ public interface Constants {
          * @return
          */
         public static String buildTestingPreviewChannel(String username, Integer caseRecordId) {
-            return StringUtils.format(SIMULATION_CHANNEL_TEMPLATE, username, caseRecordId, TESTING_PREVIEW);
+            return StringUtils.format("{}_{}_{}", username, caseRecordId, TESTING_PREVIEW);
         }
 
 

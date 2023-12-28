@@ -405,8 +405,6 @@ public class TestingServiceImpl implements TestingService {
         // 7.前端结果集
         CaseTestPrepareVo caseTestPrepareVo = new CaseTestPrepareVo();
         BeanUtils.copyProperties(tjCaseRealRecord, caseTestPrepareVo);
-        caseTestPrepareVo.setChannels(caseInfoBo.getCaseConfigs().stream().map(CaseConfigBo::getDataChannel).distinct()
-                .collect(Collectors.toList()));
         return caseTestPrepareVo;
     }
 
@@ -485,7 +483,7 @@ public class TestingServiceImpl implements TestingService {
         } catch (Exception e) {
             log.error("保存实车测试记录点位详情信息异常:{}", e);
         } finally {
-            kafkaCollector.remove(key);
+            kafkaCollector.remove(key, caseId);
         }
         String duration = DateUtils.secondsToDuration((int) Math.floor(
                 (double) (CollectionUtils.isEmpty(trajectories) ? 0 : trajectories.size()) / 10));
@@ -530,7 +528,7 @@ public class TestingServiceImpl implements TestingService {
             caseTrajectoryParam.setDataChannel(t.getDataChannel());
         });
         String key = ChannelBuilder.buildTestingDataChannel(SecurityUtils.getUsername(), caseId);
-        kafkaCollector.remove(key);
+        kafkaCollector.remove(key, caseId);
 
         Map<String, Object> context = new HashMap<>();
         context.put("username", SecurityUtils.getUsername());

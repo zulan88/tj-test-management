@@ -303,7 +303,7 @@
                  inner join tj_fragmented_scene_detail sd on sd.id = tc.scene_detail_id
                  LEFT JOIN tj_case_part_config pc ON pc.case_id = tc.id
                  LEFT JOIN tj_device_detail dd ON dd.device_id = pc.device_id
-                 LEFT JOIN tj_case_real_record rr ON rr.case_id = tc.id
+                 LEFT JOIN tj_case_real_record rr ON (rr.case_id = tc.id AND rr.route_file is null)
         WHERE tc.id = #{caseId}
     </select>
 

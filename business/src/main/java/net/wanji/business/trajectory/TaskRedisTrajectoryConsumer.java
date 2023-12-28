@@ -166,7 +166,7 @@ public class TaskRedisTrajectoryConsumer {
             // 任务用例信息 TaskCaseInfoBo
             paramMap.put("caseInfo", taskCaseInfo);
             // 主车轨迹
-            List<RealTestTrajectoryDto> realTestTrajectoryDtos = routeService.readRealTrajectoryFromRouteFile(taskCaseInfo.getRealRouteFile());
+            List<RealTestTrajectoryDto> realTestTrajectoryDtos = routeService.readRealTrajectoryFromRouteFile(taskCaseInfo.getRouteFile());
             realTestTrajectoryDtos.stream().filter(RealTestTrajectoryDto::isMain).findFirst().ifPresent(t -> {
                 paramMap.put("main", t.getData());
             });
@@ -276,30 +276,30 @@ public class TaskRedisTrajectoryConsumer {
                         }
                         break;
                     case RedisMessageType.END:
-                        JSONObject end = JSONObject.parseObject(JSON.toJSONString(simulationMessage.getValue()));
+//                        JSONObject end = JSONObject.parseObject(JSON.toJSONString(simulationMessage.getValue()));
 //                        JSONObject end = objectMapper.readValue(JSON.toJSONString(simulationMessage.getValue()), JSONObject.class);
-                        log.info(StringUtils.format("结束接收{}数据：{}", methodLog, JSON.toJSONString(end)));
+//                        log.info(StringUtils.format("结束接收{}数据：{}", methodLog, JSON.toJSONString(end)));
 //                        try {
 //                            Optional.ofNullable(end.getEvaluationVerify()).ifPresent(originalTrajectory::setEvaluationVerify);
 //                        } catch (Exception e) {
 //                            originalTrajectory.setEvaluationVerify("True");
 //                        }
-                        TaskCaseInfoBo caseInfo = paramItem.getObject("caseInfo", TaskCaseInfoBo.class);
-                        CaseTrajectoryDetailBo originalTrajectory = JSONObject.parseObject(caseInfo.getDetailInfo(), CaseTrajectoryDetailBo.class);
-                        TjTaskCaseRecord param = new TjTaskCaseRecord();
-                        param.setId(caseInfo.getRecordId());
-                        originalTrajectory.setDuration(duration);
-                        param.setDetailInfo(JSON.toJSONString(originalTrajectory));
-                        int endSuccess = taskCaseRecordMapper.updateById(param);
-                        log.info(StringUtils.format("修改用例场景评价:{}", endSuccess));
-                        clearRunningCase(String.valueOf(caseInfo.getCaseId()));
-                        save(key, caseInfo.getRecordId(), originalTrajectory, end.getInteger("action"));
-                        if (end.getBoolean("taskEnd")) {
-                            removeListener(key);
-                            RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null, null,
-                                    duration);
-                            WebSocketManage.sendInfo(key.concat("_").concat(channel), JSON.toJSONString(endMsg));
-                        }
+//                        TaskCaseInfoBo caseInfo = paramItem.getObject("caseInfo", TaskCaseInfoBo.class);
+//                        CaseTrajectoryDetailBo originalTrajectory = JSONObject.parseObject(caseInfo.getDetailInfo(), CaseTrajectoryDetailBo.class);
+//                        TjTaskCaseRecord param = new TjTaskCaseRecord();
+//                        param.setId(caseInfo.getRecordId());
+//                        originalTrajectory.setDuration(duration);
+//                        param.setDetailInfo(JSON.toJSONString(originalTrajectory));
+//                        int endSuccess = taskCaseRecordMapper.updateById(param);
+//                        log.info(StringUtils.format("修改用例场景评价:{}", endSuccess));
+//                        clearRunningCase(String.valueOf(caseInfo.getCaseId()));
+//                        save(key, caseInfo.getRecordId(), originalTrajectory, end.getInteger("action"));
+//                        if (end.getBoolean("taskEnd")) {
+//                            removeListener(key);
+//                            RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null, null,
+//                                    duration);
+//                            WebSocketManage.sendInfo(key.concat("_").concat(channel), JSON.toJSONString(endMsg));
+//                        }
                         break;
                     default:
                         break;

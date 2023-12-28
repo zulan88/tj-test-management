@@ -27,7 +27,5 @@ public class CaseRealTestVo {
 
     private String endTime;
 
-    private Set<String> channels;
-
     Map<String, List<TrajectoryDetailBo>> mainTrajectories;
 }

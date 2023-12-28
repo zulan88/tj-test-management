@@ -22,44 +22,9 @@ public class TaskCaseInfoBo extends TjTaskCase {
 
     private String allStageLabel;
 
-    private Integer recordId;
-
     private String filePath;
 
     private String geoJsonPath;
-
-    /**
-     * 任务用例测试点位详情
-     */
-    private String detailInfo;
-
-    /**
-     * 任务用例测试轨迹文件
-     */
-    private String routeFile;
-
-    /**
-     * 实车试验点位详情
-     */
-    private String realDetailInfo;
-
-    /**
-     * 实车试验轨迹文件
-     */
-    private String realRouteFile;
-
-
-    /**
-     * 用例原点位详情
-     */
-    private String caseDetailInfo;
-
-    /**
-     * 用例原轨迹文件
-     */
-    private String caseRouteFile;
-
-    private Integer recordStatus;
 
     private List<TaskCaseConfigBo> dataConfigs;
 }

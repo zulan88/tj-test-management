@@ -67,7 +67,7 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
     CaseRealTestVo caseStartEnd(Integer taskId, Integer caseId, Integer action,
                                 boolean taskEnd, Map<String, Object> context) throws BusinessException;
 
-    void playback(Integer recordId, Integer action) throws BusinessException, IOException;
+    void playback(Integer taskId, Integer caseId, Integer action) throws BusinessException, IOException;
 
     /**
      * 获取实时测试结果

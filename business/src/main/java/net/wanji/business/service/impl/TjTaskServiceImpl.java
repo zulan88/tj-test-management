@@ -359,7 +359,6 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
                 deviceDetailDto.setStatus(YN.Y_INT);
                 deviceDetailDto.setSupportRoles(PartRole.AV);
-                deviceDetailDto.setAttribute2(SecurityUtils.getUsername());
                 List<DeviceDetailVo> avDevices = deviceDetailMapper.selectByCondition(deviceDetailDto);
                 TjTask task = new TjTask();
                 if (ObjectUtil.isNotEmpty(taskSaveDto.getId())) {
@@ -566,7 +565,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                     TjTaskDataConfig oldAvConfig = tjTaskDataConfigService.getOne(new LambdaQueryWrapper<TjTaskDataConfig>()
                             .eq(TjTaskDataConfig::getTaskId, tjTask.getId())
                             .eq(TjTaskDataConfig::getType, PartRole.AV));
-                    newAvConfig.setId(oldAvConfig.getId());
+                    this.updateById(tjTask);
                     BeanUtils.copyBeanProp(newAvConfig, oldAvConfig);
                 } else {
                     BeanUtils.copyBeanProp(tjTask, in);
@@ -584,8 +583,12 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                         tjTask.setMeasurandId(in.getMeasurandId());
                         tjTask.setApprecordId(in.getApprecordId());
                     }
+                    this.save(tjTask);
+                    newAvConfig.setTaskId(tjTask.getId());
+                    newAvConfig.setType(PartRole.AV);
+                    newAvConfig.setParticipatorId("1");
+                    newAvConfig.setParticipatorName("主车1");
                 }
-                this.saveOrUpdate(tjTask);
                 in.getAvDeviceIds().stream().findFirst().ifPresent(newAvConfig::setDeviceId);
                 tjTaskDataConfigService.saveOrUpdate(newAvConfig);
                 return tjTask.getId();
@@ -604,12 +607,11 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                     taskCaseList.get(i).setSort(i + 1);
                 });
                 tjTaskCaseService.updateBatchById(taskCaseList);
-
+                // 查询对应用例
                 List<TjCase> cases = tjCaseService.listByIds(taskCaseList.stream().map(TjTaskCase::getCaseId).collect(Collectors.toList()));
                 // todo 设备从运营平台查询
                 TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
                 deviceDetailDto.setSupportRoles(PartRole.MV_SIMULATION);
-                deviceDetailDto.setAttribute2(SecurityUtils.getUsername());
                 List<DeviceDetailVo> simulationDevices = deviceDetailMapper.selectByCondition(deviceDetailDto);
                 if (CollectionUtils.isEmpty(simulationDevices)) {
                     throw new BusinessException("无可用的从车设备");

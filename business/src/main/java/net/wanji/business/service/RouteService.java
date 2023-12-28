@@ -191,10 +191,10 @@ public class RouteService {
     }
 
 
-    public boolean saveTaskRouteFile2(Integer recordId, List<List<SimulationTrajectoryDto>> data, Integer action) throws Exception {
-        TjTaskCaseRecord taskCaseRecord = taskCaseRecordMapper.selectById(recordId);
+    public boolean saveTaskRouteFile2(TjTaskCaseRecord taskCaseRecord, List<List<SimulationTrajectoryDto>> data, Integer action) throws Exception {
         String path = FileUtils.writeRoute(data, WanjiConfig.getRoutePath(), Extension.TXT);
-        log.info("保存任务 {} 用例 {} 测试记录 {} 路径文件 : {}, 轨迹长度：{}", taskCaseRecord.getTaskId(), taskCaseRecord.getCaseId(), recordId, path, data.size());
+        log.info("保存任务 {} 用例 {} 测试记录 {} 路径文件 : {}, 轨迹长度：{}", taskCaseRecord.getTaskId(),
+                taskCaseRecord.getCaseId(), taskCaseRecord.getId(), path, data.size());
         CaseTrajectoryDetailBo trajectoryDetailBo = JSONObject.parseObject(taskCaseRecord.getDetailInfo(), CaseTrajectoryDetailBo.class);
         String duration = DateUtils.secondsToDuration((int) Math.floor((data.size())) / 10);
         trajectoryDetailBo.setDuration(duration);

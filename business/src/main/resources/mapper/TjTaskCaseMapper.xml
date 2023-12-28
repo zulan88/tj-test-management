@@ -51,26 +51,20 @@
                 and a.case_id = #{caseId}
             </if>
         </where>
+        order by a.sort
     </select>
-
 
     <resultMap id="TaskCaseInfoResult" type="net.wanji.business.domain.bo.TaskCaseInfoBo">
         <id property="id" column="id"/>
         <result property="caseId" column="case_id"/>
         <result property="taskId" column="task_id"/>
         <result property="sort" column="sort"/>
-        <result property="sceneName" column="scene_name"/>
-        <result property="allStageLabel" column="all_stage_label"/>
-        <result property="caseNumber" column="case_number"/>
-        <result property="realDetailInfo" column="real_detail_info"/>
-        <result property="realRouteFile" column="real_route_file"/>
-        <result property="caseDetailInfo" column="case_detail_info"/>
-        <result property="caseRouteFile" column="case_route_file"/>
-        <result property="recordId" column="record_id"/>
         <result property="detailInfo" column="detail_info"/>
         <result property="routeFile" column="route_file"/>
         <result property="status" column="status"/>
-        <result property="recordStatus" column="record_status"/>
+        <result property="caseNumber" column="case_number"/>
+        <result property="sceneName" column="scene_name"/>
+        <result property="allStageLabel" column="all_stage_label"/>
         <collection property="dataConfigs" ofType="net.wanji.business.domain.bo.TaskCaseConfigBo"
                     select="selectTaskCaseConfigInfo" column="{taskId= task_id,caseId= case_id}"/>
     </resultMap>
@@ -94,6 +88,55 @@
         <result property="lastOnlineDate" column="last_online_date"/>
     </resultMap>
 
+    <select id="selectTaskCaseByCondition" resultMap="TaskCaseInfoResult">
+        SELECT
+            ttc.id,
+            ttc.task_id,
+            ttc.case_id,
+            ttc.sort,
+            ttc.`status`,
+            a.case_number,
+            a.scene_name,
+            a.all_stage_label,
+            tcr.id as record_id,
+            tcr.detail_info,
+            tcr.route_file,
+            tcr.status as record_status
+        FROM
+            tj_task_case ttc
+        INNER JOIN (
+            SELECT
+                tc.id,
+                tc.case_number,
+                sd.`name` AS scene_name,
+                sd.all_stage_label
+            FROM
+                tj_case tc
+            INNER JOIN (
+                SELECT
+                    fsd.id,
+                    fs.NAME,
+                    fsd.all_stage_label
+                FROM
+                    tj_fragmented_scene_detail fsd
+                LEFT JOIN tj_fragmented_scenes fs ON fsd.fragmented_scene_id = fs.id
+            ) sd ON sd.id = tc.scene_detail_id
+        ) a ON a.id = ttc.case_id
+        LEFT JOIN tj_task_case_record tcr ON (tcr.task_id = ttc.task_id AND tcr.case_id = ttc.case_id)
+        <where>
+            <if test="taskId != null and taskId > 0">
+                and ttc.task_id = #{taskId}
+            </if>
+            <if test="caseId != null and caseId > 0">
+                and ttc.case_id = #{caseId}
+            </if>
+            <if test="id != null and id > 0 ">
+                and ttc.id = #{id}
+            </if>
+        </where>
+        ORDER BY ttc.sort
+    </select>
+
     <select id="selectTaskCaseConfigInfo" resultMap="TaskCaseConfigResult">
         SELECT dc.id       AS config_id,
                dc.task_id,
@@ -115,90 +158,6 @@
                  LEFT JOIN tj_device_detail dd ON dd.device_id = dc.device_id
         where dc.task_id = #{taskId}
           and (dc.case_id = #{caseId} or dc.case_id = 0)
-    </select>
-
-    <select id="selectTaskCaseInfo" resultMap="TaskCaseInfoResult">
-        SELECT ttc.id  as task_case_id,
-               ttc.case_id,
-               ttc.task_id,
-               sd.NAME AS scene_name,
-               sd.all_stage_label,
-               tc.scene_detail_id,
-               tc.resources_detail_id,
-               tc.detail_info,
-               tc.route_file,
-               tc.`status`,
-               rd.file_path,
-               rd.attribute4
-        FROM tj_task_case ttc
-                 LEFT JOIN tj_case tc ON tc.id = ttc.case_id
-                 LEFT JOIN (
-            SELECT fsd.id, fs.NAME, fsd.all_stage_label
-            FROM tj_fragmented_scene_detail fsd
-                     LEFT JOIN tj_fragmented_scenes fs ON fsd.fragmented_scene_id = fs.id) sd
-                           ON sd.id = tc.scene_detail_id
-                 LEFT JOIN tj_task_data_config dc ON dc.task_id = ttc.task_id
-                 LEFT JOIN tj_resources_detail rd ON rd.id = tc.resources_detail_id
-
-        WHERE ttc.id = #{taskCaseId}
-    </select>
-
-    <select id="selectTaskCaseByCondition" resultMap="TaskCaseInfoResult">
-        SELECT
-            ttc.id,
-            ttc.task_id,
-            ttc.case_id,
-            ttc.sort,
-            ttc.`status`,
-            a.case_number,
-            a.scene_name,
-            a.all_stage_label,
-            a.case_detail_info,
-            a.case_route_file,
-            a.real_detail_info,
-            a.real_route_file,
-            tcr.id as record_id,
-            tcr.detail_info,
-            tcr.route_file,
-            tcr.status as record_status
-        FROM
-            tj_task_case ttc
-        INNER JOIN (
-            SELECT
-                tc.id,
-                tc.case_number,
-                tc.route_file as case_route_file,
-                tc.detail_info as case_detail_info,
-                sd.`name` AS scene_name,
-                sd.all_stage_label,
-                rr.detail_info AS real_detail_info,
-                rr.route_file AS real_route_file
-            FROM
-                tj_case tc
-            INNER JOIN (
-                SELECT
-                    fsd.id,
-                    fs.NAME,
-                    fsd.all_stage_label
-                FROM
-                    tj_fragmented_scene_detail fsd
-                LEFT JOIN tj_fragmented_scenes fs ON fsd.fragmented_scene_id = fs.id
-            ) sd ON sd.id = tc.scene_detail_id
-            LEFT JOIN tj_case_real_record rr ON rr.case_id = tc.id
-        ) a ON a.id = ttc.case_id
-        LEFT JOIN tj_task_case_record tcr ON (tcr.task_id = ttc.task_id AND tcr.case_id = ttc.case_id)
-        <where>
-            <if test="taskId != null and taskId > 0">
-                and ttc.task_id = #{taskId}
-            </if>
-            <if test="caseId != null and caseId > 0">
-                and ttc.case_id = #{caseId}
-            </if>
-            <if test="id != null and id > 0 ">
-                and ttc.id = #{id}
-            </if>
-        </where>
-        ORDER BY ttc.sort
     </select>
 
     <update id="updateByCondition">

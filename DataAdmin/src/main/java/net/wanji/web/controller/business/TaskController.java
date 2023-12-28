@@ -389,4 +389,26 @@ public class TaskController extends BaseController {
         }
         return AjaxResult.error("操作失败");
     }
+
+    @ApiOperationSort(27)
+    @ApiOperation(value = "27.回放")
+    @GetMapping("/playback")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "taskId", value = "任务ID", required = true, dataType = "Integer", paramType = "query", example = "1"),
+            @ApiImplicitParam(name = "caseId", value = "用例ID", required = false, dataType = "Integer", paramType = "query", example = "1,2,3"),
+            @ApiImplicitParam(name = "action", value = "1：开始；2：暂停；3：继续；4：结束", required = true, dataType = "Integer", paramType = "query", example = "1")
+    })
+    public AjaxResult playback(@RequestParam("taskId") Integer taskId,
+                               @RequestParam("caseId") Integer caseId,
+                               @RequestParam("action") Integer action) {
+        try {
+            taskCaseService.playback(taskId, caseId, action);
+        } catch (Exception e) {
+            log.error("回放失败:{}", e);
+            return AjaxResult.error("回放失败");
+        }
+
+
+        return AjaxResult.success("请等待...");
+    }
 }

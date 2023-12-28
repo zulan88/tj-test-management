@@ -95,7 +95,8 @@ public class MyWebSocketHandle extends TextWebSocketHandler {
             return ChannelBuilder.buildTaskDataChannel(userName, Integer.valueOf(id));
         }
         if (ChannelBuilder.TASK_PREVIEW == clientType) {
-            return ChannelBuilder.buildTaskPreviewChannel(userName, Integer.valueOf(id));
+            return ChannelBuilder.buildTaskPreviewChannel(userName, Integer.valueOf(id),
+                    StringUtils.isEmpty(signId) ? null : Integer.valueOf(signId));
         }
         if (ChannelBuilder.TESTING_PREVIEW == clientType) {
             return ChannelBuilder.buildTestingPreviewChannel(userName, Integer.valueOf(id));

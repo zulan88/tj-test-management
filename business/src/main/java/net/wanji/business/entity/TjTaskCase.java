@@ -64,6 +64,14 @@ public class TjTaskCase implements Serializable {
     @TableField(value = "passing_rate")
     private String passingRate;
 
+    @ApiModelProperty(value = "点位详情", dataType = "String")
+    @TableField(value = "detail_info")
+    private String detailInfo;
+
+    @ApiModelProperty(value = "轨迹文件路径", dataType = "String")
+    @TableField(value = "route_file")
+    private String routeFile;
+
     /**
      * 开始时间
      */

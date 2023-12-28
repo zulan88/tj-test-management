@@ -1,7 +1,11 @@
 package net.wanji.business.listener;
 
 import net.wanji.common.common.SimulationTrajectoryDto;
+import net.wanji.common.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ObjectUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,6 +20,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Component
 public class KafkaCollector {
+
+    private static final Logger log = LoggerFactory.getLogger("kafka");
 
     public static Map<String, Map<Integer, List<List<SimulationTrajectoryDto>>>> collectorMap = new ConcurrentHashMap<>();
 
@@ -42,7 +48,7 @@ public class KafkaCollector {
         // 有key，有用例
         List<List<SimulationTrajectoryDto>> trajectories = caseTrajectoryMap.get(caseId);
         trajectories.add(data);
-        System.out.println(key + " : " + trajectories.size());
+        log.info("{} - {} ： {}", key, caseId, trajectories.size());
         collectorMap.put(key, caseTrajectoryMap);
         return true;
     }
@@ -59,8 +65,14 @@ public class KafkaCollector {
                 : null;
     }
 
-    public void remove(String key) {
-        collectorMap.remove(key);
+    public void remove(String key, Integer caseId) {
+        if (!collectorMap.containsKey(key)) {
+            return;
+        }
+        Map<Integer, List<List<SimulationTrajectoryDto>>> caseTrajectoryMap = collectorMap.get(key);
+        if (!ObjectUtils.isEmpty(caseId) && caseTrajectoryMap.containsKey(caseId)) {
+            collectorMap.remove(key);
+        }
     }
 
 }
