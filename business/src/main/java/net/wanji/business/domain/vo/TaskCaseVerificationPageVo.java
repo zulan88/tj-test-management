@@ -25,7 +25,7 @@ public class TaskCaseVerificationPageVo {
 
     private Map<String, List<TaskCaseConfigBo>> statusMap;
 
-    private Set<String> channels;
+    private Map<String, List<TaskCaseConfigBo>> viewMap;
 
     private boolean canStart;
 

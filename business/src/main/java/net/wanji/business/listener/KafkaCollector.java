@@ -1,6 +1,6 @@
 package net.wanji.business.listener;
 
-import net.wanji.common.common.SimulationTrajectoryDto;
+import net.wanji.common.common.ClientSimulationTrajectoryDto;
 import net.wanji.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,30 +23,30 @@ public class KafkaCollector {
 
     private static final Logger log = LoggerFactory.getLogger("kafka");
 
-    public static Map<String, Map<Integer, List<List<SimulationTrajectoryDto>>>> collectorMap = new ConcurrentHashMap<>();
+    public static Map<String, Map<Integer, List<List<ClientSimulationTrajectoryDto>>>> collectorMap = new ConcurrentHashMap<>();
 
 
-    public boolean collector(String key, Integer caseId, List<SimulationTrajectoryDto> data) {
+    public boolean collector(String key, Integer caseId, List<ClientSimulationTrajectoryDto> data) {
         // 没有key
         if (!collectorMap.containsKey(key)) {
-            Map<Integer, List<List<SimulationTrajectoryDto>>> caseTrajectoryMap = new HashMap<>();
-            List<List<SimulationTrajectoryDto>> trajectoriesList = new ArrayList<>();
+            Map<Integer, List<List<ClientSimulationTrajectoryDto>>> caseTrajectoryMap = new HashMap<>();
+            List<List<ClientSimulationTrajectoryDto>> trajectoriesList = new ArrayList<>();
             trajectoriesList.add(data);
             caseTrajectoryMap.put(caseId, trajectoriesList);
             collectorMap.put(key, caseTrajectoryMap);
             return true;
         }
-        Map<Integer, List<List<SimulationTrajectoryDto>>> caseTrajectoryMap = collectorMap.get(key);
+        Map<Integer, List<List<ClientSimulationTrajectoryDto>>> caseTrajectoryMap = collectorMap.get(key);
         // 有key，没有用例
         if (!caseTrajectoryMap.containsKey(caseId)) {
-            List<List<SimulationTrajectoryDto>> trajectoriesList = new ArrayList<>();
+            List<List<ClientSimulationTrajectoryDto>> trajectoriesList = new ArrayList<>();
             trajectoriesList.add(data);
             caseTrajectoryMap.put(caseId, trajectoriesList);
             collectorMap.put(key, caseTrajectoryMap);
             return true;
         }
         // 有key，有用例
-        List<List<SimulationTrajectoryDto>> trajectories = caseTrajectoryMap.get(caseId);
+        List<List<ClientSimulationTrajectoryDto>> trajectories = caseTrajectoryMap.get(caseId);
         trajectories.add(data);
         log.info("{} - {} ： {}", key, caseId, trajectories.size());
         collectorMap.put(key, caseTrajectoryMap);
@@ -59,7 +59,7 @@ public class KafkaCollector {
                 : 0;
     }
 
-    public List<List<SimulationTrajectoryDto>> take(String key, Integer caseId) {
+    public List<List<ClientSimulationTrajectoryDto>> take(String key, Integer caseId) {
         return collectorMap.containsKey(key)
                 ? (collectorMap.get(key).getOrDefault(caseId, null))
                 : null;
@@ -69,7 +69,7 @@ public class KafkaCollector {
         if (!collectorMap.containsKey(key)) {
             return;
         }
-        Map<Integer, List<List<SimulationTrajectoryDto>>> caseTrajectoryMap = collectorMap.get(key);
+        Map<Integer, List<List<ClientSimulationTrajectoryDto>>> caseTrajectoryMap = collectorMap.get(key);
         if (!ObjectUtils.isEmpty(caseId) && caseTrajectoryMap.containsKey(caseId)) {
             collectorMap.remove(key);
         }

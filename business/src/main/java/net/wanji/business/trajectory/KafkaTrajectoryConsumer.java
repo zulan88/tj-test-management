@@ -18,6 +18,7 @@ import net.wanji.business.mapper.TjTaskMapper;
 import net.wanji.business.service.TjCaseRealRecordService;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.util.RedisLock;
+import net.wanji.common.common.ClientSimulationTrajectoryDto;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.StringUtils;
@@ -59,7 +60,7 @@ public class KafkaTrajectoryConsumer {
     @Autowired
     private RedisLock redisLock;
 
-    @KafkaListener(id = "singleTrajectory", topics = {"tj_master_fusion_data"}, groupId = "trajectory3")
+    @KafkaListener(id = "singleTrajectory", topics = {"tj_master_fusion_data"}, groupId = "trajectory4")
     public void listen(ConsumerRecord<String, String> record) {
         JSONObject jsonObject = JSONObject.parseObject(record.value());
         Integer taskId = jsonObject.getInteger("taskId");
@@ -70,8 +71,8 @@ public class KafkaTrajectoryConsumer {
                 : ChannelBuilder.buildTestingDataChannel(userName, caseId);
         JSONArray participantTrajectories = jsonObject.getJSONArray("participantTrajectories");
         // 收集数据
-        List<SimulationTrajectoryDto> data = participantTrajectories.stream()
-                .map(t -> JSONObject.parseObject(t.toString(), SimulationTrajectoryDto.class))
+        List<ClientSimulationTrajectoryDto> data = participantTrajectories.stream()
+                .map(t -> JSONObject.parseObject(t.toString(), ClientSimulationTrajectoryDto.class))
                 .collect(Collectors.toList());
         outLog(data);
         if(taskId > 0){
@@ -108,10 +109,10 @@ public class KafkaTrajectoryConsumer {
         return CollectionUtils.isEmpty(records) ? 0 : records.get(0).getId();
     }
 
-    private void outLog(List<SimulationTrajectoryDto> data) {
+    private void outLog(List<ClientSimulationTrajectoryDto> data) {
         StringBuilder sb = new StringBuilder();
         long now = System.currentTimeMillis();
-        for (SimulationTrajectoryDto trajectoryDto : data) {
+        for (ClientSimulationTrajectoryDto trajectoryDto : data) {
             sb.append(StringUtils.format("{}：{}ms；",trajectoryDto.getSource(), now - Long.parseLong(trajectoryDto.getTimestamp())));
         }
         log.info(sb.toString());

@@ -210,6 +210,7 @@
 
     <select id="selectTaskCaseInfo" resultMap="TaskCaseResult">
         select ttc.id as task_case_id,
+               ttc.task_id,
                ttc.case_id,
                ttc.sort,
                ttc.passing_rate,

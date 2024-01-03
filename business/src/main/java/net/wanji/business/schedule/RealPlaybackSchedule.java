@@ -2,6 +2,7 @@ package net.wanji.business.schedule;
 
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.socket.WebSocketManage;
+import net.wanji.common.common.ClientSimulationTrajectoryDto;
 import net.wanji.common.common.RealTestTrajectoryDto;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
@@ -29,7 +30,7 @@ public class RealPlaybackSchedule {
     static Map<String, RealPlaybackDomain> futureMap = new HashMap<>(16);
 
 
-    public static void startSendingData(String key, String mainChannel, List<List<SimulationTrajectoryDto>> trajectories) throws BusinessException, IOException {
+    public static void startSendingData(String key, String mainChannel, List<List<ClientSimulationTrajectoryDto>> trajectories) throws BusinessException, IOException {
         stopSendingData(key);
         RealPlaybackDomain realPlaybackDomain = new RealPlaybackDomain(key, mainChannel, trajectories);
         futureMap.put(key, realPlaybackDomain);

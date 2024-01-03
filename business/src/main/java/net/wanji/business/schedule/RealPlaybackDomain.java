@@ -2,36 +2,24 @@ package net.wanji.business.schedule;
 
 import com.alibaba.fastjson.JSONObject;
 import lombok.Data;
-import net.wanji.business.common.Constants.PartRole;
-import net.wanji.business.common.Constants.PartType;
 import net.wanji.business.common.Constants.RedisMessageType;
-import net.wanji.business.component.CountDown;
-import net.wanji.business.component.PathwayPoints;
 import net.wanji.business.domain.RealWebsocketMessage;
-import net.wanji.business.domain.bo.TrajectoryDetailBo;
-import net.wanji.business.domain.dto.CountDownDto;
 import net.wanji.business.exception.BusinessException;
-import net.wanji.common.common.RealTestTrajectoryDto;
-import net.wanji.common.common.SimulationTrajectoryDto;
+import net.wanji.business.socket.WebSocketManage;
+import net.wanji.common.common.ClientSimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.utils.DateUtils;
-import net.wanji.common.utils.StringUtils;
-import net.wanji.business.socket.WebSocketManage;
 import net.wanji.framework.manager.AsyncManager;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 
-import java.awt.geom.Point2D;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * @Auther: guanyuduo
@@ -44,12 +32,12 @@ public class RealPlaybackDomain {
     private ScheduledFuture<?> future;
     private String key;
     private String mainChannel;
-    private List<List<SimulationTrajectoryDto>> trajectories;
+    private List<List<ClientSimulationTrajectoryDto>> trajectories;
     private boolean running;
     private int index;
     private int length;
 
-    public RealPlaybackDomain(String key, String mainChannel, List<List<SimulationTrajectoryDto>> trajectories) {
+    public RealPlaybackDomain(String key, String mainChannel, List<List<ClientSimulationTrajectoryDto>> trajectories) {
         this.key = key;
         this.trajectories = trajectories;
         this.mainChannel = mainChannel;
@@ -92,7 +80,7 @@ public class RealPlaybackDomain {
                 }
                 String duration = DateUtils.secondsToDuration((int) Math.floor((double) (length - index) / 10));
                 if (CollectionUtils.isNotEmpty(trajectories)) {
-                    List<SimulationTrajectoryDto> data = trajectories.get(index);
+                    List<ClientSimulationTrajectoryDto> data = trajectories.get(index);
 //                    CountDownDto countDownDto = countDown.countDown(data.get(0).getSpeed(),
 //                            new Point2D.Double(data.get(0).getLongitude(), data.get(0).getLatitude()));
 //                    if (!ObjectUtils.isEmpty(countDownDto)) {

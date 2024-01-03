@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import net.wanji.business.common.Constants.ChannelBuilder;
 import net.wanji.business.common.Constants.Extension;
+import net.wanji.business.common.Constants.PartType;
 import net.wanji.business.common.Constants.RedisMessageType;
 import net.wanji.business.domain.WebsocketMessage;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
@@ -120,6 +121,10 @@ public class RedisTrajectory2Consumer {
         ObjectMapper objectMapper = new ObjectMapper();
         String methodLog = StringUtils.format("{}仿真验证 - ", sceneDebugDto.getNumber());
         Long nowtime = System.currentTimeMillis();
+        List<String> mainId = new ArrayList<>();
+        sceneDebugDto.getTrajectoryJson().getParticipantTrajectories().stream().filter(p -> PartType.MAIN.equals(p.getType())).findFirst().ifPresent(p -> {
+            mainId.add(p.getId());
+        });
         return (message, pattern) -> {
             try {
                 // 解析消息
@@ -150,6 +155,11 @@ public class RedisTrajectory2Consumer {
                             // 检查轨迹
                             List<ParticipantTrajectoryVo> res = routeService.checkSimulaitonRoute2(sceneDebugDto.getTrajectoryJson(), data, nowtime);
                             // 保存轨迹(本地)
+                            for (TrajectoryValueDto value : data) {
+                                if (mainId.contains(value.getId())) {
+                                    value.setTimestamp(value.getTimestamp() + nowtime);
+                                }
+                            }
                             receiveData(channel, simulationTrajectory);
                             // send ws
                             WebsocketMessage msg = new WebsocketMessage(

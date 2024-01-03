@@ -3,14 +3,11 @@ package net.wanji.business.service;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import net.wanji.business.common.Constants;
-import net.wanji.business.common.Constants.ChannelBuilder;
 import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.Extension;
 import net.wanji.business.common.Constants.TaskCaseStatusEnum;
 import net.wanji.business.common.Constants.TaskStatusEnum;
 import net.wanji.business.common.Constants.TestingStatusEnum;
-import net.wanji.business.domain.bo.CaseInfoBo;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
@@ -27,6 +24,7 @@ import net.wanji.business.mapper.TjCaseRealRecordMapper;
 import net.wanji.business.mapper.TjTaskCaseMapper;
 import net.wanji.business.mapper.TjTaskCaseRecordMapper;
 import net.wanji.business.mapper.TjTaskMapper;
+import net.wanji.common.common.ClientSimulationTrajectoryDto;
 import net.wanji.common.common.RealTestTrajectoryDto;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
@@ -43,10 +41,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
-import org.springframework.util.StopWatch;
 
 import java.io.IOException;
-import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -122,7 +118,7 @@ public class RouteService {
         }
     }
 
-    public boolean saveRealRouteFile2(TjCaseRealRecord caseRealRecord, int action, List<List<SimulationTrajectoryDto>> data) throws Exception {
+    public boolean saveRealRouteFile2(TjCaseRealRecord caseRealRecord, int action, List<List<ClientSimulationTrajectoryDto>> data) throws Exception {
         // 保存本地文件
         String path = null;
         try {
@@ -191,7 +187,7 @@ public class RouteService {
     }
 
 
-    public boolean saveTaskRouteFile2(TjTaskCaseRecord taskCaseRecord, List<List<SimulationTrajectoryDto>> data, Integer action) throws Exception {
+    public boolean saveTaskRouteFile2(TjTaskCaseRecord taskCaseRecord, List<List<ClientSimulationTrajectoryDto>> data, Integer action) throws Exception {
         String path = FileUtils.writeRoute(data, WanjiConfig.getRoutePath(), Extension.TXT);
         log.info("保存任务 {} 用例 {} 测试记录 {} 路径文件 : {}, 轨迹长度：{}", taskCaseRecord.getTaskId(),
                 taskCaseRecord.getCaseId(), taskCaseRecord.getId(), path, data.size());
@@ -204,6 +200,19 @@ public class RouteService {
         taskCaseRecord.setEndTime(LocalDateTime.now());
         int result = taskCaseRecordMapper.updateById(taskCaseRecord);
         return result > 0;
+    }
+
+    public void checkMain(List<List<ClientSimulationTrajectoryDto>> data, String mainSource) {
+        if (StringUtils.isBlank(mainSource)) {
+            return;
+        }
+        for (List<ClientSimulationTrajectoryDto> trajectory : CollectionUtils.emptyIfNull(data)) {
+            for (ClientSimulationTrajectoryDto dto : CollectionUtils.emptyIfNull(trajectory)) {
+                if (mainSource.equals(dto.getSource())) {
+                    dto.setMain(Boolean.TRUE);
+                }
+            }
+        }
     }
 
     /**
@@ -412,6 +421,22 @@ public class RouteService {
         return data;
     }
 
+    /**
+     * 从仿真验证轨迹文件中读取主车轨迹
+     * @param fileName
+     * @return
+     * @throws IOException
+     */
+    public List<TrajectoryValueDto> readMainTrajectoryFromOriRoute(String fileName) throws IOException {
+        List<SimulationTrajectoryDto> participantTrajectories = readOriRouteFile(fileName);
+        return participantTrajectories.stream()
+                .map(SimulationTrajectoryDto::getValue)
+                .filter(value -> !ObjectUtils.isEmpty(value))
+                .flatMap(List::stream)
+                .filter(a -> 1 == a.getDriveType())
+                .collect(Collectors.toList());
+    }
+
 
     /**
      * 读取实车验证轨迹文件
@@ -437,11 +462,11 @@ public class RouteService {
      * @return
      * @throws IOException
      */
-    public List<List<SimulationTrajectoryDto>> readRealTrajectoryFromRouteFile2(String fileName) {
+    public List<List<ClientSimulationTrajectoryDto>> readRealTrajectoryFromRouteFile2(String fileName) {
         return readRealRouteFile2(fileName);
     }
 
-    public List<List<SimulationTrajectoryDto>> readRealRouteFile2(String fileName) {
+    public List<List<ClientSimulationTrajectoryDto>> readRealRouteFile2(String fileName) {
         String routeFile = FileUploadUtils.getAbsolutePathFileName(fileName);
         return FileUtils.readRealRouteFile2(routeFile);
     }

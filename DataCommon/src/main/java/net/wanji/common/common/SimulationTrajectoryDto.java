@@ -30,14 +30,6 @@ public class SimulationTrajectoryDto {
         return timestampType;
     }
 
-    public String getSource() {
-        return source;
-    }
-
-    public void setSource(String source) {
-        this.source = source;
-    }
-
     public void setTimestampType(String timestampType) {
         this.timestampType = timestampType;
     }

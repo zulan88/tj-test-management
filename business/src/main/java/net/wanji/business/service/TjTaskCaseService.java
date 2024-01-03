@@ -67,6 +67,16 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
     CaseRealTestVo caseStartEnd(Integer taskId, Integer caseId, Integer action,
                                 boolean taskEnd, Map<String, Object> context) throws BusinessException;
 
+    /**
+     * 回放
+     *
+     * @param taskId 任务ID
+     * @param caseId 任务用例ID
+     * @param action 1：开始回放 2：暂停；3：继续；4：结束回放
+     * @return
+     * @throws BusinessException
+     * @throws IOException
+     */
     void playback(Integer taskId, Integer caseId, Integer action) throws BusinessException, IOException;
 
     /**
@@ -93,7 +103,7 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
 
     List<CaseTreeVo> selectTree(String type, Integer taskId);
 
-    boolean addTaskCase(@NotNull Integer taskId, @NotNull List<Integer> caseIds);
+    boolean addTaskCase(@NotNull Integer taskId, @NotNull List<Integer> caseIds) throws BusinessException ;
 
     boolean deleteTaskCase(@NotNull Integer taskId, @NotNull List<Integer> caseIds);
 

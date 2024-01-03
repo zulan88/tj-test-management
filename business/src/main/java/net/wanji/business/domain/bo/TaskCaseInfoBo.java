@@ -1,8 +1,6 @@
 package net.wanji.business.domain.bo;
 
 import lombok.Data;
-import net.wanji.business.entity.TjCase;
-import net.wanji.business.entity.TjCaseRealRecord;
 import net.wanji.business.entity.TjTaskCase;
 import net.wanji.business.entity.TjTaskCaseRecord;
 
@@ -25,6 +23,8 @@ public class TaskCaseInfoBo extends TjTaskCase {
     private String filePath;
 
     private String geoJsonPath;
+
+    private List<TjTaskCaseRecord> records;
 
     private List<TaskCaseConfigBo> dataConfigs;
 }

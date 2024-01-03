@@ -24,7 +24,7 @@ public class RealVehicleVerificationPageVo {
 
     private Map<String, List<CaseConfigBo>> statusMap;
 
-    private Set<String> channels;
+    private Map<String, List<CaseConfigBo>> viewMap;
 
     private boolean canStart;
 

@@ -47,6 +47,7 @@ import net.wanji.business.service.TjCaseService;
 import net.wanji.business.service.TjDeviceDetailService;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.util.RedisLock;
+import net.wanji.common.common.ClientSimulationTrajectoryDto;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
@@ -174,7 +175,7 @@ public class TestingServiceImpl implements TestingService {
         stopWatch.stop();
 //        log.info(stopWatch.prettyPrint());
         // 6.返回结果集
-        return buildPageVo(caseInfoBo, startMap, allCaseConfigs);
+        return buildPageVo(caseInfoBo, startMap, allCaseConfigs, distCaseConfigs);
     }
 
     /**
@@ -226,7 +227,7 @@ public class TestingServiceImpl implements TestingService {
      */
     private RealVehicleVerificationPageVo buildPageVo(CaseInfoBo caseInfoBo,
                                                       Map<String, String> startMap,
-                                                      List<CaseConfigBo> caseConfigs) {
+                                                      List<CaseConfigBo> caseConfigs, List<CaseConfigBo> distCaseConfigs) {
         for (CaseConfigBo caseConfigBo : caseConfigs) {
             String start = startMap.get(caseConfigBo.getBusinessId());
             if (StringUtils.isNotEmpty(start)) {
@@ -239,10 +240,9 @@ public class TestingServiceImpl implements TestingService {
         result.setCaseId(caseInfoBo.getId());
         result.setFilePath(caseInfoBo.getFilePath());
         result.setGeoJsonPath(caseInfoBo.getGeoJsonPath());
-        result.setStatusMap(caseConfigs.stream().collect(
-                Collectors.groupingBy(CaseConfigBo::getParticipantRole)));
-        result.setChannels(caseConfigs.stream().map(CaseConfigBo::getDataChannel).collect(Collectors.toSet()));
-        result.setMessage(validStatus(caseConfigs));
+        result.setStatusMap(distCaseConfigs.stream().collect(Collectors.groupingBy(CaseConfigBo::getParticipantRole)));
+        result.setViewMap(caseConfigs.stream().collect(Collectors.groupingBy(CaseConfigBo::getParticipantRole)));
+        result.setMessage(validStatus(distCaseConfigs));
         return result;
     }
 
@@ -477,8 +477,9 @@ public class TestingServiceImpl implements TestingService {
 
         stopWatch.start("2.保存实车测试记录点位详情信息");
         String key = ChannelBuilder.buildTestingDataChannel(caseInfoBo.getCreatedBy(), caseId);
-        List<List<SimulationTrajectoryDto>> trajectories = kafkaCollector.take(key, caseId);
+        List<List<ClientSimulationTrajectoryDto>> trajectories = kafkaCollector.take(key, caseId);
         try {
+            routeService.checkMain(trajectories, mainConfig.getDataChannel());
             routeService.saveRealRouteFile2(caseInfoBo.getCaseRealRecord(), action, trajectories);
         } catch (Exception e) {
             log.error("保存实车测试记录点位详情信息异常:{}", e);
@@ -626,7 +627,7 @@ public class TestingServiceImpl implements TestingService {
         String key = ChannelBuilder.buildTestingPreviewChannel(SecurityUtils.getUsername(), recordId);
         switch (action) {
             case PlaybackAction.START:
-                List<List<SimulationTrajectoryDto>> trajectories = routeService.readRealTrajectoryFromRouteFile2(caseRealRecord.getRouteFile());
+                List<List<ClientSimulationTrajectoryDto>> trajectories = routeService.readRealTrajectoryFromRouteFile2(caseRealRecord.getRouteFile());
                 RealPlaybackSchedule.startSendingData(key, mainConfigBo.getDataChannel(), trajectories);
                 break;
             case PlaybackAction.SUSPEND:

@@ -25,6 +25,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import net.wanji.common.common.ClientSimulationTrajectoryDto;
 import net.wanji.common.common.RealTestTrajectoryDto;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
@@ -194,12 +195,12 @@ public class FileUtils {
         return list;
     }
 
-    public static List<List<SimulationTrajectoryDto>> readRealRouteFile2(String filePath) {
-        List<List<SimulationTrajectoryDto>> list = new ArrayList<>();
+    public static List<List<ClientSimulationTrajectoryDto>> readRealRouteFile2(String filePath) {
+        List<List<ClientSimulationTrajectoryDto>> list = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
             String line;
             while ((line = br.readLine()) != null) {
-                List<SimulationTrajectoryDto> data = JSONObject.parseArray(line, SimulationTrajectoryDto.class);
+                List<ClientSimulationTrajectoryDto> data = JSONObject.parseArray(line, ClientSimulationTrajectoryDto.class);
                 list.add(data);
             }
         } catch (IOException e) {
