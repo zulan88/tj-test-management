@@ -12,8 +12,10 @@ import net.wanji.business.domain.vo.CasePageVo;
 import net.wanji.business.domain.vo.CaseVerificationVo;
 import net.wanji.business.domain.vo.TjCasePartRoleVo;
 import net.wanji.business.entity.TjCase;
+import net.wanji.business.entity.TjCaseOp;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.common.core.domain.SimpleSelect;
+import org.apache.ibatis.annotations.Param;
 
 import java.io.IOException;
 import java.util.List;
@@ -179,4 +181,6 @@ public interface TjCaseService extends IService<TjCase> {
      * @throws BusinessException
      */
     boolean deleteRecord(Integer recordId) throws BusinessException;
+
+    List<TjCaseOp> selectCaseOp(Integer taskId);
 }

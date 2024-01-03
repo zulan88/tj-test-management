@@ -269,4 +269,18 @@ public class CaseController extends BaseController {
     public AjaxResult configDetailNew(@RequestParam("id") Integer id) throws BusinessException {
         return AjaxResult.success(caseService.getConfigDetailNew(id));
     }
+
+    @ApiOperationSort(21)
+    @ApiOperation(value = "21.查询")
+    @GetMapping("/getCasesByTaskId")
+    public AjaxResult saveCaseDeviceNew(Integer taskId) {
+        return AjaxResult.success(caseService.selectCaseOp(taskId));
+    }
+
+    //孪生专用
+    @GetMapping("/getCasesByTaskIdTW")
+    public AjaxResult saveCaseDeviceNewtw(Integer taskId) {
+        return AjaxResult.success(caseService.selectCaseOp(taskId));
+    }
+
 }

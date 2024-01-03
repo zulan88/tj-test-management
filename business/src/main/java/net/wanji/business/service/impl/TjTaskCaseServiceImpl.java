@@ -935,6 +935,59 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 .in(ColumnName.CASE_ID_COLUMN, caseIds));
     }
 
+    @Override
+    public TaskCaseVerificationPageVo getStatustw(TjTaskCase param) throws BusinessException {
+        if (ObjectUtils.isEmpty(param.getTaskId())) {
+            throw new BusinessException("参数异常");
+        }
+        // 1.查询用例详情
+        // taskId为空时 单个用例测试
+        // caseId为空时 连续性测试
+        List<TaskCaseInfoBo> taskCaseInfos = taskCaseMapper.selectTaskCaseByCondition(param);
+        if (CollectionUtils.isEmpty(taskCaseInfos)) {
+            throw new BusinessException("查询失败，请检查用例是否存在");
+        }
+        TjTask tjTask = taskMapper.selectById(param.getTaskId());
+        if (ObjectUtils.isEmpty(tjTask)) {
+            throw new BusinessException("查询失败，请检查任务是否存在");
+        }
+        // 2.数据填充
+        List<TaskCaseConfigBo> allTaskCaseConfigs = new ArrayList<>();
+        Map<Integer, Map<String, String>> caseBusinessIdAndRoleMap = new HashMap<>();
+        Map<Integer, Integer> caseMainSize = new HashMap<>();
+        Map<String, String> startMap = new HashMap<>();
+        Map<String, List<SimulationTrajectoryDto>> mainTrajectoryMap = new HashMap<>();
+        Map<Integer, TaskCaseInfoBo> taskCaseInfoMap = new HashMap<>();
+        fillStatusParam(param.getId(), taskCaseInfos, allTaskCaseConfigs, caseBusinessIdAndRoleMap, caseMainSize, startMap,
+                tjTask.getMainPlanFile(), mainTrajectoryMap, taskCaseInfoMap);
+        // 3.重复设备过滤
+        List<TaskCaseConfigBo> distTaskCaseConfigs = filterConfigs(allTaskCaseConfigs);
+        TaskCaseConfigBo simulationConfig = distTaskCaseConfigs.stream()
+                .filter(t -> PartRole.MV_SIMULATION.equals(t.getType()))
+                .findFirst()
+                .orElseThrow(() -> new BusinessException("未找到仿真设备"));
+        // 5.状态查询
+        for (TaskCaseConfigBo taskCaseConfigBo : distTaskCaseConfigs) {
+            // 查询设备状态
+            Integer status = deviceDetailService.selectDeviceState(taskCaseConfigBo.getDeviceId(), getCommandChannelByRole(taskCaseConfigBo), false);
+            taskCaseConfigBo.setStatus(status);
+            // 查询设备准备状态
+            DeviceReadyStateParam stateParam = new DeviceReadyStateParam(taskCaseConfigBo.getDeviceId(), getCommandChannelByRole(taskCaseConfigBo));
+            if (PartRole.AV.equals(taskCaseConfigBo.getType())) {
+                // av车需要主车全部轨迹
+                stateParam.setParams(new ParamsDto("1", mainTrajectoryMap.get("main")));
+            }
+            if (PartRole.MV_SIMULATION.equals(taskCaseConfigBo.getType())) {
+                stateParam.setParams(buildTessStateParam(param.getTaskId(), taskCaseInfoMap, caseBusinessIdAndRoleMap, caseMainSize));
+            }
+            Integer readyStatus = deviceDetailService.selectDeviceReadyState(taskCaseConfigBo.getDeviceId(),
+                    getReadyStatusChannelByType(taskCaseConfigBo), stateParam, false);
+            taskCaseConfigBo.setPositionStatus(readyStatus);
+        }
+        // 6.构建页面结果集
+        return buildPageVo(param, startMap, allTaskCaseConfigs, distTaskCaseConfigs);
+    }
+
     private void validStatus(TaskCaseVerificationPageVo pageVo) {
         Map<String, List<TaskCaseConfigBo>> statusMap = pageVo.getStatusMap();
         List<TaskCaseConfigBo> configs = new ArrayList<>();

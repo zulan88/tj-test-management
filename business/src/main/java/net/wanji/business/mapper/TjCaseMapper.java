@@ -8,9 +8,11 @@ import net.wanji.business.domain.vo.CaseDetailVo;
 import net.wanji.business.domain.vo.CasePageVo;
 import net.wanji.business.domain.vo.CaseVo;
 import net.wanji.business.entity.TjCase;
+import net.wanji.business.entity.TjCaseOp;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.entity.TjFragmentedScenes;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
@@ -43,4 +45,8 @@ public interface TjCaseMapper extends BaseMapper<TjCase> {
                                                         @Param("fragmentedSceneId") Integer fragmentedSceneId);
 
     CaseInfoBo selectCaseInfo(Integer caseId);
+
+    @Select("select a.*, b.status as op_status FROM tj_case a LEFT JOIN tj_task_case b on a.id=b.case_id where b.task_id=#{taskId}")
+    List<TjCaseOp> selectCaseOp(@Param("taskId") Integer taskId);
+
 }

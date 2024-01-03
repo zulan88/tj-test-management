@@ -107,4 +107,6 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
 
     boolean deleteTaskCase(@NotNull Integer taskId, @NotNull List<Integer> caseIds);
 
+    TaskCaseVerificationPageVo getStatustw(TjTaskCase param) throws BusinessException;
+
 }

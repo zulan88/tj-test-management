@@ -264,6 +264,12 @@ public class TaskController extends BaseController {
         return AjaxResult.success(taskCaseService.getStatus(param, false));
     }
 
+    //孪生专用
+    @PostMapping("/getStatusTW")
+    public AjaxResult getStatustw(@RequestBody TjTaskCase param) throws BusinessException {
+        return AjaxResult.success(taskCaseService.getStatustw(param));
+    }
+
     //
     @ApiOperationSort(16)
     @ApiOperation(value = "16.准备")
