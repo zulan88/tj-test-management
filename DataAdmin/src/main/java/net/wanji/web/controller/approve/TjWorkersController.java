@@ -82,6 +82,10 @@ public class TjWorkersController extends BaseController {
     @ApiOperation("根据ID删除工作人员")
     @ApiImplicitParam(name = "id", value = "工作人员ID", dataType = "Integer", paramType = "path")
     public AjaxResult deleteWorkerById(@PathVariable Integer id) {
+        List<Integer> ids = recordReService.getrecordByperson(id);
+        if (ids.size() > 0) {
+            return AjaxResult.error("该人员已被排期，无法删除");
+        }
         return workersService.deleteWorkerById(id) ?
                 AjaxResult.success("删除成功")
                 : AjaxResult.error("删除失败");
