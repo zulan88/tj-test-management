@@ -144,6 +144,26 @@ public class TaskController extends BaseController {
         return result;
     }
 
+    //孪生专用
+    @PostMapping("/pageListTW")
+    public Map<String, Object> pageListtw(@Validated @RequestBody TaskDto taskDto, HttpServletRequest request) throws BusinessException {
+        taskDto.setCreatedBy("admin");
+        Map<String, Object> result = new HashMap<>();
+        Map<String, Long> countMap = tjTaskService.selectCount(taskDto);
+        result.put("statistics", countMap);
+        PageHelper.startPage(taskDto.getPageNum(), taskDto.getPageSize());
+        TableDataInfo tableDataInfo = new TableDataInfo();
+        tableDataInfo.setCode(HttpStatus.SUCCESS);
+        tableDataInfo.setMsg("查询成功");
+        List<TaskListVo> list = tjTaskService.pageList(taskDto);
+        tableDataInfo.setData(list);
+        tableDataInfo.setTotal(new PageInfo(list).getTotal());
+        result.put("tableData", tableDataInfo);
+        // 添加测试报告的跳转外链
+        result.put("testReportOuterChain", tjTaskService.getTestReportOuterChain(request));
+        return result;
+    }
+
     @ApiOperationSort(6)
     @ApiOperation(value = "6.列表页初始化")
     @GetMapping("/initPage")

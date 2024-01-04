@@ -13,8 +13,11 @@ import net.wanji.business.domain.PartConfigSelect;
 import net.wanji.business.domain.dto.CaseQueryDto;
 import net.wanji.business.domain.dto.CaseTreeDto;
 import net.wanji.business.domain.dto.TjCaseDto;
+import net.wanji.business.domain.vo.CaseDetailVo;
+import net.wanji.business.domain.vo.CasePartConfigVo;
 import net.wanji.business.domain.vo.RoleVo;
 import net.wanji.business.domain.vo.SceneDetailVo;
+import net.wanji.business.entity.TjCasePartConfig;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.TjCasePartConfigService;
 import net.wanji.business.service.TjCaseService;
@@ -124,6 +127,18 @@ public class CaseController extends BaseController {
     @ApiImplicitParam(name = "caseId", value = "用例id", required = true, dataType = "Integer", paramType = "query", example = "276")
     public AjaxResult selectDetail(Integer caseId) {
         return AjaxResult.success(caseService.selectCaseDetail(caseId));
+    }
+
+    //孪生专用
+    @GetMapping("/selectDetailTW")
+    public AjaxResult selectDetailtw(Integer caseId) {
+        CaseDetailVo caseDetailVo = caseService.selectCaseDetail(caseId);
+        for (PartConfigSelect partConfig : caseDetailVo.getPartConfigSelects()){
+            if(partConfig.getParts().size() > 0){
+                partConfig.setParts(partConfig.getParts().stream().filter(part -> part.getId()!= null).collect(Collectors.toList()));
+            }
+        }
+        return AjaxResult.success(caseService);
     }
 
     @ApiOperationSort(7)

@@ -71,6 +71,7 @@ import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
+import net.wanji.business.util.ToBuildOpenX;
 import net.wanji.system.service.ISysDictDataService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.BeanUtils;
@@ -155,6 +156,9 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
     @Autowired
     private RedisLock redisLock;
+
+    @Autowired
+    ToBuildOpenX toBuildOpenX;
 
     @Override
     public TaskCaseVerificationPageVo getStatus(TjTaskCase param, boolean hand) throws BusinessException {
@@ -663,6 +667,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 ssCaseResultUpdate(action, taskCaseRecord, mainConfig, taskCase, duration, trajectories);
                 RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null, null, duration);
                 WebSocketManage.sendInfo(key, JSON.toJSONString(endMsg));
+                toBuildOpenX.casetoOpenX(trajectories, taskId, caseId, null);
             } finally {
                 if (taskEnd) {
                     kafkaCollector.remove(key, null);

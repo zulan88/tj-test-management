@@ -20,7 +20,7 @@
     <dependencies>
         <dependency>
             <groupId>net.wanji</groupId>
-            <artifactId>business</artifactId>
+            <artifactId>DataCommon</artifactId>
         </dependency>
         <dependency>
             <groupId>org.locationtech.geotrellis</groupId>
