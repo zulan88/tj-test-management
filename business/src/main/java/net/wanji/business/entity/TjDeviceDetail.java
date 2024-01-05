@@ -123,4 +123,7 @@ public class TjDeviceDetail implements Serializable {
     @JsonFormat(shape= JsonFormat.Shape.STRING, pattern="yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updatedDate;
 
+    @TableField("is_inner")
+    private Integer isInner;
+
 }

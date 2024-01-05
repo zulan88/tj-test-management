@@ -1,6 +1,7 @@
 package net.wanji.web.controller.approve;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import net.wanji.approve.entity.AppointmentRecord;
 import net.wanji.approve.entity.TjDeviceDetail;
 import net.wanji.approve.entity.dto.AppointmentRecordDto;
@@ -53,6 +54,13 @@ public class AppointmentRecordController extends BaseController {
 
     @PutMapping("/edit")
     public AjaxResult edit(@RequestBody AppointmentRecord appointmentRecord) {
+        if(appointmentRecord.getStatus()==1){
+            UpdateWrapper<AppointmentRecord> updateWrapper = new UpdateWrapper<>();
+            updateWrapper.set("expense",null);
+            updateWrapper.eq("id",appointmentRecord.getId());
+            updateWrapper.eq("status",1);
+            return toAjax(appointmentRecordService.update(updateWrapper));
+        }
         return toAjax(appointmentRecordService.updateById(appointmentRecord));
     }
 

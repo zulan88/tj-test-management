@@ -79,6 +79,7 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
             if (appointmentRecord.getStatus()!=null){
                 queryWrapper.eq("status", appointmentRecord.getStatus());
             }
+            queryWrapper.orderByDesc("commit_date");
             return this.list(queryWrapper);
         }
     }

@@ -20,7 +20,7 @@ import net.wanji.business.service.TjScenelibTreeService;
 import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
-import net.wanji.openx.service.ToBuildOpenX;
+import net.wanji.business.util.ToBuildOpenX;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;

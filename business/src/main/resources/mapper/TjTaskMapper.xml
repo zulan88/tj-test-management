@@ -217,6 +217,7 @@
                ttc.start_time,
                ttc.end_time,
                ttc.status,
+               ttc.zip_path,
                b.case_number,
                b.scene_detail_id,
                b.label,

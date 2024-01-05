@@ -29,12 +29,7 @@ import net.wanji.business.domain.vo.CasePartConfigVo;
 import net.wanji.business.domain.vo.CaseVerificationVo;
 import net.wanji.business.domain.vo.DeviceDetailVo;
 import net.wanji.business.domain.vo.TjCasePartRoleVo;
-import net.wanji.business.entity.TjCase;
-import net.wanji.business.entity.TjCasePartConfig;
-import net.wanji.business.entity.TjCaseRealRecord;
-import net.wanji.business.entity.TjDeviceDetail;
-import net.wanji.business.entity.TjFragmentedSceneDetail;
-import net.wanji.business.entity.TjResourcesDetail;
+import net.wanji.business.entity.*;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjCasePartConfigMapper;
@@ -1026,6 +1021,11 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
     @Override
     public boolean deleteRecord(Integer recordId) throws BusinessException {
         return caseRealRecordService.removeById(recordId);
+    }
+
+    @Override
+    public List<TjCaseOp> selectCaseOp(Integer taskId) {
+        return caseMapper.selectCaseOp(taskId);
     }
 
 

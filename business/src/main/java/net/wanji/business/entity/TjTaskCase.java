@@ -96,6 +96,18 @@ public class TjTaskCase implements Serializable {
 
     private String connectInfo;
 
+    /** 压缩包目录 */
+    @TableField("zip_path")
+    private String zipPath;
+
+    /** 地图目录 */
+    @TableField("xodr_path")
+    private String xodrPath;
+
+    /** 场景脚本目录 */
+    @TableField("xosc_path")
+    private String xoscPath;
+
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 }

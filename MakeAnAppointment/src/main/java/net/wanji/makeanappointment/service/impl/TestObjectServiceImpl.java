@@ -51,10 +51,9 @@ public class TestObjectServiceImpl implements TestObjectService {
 
     @Override
     public void deleteTesteeObject(Integer id) {
-        testeeObjectMapper.deleteTesteeObject(id);
-
         // 删除设备信息
         tjTesteeObjectInfoService.deletedevice(id);
+        testeeObjectMapper.deleteTesteeObject(id);
     }
 
     @Override
