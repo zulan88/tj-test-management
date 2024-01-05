@@ -19,6 +19,8 @@ public class RealTestResultVo extends CaseTrajectoryDetailBo {
 
     private Integer taskId;
 
+    private Integer recordId;
+
     private String caseNumber;
 
     private String testTypeName;

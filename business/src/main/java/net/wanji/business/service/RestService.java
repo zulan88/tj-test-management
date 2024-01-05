@@ -150,7 +150,13 @@ public interface RestService {
      */
     boolean sendCaseTrajectoryInfo(CaseTrajectoryParam param);
 
-
+    /**
+     * 手动终止
+     * @param taskId
+     * @param caseId
+     * @return
+     */
+    boolean sendManualTermination(Integer taskId, Integer caseId);
 
     // ========================= 设备 =========================
     /**

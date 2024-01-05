@@ -80,26 +80,49 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
     void playback(Integer taskId, Integer caseId, Integer action) throws BusinessException, IOException;
 
     /**
-     * 获取实时测试结果
+     * 获取评估结果
      * @param taskId
      * @param id
      * @return
      * @throws BusinessException
      */
-    RealTestResultVo getResult(Integer taskId, Integer id) throws BusinessException;
+    Object getEvaluation(Integer taskId, Integer id) throws BusinessException;
+
+    /**
+     * 获取实时测试结果
+     * @param taskId 任务ID
+     * @param id 任务用例ID
+     * @return
+     * @throws BusinessException
+     */
+    List<RealTestResultVo> getResult(Integer taskId, Integer id) throws BusinessException;
 
     /**
      * 通信时延
      *
-     * @param taskId
-     * @param id
+     * @param taskId 任务ID
+     * @param id 任务用例ID
      * @return
      */
     CommunicationDelayVo communicationDelayVo(Integer taskId, Integer id) throws BusinessException;
 
     List<TaskReportVo> getReport(Integer taskId, Integer taskCaseId);
 
+    /**
+     * 停止任务
+     * @param taskId
+     * @param taskCaseId
+     * @throws BusinessException
+     */
     void stop(Integer taskId, Integer taskCaseId) throws BusinessException;
+
+    /**
+     * 手动终止任务
+     * @param taskId
+     * @param taskCaseId
+     * @throws BusinessException
+     */
+    void manualTermination(Integer taskId, Integer taskCaseId) throws BusinessException;
 
     List<CaseTreeVo> selectTree(String type, Integer taskId);
 

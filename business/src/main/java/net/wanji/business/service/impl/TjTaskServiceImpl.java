@@ -353,7 +353,6 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         switch (taskSaveDto.getProcessNode()) {
             case TaskProcessNode.TASK_INFO:
                 TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
-                deviceDetailDto.setStatus(YN.Y_INT);
                 deviceDetailDto.setSupportRoles(PartRole.AV);
                 List<DeviceDetailVo> avDevices = deviceDetailMapper.selectByCondition(deviceDetailDto);
                 TjTask task = new TjTask();
@@ -501,7 +500,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 caseContinuousVo.setMainTrajectory(mainTrajectories);
                 caseContinuousVo.setStartPoint(mainTrajectories.get(0));
                 caseContinuousVo.setEndPoint(mainTrajectories.get(mainTrajectories.size() - 1));
-            } catch (IOException e) {
+            } catch (Exception e) {
                 log.error(StringUtils.format("{}主车轨迹信息异常，请检查{}", caseContinuousVo.getCaseNumber(),
                         caseDetail.getRouteFile()));
             }

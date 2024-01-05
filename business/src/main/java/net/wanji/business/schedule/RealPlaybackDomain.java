@@ -148,7 +148,7 @@ public class RealPlaybackDomain {
     public synchronized void stopSendingData() throws BusinessException, IOException {
         this.validFuture();
         this.running = false;
-        this.future.cancel(false);
+//        this.future.cancel(false);
         WebSocketManage.remove(this.key);
     }
 

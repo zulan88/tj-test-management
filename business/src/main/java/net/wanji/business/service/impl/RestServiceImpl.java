@@ -93,6 +93,9 @@ public class RestServiceImpl implements RestService {
     @Value("${masterControl.sendCaseTrajectoryInfo}")
     private String sendCaseTrajectoryInfoUrl;
 
+    @Value("${masterControl.manualTermination}")
+    private String sendManualTerminationUrl;
+
     @Override
     public boolean startServer(String ip, Integer port, TessParam tessParam) {
         try {
@@ -235,11 +238,38 @@ public class RestServiceImpl implements RestService {
     public boolean sendCaseTrajectoryInfo(CaseTrajectoryParam param) {
         try {
             String resultUrl = sendCaseTrajectoryInfoUrl;
-            log.info("============================== sendCaseTrajectoryInfoUrl：{}", sendCaseTrajectoryInfoUrl);
+            log.info("============================== sendCaseTrajectoryInfoUrl：{}", resultUrl);
             HttpHeaders httpHeaders = new HttpHeaders();
             httpHeaders.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<CaseTrajectoryParam> resultHttpEntity = new HttpEntity<>(param, httpHeaders);
-            log.info("============================== sendCaseTrajectoryInfo：{}", JSONObject.toJSONString(param));
+            log.info("============================== sendCaseTrajectoryInfo param：{}", JSONObject.toJSONString(param));
+            ResponseEntity<String> response =
+                    restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);
+            if (response.getStatusCodeValue() == 200) {
+                if (!"true".equals(response.getBody())) {
+                    log.error("远程服务调用失败");
+                    return false;
+                }
+                return true;
+            }
+        } catch (Exception e) {
+            log.error("远程服务调用失败:{}", e);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean sendManualTermination(Integer taskId, Integer caseId) {
+        try {
+            String resultUrl = sendManualTerminationUrl;
+            log.info("============================== sendManualTerminationUrl：{}", resultUrl);
+            Map<String, Object> param = new HashMap<>();
+            param.put("taskId", taskId);
+            param.put("caseId", caseId);
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, Object>> resultHttpEntity = new HttpEntity<>(param, httpHeaders);
+            log.info("============================== sendManualTermination param：{}", JSONObject.toJSONString(param));
             ResponseEntity<String> response =
                     restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);
             if (response.getStatusCodeValue() == 200) {
