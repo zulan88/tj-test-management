@@ -53,6 +53,9 @@ public class TjTesteeObjectInfoServiceImpl extends ServiceImpl<TjTesteeObjectInf
     @Override
     public boolean deletedevice(Integer id) {
         TjTesteeObjectInfo tjTesteeObjectInfo = this.getById(id);
+        if (null == tjTesteeObjectInfo.getDeviceId()){
+            return false;
+        }
         return tjDeviceDetailApService.removeById(tjTesteeObjectInfo.getDeviceId());
     }
 }

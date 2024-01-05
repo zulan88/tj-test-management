@@ -1,5 +1,8 @@
 package net.wanji.web.controller.makeanappointment;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import net.wanji.approve.entity.AppointmentRecord;
+import net.wanji.approve.service.AppointmentRecordService;
 import net.wanji.common.core.controller.BaseController;
 import net.wanji.makeanappointment.domain.vo.TestObjectVo;
 import net.wanji.makeanappointment.service.TestObjectService;
@@ -9,6 +12,7 @@ import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -29,6 +33,9 @@ public class TestObjectController extends BaseController {
 
     @Resource
     private TestObjectService testObjectService;
+
+    @Autowired
+    private AppointmentRecordService appointmentRecordService;
 
     /**
      * 新增被测对象
@@ -71,6 +78,11 @@ public class TestObjectController extends BaseController {
     public AjaxResult deleteTesteeObject(Integer id) {
         if(id == null){
             return AjaxResult.error("被测对象id不能为空!");
+        }
+        QueryWrapper<AppointmentRecord> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("measurand_id", id);
+        if(appointmentRecordService.count(queryWrapper) > 0){
+            return AjaxResult.error("被测对象已被预约，不能删除!");
         }
         try {
             testObjectService.deleteTesteeObject(id);
