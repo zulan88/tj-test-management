@@ -38,6 +38,11 @@ public class TjDeviceDetailApServiceImpl extends ServiceImpl<TjDeviceDetailApMap
 
     @Override
     public List<DeviceListVo> getDevices(Set<Integer> set, Integer recordId) {
+        Set<String> typeSet = new HashSet<>();
+        typeSet.add("HMI设备");
+        typeSet.add("VR设备");
+        typeSet.add("远程驾驶车");
+        typeSet.add("域控制器");
         RecordRe recordRe = recordReService.getById(recordId);
         List<Integer> selectdeviceIds = new ArrayList<>();
         if(recordRe!=null) {
@@ -48,6 +53,7 @@ public class TjDeviceDetailApServiceImpl extends ServiceImpl<TjDeviceDetailApMap
         List<Integer> finalSelectdeviceIds = selectdeviceIds;
         QueryWrapper<TjDeviceDetail> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("is_inner",0);
+        queryWrapper.ne("support_roles","av");
         List<TjDeviceDetailVo> list = this.list(queryWrapper).stream().map(item -> {
             TjDeviceDetailVo tjDeviceDetailVo = new TjDeviceDetailVo();
             BeanUtils.copyBeanProp(tjDeviceDetailVo, item);
@@ -69,6 +75,17 @@ public class TjDeviceDetailApServiceImpl extends ServiceImpl<TjDeviceDetailApMap
             DeviceListVo deviceListVo = new DeviceListVo();
             deviceListVo.setType(entry.getKey());
             deviceListVo.setTjDeviceDetailVos(entry.getValue());
+            if(typeSet.contains(entry.getKey())){
+                result.add(deviceListVo);
+                typeSet.remove(entry.getKey());
+            }
+        }
+        for (String type:typeSet){
+            DeviceListVo deviceListVo = new DeviceListVo();
+            deviceListVo.setType(type);
+            deviceListVo.setTjDeviceDetailVos(new ArrayList<>());
+            deviceListVo.setCaseCount(0);
+            deviceListVo.setMaxDeviceCount(0);
             result.add(deviceListVo);
         }
         return result;
@@ -80,8 +97,12 @@ public class TjDeviceDetailApServiceImpl extends ServiceImpl<TjDeviceDetailApMap
                 .map(Integer::parseInt)
                 .collect(Collectors.toList());
         for (DeviceListVo deviceListVo:list){
+            if(deviceListVo.getTjDeviceDetailVos().size()==0){
+                continue;
+            }
             QueryWrapper<TjDeviceDetail> queryWrapper = new QueryWrapper<>();
             queryWrapper.eq("device_type", deviceListVo.getType());
+            queryWrapper.ne("support_roles","av");
             queryWrapper.in("device_id", deviceIds);
             List<Integer> typeDeviceIds = this.list(queryWrapper).stream().map(TjDeviceDetail::getDeviceId).collect(Collectors.toList());
             deviceListVo.setMaxDeviceCount(typeDeviceIds.size());
