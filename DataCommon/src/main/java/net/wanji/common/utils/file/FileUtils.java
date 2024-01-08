@@ -1,7 +1,21 @@
 package net.wanji.common.utils.file;
 
+import com.alibaba.fastjson.JSONObject;
+import net.wanji.common.common.ClientSimulationTrajectoryDto;
+import net.wanji.common.common.RealTestTrajectoryDto;
+import net.wanji.common.common.SimulationTrajectoryDto;
+import net.wanji.common.common.TrajectoryValueDto;
+import net.wanji.common.config.WanjiConfig;
+import net.wanji.common.utils.DateUtils;
+import net.wanji.common.utils.StringUtils;
+import net.wanji.common.utils.uuid.IdUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ArrayUtils;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -17,26 +31,9 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
-import net.wanji.common.common.ClientSimulationTrajectoryDto;
-import net.wanji.common.common.RealTestTrajectoryDto;
-import net.wanji.common.common.SimulationTrajectoryDto;
-import net.wanji.common.common.TrajectoryValueDto;
-import net.wanji.common.config.WanjiConfig;
-import net.wanji.common.utils.DataUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.ArrayUtils;
-import net.wanji.common.utils.DateUtils;
-import net.wanji.common.utils.StringUtils;
-import net.wanji.common.utils.uuid.IdUtils;
-import org.apache.commons.io.FilenameUtils;
 
 /**
  * 文件处理工具类
@@ -118,7 +115,8 @@ public class FileUtils {
             pathName = DateUtils.datePath() + "/" + IdUtils.fastUUID() + "." + extension;
             File file = FileUploadUtils.getAbsoluteFile(uploadDir, pathName);
             writer = new PrintWriter(file, "utf-8");
-            for (Object content : data) {
+            CopyOnWriteArrayList<?> objects = new CopyOnWriteArrayList<>(data);
+            for (Object content : objects) {
                 writer.println(JSONObject.toJSONString(content));
             }
         } catch (FileNotFoundException | UnsupportedEncodingException e) {

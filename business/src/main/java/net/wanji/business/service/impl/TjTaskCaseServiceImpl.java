@@ -883,6 +883,9 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         Integer caseId = 0;
         if (!ObjectUtils.isEmpty(taskCaseId)) {
             TjTaskCase taskCase = this.getById(taskCaseId);
+            if (ObjectUtils.isEmpty(taskCase)) {
+                throw new BusinessException("未查询到任务用例信息");
+            }
             caseId = taskCase.getCaseId();
         }
         if (!restService.sendManualTermination(taskId, caseId)) {

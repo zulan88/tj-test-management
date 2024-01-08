@@ -35,6 +35,7 @@ import net.wanji.business.domain.vo.CommunicationDelayVo;
 import net.wanji.business.domain.vo.RealTestResultVo;
 import net.wanji.business.domain.vo.RealVehicleVerificationPageVo;
 import net.wanji.business.entity.TjCaseRealRecord;
+import net.wanji.business.entity.TjTaskCase;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.listener.KafkaCollector;
 import net.wanji.business.mapper.TjCaseRealRecordMapper;
@@ -705,6 +706,13 @@ public class TestingServiceImpl implements TestingService {
         communicationDelayVo.setDelay(delay);
 
         return communicationDelayVo;
+    }
+
+    @Override
+    public void manualTermination(Integer caseId) throws BusinessException {
+        if (!restService.sendManualTermination(0, caseId)) {
+            throw new BusinessException("任务终止失败");
+        }
     }
 
     private String validStatus(List<CaseConfigBo> configs) {

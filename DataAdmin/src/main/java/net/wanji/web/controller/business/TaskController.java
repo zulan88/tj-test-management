@@ -454,7 +454,7 @@ public class TaskController extends BaseController {
 
     @ApiOperationSort(29)
     @ApiOperation(value = "29.保存记录状态")
-    @PostMapping("/saveRecordStatus")
+    @GetMapping("/saveRecordStatus")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "recordId", value = "测试记录ID", dataType = "Integer", paramType = "query", example = "499"),
             @ApiImplicitParam(name = "status", value = "状态", dataType = "Integer", paramType = "query", example = "1")
@@ -468,8 +468,16 @@ public class TaskController extends BaseController {
     @ApiOperationSort(30)
     @ApiOperation(value = "30.手动终止")
     @GetMapping("/manualTermination")
-    public AjaxResult manualTermination(Integer taskId, Integer id, Integer action) throws BusinessException {
-        taskCaseService.manualTermination(taskId, id);
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "taskId", value = "任务ID", dataType = "Integer", paramType = "query", example = "499"),
+            @ApiImplicitParam(name = "id", value = "用例ID/任务用例ID", dataType = "Integer", paramType = "query", example = "1")
+    })
+    public AjaxResult manualTermination(@RequestParam("taskId") Integer taskId, @RequestParam("id") Integer id) throws BusinessException {
+        if (taskId > 0) {
+            taskCaseService.manualTermination(taskId, id);
+        } else {
+            testingService.manualTermination(id);
+        }
         return AjaxResult.success();
     }
 }

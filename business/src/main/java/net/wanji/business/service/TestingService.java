@@ -81,4 +81,12 @@ public interface TestingService {
      * @return
      */
     CommunicationDelayVo communicationDelayVo(Integer recordId);
+
+
+    /**
+     * 手动终止任务
+     * @param caseId
+     * @throws BusinessException
+     */
+    void manualTermination(Integer caseId) throws BusinessException;
 }
