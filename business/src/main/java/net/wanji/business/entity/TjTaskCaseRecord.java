@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
+import net.wanji.common.annotation.Excel;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -61,6 +62,21 @@ public class TjTaskCaseRecord implements Serializable {
      */
     @JsonFormat(shape= JsonFormat.Shape.STRING, pattern="yyyy-MM-dd HH:mm:ss")
     private LocalDateTime endTime;
+
+    /**
+     * 创建人
+     */
+    @TableField("created_by")
+    @Excel(name = "创建人")
+    private String createdBy;
+
+    /**
+     * 创建日期
+     */
+    @TableField("created_date")
+    @Excel(name = "创建日期")
+    @JsonFormat(shape= JsonFormat.Shape.STRING, pattern="yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime createdDate;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;

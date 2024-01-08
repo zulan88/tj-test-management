@@ -2,27 +2,24 @@ package net.wanji.business.trajectory;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.google.common.collect.Maps;
 import net.wanji.business.common.Constants.ChannelBuilder;
-import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.RedisMessageType;
 import net.wanji.business.common.Constants.TestingStatusEnum;
 import net.wanji.business.domain.RealWebsocketMessage;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjCaseRealRecord;
-import net.wanji.business.entity.TjTask;
+import net.wanji.business.entity.TjTaskCaseRecord;
 import net.wanji.business.listener.KafkaCollector;
 import net.wanji.business.mapper.TjCaseMapper;
-import net.wanji.business.mapper.TjTaskMapper;
-import net.wanji.business.service.TjCaseRealRecordService;
+import net.wanji.business.mapper.TjCaseRealRecordMapper;
+import net.wanji.business.mapper.TjTaskCaseRecordMapper;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.util.RedisLock;
 import net.wanji.common.common.ClientSimulationTrajectoryDto;
-import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.StringUtils;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,13 +43,13 @@ public class KafkaTrajectoryConsumer {
     private static final Logger log = LoggerFactory.getLogger("kafka");
 
     @Resource
-    private TjTaskMapper taskMapper;
-
-    @Resource
     private TjCaseMapper caseMapper;
 
     @Resource
-    private TjCaseRealRecordService caseRealRecordService;
+    private TjTaskCaseRecordMapper taskCaseRecordMapper;
+
+    @Resource
+    private TjCaseRealRecordMapper caseRealRecordMapper;
 
     @Resource
     private KafkaCollector kafkaCollector;
@@ -77,7 +74,7 @@ public class KafkaTrajectoryConsumer {
         outLog(data);
         if(taskId > 0){
             data.forEach(t -> redisLock.renewLock("task_"+t.getSource()));
-        }else {
+        } else {
             redisLock.renewLock("case_"+caseId);
         }
         kafkaCollector.collector(key, caseId, data);
@@ -90,23 +87,31 @@ public class KafkaTrajectoryConsumer {
     }
 
     private String selectUserOfTask(Integer taskId, Integer caseId) {
+        // todo 可以使用缓存：taskId_caseId -> userName
+        String userName = null;
         if (0 < taskId) {
-            TjTask task = taskMapper.selectById(taskId);
-            if (!ObjectUtils.isEmpty(task)) {
-                return task.getCreatedBy();
+            TjTaskCaseRecord taskCaseRecord = taskCaseRecordMapper.selectOne(new LambdaQueryWrapper<TjTaskCaseRecord>()
+                    .eq(TjTaskCaseRecord::getTaskId, taskId)
+                    .eq(TjTaskCaseRecord::getCaseId, caseId)
+                    .eq(TjTaskCaseRecord::getStatus, TestingStatusEnum.NO_PASS)
+                    .isNull(TjTaskCaseRecord::getEndTime));
+            if (!ObjectUtils.isEmpty(taskCaseRecord)) {
+                userName = taskCaseRecord.getCreatedBy();
+            }
+        } else {
+            TjCaseRealRecord caseRealRecord = caseRealRecordMapper.selectOne(new LambdaQueryWrapper<TjCaseRealRecord>()
+                    .eq(TjCaseRealRecord::getCaseId, caseId)
+                    .eq(TjCaseRealRecord::getStatus, TestingStatusEnum.NO_PASS)
+                    .isNull(TjCaseRealRecord::getEndTime));
+            if (!ObjectUtils.isEmpty(caseRealRecord)) {
+                userName = caseRealRecord.getCreatedBy();
             }
         }
         TjCase tjCase = caseMapper.selectById(caseId);
         if (!ObjectUtils.isEmpty(tjCase)) {
             return tjCase.getCreatedBy();
         }
-        return null;
-    }
-
-    private Integer getCaseRealRecordId(Integer caseId) {
-        List<TjCaseRealRecord> records = caseRealRecordService.list(new QueryWrapper<TjCaseRealRecord>()
-                .eq(ColumnName.CASE_ID_COLUMN, caseId).eq(ColumnName.STATUS_COLUMN, TestingStatusEnum.NO_PASS));
-        return CollectionUtils.isEmpty(records) ? 0 : records.get(0).getId();
+        return userName;
     }
 
     private void outLog(List<ClientSimulationTrajectoryDto> data) {

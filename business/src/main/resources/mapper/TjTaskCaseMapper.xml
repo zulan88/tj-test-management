@@ -180,7 +180,9 @@
                cr.detail_info,
                cr.route_file,
                cr.start_time,
-               cr.end_time
+               cr.end_time,
+               cr.created_date,
+               cr.created_by
         from tj_task_case_record cr
         where cr.task_id = #{taskId} and cr.case_id = #{caseId}
         order by cr.start_time desc

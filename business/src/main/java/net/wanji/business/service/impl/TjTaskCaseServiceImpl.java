@@ -506,6 +506,8 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             addRecord.setCaseId(taskCaseInfoBo.getCaseId());
             addRecord.setDetailInfo(JSONObject.toJSONString(caseTrajectoryDetailBo));
             addRecord.setStatus(TestingStatusEnum.NO_PASS.getCode());
+            addRecord.setCreatedBy(SecurityUtils.getUsername());
+            addRecord.setCreatedDate(LocalDateTime.now());
             addList.add(addRecord);
             // 8.重置测试用例
             resetList.add(taskCaseInfoBo.getId());

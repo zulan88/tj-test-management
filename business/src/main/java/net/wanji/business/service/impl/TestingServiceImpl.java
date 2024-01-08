@@ -402,6 +402,8 @@ public class TestingServiceImpl implements TestingService {
         tjCaseRealRecord.setCaseId(caseId);
         tjCaseRealRecord.setDetailInfo(JSONObject.toJSONString(caseTrajectoryDetailBo));
         tjCaseRealRecord.setStatus(TestingStatusEnum.NO_PASS.getCode());
+        tjCaseRealRecord.setCreatedDate(LocalDateTime.now());
+        tjCaseRealRecord.setCreatedBy(SecurityUtils.getUsername());
         caseRealRecordMapper.insert(tjCaseRealRecord);
         // 7.前端结果集
         CaseTestPrepareVo caseTestPrepareVo = new CaseTestPrepareVo();
