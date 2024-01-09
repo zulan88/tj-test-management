@@ -985,7 +985,8 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
         if (ObjectUtils.isEmpty(tjCase)) {
             throw new BusinessException("未查询到对应的测试用例");
         }
-        List<DeviceDetailVo> deviceDetails = deviceDetailService.list().stream().map(device -> {
+        List<DeviceDetailVo> deviceDetails = deviceDetailService.list(new LambdaQueryWrapper<TjDeviceDetail>()
+                .eq(TjDeviceDetail::getIsInner, 0)).stream().map(device -> {
             DeviceDetailVo detailVo = new DeviceDetailVo();
             BeanUtils.copyBeanProp(detailVo, device);
             return detailVo;
@@ -993,10 +994,6 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
         Map<String, List<DeviceDetailVo>> devicesMap = deviceDetails.stream()
                 .collect(Collectors.groupingBy(DeviceDetailVo::getSupportRoles));
         List<CasePartConfigVo> configs = casePartConfigService.getConfigInfoByCaseId(caseId);
-        Map<String, CasePartConfigVo> businessIdAndConfigMap = CollectionUtils.emptyIfNull(configs).stream()
-                .collect(Collectors.toMap(CasePartConfigVo::getBusinessId, Function.identity()));
-
-
         SceneTrajectoryBo trajectoryBo = JSONObject.parseObject(tjCase.getDetailInfo(), SceneTrajectoryBo.class);
         if (ObjectUtils.isEmpty(trajectoryBo) || CollectionUtils.isEmpty(trajectoryBo.getParticipantTrajectories())) {
             throw new BusinessException("用例异常：未进行点位配置");

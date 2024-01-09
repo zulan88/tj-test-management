@@ -784,12 +784,12 @@ public class TestingServiceImpl implements TestingService {
         return PartRole.MV_SIMULATION.equals(config.getSupportRoles())
                 ? createSimulationConnInfo(String.valueOf(config.getDeviceId()), commandChannel, dataChannel, params)
                 : new DeviceConnInfo(String.valueOf(config.getDeviceId()), config.getCommandChannel(),
-                config.getDataChannel(), params);
+                config.getDataChannel(), config.getParticipantRole(), params);
     }
 
     private static DeviceConnInfo createSimulationConnInfo(String deviceId, String commandChannel, String dataChannel,
                                                            Map<String, Object> params) {
-        return new DeviceConnInfo(deviceId, commandChannel, dataChannel, params);
+        return new DeviceConnInfo(deviceId, commandChannel, dataChannel, PartRole.MV_SIMULATION, params);
     }
 
     private static List<String> delayTimes(Date startTime, Date endTime) {

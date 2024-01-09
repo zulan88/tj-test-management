@@ -1086,23 +1086,16 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         return PartRole.MV_SIMULATION.equals(config.getSupportRoles())
                 ? createSimulationConnInfo(String.valueOf(config.getDeviceId()), commandChannel, dataChannel, params)
                 : new DeviceConnInfo(String.valueOf(config.getDeviceId()), config.getCommandChannel(),
-                config.getDataChannel(), params);
+                config.getDataChannel(), config.getSupportRoles(), params);
     }
 
     private static DeviceConnInfo createSimulationConnInfo(String deviceId, String commandChannel, String dataChannel,
                                                            Map<String, Object> params) {
-        return new DeviceConnInfo(deviceId, commandChannel, dataChannel, params);
+        return new DeviceConnInfo(deviceId, commandChannel, dataChannel, PartRole.MV_SIMULATION, params);
     }
 
     private static List<String> delayTimes(Date startTime, Date endTime) {
         ArrayList<String> time = new ArrayList<>();
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(
-                "HH:mm:ss");
-      /*LocalTime localTime = startTime.toInstant().atZone(ZoneId.systemDefault())
-          .toLocalTime();
-      localTime.plusSeconds(1);
-      localTime.format(dateTimeFormatter);*/
-
         long seconds = Duration.between(startTime.toInstant(),
                 endTime.toInstant()).getSeconds();
         for (int i = 1; i < seconds + 1; i++) {

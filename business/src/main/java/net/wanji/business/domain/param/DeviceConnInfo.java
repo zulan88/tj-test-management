@@ -25,11 +25,14 @@ public class DeviceConnInfo {
     private String channel;
 
     private Map<String, Object> params;
+    
+    private String role;
 
-    public DeviceConnInfo(String id, String controlChannel, String channel, Map<String, Object> params) {
+    public DeviceConnInfo(String id, String controlChannel, String channel, String role, Map<String, Object> params) {
         this.id = id;
         this.controlChannel = controlChannel;
         this.channel = channel;
+        this.role = role;
         this.params = params;
     }
 }

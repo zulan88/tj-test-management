@@ -354,6 +354,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
             case TaskProcessNode.TASK_INFO:
                 TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
                 deviceDetailDto.setSupportRoles(PartRole.AV);
+                deviceDetailDto.setIsInner(0);
                 List<DeviceDetailVo> avDevices = deviceDetailMapper.selectByCondition(deviceDetailDto);
                 TjTask task = new TjTask();
                 if (ObjectUtil.isNotEmpty(taskSaveDto.getId())) {

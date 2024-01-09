@@ -32,6 +32,9 @@
                     #{deviceId}
                 </foreach>
             </if>
+            <if test="isInner != null">
+                AND d.is_inner = #{isInner}
+            </if>
         </where>
         ORDER BY d.created_date DESC
     </select>
