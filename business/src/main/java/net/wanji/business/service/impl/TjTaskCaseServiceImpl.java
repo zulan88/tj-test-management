@@ -998,7 +998,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         // 5.状态查询
         for (TaskCaseConfigBo taskCaseConfigBo : distTaskCaseConfigs) {
             // 查询设备状态
-            Integer status = deviceDetailService.selectDeviceState(taskCaseConfigBo.getDeviceId(), getCommandChannelByRoleTW(taskCaseConfigBo, userName), false);
+            Integer status = deviceDetailService.selectDeviceState(taskCaseConfigBo.getDeviceId(), getReadyStatusChannelByTypeTW(taskCaseConfigBo, userName), false);
             taskCaseConfigBo.setStatus(status);
             // 查询设备准备状态
             DeviceReadyStateParam stateParam = new DeviceReadyStateParam(taskCaseConfigBo.getDeviceId(), getCommandChannelByRoleTW(taskCaseConfigBo, userName));
@@ -1010,7 +1010,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 stateParam.setParams(buildTessStateParam(param.getTaskId(), taskCaseInfoMap, caseBusinessIdAndRoleMap, caseMainSize));
             }
             Integer readyStatus = deviceDetailService.selectDeviceReadyState(taskCaseConfigBo.getDeviceId(),
-                    getReadyStatusChannelByType(taskCaseConfigBo), stateParam, false);
+                    getReadyStatusChannelByTypeTW(taskCaseConfigBo, userName), stateParam, false);
             taskCaseConfigBo.setPositionStatus(readyStatus);
         }
         // 6.构建页面结果集
