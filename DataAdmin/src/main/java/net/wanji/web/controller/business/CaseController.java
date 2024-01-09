@@ -17,6 +17,7 @@ import net.wanji.business.domain.vo.CaseDetailVo;
 import net.wanji.business.domain.vo.CasePartConfigVo;
 import net.wanji.business.domain.vo.RoleVo;
 import net.wanji.business.domain.vo.SceneDetailVo;
+import net.wanji.business.entity.TjCaseOp;
 import net.wanji.business.entity.TjCasePartConfig;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.TjCasePartConfigService;
@@ -131,14 +132,21 @@ public class CaseController extends BaseController {
 
     //孪生专用
     @GetMapping("/selectDetailTW")
-    public AjaxResult selectDetailtw(Integer caseId) {
+    public AjaxResult selectDetailtw(Integer taskId) {
+        Integer caseId = 0;
+        List<TjCaseOp> list = caseService.selectCaseOp(taskId);
+        if(list.size() > 0){
+            caseId = list.get(0).getId();
+        }else {
+            return AjaxResult.error("改任务异常，请重新进行任务配置");
+        }
         CaseDetailVo caseDetailVo = caseService.selectCaseDetail(caseId);
         for (PartConfigSelect partConfig : caseDetailVo.getPartConfigSelects()){
             if(partConfig.getParts().size() > 0){
                 partConfig.setParts(partConfig.getParts().stream().filter(part -> part.getId()!= null).collect(Collectors.toList()));
             }
         }
-        return AjaxResult.success(caseService);
+        return AjaxResult.success(caseDetailVo);
     }
 
     @ApiOperationSort(7)

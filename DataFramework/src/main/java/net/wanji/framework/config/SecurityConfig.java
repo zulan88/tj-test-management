@@ -111,13 +111,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter
                 // 对于登录login 注册register 验证码captchaImage 允许匿名访问
                 .antMatchers("/login", "/register", "/captchaImage", "/common/uploadframe", "/scenario/upload", "/scenario/start", "/ws/**", "/jdLabels/**", "/task/caseStartEnd").anonymous()
                 // 孪生接口
-                .antMatchers("/task/getStatusTW", "/task/pageListTW", "/case/selectDetailTW", "/case/getCasesByTaskIdTW").anonymous()
+                .antMatchers("/task/getStatusTW", "/task/pageListTW", "/case/selectDetailTW", "/case/getCasesByTaskIdTW", "/task/runningTaskTW").anonymous()
                 // 静态资源，可匿名访问
                 .antMatchers(HttpMethod.GET, "/", "/*.html", "/**/*.html", "/**/*.css", "/**/*.js", "/profile/**").permitAll()
                 .antMatchers("/swagger-ui.html", "/swagger-resources/**", "/webjars/**", "/*/api-docs", "/druid/**").permitAll()
                 // 除上面外的所有请求全部需要鉴权认证
                 .anyRequest().authenticated()
-
                 .and()
                 .headers().frameOptions().disable();
         // 添加Logout filter

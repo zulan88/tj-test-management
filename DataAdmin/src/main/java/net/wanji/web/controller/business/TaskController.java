@@ -1,6 +1,7 @@
 package net.wanji.web.controller.business;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import io.swagger.annotations.Api;
@@ -35,6 +36,7 @@ import net.wanji.common.core.page.TableDataInfo;
 import net.wanji.common.core.redis.RedisCache;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
+import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -278,6 +280,12 @@ public class TaskController extends BaseController {
     @ApiOperation(value = "14.重置状态")
     @PostMapping("/resetStatus")
     public AjaxResult resetStatus(@RequestBody TjTaskCase param) throws BusinessException {
+        if(param.getTaskId() != null) {
+            TjTask task = tjTaskService.getById(param.getTaskId());
+            task.setLastStatus(task.getStatus());
+            task.setStatus("prepping");
+            tjTaskService.updateById(task);
+        }
         taskCaseService.getStatus(param, true);
         return AjaxResult.success();
     }
@@ -300,6 +308,11 @@ public class TaskController extends BaseController {
     @ApiOperation(value = "16.准备")
     @PostMapping("/prepare")
     public AjaxResult prepare(@RequestBody TjTaskCase param) throws BusinessException {
+        if(param.getTaskId() != null) {
+            TjTask task = tjTaskService.getById(param.getTaskId());
+            task.setStatus("running");
+            tjTaskService.updateById(task);
+        }
         return AjaxResult.success(taskCaseService.prepare(param));
     }
 
@@ -479,5 +492,14 @@ public class TaskController extends BaseController {
             testingService.manualTermination(id);
         }
         return AjaxResult.success();
+    }
+
+    @GetMapping("/runningTaskTW")
+    public AjaxResult getRunningTask() {
+        QueryWrapper<TjTask> wrapper = new QueryWrapper<>();
+        wrapper.eq("status", "prepping");
+        wrapper.or().eq("status", "running");
+        List<TjTask> list = tjTaskService.list(wrapper);
+        return AjaxResult.success(list);
     }
 }

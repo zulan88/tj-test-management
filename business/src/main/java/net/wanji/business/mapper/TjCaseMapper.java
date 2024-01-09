@@ -46,7 +46,7 @@ public interface TjCaseMapper extends BaseMapper<TjCase> {
 
     CaseInfoBo selectCaseInfo(Integer caseId);
 
-    @Select("select a.*, b.status as op_status FROM tj_case a LEFT JOIN tj_task_case b on a.id=b.case_id where b.task_id=#{taskId}")
+    @Select("select a.*, b.status as op_status FROM tj_case a LEFT JOIN tj_task_case b on a.id=b.case_id where b.task_id=#{taskId} order by b.sort")
     List<TjCaseOp> selectCaseOp(@Param("taskId") Integer taskId);
 
 }

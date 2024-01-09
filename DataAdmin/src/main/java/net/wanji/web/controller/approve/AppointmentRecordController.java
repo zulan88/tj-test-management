@@ -58,8 +58,9 @@ public class AppointmentRecordController extends BaseController {
             UpdateWrapper<AppointmentRecord> updateWrapper = new UpdateWrapper<>();
             updateWrapper.set("expense",null);
             updateWrapper.eq("id",appointmentRecord.getId());
-            updateWrapper.eq("status",1);
-            return toAjax(appointmentRecordService.update(updateWrapper));
+            updateWrapper.set("status",1);
+            boolean i = appointmentRecordService.update(appointmentRecord,updateWrapper);
+            return toAjax(i);
         }
         return toAjax(appointmentRecordService.updateById(appointmentRecord));
     }

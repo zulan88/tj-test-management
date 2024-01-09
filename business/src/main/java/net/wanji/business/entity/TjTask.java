@@ -110,7 +110,7 @@ public class TjTask implements Serializable {
     private String testTotalTime;
 
     /**
-     * 状态（save：待提交；waiting：待测试；running：进行中；finished：已完成；past_due：逾期）
+     * 状态（save：待提交；waiting：待测试；prepping: 准备中； running：进行中；finished：已完成；past_due：逾期）
      */
     private String status;
 
@@ -190,4 +190,7 @@ public class TjTask implements Serializable {
 
     @TableField("remark")
     private String remark;
+
+    @TableField("last_status")
+    private String lastStatus;
 }

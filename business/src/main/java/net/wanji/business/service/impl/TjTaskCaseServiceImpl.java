@@ -209,6 +209,9 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                     throw new BusinessException(taskCaseConfigBo.getDeviceName()+"设备正在使用中，请稍后再试");
                 }
             }
+            if(taskId!=null) {
+                redisLock.setUser("tw_" + taskId, SecurityUtils.getUsername());
+            }
         }
         // 5.状态查询
         for (TaskCaseConfigBo taskCaseConfigBo : distTaskCaseConfigs) {
@@ -246,6 +249,18 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
     private String getReadyStatusChannelByType(TaskCaseConfigBo taskCaseConfigBo) {
         return PartRole.MV_SIMULATION.equals(taskCaseConfigBo.getSupportRoles())
                 ? ChannelBuilder.buildTaskStatusChannel(SecurityUtils.getUsername(), taskCaseConfigBo.getTaskId())
+                : ChannelBuilder.DEFAULT_STATUS_CHANNEL;
+    }
+
+    private String getCommandChannelByRoleTW(TaskCaseConfigBo taskCaseConfigBo, String userName) {
+        return PartRole.MV_SIMULATION.equals(taskCaseConfigBo.getSupportRoles())
+                ? ChannelBuilder.buildTaskControlChannel(userName, taskCaseConfigBo.getTaskId())
+                : taskCaseConfigBo.getCommandChannel();
+    }
+
+    private String getReadyStatusChannelByTypeTW(TaskCaseConfigBo taskCaseConfigBo, String userName) {
+        return PartRole.MV_SIMULATION.equals(taskCaseConfigBo.getSupportRoles())
+                ? ChannelBuilder.buildTaskStatusChannel(userName, taskCaseConfigBo.getTaskId())
                 : ChannelBuilder.DEFAULT_STATUS_CHANNEL;
     }
 
@@ -961,6 +976,10 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         if (ObjectUtils.isEmpty(tjTask)) {
             throw new BusinessException("查询失败，请检查任务是否存在");
         }
+        String userName = redisLock.getUser("tw_" + param.getTaskId());
+        if (userName == null) {
+            throw new BusinessException("查询失败，请检查任务是否正在执行");
+        }
         // 2.数据填充
         List<TaskCaseConfigBo> allTaskCaseConfigs = new ArrayList<>();
         Map<Integer, Map<String, String>> caseBusinessIdAndRoleMap = new HashMap<>();
@@ -979,10 +998,10 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         // 5.状态查询
         for (TaskCaseConfigBo taskCaseConfigBo : distTaskCaseConfigs) {
             // 查询设备状态
-            Integer status = deviceDetailService.selectDeviceState(taskCaseConfigBo.getDeviceId(), getCommandChannelByRole(taskCaseConfigBo), false);
+            Integer status = deviceDetailService.selectDeviceState(taskCaseConfigBo.getDeviceId(), getCommandChannelByRoleTW(taskCaseConfigBo, userName), false);
             taskCaseConfigBo.setStatus(status);
             // 查询设备准备状态
-            DeviceReadyStateParam stateParam = new DeviceReadyStateParam(taskCaseConfigBo.getDeviceId(), getCommandChannelByRole(taskCaseConfigBo));
+            DeviceReadyStateParam stateParam = new DeviceReadyStateParam(taskCaseConfigBo.getDeviceId(), getCommandChannelByRoleTW(taskCaseConfigBo, userName));
             if (PartRole.AV.equals(taskCaseConfigBo.getType())) {
                 // av车需要主车全部轨迹
                 stateParam.setParams(new ParamsDto("1", mainTrajectoryMap.get("main")));
