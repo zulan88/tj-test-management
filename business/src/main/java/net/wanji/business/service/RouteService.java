@@ -120,20 +120,22 @@ public class RouteService {
         String path = null;
         try {
             path = FileUtils.writeRoute(data, WanjiConfig.getRoutePath(), Extension.TXT);
+            caseRealRecord.setRouteFile(path);
+            caseRealRecord.setStatus(action < 0 ? TestingStatusEnum.NO_PASS.getCode() : TestingStatusEnum.PASS.getCode());
+            caseRealRecord.setEndTime(LocalDateTime.now());
+            CaseTrajectoryDetailBo originalTrajectory = JSONObject.parseObject(caseRealRecord.getDetailInfo(), CaseTrajectoryDetailBo.class);
+            updateRecordDetailInfo(caseRealRecord.getId(), originalTrajectory, data);
+            originalTrajectory.setDuration(DateUtils.secondsToDuration((int) Math.floor((double) data.size() / 10)));
+            caseRealRecord.setDetailInfo(JSON.toJSONString(originalTrajectory));
             log.info("保存用例 {} 实车测试记录 {} 路径文件 : {}, 轨迹长度：{}", caseRealRecord.getCaseId(), caseRealRecord.getId(), path, data.size());
         } catch (Exception e) {
             log.error("保存用例 {} 实车测试记录 {} 路径文件失败", caseRealRecord.getCaseId(), caseRealRecord.getId(), e);
         }
-        caseRealRecord.setRouteFile(path);
-        caseRealRecord.setStatus(action < 0 ? TestingStatusEnum.NO_PASS.getCode() : TestingStatusEnum.PASS.getCode());
-        caseRealRecord.setEndTime(LocalDateTime.now());
-        CaseTrajectoryDetailBo originalTrajectory = JSONObject.parseObject(caseRealRecord.getDetailInfo(), CaseTrajectoryDetailBo.class);
-        originalTrajectory.setDuration(DateUtils.secondsToDuration((int) Math.floor((double) data.size() / 10)));
-        caseRealRecord.setDetailInfo(JSON.toJSONString(originalTrajectory));
         int result = caseRealRecordMapper.updateById(caseRealRecord);
         return result > 0;
     }
 
+    @Deprecated
     public void saveTaskRouteFile(Integer recordId, List<RealTestTrajectoryDto> data,
                                   CaseTrajectoryDetailBo originalTrajectory, Integer action)
             throws ExecutionException, InterruptedException {
@@ -189,9 +191,9 @@ public class RouteService {
         log.info("保存任务 {} 用例 {} 测试记录 {} 路径文件 : {}, 轨迹长度：{}", taskCaseRecord.getTaskId(),
                 taskCaseRecord.getCaseId(), taskCaseRecord.getId(), path, data.size());
         CaseTrajectoryDetailBo trajectoryDetailBo = JSONObject.parseObject(taskCaseRecord.getDetailInfo(), CaseTrajectoryDetailBo.class);
+        updateRecordDetailInfo(taskCaseRecord.getId(), trajectoryDetailBo, data);
         String duration = DateUtils.secondsToDuration((int) Math.floor((data.size())) / 10);
         trajectoryDetailBo.setDuration(duration);
-        taskCaseRecord.setDetailInfo(JSONObject.toJSONString(trajectoryDetailBo));
         taskCaseRecord.setRouteFile(path);
         taskCaseRecord.setStatus(0 == action ? TestingStatusEnum.PASS.getCode() : TestingStatusEnum.NO_PASS.getCode());
         taskCaseRecord.setEndTime(LocalDateTime.now());
@@ -215,27 +217,6 @@ public class RouteService {
     /**
      * 仿真轨迹点位检查
      *
-     * @param caseId
-     * @param oldDetail
-     * @param data
-     */
-    public void checkSimulaitonRoute(Integer caseId, CaseTrajectoryDetailBo oldDetail, List<TrajectoryValueDto> data) {
-        if (CollectionUtils.isEmpty(data) || ObjectUtils.isEmpty(oldDetail)
-                || CollectionUtils.isEmpty(oldDetail.getParticipantTrajectories())) {
-            return;
-        }
-        if (check(oldDetail, data)) {
-            TjCase tjCase = new TjCase();
-            tjCase.setId(caseId);
-            tjCase.setDetailInfo(JSONObject.toJSONString(oldDetail));
-            tjCaseMapper.updateById(tjCase);
-        }
-    }
-
-
-    /**
-     * 仿真轨迹点位检查
-     *
      * @param oldDetail
      * @param data
      */
@@ -245,7 +226,7 @@ public class RouteService {
             return null;
         }
         List<ParticipantTrajectoryVo> res = new ArrayList<>();
-        check(oldDetail, data);
+        checkSimulationSingle(oldDetail, data);
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
         for (ParticipantTrajectoryBo trajectoryBo : oldDetail.getParticipantTrajectories()) {
             ParticipantTrajectoryVo participantTrajectoryVo = new ParticipantTrajectoryVo();
@@ -266,33 +247,26 @@ public class RouteService {
         return res;
     }
 
-    public void checkRealRoute(Integer recordId, CaseTrajectoryDetailBo oldDetail, List<TrajectoryValueDto> data) {
-        if (CollectionUtils.isEmpty(data) || ObjectUtils.isEmpty(oldDetail)
-                || CollectionUtils.isEmpty(oldDetail.getParticipantTrajectories())) {
+    /**
+     * 更新任务用例测试记录点位详情
+     * @param recordId
+     * @param oldDetail
+     * @param data
+     */
+    public void updateRecordDetailInfo(Integer recordId, CaseTrajectoryDetailBo oldDetail, List<List<ClientSimulationTrajectoryDto>> data) {
+        if (ObjectUtils.isEmpty(recordId) || ObjectUtils.isEmpty(oldDetail) || CollectionUtils.isEmpty(data)) {
             return;
         }
-        if (check(oldDetail, data)) {
-            TjCaseRealRecord caseRealRecord = new TjCaseRealRecord();
-            caseRealRecord.setId(recordId);
-            caseRealRecord.setDetailInfo(JSONObject.toJSONString(oldDetail));
-            caseRealRecordMapper.updateById(caseRealRecord);
-        }
+        checkRealTraSingle(oldDetail, data);
     }
 
-    public void checkTaskRoute(Integer recordId, CaseTrajectoryDetailBo oldDetail, List<TrajectoryValueDto> data) {
-        if (CollectionUtils.isEmpty(data) || ObjectUtils.isEmpty(oldDetail)
-                || CollectionUtils.isEmpty(oldDetail.getParticipantTrajectories())) {
-            return;
-        }
-        if (check(oldDetail, data)) {
-            TjTaskCaseRecord taskCaseRecord = new TjTaskCaseRecord();
-            taskCaseRecord.setId(recordId);
-            taskCaseRecord.setDetailInfo(JSONObject.toJSONString(oldDetail));
-            taskCaseRecordMapper.updateById(taskCaseRecord);
-        }
-    }
-
-    public boolean check(CaseTrajectoryDetailBo oldDetail, List<TrajectoryValueDto> data) {
+    /**
+     * 检验仿真验证轨迹点位
+     * @param oldDetail
+     * @param data
+     * @return
+     */
+    public boolean checkSimulationSingle(CaseTrajectoryDetailBo oldDetail, List<TrajectoryValueDto> data) {
         boolean update = false;
         for (TrajectoryValueDto trajectory : data) {
             for (ParticipantTrajectoryBo trajectoryBo : oldDetail.getParticipantTrajectories()) {
@@ -325,9 +299,47 @@ public class RouteService {
         return update;
     }
 
-    public boolean verifyRoute(List<TrajectoryDetailBo> points) {
-        // todo anyMatch -> allMatch
-        return CollectionUtils.emptyIfNull(points).stream().anyMatch(TrajectoryDetailBo::getPass);
+    /**
+     * 检验实车测试过程中的轨迹点位
+     * @param oldDetail
+     * @param data
+     * @return
+     */
+    public boolean checkRealTraSingle(CaseTrajectoryDetailBo oldDetail, List<List<ClientSimulationTrajectoryDto>> data) {
+        boolean update = false;
+        for (List<ClientSimulationTrajectoryDto> trajectoryDtoList : data) {
+            for (ClientSimulationTrajectoryDto clientTrajectoryDto : trajectoryDtoList) {
+                for (TrajectoryValueDto trajectory : clientTrajectoryDto.getValue()) {
+                    for (ParticipantTrajectoryBo trajectoryBo : oldDetail.getParticipantTrajectories()) {
+                        if (!StringUtils.equals(trajectoryBo.getId(), trajectory.getId())) {
+                            continue;
+                        }
+                        List<TrajectoryDetailBo> points = trajectoryBo.getTrajectory();
+                        for (TrajectoryDetailBo trajectoryDetailBo : points) {
+                            if (!ObjectUtils.isEmpty(trajectoryDetailBo.getPass()) && trajectoryDetailBo.getPass()) {
+                                continue;
+                            }
+                            String[] positionArray = trajectoryDetailBo.getPosition().split(",");
+                            double longitude = Double.parseDouble(positionArray[0]);
+                            double latitude = Double.parseDouble(positionArray[1]);
+                            double instance = GeoUtil.calculateDistance(latitude, longitude,
+                                    trajectory.getLatitude(), trajectory.getLongitude());
+                            if (instance <= 3) {
+                                trajectoryDetailBo.setPass(true);
+                                trajectoryDetailBo.setReason("已校验完成");
+                                trajectoryDetailBo.setDate(trajectory.getTimestamp());
+                                trajectoryDetailBo.setSpeed(Double.valueOf(trajectory.getSpeed()));
+                            } else {
+                                trajectoryDetailBo.setPass(false);
+                                trajectoryDetailBo.setReason("未经过该点位3米范围区域");
+                            }
+                            update = true;
+                        }
+                    }
+                }
+            }
+        }
+        return update;
     }
 
     public Map<String, List<Map<String, Double>>> extractRoute(List<List<TrajectoryValueDto>> data) {

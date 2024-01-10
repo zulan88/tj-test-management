@@ -51,7 +51,7 @@ public class KafkaTrajectoryConsumer {
     @Autowired
     private RedisLock redisLock;
 
-    @KafkaListener(id = "singleTrajectory", topics = {"tj_master_fusion_data"}, groupId = "trajectory")
+    @KafkaListener(id = "singleTrajectory", topics = {"tj_master_fusion_data"}, groupId = "local1")
     public void listen(ConsumerRecord<String, String> record) {
         JSONObject jsonObject = JSONObject.parseObject(record.value());
         Integer taskId = jsonObject.getInteger("taskId");
@@ -87,7 +87,7 @@ public class KafkaTrajectoryConsumer {
             TjTaskCaseRecord taskCaseRecord = taskCaseRecordMapper.selectOne(new LambdaQueryWrapper<TjTaskCaseRecord>()
                     .eq(TjTaskCaseRecord::getTaskId, taskId)
                     .eq(TjTaskCaseRecord::getCaseId, caseId)
-                    .eq(TjTaskCaseRecord::getStatus, TestingStatusEnum.NO_PASS)
+                    .eq(TjTaskCaseRecord::getStatus, TestingStatusEnum.NO_PASS.getCode())
                     .isNull(TjTaskCaseRecord::getEndTime));
             if (!ObjectUtils.isEmpty(taskCaseRecord)) {
                 userName = taskCaseRecord.getCreatedBy();
@@ -95,7 +95,7 @@ public class KafkaTrajectoryConsumer {
         } else {
             TjCaseRealRecord caseRealRecord = caseRealRecordMapper.selectOne(new LambdaQueryWrapper<TjCaseRealRecord>()
                     .eq(TjCaseRealRecord::getCaseId, caseId)
-                    .eq(TjCaseRealRecord::getStatus, TestingStatusEnum.NO_PASS)
+                    .eq(TjCaseRealRecord::getStatus, TestingStatusEnum.NO_PASS.getCode())
                     .isNull(TjCaseRealRecord::getEndTime));
             if (!ObjectUtils.isEmpty(caseRealRecord)) {
                 userName = caseRealRecord.getCreatedBy();

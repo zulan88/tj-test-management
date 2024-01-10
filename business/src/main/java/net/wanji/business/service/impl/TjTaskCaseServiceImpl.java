@@ -519,7 +519,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             TjTaskCaseRecord addRecord = new TjTaskCaseRecord();
             addRecord.setTaskId(taskCaseInfoBo.getTaskId());
             addRecord.setCaseId(taskCaseInfoBo.getCaseId());
-            addRecord.setDetailInfo(JSONObject.toJSONString(caseTrajectoryDetailBo));
+            addRecord.setDetailInfo(JSONObject.toJSONString(routeService.resetTrajectoryProp(caseTrajectoryDetailBo)));
             addRecord.setStatus(TestingStatusEnum.NO_PASS.getCode());
             addRecord.setCreatedBy(SecurityUtils.getUsername());
             addRecord.setCreatedDate(LocalDateTime.now());

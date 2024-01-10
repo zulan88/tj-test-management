@@ -4,7 +4,6 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.netty.util.concurrent.DefaultThreadFactory;
 import net.wanji.business.common.Constants.PartRole;
 import net.wanji.business.common.Constants.RedisMessageType;
 import net.wanji.business.component.PathwayPoints;
@@ -24,13 +23,11 @@ import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.utils.DataUtils;
 import net.wanji.common.utils.DateUtils;
-import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
@@ -51,9 +48,6 @@ import java.util.Map.Entry;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -80,18 +74,12 @@ public class ImitateRedisTrajectoryConsumer {
     @Autowired
     private TjCaseRealRecordMapper caseRealRecordMapper;
 
-    @Autowired
-    private DeviceStateListener deviceStateListener;
-
-    @Value("${redis.channel.device.state}")
-    private String deviceStateChannel;
-
     @PostConstruct
     public void validChannel() {
-        ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1,
-                new DefaultThreadFactory("ImitateRedisTrajectoryConsumer-removeListeners"));
-        scheduledExecutorService.scheduleAtFixedRate(
-                this::removeListeners, 0, 20, TimeUnit.SECONDS);
+//        ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1,
+//                new DefaultThreadFactory("ImitateRedisTrajectoryConsumer-removeListeners"));
+//        scheduledExecutorService.scheduleAtFixedRate(
+//                this::removeListeners, 0, 20, TimeUnit.SECONDS);
     }
 
     private ChannelListener<SimulationTrajectoryDto> getListener(String key, String channel) {
@@ -117,12 +105,6 @@ public class ImitateRedisTrajectoryConsumer {
         // 添加监听器
         this.addRunningChannel(caseInfoBo, key, username);
     }
-
-    public String createKey(Integer caseId) {
-        return WebSocketManage.buildKey(SecurityUtils.getUsername(), String.valueOf(caseId),
-                WebSocketManage.REAL, null);
-    }
-
 
     public void addRunningChannel(CaseInfoBo caseInfoBo, String key, String username) throws IOException {
         if (this.runningChannel.containsKey(key)) {
@@ -320,9 +302,9 @@ public class ImitateRedisTrajectoryConsumer {
             realTestTrajectoryDto.setData(channelListener.getData());
             realTestTrajectoryDto.setMain(StringUtils.isNotEmpty(channelListener.getRole())
                     && PartRole.AV.equals(channelListener.getRole()));
-            for (SimulationTrajectoryDto trajectoryDto : channelListener.getData()) {
-                routeService.checkRealRoute(recordId, originalTrajectory, trajectoryDto.getValue());
-            }
+//            for (SimulationTrajectoryDto trajectoryDto : channelListener.getData()) {
+//                routeService.checkRealRoute(recordId, originalTrajectory, trajectoryDto.getValue());
+//            }
             data.add(realTestTrajectoryDto);
         }
         if (save) {

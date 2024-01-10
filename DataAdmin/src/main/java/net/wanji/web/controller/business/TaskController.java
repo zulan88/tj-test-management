@@ -346,7 +346,7 @@ public class TaskController extends BaseController {
     }
 
     @ApiOperationSort(19)
-    @ApiOperation(value = "19.测试结果")
+    @ApiOperation(value = "19.测试结果（已废弃）")
     @GetMapping("/getResult")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "taskId", value = "任务ID", dataType = "Integer", paramType = "query", example = "499"),
@@ -466,7 +466,7 @@ public class TaskController extends BaseController {
     }
 
     @ApiOperationSort(29)
-    @ApiOperation(value = "29.保存记录状态")
+    @ApiOperation(value = "29.保存记录状态（废弃）")
     @GetMapping("/saveRecordStatus")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "recordId", value = "测试记录ID", dataType = "Integer", paramType = "query", example = "499"),

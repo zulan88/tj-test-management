@@ -22,14 +22,9 @@ public class WebSocketManage {
     private static final Logger log = LoggerFactory.getLogger("business");
 
     /**
-     * concurrent包的线程安全Set，用来存放每个客户端对应的CumWebSocket对象。
+     * concurrent包的线程安全Map，用来存放每个客户端对应的CumWebSocket对象。
      */
     private static final ConcurrentHashMap<String, WebSocketProperties> CLIENTS = new ConcurrentHashMap<>();
-
-    public static final String SIMULATION = "2";
-    public static final String REAL = "3";
-    public static final String PLAN = "4";
-    public static final String TASK = "5";
 
     public static String buildKey(String userName, String id, String clientType, String signId) {
         return StringUtils.isEmpty(signId)

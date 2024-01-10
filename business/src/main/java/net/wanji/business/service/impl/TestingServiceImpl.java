@@ -400,7 +400,7 @@ public class TestingServiceImpl implements TestingService {
 
         TjCaseRealRecord tjCaseRealRecord = new TjCaseRealRecord();
         tjCaseRealRecord.setCaseId(caseId);
-        tjCaseRealRecord.setDetailInfo(JSONObject.toJSONString(caseTrajectoryDetailBo));
+        tjCaseRealRecord.setDetailInfo(JSONObject.toJSONString(routeService.resetTrajectoryProp(caseTrajectoryDetailBo)));
         tjCaseRealRecord.setStatus(TestingStatusEnum.NO_PASS.getCode());
         tjCaseRealRecord.setCreatedDate(LocalDateTime.now());
         tjCaseRealRecord.setCreatedBy(SecurityUtils.getUsername());
