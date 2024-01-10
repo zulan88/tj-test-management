@@ -37,6 +37,7 @@ public class TjTesteeObjectInfoServiceImpl extends ServiceImpl<TjTesteeObjectInf
         deviceDetail.setDeviceName(tjTesteeObjectInfo.getTesteeObjectName());
         deviceDetail.setDeviceType(tjTesteeObjectInfo.getTesteeObjectType());
         deviceDetail.setSupportRoles("av");
+        deviceDetail.setServiceAddress(tjTesteeObjectInfo.getVehicleLicense());
         deviceDetail.setDataChannel(dataChannel);
         deviceDetail.setCommandChannel(commandChannel);
         deviceDetail.setStatus(Constants.YN.Y_INT);

@@ -9,4 +9,7 @@ public class TjCaseOp extends TjCase{
     @TableField("op_status")
     String opStatus;
 
+    @TableField(exist = false)
+    String score;
+
 }
