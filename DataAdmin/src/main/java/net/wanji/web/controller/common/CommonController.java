@@ -253,6 +253,25 @@ public class CommonController {
         }
     }
 
+    @PostMapping ("/download/makeAnAppointment")
+    public void downloadMakeAnAppointment(HttpServletResponse response)
+            throws Exception {
+        try {
+            // 本地资源路径
+            String localPath = WanjiConfig.getProfile();
+            // 数据库资源地址
+            String downloadPath = localPath + "/makeAnAppointment/预约申请表.xlsx";
+            // 下载名称
+            String downloadName = StringUtils.substringAfterLast(downloadPath, "/");
+            response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+            FileUtils.setAttachmentResponseHeader(response, downloadName);
+            FileUtils.writeBytes(downloadPath, response.getOutputStream());
+
+        } catch (Exception e) {
+            log.error("下载文件失败", e);
+
+        }
+    }
     @PostMapping("/batchDownload/resource")
     public void  batchDownload(@RequestBody List<String> resourcePaths, HttpServletRequest request, HttpServletResponse response) throws IOException {
         String downloads = WanjiConfig.getDownloadPath();
