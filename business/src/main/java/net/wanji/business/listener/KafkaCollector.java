@@ -69,6 +69,10 @@ public class KafkaCollector {
         if (!collectorMap.containsKey(key)) {
             return;
         }
+        if (ObjectUtils.isEmpty(caseId)) {
+            collectorMap.remove(key);
+            return;
+        }
         Map<Integer, List<List<ClientSimulationTrajectoryDto>>> caseTrajectoryMap = collectorMap.get(key);
         if (!ObjectUtils.isEmpty(caseId) && caseTrajectoryMap.containsKey(caseId)) {
             collectorMap.remove(key);

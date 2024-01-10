@@ -8,11 +8,9 @@ import net.wanji.business.common.Constants.ChannelBuilder;
 import net.wanji.business.common.Constants.RedisMessageType;
 import net.wanji.business.common.Constants.TestingStatusEnum;
 import net.wanji.business.domain.RealWebsocketMessage;
-import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjCaseRealRecord;
 import net.wanji.business.entity.TjTaskCaseRecord;
 import net.wanji.business.listener.KafkaCollector;
-import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjCaseRealRecordMapper;
 import net.wanji.business.mapper.TjTaskCaseRecordMapper;
 import net.wanji.business.socket.WebSocketManage;
@@ -28,7 +26,6 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
 
-import javax.annotation.Resource;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -42,22 +39,19 @@ public class KafkaTrajectoryConsumer {
 
     private static final Logger log = LoggerFactory.getLogger("kafka");
 
-    @Resource
-    private TjCaseMapper caseMapper;
-
-    @Resource
+    @Autowired
     private TjTaskCaseRecordMapper taskCaseRecordMapper;
 
-    @Resource
+    @Autowired
     private TjCaseRealRecordMapper caseRealRecordMapper;
 
-    @Resource
+    @Autowired
     private KafkaCollector kafkaCollector;
 
     @Autowired
     private RedisLock redisLock;
 
-    @KafkaListener(id = "singleTrajectory", topics = {"tj_master_fusion_data"}, groupId = "trajectory4")
+    @KafkaListener(id = "singleTrajectory", topics = {"tj_master_fusion_data"}, groupId = "trajectory")
     public void listen(ConsumerRecord<String, String> record) {
         JSONObject jsonObject = JSONObject.parseObject(record.value());
         Integer taskId = jsonObject.getInteger("taskId");
@@ -106,10 +100,6 @@ public class KafkaTrajectoryConsumer {
             if (!ObjectUtils.isEmpty(caseRealRecord)) {
                 userName = caseRealRecord.getCreatedBy();
             }
-        }
-        TjCase tjCase = caseMapper.selectById(caseId);
-        if (!ObjectUtils.isEmpty(tjCase)) {
-            return tjCase.getCreatedBy();
         }
         return userName;
     }

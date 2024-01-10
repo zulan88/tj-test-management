@@ -23,6 +23,8 @@ import net.wanji.common.core.redis.RedisCache;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.system.service.ISysDictDataService;
 import org.apache.commons.collections4.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -40,8 +42,9 @@ import java.util.stream.Collectors;
  * @createDate 2023-08-17 10:56:39
  */
 @Service
-@Slf4j
 public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper, TjDeviceDetail> implements TjDeviceDetailService {
+
+    private static final Logger log = LoggerFactory.getLogger("device");
 
     @Autowired
     private ISysDictDataService dictDataService;
@@ -154,7 +157,7 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
         deviceStateDto.setDeviceId(deviceId);
         deviceStateDto.setType(0);
         deviceStateDto.setTimestamp(System.currentTimeMillis());
-        log.info("发送数据：查询设备{}状态  {}", deviceId, JSONObject.toJSONString(deviceStateDto));
+        log.info("查询设备{}状态：{}", deviceId, JSONObject.toJSONString(deviceStateDto));
         deviceStateSendService.sendData(commandChannel, deviceStateDto);
         if (!wait) {
             Integer state = deviceStateToRedis.query(deviceId, ChannelBuilder.DEFAULT_STATUS_CHANNEL, DeviceStateToRedis.DEVICE_STATE_PREFIX);
@@ -164,7 +167,7 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
         try {
             StatusManage.addCountDownLatch(key, 50);
         } catch (InterruptedException e) {
-            log.error("查询设备状态异常", e);
+            log.error("查询设备{}状态异常：{}", deviceId, e);
         }
         return (Integer) StatusManage.getValue(key);
     }
@@ -189,6 +192,7 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
         if (!ChannelBuilder.DEFAULT_STATUS_CHANNEL.equals(statusChannel)) {
             deviceStateListener.addDeviceStateListener(statusChannel);
         }
+        log.info("查询设备{}准备状态", deviceId);
         restService.selectDeviceReadyState(stateParam);
         if (!wait) {
             Integer readyState = deviceStateToRedis.query(deviceId, statusChannel, DeviceStateToRedis.DEVICE_READY_STATE_PREFIX);
@@ -198,7 +202,7 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
         try {
             StatusManage.addCountDownLatch(key, 50);
         } catch (InterruptedException e) {
-            log.error("查询设备准备状态异常", e);
+            log.error("查询设备{}准备状态异常：{}", deviceId, e);
         }
         return (Integer) StatusManage.getValue(key);
     }

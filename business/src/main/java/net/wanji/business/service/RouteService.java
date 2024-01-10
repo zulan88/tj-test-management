@@ -10,6 +10,7 @@ import net.wanji.business.common.Constants.TaskStatusEnum;
 import net.wanji.business.common.Constants.TestingStatusEnum;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
+import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.business.domain.vo.ParticipantTrajectoryVo;
 import net.wanji.business.domain.vo.TrajectoryDetailVo;
@@ -18,7 +19,6 @@ import net.wanji.business.entity.TjCaseRealRecord;
 import net.wanji.business.entity.TjTask;
 import net.wanji.business.entity.TjTaskCase;
 import net.wanji.business.entity.TjTaskCaseRecord;
-import net.wanji.business.listener.KafkaCollector;
 import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjCaseRealRecordMapper;
 import net.wanji.business.mapper.TjTaskCaseMapper;
@@ -78,9 +78,6 @@ public class RouteService {
 
     @Autowired
     private TjTaskCaseRecordMapper taskCaseRecordMapper;
-
-    @Autowired
-    private KafkaCollector kafkaCollector;
 
     @Async
     public void saveRouteFile(Integer caseId, List<SimulationTrajectoryDto> data) throws ExecutionException, InterruptedException {
@@ -469,5 +466,20 @@ public class RouteService {
     public List<List<ClientSimulationTrajectoryDto>> readRealRouteFile2(String fileName) {
         String routeFile = FileUploadUtils.getAbsolutePathFileName(fileName);
         return FileUtils.readRealRouteFile2(routeFile);
+    }
+
+    public SceneTrajectoryBo resetTrajectoryProp(CaseTrajectoryDetailBo caseTrajectoryDetailBo) {
+        try {
+            for (ParticipantTrajectoryBo participantTrajectoryBo : caseTrajectoryDetailBo.getParticipantTrajectories()) {
+                participantTrajectoryBo.setDuration("00:00");
+                for (TrajectoryDetailBo trajectoryDetailBo : participantTrajectoryBo.getTrajectory()) {
+                    trajectoryDetailBo.setReason("等待校验");
+                    trajectoryDetailBo.setPass(Boolean.FALSE);
+                }
+            }
+        } catch (Exception e) {
+            log.error("重置轨迹属性异常", e);
+        }
+        return caseTrajectoryDetailBo;
     }
 }
