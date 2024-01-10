@@ -79,6 +79,8 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
      */
     void playback(Integer taskId, Integer caseId, Integer action) throws BusinessException, IOException;
 
+    void playbackTW(Integer taskId, Integer caseId, String topic) throws BusinessException, IOException;
+
     /**
      * 获取评估结果
      * @param taskId

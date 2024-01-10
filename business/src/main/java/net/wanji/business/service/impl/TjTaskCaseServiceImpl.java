@@ -746,6 +746,26 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
     }
 
     @Override
+    public void playbackTW(Integer taskId, Integer caseId, String topic) throws BusinessException, IOException {
+        TjTaskCase param = new TjTaskCase();
+        param.setTaskId(taskId);
+        param.setCaseId(caseId);
+        List<TaskCaseInfoBo> taskCaseInfos = taskCaseMapper.selectTaskCaseByCondition(param);
+
+        List<List<ClientSimulationTrajectoryDto>> trajectories = new ArrayList<>();
+        for (TaskCaseInfoBo taskCaseInfoBo : taskCaseInfos) {
+            Optional<TjTaskCaseRecord> optional = CollectionUtils.emptyIfNull(taskCaseInfoBo.getRecords()).stream()
+                    .filter(r -> TestingStatusEnum.PASS.getCode().equals(r.getStatus()))
+                    .findFirst();
+            if (!optional.isPresent()) {
+                continue;
+            }
+            TjTaskCaseRecord tjTaskCaseRecord = optional.get();
+            trajectories.addAll(routeService.readRealTrajectoryFromRouteFile2(tjTaskCaseRecord.getRouteFile()));
+        }
+    }
+
+    @Override
     public Object getEvaluation(Integer taskId, Integer id) throws BusinessException {
         Map<String, Object> result = new HashMap<>();
         try {

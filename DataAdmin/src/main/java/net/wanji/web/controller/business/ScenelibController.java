@@ -21,6 +21,7 @@ import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
 import net.wanji.business.util.ToBuildOpenX;
+import net.wanji.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -91,6 +92,9 @@ public class ScenelibController extends BaseController {
     public AjaxResult add(@RequestBody TjScenelib tjScenelib) throws BusinessException{
         int res = scenelibService.insertTjScenelib(tjScenelib);
         FragmentedScenesDetailVo detailVo = tjFragmentedSceneDetailService.getDetailVo(tjScenelib.getSceneDetailId());
+        if (StringUtils.isEmpty(detailVo.getRouteFile())) {
+            throw new BusinessException("创建失败：场景未进行仿真验证");
+        }
         toBuildOpenX.scenetoOpenX(detailVo, tjScenelib.getId());
         TjFragmentedSceneDetail fragmentedSceneDetail = new FragmentedScenesDetailVo();
         fragmentedSceneDetail.setId(tjScenelib.getSceneDetailId());
