@@ -416,6 +416,10 @@ public class TjFragmentedSceneDetailServiceImpl
 
     @Override
     public List<SceneDetailVo> selectTjFragmentedSceneDetailList(SceneDetailVo sceneDetailVo) {
+        String user = SecurityUtils.getUsername();
+        if (!user.equals("admin")) {
+            sceneDetailVo.setCreatedBy(user);
+        }
         return sceneDetailMapper.selectTjFragmentedSceneDetailList(sceneDetailVo);
     }
 

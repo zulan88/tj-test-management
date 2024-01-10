@@ -102,6 +102,7 @@
             <if test="labels != null  and labels != ''"> and FIND_IN_SET(#{labels},all_stage_label)</if>
             <if test="startDate != null and startDate != '' and endDate != null"> and created_date between #{startDate} and #{endDate}</if>
             <if test="updatedDate != null "> and updated_date = #{updatedDate}</if>
+            <if test="createdBy != null and createdBy != '' "> and created_by = #{createdBy}</if>
         </where>
         order by created_date desc
     </select>
