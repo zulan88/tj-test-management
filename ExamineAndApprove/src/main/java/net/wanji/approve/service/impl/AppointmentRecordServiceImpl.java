@@ -142,7 +142,7 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
     @Override
     public List<CasePageVo> pageList(Integer id, Integer treeId) {
         AppointmentRecord appointmentRecord = this.getById(id);
-        if(appointmentRecord.getCaseIds() == null){
+        if(appointmentRecord.getCaseIds() == null || appointmentRecord.getCaseIds().isEmpty() ){
             return new ArrayList<>();
         }
         List<Integer> ids = Arrays.stream(appointmentRecord.getCaseIds().split(","))

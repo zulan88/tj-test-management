@@ -16,11 +16,12 @@ import net.wanji.business.exception.BusinessException;
 import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
-import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.PostConstruct;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,13 +55,17 @@ public class AppointmentRecordController extends BaseController {
 
     @PutMapping("/edit")
     public AjaxResult edit(@RequestBody AppointmentRecord appointmentRecord) {
-        if(appointmentRecord.getStatus()==1){
-            UpdateWrapper<AppointmentRecord> updateWrapper = new UpdateWrapper<>();
-            updateWrapper.set("expense",null);
-            updateWrapper.eq("id",appointmentRecord.getId());
-            updateWrapper.set("status",1);
-            boolean i = appointmentRecordService.update(appointmentRecord,updateWrapper);
-            return toAjax(i);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        if(appointmentRecord.getStatus()!=null){
+            appointmentRecord.setLastApprovalTime(LocalDateTime.now().format(formatter));
+            if(appointmentRecord.getStatus()==1){
+                UpdateWrapper<AppointmentRecord> updateWrapper = new UpdateWrapper<>();
+                updateWrapper.set("expense",null);
+                updateWrapper.eq("id",appointmentRecord.getId());
+                updateWrapper.set("status",1);
+                boolean i = appointmentRecordService.update(appointmentRecord,updateWrapper);
+                return toAjax(i);
+            }
         }
         return toAjax(appointmentRecordService.updateById(appointmentRecord));
     }
