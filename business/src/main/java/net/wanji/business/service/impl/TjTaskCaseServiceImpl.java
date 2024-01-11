@@ -57,6 +57,7 @@ import net.wanji.business.mapper.TjTaskCaseRecordMapper;
 import net.wanji.business.mapper.TjTaskDataConfigMapper;
 import net.wanji.business.mapper.TjTaskMapper;
 import net.wanji.business.schedule.RealPlaybackSchedule;
+import net.wanji.business.schedule.TwinsPlayback;
 import net.wanji.business.service.ILabelsService;
 import net.wanji.business.service.RestService;
 import net.wanji.business.service.RouteService;
@@ -160,6 +161,9 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
     @Autowired
     ToBuildOpenX toBuildOpenX;
+
+    @Autowired
+    TwinsPlayback twinsPlayback;
 
     @Override
     public TaskCaseVerificationPageVo getStatus(TjTaskCase param, boolean hand) throws BusinessException {
@@ -763,6 +767,11 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             }
             TjTaskCaseRecord tjTaskCaseRecord = optional.get();
             trajectories.addAll(routeService.readRealTrajectoryFromRouteFile2(tjTaskCaseRecord.getRouteFile()));
+        }
+        try {
+            twinsPlayback.sendTwinsPlayback(topic,trajectories);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 

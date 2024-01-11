@@ -54,6 +54,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -514,5 +515,15 @@ public class TaskController extends BaseController {
             }
         }
         return AjaxResult.success(list);
+    }
+
+    @GetMapping("/playbackTW")
+    public AjaxResult playbacktw(@RequestParam("taskId") Integer taskId, @RequestParam(value = "caseId", required = false) Integer caseId) throws BusinessException, IOException {
+        UUID uuid = UUID.randomUUID();
+        String uuidString = uuid.toString().replace("-", "");
+        String substring = uuidString.substring(0, 5);
+        String topic = "tj_playback_tw_"+substring;
+        taskCaseService.playbackTW(taskId,caseId,topic);
+        return AjaxResult.success(topic);
     }
 }

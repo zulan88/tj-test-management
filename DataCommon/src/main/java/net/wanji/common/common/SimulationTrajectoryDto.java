@@ -9,7 +9,7 @@ import java.util.List;
  */
 public class SimulationTrajectoryDto {
 
-    private String source;
+//    private String source;
 
     /**
      * 时间戳类型（创建时间：CREATE_TIME）
