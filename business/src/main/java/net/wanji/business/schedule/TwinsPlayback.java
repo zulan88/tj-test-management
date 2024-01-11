@@ -19,10 +19,10 @@ public class TwinsPlayback {
     @Async
     public void sendTwinsPlayback(String topic, List<List<ClientSimulationTrajectoryDto>> trajectories) throws InterruptedException {
         Thread.sleep(1000);
+        Gson gson = new Gson();
         for(List<ClientSimulationTrajectoryDto> trajectory : trajectories) {
-            Gson gson = new Gson();
             JsonArray jsonArray = gson.toJsonTree(trajectory).getAsJsonArray();
-            kafkaProducer.sendMessage(topic, jsonArray.getAsString());
+            kafkaProducer.sendMessage(topic, jsonArray.toString());
             Thread.sleep(99);
         }
     }
