@@ -11,6 +11,7 @@ import net.wanji.business.common.Constants.PartType;
 import net.wanji.business.common.Constants.PlaybackAction;
 import net.wanji.business.common.Constants.PointTypeEnum;
 import net.wanji.business.common.Constants.RedisMessageType;
+import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.TestingStatusEnum;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.Label;
@@ -34,8 +35,9 @@ import net.wanji.business.domain.vo.CaseTestStartVo;
 import net.wanji.business.domain.vo.CommunicationDelayVo;
 import net.wanji.business.domain.vo.RealTestResultVo;
 import net.wanji.business.domain.vo.RealVehicleVerificationPageVo;
+import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjCaseRealRecord;
-import net.wanji.business.entity.TjTaskCase;
+import net.wanji.business.entity.TjCaseTree;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.listener.KafkaCollector;
 import net.wanji.business.mapper.TjCaseRealRecordMapper;
@@ -45,6 +47,7 @@ import net.wanji.business.service.RestService;
 import net.wanji.business.service.RouteService;
 import net.wanji.business.service.TestingService;
 import net.wanji.business.service.TjCaseService;
+import net.wanji.business.service.TjCaseTreeService;
 import net.wanji.business.service.TjDeviceDetailService;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.util.RedisLock;
@@ -53,6 +56,7 @@ import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
+import net.wanji.system.service.ISysDictDataService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -98,10 +102,16 @@ public class TestingServiceImpl implements TestingService {
     private TjCaseService caseService;
 
     @Autowired
+    private TjCaseTreeService caseTreeService;
+
+    @Autowired
     private TjDeviceDetailService deviceDetailService;
 
     @Autowired
     private ILabelsService labelsService;
+
+    @Autowired
+    private ISysDictDataService dictDataService;
 
     @Autowired
     private TjCaseRealRecordMapper caseRealRecordMapper;
@@ -660,6 +670,9 @@ public class TestingServiceImpl implements TestingService {
         caseTrajectoryDetailBo.setParticipantTrajectories(trajectoryBos);
         RealTestResultVo realTestResultVo = new RealTestResultVo();
         BeanUtils.copyProperties(caseTrajectoryDetailBo, realTestResultVo);
+        TjCase tjCase = caseService.getById(caseRealRecord.getCaseId());
+        TjCaseTree caseTree = caseTreeService.getById(tjCase.getTreeId());
+        realTestResultVo.setTestTypeName(dictDataService.selectDictLabel(SysType.TEST_TYPE, caseTree.getType()));
         realTestResultVo.setSceneName(caseTrajectoryDetailBo.getSceneDesc());
         realTestResultVo.setId(caseRealRecord.getId());
         realTestResultVo.setStartTime(caseRealRecord.getStartTime());

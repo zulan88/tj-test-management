@@ -678,16 +678,17 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         } else {
             TjTask tjTask = taskMapper.selectById(taskId);
             String key = ChannelBuilder.buildTaskDataChannel(tjTask.getCreatedBy(), taskId);
+            String duration = null;
             try {
                 List<List<ClientSimulationTrajectoryDto>> trajectories = kafkaCollector.take(key, caseId);
-                String duration = DateUtils.secondsToDuration((int) Math.floor(
+                duration = DateUtils.secondsToDuration((int) Math.floor(
                         (double) (CollectionUtils.isEmpty(trajectories) ? 0 : trajectories.size()) / 10));
                 ssCaseResultUpdate(action, taskCaseRecord, mainConfig, taskCase, duration, trajectories);
-                RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null, null, duration);
-                WebSocketManage.sendInfo(key, JSON.toJSONString(endMsg));
                 toBuildOpenX.casetoOpenX(trajectories, taskId, caseId, null);
             } finally {
                 if (taskEnd) {
+                    RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null, null, duration);
+                    WebSocketManage.sendInfo(key, JSON.toJSONString(endMsg));
                     kafkaCollector.remove(key, null);
                 }
             }

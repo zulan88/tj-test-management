@@ -10,6 +10,8 @@ public class ClientSimulationTrajectoryDto extends SimulationTrajectoryDto {
 
     private boolean isMain;
 
+    private String role;
+
     private String source;
 
     public boolean isMain() {
@@ -18,6 +20,14 @@ public class ClientSimulationTrajectoryDto extends SimulationTrajectoryDto {
 
     public void setMain(boolean main) {
         isMain = main;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 
     public String getSource() {
