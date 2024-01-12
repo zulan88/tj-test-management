@@ -14,12 +14,11 @@ import com.alibaba.excel.write.style.HorizontalCellStyleStrategy;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.google.common.collect.Maps;
 import net.wanji.business.common.Constants.ChannelBuilder;
-import net.wanji.business.common.Constants.ColumnName;
 import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.business.common.Constants.PartRole;
 import net.wanji.business.common.Constants.PartType;
@@ -28,7 +27,6 @@ import net.wanji.business.common.Constants.TaskCaseStatusEnum;
 import net.wanji.business.common.Constants.TaskProcessNode;
 import net.wanji.business.common.Constants.TaskStatusEnum;
 import net.wanji.business.common.Constants.TestType;
-import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
@@ -112,6 +110,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -348,116 +347,177 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
 
     @Override
     public Object processedInfo(TaskSaveDto taskSaveDto) throws BusinessException {
-        // 1.查询主车可用设备
-        Map<String, Object> result = new HashMap<>();
         switch (taskSaveDto.getProcessNode()) {
             case TaskProcessNode.TASK_INFO:
-                TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
-                deviceDetailDto.setSupportRoles(PartRole.AV);
-                deviceDetailDto.setIsInner(0);
-                List<DeviceDetailVo> avDevices = deviceDetailMapper.selectByCondition(deviceDetailDto);
-                TjTask task = new TjTask();
-                if (ObjectUtil.isNotEmpty(taskSaveDto.getId())) {
-                    task = this.getById(taskSaveDto.getId());
-                    // 已存在的设备
-                    TjTaskDataConfig dataConfig = new TjTaskDataConfig();
-                    dataConfig.setTaskId(taskSaveDto.getId());
-                    List<TjTaskDataConfig> dataConfigs = tjTaskDataConfigMapper.selectByCondition(dataConfig);
-                    CollectionUtils.emptyIfNull(avDevices).forEach(t -> {
-                        if (CollectionUtils.emptyIfNull(dataConfigs).stream().anyMatch(dc -> dc.getDeviceId().equals(t.getDeviceId()))) {
-                            t.setSelected(Boolean.TRUE);
-                        }
-                    });
-                }
-                result.put("taskInfo", task);
-                result.put("avDevices", avDevices.stream().map(t -> {
-                    TaskTargetVehicleVo targetVehicleVo = new TaskTargetVehicleVo();
-                    targetVehicleVo.setDeviceId(t.getDeviceId());
-                    targetVehicleVo.setObjectType(t.getDeviceType());
-                    targetVehicleVo.setLevel("L3");
-                    targetVehicleVo.setBrand(t.getDeviceName());
-                    targetVehicleVo.setType(t.getDeviceName());
-                    targetVehicleVo.setPerson("张三");
-                    targetVehicleVo.setPhone("135****9384");
-                    targetVehicleVo.setSelected(t.isSelected());
-                    return targetVehicleVo;
-                }).collect(Collectors.toList()));
-                break;
+                return this.getTaskInfo(taskSaveDto);
             case TaskProcessNode.SELECT_CASE:
-                if (ObjectUtil.isEmpty(taskSaveDto.getId())) {
-                    throw new BusinessException("请确认任务信息是否已保存");
-                }
-                if (ObjectUtil.isEmpty(taskSaveDto.getCaseQueryDto())) {
-                    throw new BusinessException("请确认用例查询条件");
-                }
-                // 已选择的用例
-                TjTaskCase taskCase = new TjTaskCase();
-                taskCase.setTaskId(taskSaveDto.getId());
-                List<TaskCaseVo> taskCaseVos = tjTaskCaseMapper.selectByCondition(taskCase);
-                List<Integer> choiceCaseIds = taskCaseVos.stream().map(TaskCaseVo::getCaseId).collect(Collectors.toList());
-                // 分页查询用例
-                List<Integer> selectedIds = new ArrayList<>();
-                CaseQueryDto caseQueryDto = taskSaveDto.getCaseQueryDto();
-                caseQueryDto.setUserName(SecurityUtils.getUsername());
-                PageHelper.startPage(caseQueryDto.getPageNum(), caseQueryDto.getPageSize());
-                List<CasePageVo> casePageVos = null;
-                if (ObjectUtils.isEmpty(caseQueryDto.getShowType()) || 0 == caseQueryDto.getShowType()) {
-                    caseQueryDto.setSelectedIds(null);
-                    casePageVos = tjCaseService.pageList(caseQueryDto, "byUsername");
-                    for (CasePageVo casePageVo : CollectionUtils.emptyIfNull(casePageVos)) {
-                        if (CollectionUtils.isNotEmpty(taskCaseVos) && choiceCaseIds.contains(casePageVo.getId())) {
-                            casePageVo.setSelected(Boolean.TRUE);
-                        }
-                    }
-                } else {
-                    // 仅查看选中用例
-                    caseQueryDto.setSelectedIds(choiceCaseIds);
-                    casePageVos = tjCaseService.pageList(caseQueryDto, "byUsername");
-                    CollectionUtils.emptyIfNull(casePageVos).forEach(t -> t.setSelected(Boolean.TRUE));
-                }
-                // 列表数据+已选择的用例
-                TableDataInfo rspData = new TableDataInfo();
-                rspData.setData(casePageVos);
-                rspData.setTotal(new PageInfo(casePageVos).getTotal());
-                result.put("tableData", rspData);
-                result.put("selectedIds", selectedIds);
-                break;
+                return this.selectTaskCaseInfo(taskSaveDto);
             case TaskProcessNode.CONFIG:
-                TjTask tjTask = this.getById(taskSaveDto.getId());
-                if (ObjectUtil.isEmpty(tjTask)) {
-                    throw new BusinessException("任务查询失败");
-                }
-                List<Map<String, Double>> mainTrajectories = null;
-                if (ObjectUtil.isNotEmpty(tjTask.getMainPlanFile())) {
-                    try {
-                        List<List<TrajectoryValueDto>> trajectoryValues = routeService.readTrajectoryFromRouteFile(tjTask.getMainPlanFile(), "1");
-                        mainTrajectories = trajectoryValues.stream().filter(CollectionUtils::isNotEmpty)
-                                .map(item -> item.get(0)).map(t -> {
-                                    Map<String, Double> map = new HashMap<>();
-                                    map.put("longitude", t.getLongitude());
-                                    map.put("latitude", t.getLatitude());
-                                    map.put("courseAngle", t.getCourseAngle());
-                                    return map;
-                                }).collect(Collectors.toList());
-                    } catch (IOException e) {
-                        log.error(StringUtils.format("读取任务{}主车规划后路线文件失败:{}", tjTask.getTaskCode(), e));
-                    }
-                }
-                result.put("taskId", taskSaveDto.getId());
-                result.put("planRoute", mainTrajectories);
-                result.put("cases", getCaseContinuousInfo(taskSaveDto.getId()));
-                break;
+                return this.selectTaskContinuousConfig(taskSaveDto);
             case TaskProcessNode.VIEW_PLAN:
-                List<SceneIndexSchemeVo> sceneIndexSchemeVos = restService.getSceneIndexSchemeList(taskSaveDto);
-                result.put("data", sceneIndexSchemeVos);
-                break;
+                return this.viewPlan(taskSaveDto);
             default:
                 break;
         }
+        return Maps.newHashMap();
+    }
+
+    /**
+     * 节点1：查询任务信息
+     *
+     * @param taskSaveDto
+     * @return
+     * @throws BusinessException
+     */
+    private Map<String, Object> getTaskInfo(TaskSaveDto taskSaveDto) throws BusinessException {
+        TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
+        deviceDetailDto.setSupportRoles(PartRole.AV);
+        deviceDetailDto.setIsInner(0);
+        List<DeviceDetailVo> avDevices = deviceDetailMapper.selectByCondition(deviceDetailDto);
+        TjTask task = new TjTask();
+        if (ObjectUtil.isNotEmpty(taskSaveDto.getId())) {
+            task = this.getById(taskSaveDto.getId());
+            // 已存在的设备
+            TjTaskDataConfig dataConfig = new TjTaskDataConfig();
+            dataConfig.setTaskId(taskSaveDto.getId());
+            List<TjTaskDataConfig> dataConfigs = tjTaskDataConfigMapper.selectByCondition(dataConfig);
+            CollectionUtils.emptyIfNull(avDevices).forEach(t -> {
+                if (CollectionUtils.emptyIfNull(dataConfigs).stream().anyMatch(dc -> dc.getDeviceId().equals(t.getDeviceId()))) {
+                    t.setSelected(Boolean.TRUE);
+                }
+            });
+        }
+        Map<String, Object> result = new HashMap<>();
+        result.put("taskInfo", task);
+        result.put("avDevices", avDevices.stream().map(t -> {
+            TaskTargetVehicleVo targetVehicleVo = new TaskTargetVehicleVo();
+            targetVehicleVo.setDeviceId(t.getDeviceId());
+            targetVehicleVo.setObjectType(t.getDeviceType());
+            targetVehicleVo.setLevel("L3");
+            targetVehicleVo.setBrand(t.getDeviceName());
+            targetVehicleVo.setType(t.getDeviceName());
+            targetVehicleVo.setPerson("张三");
+            targetVehicleVo.setPhone("135****9384");
+            targetVehicleVo.setSelected(t.isSelected());
+            return targetVehicleVo;
+        }).collect(Collectors.toList()));
         return result;
     }
 
-    public List<CaseContinuousVo> getCaseContinuousInfo(Integer taskId) throws BusinessException {
+    /**
+     * 节点2：查询用例信息
+     *
+     * @param taskSaveDto
+     * @return
+     * @throws BusinessException
+     */
+    private Map<String, Object> selectTaskCaseInfo(TaskSaveDto taskSaveDto) throws BusinessException {
+        if (ObjectUtil.isEmpty(taskSaveDto.getId())) {
+            throw new BusinessException("请确认任务信息是否已保存");
+        }
+        if (ObjectUtil.isEmpty(taskSaveDto.getCaseQueryDto())) {
+            throw new BusinessException("请确认用例查询条件");
+        }
+        // 已选择的用例
+        TjTaskCase taskCase = new TjTaskCase();
+        taskCase.setTaskId(taskSaveDto.getId());
+        List<TaskCaseVo> taskCaseVos = tjTaskCaseMapper.selectByCondition(taskCase);
+        List<Integer> choiceCaseIds = taskCaseVos.stream().map(TaskCaseVo::getCaseId).collect(Collectors.toList());
+        // 分页查询用例
+        List<Integer> selectedIds = new ArrayList<>();
+        CaseQueryDto caseQueryDto = taskSaveDto.getCaseQueryDto();
+        caseQueryDto.setUserName(SecurityUtils.getUsername());
+        PageHelper.startPage(caseQueryDto.getPageNum(), caseQueryDto.getPageSize());
+        List<CasePageVo> casePageVos = null;
+        if (ObjectUtils.isEmpty(caseQueryDto.getShowType()) || 0 == caseQueryDto.getShowType()) {
+            caseQueryDto.setSelectedIds(null);
+            casePageVos = tjCaseService.pageList(caseQueryDto, "byUsername");
+            for (CasePageVo casePageVo : CollectionUtils.emptyIfNull(casePageVos)) {
+                if (CollectionUtils.isNotEmpty(taskCaseVos) && choiceCaseIds.contains(casePageVo.getId())) {
+                    casePageVo.setSelected(Boolean.TRUE);
+                }
+            }
+        } else {
+            // 仅查看选中用例
+            caseQueryDto.setSelectedIds(choiceCaseIds);
+            casePageVos = tjCaseService.pageList(caseQueryDto, "byUsername");
+            CollectionUtils.emptyIfNull(casePageVos).forEach(t -> t.setSelected(Boolean.TRUE));
+        }
+        // 列表数据+已选择的用例
+        TableDataInfo rspData = new TableDataInfo();
+        rspData.setData(casePageVos);
+        rspData.setTotal(new PageInfo(casePageVos).getTotal());
+        Map<String, Object> result = new HashMap<>();
+        result.put("tableData", rspData);
+        result.put("selectedIds", selectedIds);
+        return result;
+    }
+
+    /**
+     * 节点3：查询任务连续性配置信息
+     *
+     * @param taskSaveDto
+     * @return
+     * @throws BusinessException
+     */
+    private Map<String, Object> selectTaskContinuousConfig(TaskSaveDto taskSaveDto) throws BusinessException {
+        if (ObjectUtil.isEmpty(taskSaveDto.getId())) {
+            throw new BusinessException("请确认任务");
+        }
+        TjTask tjTask = this.getById(taskSaveDto.getId());
+        if (ObjectUtil.isEmpty(tjTask)) {
+            throw new BusinessException("任务查询失败");
+        }
+        TjTaskDataConfig taskAvConfig = tjTaskDataConfigService.getOne(new LambdaQueryWrapper<TjTaskDataConfig>()
+                .eq(TjTaskDataConfig::getTaskId, taskSaveDto.getId())
+                .eq(TjTaskDataConfig::getType, PartRole.AV));
+        if (ObjectUtil.isEmpty(taskAvConfig)) {
+            throw new BusinessException("请配置被测设备");
+        }
+        TjDeviceDetail avDetail = deviceDetailMapper.selectById(taskAvConfig.getDeviceId());
+        if (ObjectUtils.isEmpty(avDetail)) {
+            throw new BusinessException(StringUtils.format("被测设备查询失败:{}", taskAvConfig.getDeviceId()));
+        }
+        List<Map<String, Double>> mainTrajectories = null;
+        if (ObjectUtil.isNotEmpty(tjTask.getMainPlanFile())) {
+            try {
+                List<List<TrajectoryValueDto>> trajectoryValues = routeService.readTrajectoryFromRouteFile(tjTask.getMainPlanFile(), "1");
+                mainTrajectories = trajectoryValues.stream().filter(CollectionUtils::isNotEmpty)
+                        .map(item -> item.get(0)).map(t -> {
+                            Map<String, Double> map = new HashMap<>();
+                            map.put("longitude", t.getLongitude());
+                            map.put("latitude", t.getLatitude());
+                            map.put("courseAngle", t.getCourseAngle());
+                            return map;
+                        }).collect(Collectors.toList());
+            } catch (Exception e) {
+                log.error(StringUtils.format("读取任务{}主车规划后路线文件失败:{}", tjTask.getTaskCode(), e));
+            }
+        }
+        Map<String, Object> result = new HashMap<>();
+        result.put("taskId", taskSaveDto.getId());
+        result.put("planRoute", mainTrajectories);
+        result.put("cases", getCaseContinuousInfo(taskSaveDto.getId()));
+        result.put("plan", !"域控制器".equals(avDetail.getDeviceType()));
+        return result;
+    }
+
+    /**
+     * 节点4：查询任务场景评价信息
+     *
+     * @param taskSaveDto
+     * @return
+     * @throws BusinessException
+     */
+    private Map<String, Object> viewPlan(TaskSaveDto taskSaveDto) throws BusinessException {
+        Map<String, Object> result = new HashMap<>();
+        List<SceneIndexSchemeVo> sceneIndexSchemeVos = restService.getSceneIndexSchemeList(taskSaveDto);
+        result.put("data", sceneIndexSchemeVos);
+        return result;
+    }
+
+
+    private List<CaseContinuousVo> getCaseContinuousInfo(Integer taskId) throws BusinessException {
         // 已选择的用例
         TjTaskCase taskCase = new TjTaskCase();
         taskCase.setTaskId(taskId);
@@ -524,156 +584,213 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         }
         switch (in.getProcessNode()) {
             case TaskProcessNode.TASK_INFO:
-                if (CollectionUtils.isEmpty(in.getAvDeviceIds())) {
-                    throw new BusinessException("请选择主车被测设备");
-                }
-                TjTaskDataConfig newAvConfig = new TjTaskDataConfig();
-                if (ObjectUtil.isNotEmpty(in.getId())) {
-                    tjTask.setClient(in.getClient());
-                    tjTask.setConsigner(in.getConsigner());
-                    tjTask.setContract(in.getContract());
-                    tjTask.setStartTime(in.getStartTime());
-                    tjTask.setEndTime(in.getEndTime());
-                    tjTask.setUpdatedBy(SecurityUtils.getUsername());
-                    tjTask.setUpdatedDate(LocalDateTime.now());
-                    if(in.getIsInner()!=null){
-                        tjTask.setIsInner(in.getIsInner());
-                        tjTask.setOpStatus(0);
-                        tjTask.setMeasurandId(in.getMeasurandId());
-                        tjTask.setApprecordId(in.getApprecordId());
-                    }
-                    TjTaskDataConfig oldAvConfig = tjTaskDataConfigService.getOne(new LambdaQueryWrapper<TjTaskDataConfig>()
-                            .eq(TjTaskDataConfig::getTaskId, tjTask.getId())
-                            .eq(TjTaskDataConfig::getType, PartRole.AV));
-                    this.updateById(tjTask);
-                    BeanUtils.copyBeanProp(newAvConfig, oldAvConfig);
-                } else {
-                    BeanUtils.copyBeanProp(tjTask, in);
-                    tjTask.setTaskCode("task-" + sf.format(new Date()));
-                    tjTask.setProcessNode(TaskProcessNode.SELECT_CASE);
-                    // todo 排期日期
-                    tjTask.setPlanDate(new Date());
-                    tjTask.setCreateTime(new Date());
-                    tjTask.setStatus(TaskStatusEnum.NO_SUBMIT.getCode());
-                    tjTask.setCreatedBy(SecurityUtils.getUsername());
-                    tjTask.setCreatedDate(LocalDateTime.now());
-                    if(in.getIsInner()!=null){
-                        tjTask.setIsInner(in.getIsInner());
-                        tjTask.setOpStatus(0);
-                        tjTask.setMeasurandId(in.getMeasurandId());
-                        tjTask.setApprecordId(in.getApprecordId());
-                    }
-                    this.save(tjTask);
-                    newAvConfig.setTaskId(tjTask.getId());
-                    newAvConfig.setType(PartRole.AV);
-                    newAvConfig.setParticipatorId("1");
-                    newAvConfig.setParticipatorName("主车1");
-                }
-                in.getAvDeviceIds().stream().findFirst().ifPresent(newAvConfig::setDeviceId);
-                tjTaskDataConfigService.saveOrUpdate(newAvConfig);
-                return tjTask.getId();
+                this.saveTaskInfo(tjTask, in);
+                break;
             case TaskProcessNode.SELECT_CASE:
-                if (ObjectUtil.isEmpty(in.getId())) {
-                    throw new BusinessException("请选择任务");
-                }
-                List<TjTaskCase> taskCaseList = tjTaskCaseService.list(new LambdaQueryWrapper<TjTaskCase>()
-                        .eq(TjTaskCase::getTaskId, in.getId())
-                        .orderByDesc(TjTaskCase::getCreateTime));
-                if (CollectionUtils.isEmpty(taskCaseList)) {
-                    throw new BusinessException("请选择用例");
-                }
-                // 默认按创建时间排序
-                IntStream.range(0, taskCaseList.size()).forEach(i -> {
-                    taskCaseList.get(i).setSort(i + 1);
-                });
-                tjTaskCaseService.updateBatchById(taskCaseList);
-                // 查询对应用例
-                List<TjCase> cases = tjCaseService.listByIds(taskCaseList.stream().map(TjTaskCase::getCaseId).collect(Collectors.toList()));
-                // todo 设备从运营平台查询
-                TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
-                deviceDetailDto.setSupportRoles(PartRole.MV_SIMULATION);
-                List<DeviceDetailVo> simulationDevices = deviceDetailMapper.selectByCondition(deviceDetailDto);
-                if (CollectionUtils.isEmpty(simulationDevices)) {
-                    throw new BusinessException("无可用的从车设备");
-                }
-                // 删除老的任务配置
-                tjTaskDataConfigService.remove(new LambdaQueryWrapper<TjTaskDataConfig>()
-                        .eq(TjTaskDataConfig::getTaskId, in.getId())
-                        .ne(TjTaskDataConfig::getType, PartRole.AV));
-                // 添加新的任务配置
-                List<TjTaskDataConfig> dataConfigList = new ArrayList<>();
-                for (TjCase tjCase : cases) {
-                    SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(tjCase.getDetailInfo(), SceneTrajectoryBo.class);
-                    // 当前所有从车都使用TESSNG
-                    List<TjTaskDataConfig> slaveConfigs = sceneTrajectoryBo.getParticipantTrajectories().stream()
-                            .filter(t -> PartType.SLAVE.equals(t.getType())).map(t -> {
-                                TjTaskDataConfig config = new TjTaskDataConfig();
-                                config.setTaskId(in.getId());
-                                config.setCaseId(tjCase.getId());
-                                config.setType(PartRole.MV_SIMULATION);
-                                config.setParticipatorId(t.getId());
-                                config.setParticipatorName(t.getName());
-                                config.setDeviceId(simulationDevices.get(0).getDeviceId());
-                                return config;
-                            }).collect(Collectors.toList());
-                    dataConfigList.addAll(slaveConfigs);
-                }
-                tjTaskDataConfigService.saveBatch(dataConfigList);
-                // 修改任务信息
-                tjTask.setProcessNode(TaskProcessNode.CONFIG);
-                tjTask.setCaseCount(cases.size());
-                updateById(tjTask);
-                return tjTask.getId();
+                this.saveTaskCaseInfo(tjTask, in);
+                break;
             case TaskProcessNode.CONFIG:
-                if (ObjectUtil.isEmpty(in.getId())) {
-                    throw new BusinessException("请选择任务");
-                }
-                if (TestType.VIRTUAL_REAL_FUSION.equals(tjTask.getTestType())) {
-                    if (CollectionUtils.isEmpty(in.getCases())) {
-                        throw new BusinessException("请选择用例");
-                    }
-                    if (StringUtils.isEmpty(in.getRouteFile())) {
-                        throw new BusinessException("请进行路径规划");
-                    }
-                    if (in.getCases().subList(0, in.getCases().size() - 1).stream().anyMatch(t -> CollectionUtils.isEmpty((List) t.getConnectInfo()))) {
-                        throw new BusinessException("请完善用例连接信息");
-                    }
-                    // 修改任务用例信息
-                    List<TjTaskCase> tjTaskCases = tjTaskCaseService.listByIds(in.getCases().stream()
-                            .map(CaseContinuousVo::getId).collect(Collectors.toList()));
-                    IntStream.range(0, in.getCases().size()).forEach(i -> {
-                        in.getCases().get(i).setSort(i + 1);
-                    });
-                    Map<Integer, Object> connectMap = in.getCases().stream().collect(Collectors.toMap(CaseContinuousVo::getId,
-                            CaseContinuousVo::getConnectInfo));
-                    Map<Integer, Integer> sortMap = in.getCases().stream().collect(Collectors.toMap(CaseContinuousVo::getId,
-                            CaseContinuousVo::getSort));
-                    for (int i = 0; i < tjTaskCases.size(); i++) {
-                        TjTaskCase taskCase = tjTaskCases.get(i);
-                        taskCase.setSort(sortMap.get(taskCase.getId()));
-                        Object obj = connectMap.get(taskCase.getId());
-                        taskCase.setConnectInfo(ObjectUtil.isEmpty(obj) ? null : JSONObject.toJSONString(obj));
-                        tjTaskCaseMapper.updateByCondition(taskCase);
-                    }
-                    // 修改连续式场景任务完整轨迹信息
-                    tjTask.setMainPlanFile(in.getRouteFile());
-                    tjTask.setContinuous(Boolean.TRUE);
-                }
-                tjTask.setProcessNode(TaskProcessNode.VIEW_PLAN);
-                updateById(tjTask);
-                return tjTask.getId();
+                this.saveTaskContinuousConfig(tjTask, in);
+                break;
             case TaskProcessNode.VIEW_PLAN:
-                if (ObjectUtil.isEmpty(in.getId())) {
-                    throw new BusinessException("请选择任务");
-                }
-                tjTask.setProcessNode(TaskProcessNode.WAIT_TEST);
-                tjTask.setStatus(TaskStatusEnum.WAITING.getCode());
-                updateById(tjTask);
-                return tjTask.getId();
+                this.saveTaskEvaluateInfo(tjTask, in);
+                break;
             default:
                 break;
         }
-        return 0;
+        return tjTask.getId();
+    }
+
+    /**
+     * 保存节点1：任务信息
+     *
+     * @param tjTask
+     * @param in
+     * @throws BusinessException
+     */
+    private void saveTaskInfo(TjTask tjTask, TaskBo in) throws BusinessException {
+        if (CollectionUtils.isEmpty(in.getAvDeviceIds())) {
+            throw new BusinessException("请选择主车被测设备");
+        }
+        TjTaskDataConfig newAvConfig = new TjTaskDataConfig();
+        if (ObjectUtil.isNotEmpty(in.getId())) {
+            tjTask.setClient(in.getClient());
+            tjTask.setConsigner(in.getConsigner());
+            tjTask.setContract(in.getContract());
+            tjTask.setStartTime(in.getStartTime());
+            tjTask.setEndTime(in.getEndTime());
+            tjTask.setUpdatedBy(SecurityUtils.getUsername());
+            tjTask.setUpdatedDate(LocalDateTime.now());
+            if (in.getIsInner() != null) {
+                tjTask.setIsInner(in.getIsInner());
+                tjTask.setOpStatus(0);
+                tjTask.setMeasurandId(in.getMeasurandId());
+                tjTask.setApprecordId(in.getApprecordId());
+            }
+            TjTaskDataConfig oldAvConfig = tjTaskDataConfigService.getOne(new LambdaQueryWrapper<TjTaskDataConfig>()
+                    .eq(TjTaskDataConfig::getTaskId, tjTask.getId())
+                    .eq(TjTaskDataConfig::getType, PartRole.AV));
+            this.updateById(tjTask);
+            BeanUtils.copyBeanProp(newAvConfig, oldAvConfig);
+        } else {
+            BeanUtils.copyBeanProp(tjTask, in);
+            tjTask.setTaskCode("task-" + sf.format(new Date()));
+            tjTask.setProcessNode(TaskProcessNode.SELECT_CASE);
+            // todo 排期日期
+            tjTask.setPlanDate(new Date());
+            tjTask.setCreateTime(new Date());
+            tjTask.setStatus(TaskStatusEnum.NO_SUBMIT.getCode());
+            tjTask.setCreatedBy(SecurityUtils.getUsername());
+            tjTask.setCreatedDate(LocalDateTime.now());
+            if (in.getIsInner() != null) {
+                tjTask.setIsInner(in.getIsInner());
+                tjTask.setOpStatus(0);
+                tjTask.setMeasurandId(in.getMeasurandId());
+                tjTask.setApprecordId(in.getApprecordId());
+            }
+            this.save(tjTask);
+            newAvConfig.setTaskId(tjTask.getId());
+            newAvConfig.setType(PartRole.AV);
+            newAvConfig.setParticipatorId("1");
+            newAvConfig.setParticipatorName("主车1");
+        }
+        in.getAvDeviceIds().stream().findFirst().ifPresent(newAvConfig::setDeviceId);
+        tjTaskDataConfigService.saveOrUpdate(newAvConfig);
+    }
+
+    /**
+     * 保存节点2：任务用例信息
+     *
+     * @param tjTask
+     * @param in
+     * @throws BusinessException
+     */
+    private void saveTaskCaseInfo(TjTask tjTask, TaskBo in) throws BusinessException {
+        if (ObjectUtil.isEmpty(in.getId())) {
+            throw new BusinessException("请选择任务");
+        }
+        List<TjTaskCase> taskCaseList = tjTaskCaseService.list(new LambdaQueryWrapper<TjTaskCase>()
+                .eq(TjTaskCase::getTaskId, in.getId())
+                .orderByDesc(TjTaskCase::getCreateTime));
+        if (CollectionUtils.isEmpty(taskCaseList)) {
+            throw new BusinessException("请选择用例");
+        }
+        // 默认按创建时间排序
+        IntStream.range(0, taskCaseList.size()).forEach(i -> {
+            taskCaseList.get(i).setSort(i + 1);
+        });
+        tjTaskCaseService.updateBatchById(taskCaseList);
+        // 查询对应用例
+        List<TjCase> cases = tjCaseService.listByIds(taskCaseList.stream().map(TjTaskCase::getCaseId).collect(Collectors.toList()));
+        // todo 设备从运营平台查询
+        TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
+        deviceDetailDto.setSupportRoles(PartRole.MV_SIMULATION);
+        List<DeviceDetailVo> simulationDevices = deviceDetailMapper.selectByCondition(deviceDetailDto);
+        if (CollectionUtils.isEmpty(simulationDevices)) {
+            throw new BusinessException("无可用的从车设备");
+        }
+        // 删除老的任务配置
+        tjTaskDataConfigService.remove(new LambdaQueryWrapper<TjTaskDataConfig>()
+                .eq(TjTaskDataConfig::getTaskId, in.getId())
+                .ne(TjTaskDataConfig::getType, PartRole.AV));
+        // 添加新的任务配置
+        List<TjTaskDataConfig> dataConfigList = new ArrayList<>();
+        for (TjCase tjCase : cases) {
+            SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(tjCase.getDetailInfo(), SceneTrajectoryBo.class);
+            // 当前所有从车都使用TESSNG
+            List<TjTaskDataConfig> slaveConfigs = sceneTrajectoryBo.getParticipantTrajectories().stream()
+                    .filter(t -> PartType.SLAVE.equals(t.getType())).map(t -> {
+                        TjTaskDataConfig config = new TjTaskDataConfig();
+                        config.setTaskId(in.getId());
+                        config.setCaseId(tjCase.getId());
+                        config.setType(PartRole.MV_SIMULATION);
+                        config.setParticipatorId(t.getId());
+                        config.setParticipatorName(t.getName());
+                        config.setDeviceId(simulationDevices.get(0).getDeviceId());
+                        return config;
+                    }).collect(Collectors.toList());
+            dataConfigList.addAll(slaveConfigs);
+        }
+        tjTaskDataConfigService.saveBatch(dataConfigList);
+        // 修改任务信息
+        tjTask.setProcessNode(TaskProcessNode.CONFIG);
+        tjTask.setCaseCount(cases.size());
+        updateById(tjTask);
+    }
+
+    /**
+     * 保存节点3：任务连续性配置信息
+     *
+     * @param tjTask
+     * @param in
+     * @throws BusinessException
+     */
+    private void saveTaskContinuousConfig(TjTask tjTask, TaskBo in) throws BusinessException {
+        if (ObjectUtil.isEmpty(in.getId())) {
+            throw new BusinessException("请选择任务");
+        }
+        if (TestType.VIRTUAL_REAL_FUSION.equals(tjTask.getTestType())) {
+            if (CollectionUtils.isEmpty(in.getCases())) {
+                throw new BusinessException("请选择用例");
+            }
+            TjTaskDataConfig taskAvConfig = tjTaskDataConfigService.getOne(new LambdaQueryWrapper<TjTaskDataConfig>()
+                    .eq(TjTaskDataConfig::getTaskId, tjTask.getId())
+                    .eq(TjTaskDataConfig::getType, PartRole.AV));
+            if (ObjectUtil.isEmpty(taskAvConfig)) {
+                throw new BusinessException("请配置被测设备");
+            }
+            TjDeviceDetail avDetail = deviceDetailMapper.selectById(taskAvConfig.getDeviceId());
+            if (ObjectUtils.isEmpty(avDetail)) {
+                throw new BusinessException(StringUtils.format("被测设备查询失败:{}", taskAvConfig.getDeviceId()));
+            }
+            if (!"域控制器".equals(avDetail.getDeviceType())) {
+                if (StringUtils.isEmpty(in.getRouteFile())) {
+                    throw new BusinessException("请进行路径规划");
+                }
+                if (in.getCases().subList(0, in.getCases().size() - 1).stream()
+                        .anyMatch(t -> CollectionUtils.isEmpty((List) t.getConnectInfo()))) {
+                    throw new BusinessException("请完善用例连接信息");
+                }
+                tjTask.setContinuous(Boolean.TRUE);
+            }
+            // 修改任务用例信息
+            List<TjTaskCase> tjTaskCases = tjTaskCaseService.listByIds(in.getCases().stream()
+                    .map(CaseContinuousVo::getId).collect(Collectors.toList()));
+            IntStream.range(0, in.getCases().size()).forEach(i -> {
+                in.getCases().get(i).setSort(i + 1);
+            });
+            Map<Integer, Object> connectMap = in.getCases().stream().collect(Collectors.toMap(CaseContinuousVo::getId,
+                    CaseContinuousVo::getConnectInfo));
+            Map<Integer, Integer> sortMap = in.getCases().stream().collect(Collectors.toMap(CaseContinuousVo::getId,
+                    CaseContinuousVo::getSort));
+            for (int i = 0; i < tjTaskCases.size(); i++) {
+                TjTaskCase taskCase = tjTaskCases.get(i);
+                taskCase.setSort(sortMap.get(taskCase.getId()));
+                Object obj = connectMap.get(taskCase.getId());
+                taskCase.setConnectInfo(ObjectUtil.isEmpty(obj) ? null : JSONObject.toJSONString(obj));
+                tjTaskCaseMapper.updateByCondition(taskCase);
+            }
+            // 修改连续式场景任务完整轨迹信息
+            tjTask.setMainPlanFile(in.getRouteFile());
+        }
+        tjTask.setProcessNode(TaskProcessNode.VIEW_PLAN);
+        updateById(tjTask);
+    }
+
+    /**
+     * 保存节点4：任务测试评价信息
+     *
+     * @param tjTask
+     * @param in
+     * @throws BusinessException
+     */
+    private void saveTaskEvaluateInfo(TjTask tjTask, TaskBo in) throws BusinessException {
+        if (ObjectUtil.isEmpty(in.getId())) {
+            throw new BusinessException("请选择任务");
+        }
+        tjTask.setProcessNode(TaskProcessNode.WAIT_TEST);
+        tjTask.setStatus(TaskStatusEnum.WAITING.getCode());
+        updateById(tjTask);
     }
 
     @Override
@@ -682,18 +799,28 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         if (ObjectUtil.isEmpty(task)) {
             throw new BusinessException("任务不存在");
         }
-        List<TjTaskDataConfig> configs = tjTaskDataConfigService.list(new QueryWrapper<TjTaskDataConfig>()
-                        .eq(ColumnName.TASK_ID, routingPlanDto.getTaskId())).stream()
-                .filter(t -> t.getType().equals(PartRole.MV_SIMULATION)).collect(Collectors.toList());
+        List<TjTaskDataConfig> configs = tjTaskDataConfigService.list(new LambdaQueryWrapper<TjTaskDataConfig>()
+                .eq(TjTaskDataConfig::getTaskId, task.getId()));
         if (CollectionUtils.isEmpty(configs)) {
-            throw new BusinessException("请先创建任务信息");
+            throw new BusinessException("请配置任务被测车辆以及用例");
         }
-
-        TjDeviceDetail deviceDetail = deviceDetailMapper.selectById(configs.get(0).getDeviceId());
+        TjTaskDataConfig avConfig = configs.stream().filter(t -> t.getType().equals(PartRole.AV))
+                .findFirst()
+                .orElseThrow(() -> new BusinessException("请配置被测设备"));
+        TjDeviceDetail avDetail = deviceDetailMapper.selectById(avConfig.getDeviceId());
+        if ("域控制器".equals(Optional.of(avDetail)
+                .orElseThrow(() -> new BusinessException(StringUtils.format("被测设备查询失败:{}", avConfig.getDeviceId())))
+                .getDeviceType())) {
+            throw new BusinessException("域控制器无需进行路径规划（连续性配置）");
+        }
+        TjTaskDataConfig svConfig = configs.stream().filter(t -> t.getType().equals(PartRole.MV_SIMULATION))
+                .findFirst()
+                .orElseThrow(() -> new BusinessException("请配置仿真设备"));
+        TjDeviceDetail svDeviceDetail = deviceDetailMapper.selectById(svConfig.getDeviceId());
         String channel = ChannelBuilder.buildRoutingPlanChannel(SecurityUtils.getUsername(), task.getId());
         Map<String, Object> params = buildRoutingPlanParam(task.getId(), routingPlanDto.getCases());
         routingPlanConsumer.subscribeAndSend(channel, task.getId(), task.getTaskCode());
-        boolean start = restService.startServer(deviceDetail.getIp(), Integer.valueOf(deviceDetail.getServiceAddress()),
+        boolean start = restService.startServer(svDeviceDetail.getIp(), Integer.valueOf(svDeviceDetail.getServiceAddress()),
                 new TessParam().buildRoutingPlanParam(1, channel, params));
         if (!start) {
             String repeatKey = "ROUTING_TASK_" + routingPlanDto.getTaskId();

@@ -187,15 +187,20 @@ public class RouteService {
 
 
     public boolean saveTaskRouteFile2(TjTaskCaseRecord taskCaseRecord, List<List<ClientSimulationTrajectoryDto>> data, Integer action) throws Exception {
+        log.info("保存任务 {} 用例 {} 测试记录 {} 轨迹长度:{}", taskCaseRecord.getTaskId(),
+                taskCaseRecord.getCaseId(), taskCaseRecord.getId(), data.size());
         String path = FileUtils.writeRoute(data, WanjiConfig.getRoutePath(), Extension.TXT);
-        log.info("保存任务 {} 用例 {} 测试记录 {} 路径文件 : {}, 轨迹长度：{}", taskCaseRecord.getTaskId(),
-                taskCaseRecord.getCaseId(), taskCaseRecord.getId(), path, data.size());
+        log.info("路径文件:{}", path);
+        log.info("评价文件:{}", path);
         CaseTrajectoryDetailBo trajectoryDetailBo = JSONObject.parseObject(taskCaseRecord.getDetailInfo(), CaseTrajectoryDetailBo.class);
         updateRecordDetailInfo(taskCaseRecord.getId(), trajectoryDetailBo, data);
         String duration = DateUtils.secondsToDuration((int) Math.floor((data.size())) / 10);
         trajectoryDetailBo.setDuration(duration);
         taskCaseRecord.setRouteFile(path);
+        // todo 评价文件取存方式待修改
+        taskCaseRecord.setEvaluatePath(path);
         taskCaseRecord.setStatus(0 == action ? TestingStatusEnum.PASS.getCode() : TestingStatusEnum.NO_PASS.getCode());
+        taskCaseRecord.setEndTime(LocalDateTime.now());
         taskCaseRecord.setEndTime(LocalDateTime.now());
         int result = taskCaseRecordMapper.updateById(taskCaseRecord);
         return result > 0;

@@ -74,7 +74,7 @@ public class KafkaTrajectoryConsumer {
         kafkaCollector.collector(key, caseId, data);
         // 发送ws数据
         String duration = DateUtils.secondsToDuration(
-                (int) Math.floor((double) (kafkaCollector.getSize(key, caseId)) / 10));
+                (int) Math.floor((double) (kafkaCollector.getSize(key)) / 10));
         RealWebsocketMessage msg = new RealWebsocketMessage(RedisMessageType.TRAJECTORY, Maps.newHashMap(), participantTrajectories,
                 duration);
         WebSocketManage.sendInfo(key, JSONObject.toJSONString(msg));

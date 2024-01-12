@@ -108,6 +108,10 @@ public class TjTaskCase implements Serializable {
     @TableField("xosc_path")
     private String xoscPath;
 
-    @TableField(exist = false)
+
+    /** 评价路径 */
+    @TableField("evaluate_path")
+    private String evaluatePath;
+
     private static final long serialVersionUID = 1L;
 }

@@ -53,6 +53,17 @@ public class KafkaCollector {
         return true;
     }
 
+    public int getSize(String key) {
+        if (collectorMap.containsKey(key)) {
+            int size = 0;
+            for (Map.Entry<Integer, List<List<ClientSimulationTrajectoryDto>>> entry : collectorMap.get(key).entrySet()) {
+                size += entry.getValue().size();
+            }
+            return size;
+        }
+        return 0;
+    }
+
     public int getSize(String key, Integer caseId) {
         return collectorMap.containsKey(key)
                 ? (collectorMap.get(key).containsKey(caseId) ? collectorMap.get(key).get(caseId).size() : 0)

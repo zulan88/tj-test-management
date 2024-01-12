@@ -47,6 +47,11 @@ public class TjTaskCaseRecord implements Serializable {
     private String routeFile;
 
     /**
+     * 评价文件
+     */
+    private String evaluatePath;
+
+    /**
      * 状态
      */
     private Integer status;
