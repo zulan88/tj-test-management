@@ -17,7 +17,7 @@ public interface TestReservationService {
      */
     List<TestTypeVo> getTestType();
 
-    List<CaseTreeVo> selectTree(String type, Integer id);
+    List<CaseTreeVo> selectTree(String type, Integer id, Integer sellectOrAll);
 
 
     List<CasePageVo> pageList(CaseQueryDto caseQueryDto);

@@ -62,4 +62,6 @@ public class CaseQueryDto {
     private Integer showType;
 
     private String userName;
+
+    private Integer sellectOrAll;
 }

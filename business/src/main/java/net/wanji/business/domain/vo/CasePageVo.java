@@ -30,5 +30,5 @@ public class CasePageVo extends CaseDetailVo {
     @ApiModelProperty("实车试验测试记录")
     private List<TjCaseRealRecord> caseRealRecords;
 
-    private boolean selected;
+    private Boolean selected;
 }

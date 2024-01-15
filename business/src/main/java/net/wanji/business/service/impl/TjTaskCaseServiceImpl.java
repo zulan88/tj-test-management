@@ -688,7 +688,11 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 duration = DateUtils.secondsToDuration((int) Math.floor(
                         (double) (CollectionUtils.isEmpty(trajectories) ? 0 : trajectories.size()) / 10));
                 ssCaseResultUpdate(action, taskCaseRecord, mainConfig, taskCase, duration, trajectories);
+                RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null, null, duration);
+                WebSocketManage.sendInfo(key, JSON.toJSONString(endMsg));
+                log.info("开始进行openX场景数据保存");
                 toBuildOpenX.casetoOpenX(trajectories, taskId, caseId, null);
+                log.info("openX场景数据保存结束");
             } finally {
                 if (taskEnd) {
                     RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null, null, duration);

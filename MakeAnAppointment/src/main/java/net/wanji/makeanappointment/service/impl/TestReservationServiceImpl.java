@@ -67,7 +67,7 @@ public class TestReservationServiceImpl implements TestReservationService {
     }
 
     @Override
-    public List<CaseTreeVo> selectTree(String type, Integer id) {
+    public List<CaseTreeVo> selectTree(String type, Integer id, Integer sellectOrAll) {
         // 获取 tree 列表
         List<CaseTreeVo> caseTree = caseTreeService.selectTree(type, null);
 
@@ -88,6 +88,12 @@ public class TestReservationServiceImpl implements TestReservationService {
 
         for (CaseTreeVo treeVo : CollectionUtils.emptyIfNull(caseTree)) {
             treeVo.setNumber(caseCountMap.containsKey(treeVo.getId()) ? caseCountMap.get(treeVo.getId()).intValue() : 0);
+        }
+        if (sellectOrAll!=null&&sellectOrAll==1){
+            Map<Integer, Long> finalCaseCountMap = caseCountMap;
+            return caseTree.stream()
+                    .filter(treeVo -> finalCaseCountMap.containsKey(treeVo.getId()))
+                    .collect(Collectors.toList());
         }
 
         return caseTree;
@@ -119,10 +125,11 @@ public class TestReservationServiceImpl implements TestReservationService {
             return allCasePage;
         }
 
-        for (CasePageVo casePageVo : CollectionUtils.emptyIfNull(allCasePage)) {
-            if (caseIdArray.contains(String.valueOf(casePageVo.getId()))) {
-                casePageVo.setSelected(true);
-            }
+        for (CasePageVo casePageVo : allCasePage) {
+            casePageVo.setSelected(caseIdArray.contains(String.valueOf(casePageVo.getId())));
+        }
+        if(caseQueryDto.getSellectOrAll()!=null && caseQueryDto.getSellectOrAll()==1){
+            return allCasePage.stream().filter(casePageVo -> casePageVo.getSelected()).collect(Collectors.toList());
         }
 
         return allCasePage;
