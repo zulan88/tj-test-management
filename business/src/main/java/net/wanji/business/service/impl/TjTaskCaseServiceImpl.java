@@ -372,25 +372,21 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             // 7.用例对应主车轨迹长度(使用仿真验证的轨迹)
             try {
                 List<SimulationTrajectoryDto> trajectories = routeService.readOriRouteFile(taskCaseInfoBo.getRouteFile());
-                trajectories = trajectories.stream()
-                        .filter(item -> !ObjectUtils.isEmpty(item.getValue())
-                                && item.getValue().stream()
-                                .anyMatch(p -> PartRole.AV.equals(businessIdAndRoleMap.get(p.getId()))))
-                        .peek(s -> s.setValue(s.getValue().stream()
-                                .filter(p -> PartRole.AV.equals(businessIdAndRoleMap.get(p.getId())))
-                                .collect(Collectors.toList())))
-                        .collect(Collectors.toList());
+
                 // 若taskCaseId不为空，则按用例进行，使用用例仿真验证的轨迹
-                mainTrajectories.addAll(trajectories);
+                if (!ObjectUtils.isEmpty(taskCaseId) && taskCaseId.equals(taskCaseInfoBo.getId())) {
+                    mainTrajectories.addAll(trajectories);
+                }
                 caseMainSize.put(taskCaseInfoBo.getCaseId(), trajectories.size());
             } catch (IOException e) {
                 log.error("用例轨迹文件读取失败：{}", e.getMessage());
             }
         }
-        // 8.taskCaseId为空时，则按整体任务进行。连续性任务使用主车规划路径，非连续性任务使用拼接的仿真验证的轨迹
+        // 8.taskCaseId为空时，则按整体任务进行。连续性任务使用主车规划路径；非连续性任务使用拼接的仿真验证的轨迹（暂时去掉）
         if (ObjectUtils.isEmpty(taskCaseId) && tjTask.isContinuous()) {
             try {
                 List<SimulationTrajectoryDto> main = routeService.readOriRouteFile(tjTask.getMainPlanFile());
+                mainTrajectories.addAll(main);
                 mainTrajectoryMap.put("main", main);
             } catch (IOException e) {
                 log.error("主车规划路径文件读取失败：{}", e.getMessage());
@@ -398,9 +394,18 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             } catch (NullPointerException v2) {
                 throw new BusinessException("主车轨迹未规划");
             }
-        } else {
-            mainTrajectoryMap.put("main", mainTrajectories);
         }
+//        else {
+//            mainTrajectoryMap.put("main", mainTrajectories);
+//        }
+        mainTrajectories = mainTrajectories.stream()
+                .filter(item -> !CollectionUtils.isEmpty(item.getValue()) && item.getValue().stream()
+                        .anyMatch(p -> p.getDriveType() == 1))
+                .peek(s -> s.setValue(s.getValue().stream()
+                        .filter(p -> p.getDriveType() == 1)
+                        .collect(Collectors.toList())))
+                .collect(Collectors.toList());
+        mainTrajectoryMap.put("main", mainTrajectories);
         for (TaskCaseInfoBo caseInfoBo : taskCaseInfos) {
             taskCaseInfoMap.put(caseInfoBo.getCaseId(), caseInfoBo);
         }

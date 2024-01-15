@@ -38,10 +38,12 @@ import net.wanji.business.domain.vo.RealVehicleVerificationPageVo;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjCaseRealRecord;
 import net.wanji.business.entity.TjCaseTree;
+import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.listener.KafkaCollector;
 import net.wanji.business.mapper.TjCaseRealRecordMapper;
 import net.wanji.business.schedule.RealPlaybackSchedule;
+import net.wanji.business.schedule.SceneLabelMap;
 import net.wanji.business.service.ILabelsService;
 import net.wanji.business.service.RestService;
 import net.wanji.business.service.RouteService;
@@ -49,6 +51,7 @@ import net.wanji.business.service.TestingService;
 import net.wanji.business.service.TjCaseService;
 import net.wanji.business.service.TjCaseTreeService;
 import net.wanji.business.service.TjDeviceDetailService;
+import net.wanji.business.service.TjFragmentedSceneDetailService;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.util.RedisLock;
 import net.wanji.common.common.ClientSimulationTrajectoryDto;
@@ -111,10 +114,16 @@ public class TestingServiceImpl implements TestingService {
     private ILabelsService labelsService;
 
     @Autowired
+    private TjFragmentedSceneDetailService sceneDetailService;
+
+    @Autowired
     private ISysDictDataService dictDataService;
 
     @Autowired
     private TjCaseRealRecordMapper caseRealRecordMapper;
+
+    @Autowired
+    private SceneLabelMap sceneLabelMap;
 
     @Autowired
     private KafkaCollector kafkaCollector;
@@ -673,7 +682,28 @@ public class TestingServiceImpl implements TestingService {
         TjCase tjCase = caseService.getById(caseRealRecord.getCaseId());
         TjCaseTree caseTree = caseTreeService.getById(tjCase.getTreeId());
         realTestResultVo.setTestTypeName(dictDataService.selectDictLabel(SysType.TEST_TYPE, caseTree.getType()));
-        realTestResultVo.setSceneName(caseTrajectoryDetailBo.getSceneDesc());
+
+        TjFragmentedSceneDetail sceneDetail = sceneDetailService.getById(tjCase.getSceneDetailId());
+        // 场景分类
+        if (StringUtils.isNotEmpty(sceneDetail.getLabel())) {
+            StringBuilder labelSort = new StringBuilder();
+            for (String str : sceneDetail.getLabel().split(",")) {
+                try {
+                    long intValue = Long.parseLong(str);
+                    String labelName = sceneLabelMap.getSceneLabel(intValue);
+                    if (StringUtils.isNotEmpty(labelName)) {
+                        if (labelSort.length() > 0) {
+                            labelSort.append(",").append(labelName);
+                        } else {
+                            labelSort.append(labelName);
+                        }
+                    }
+                } catch (NumberFormatException e) {
+                    // 处理无效的整数字符串
+                }
+            }
+            realTestResultVo.setSceneName(labelSort.toString());
+        }
         realTestResultVo.setId(caseRealRecord.getId());
         realTestResultVo.setStartTime(caseRealRecord.getStartTime());
         realTestResultVo.setEndTime(caseRealRecord.getEndTime());
@@ -699,7 +729,7 @@ public class TestingServiceImpl implements TestingService {
                         .atZone(ZoneId.systemDefault()).toInstant());
             }
             String role = String.valueOf(info.get("PARTICIPANT_ROLE"));
-            type.add(role);
+            type.add(dictDataService.selectDictLabel(SysType.PART_ROLE, role));
         }
         if (startTime == null | endTime == null) {
             return null;
