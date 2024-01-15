@@ -78,6 +78,8 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
             }
             if (appointmentRecord.getStatus()!=null){
                 queryWrapper.eq("status", appointmentRecord.getStatus());
+            }else if (appointmentRecord.getStatus().equals(99)) {
+                queryWrapper.ne("status", 4);
             }
             queryWrapper.orderByDesc("commit_date");
             return this.list(queryWrapper);
@@ -164,6 +166,7 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
             String recordId = StringUtils.generateRandomString(12);
             appointmentRecord.setRecordId(recordId);
             appointmentRecord.setCreateBy(SecurityUtils.getUsername());
+            appointmentRecord.setStatus(4);
             save(appointmentRecord);
 
             QueryWrapper<AppointmentRecord> queryWrapper = new QueryWrapper<>();

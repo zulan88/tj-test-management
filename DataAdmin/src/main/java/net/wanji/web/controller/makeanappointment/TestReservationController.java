@@ -96,8 +96,8 @@ public class TestReservationController extends BaseController {
             @ApiImplicitParam(name = "type", value = "类型", required = true, dataType = "String", paramType = "query", example = "virtualRealFusion"),
             @ApiImplicitParam(name = "id", value = "任务ID", required = true, dataType = "Integer", paramType = "query", example = "1")
     })
-    public AjaxResult selectTree(String type, Integer id) {
-        return AjaxResult.success(testReservationService.selectTree(type, id));
+    public AjaxResult selectTree(String type, Integer id, Integer sellectOrAll) {
+        return AjaxResult.success(testReservationService.selectTree(type, id, sellectOrAll));
     }
 
     @ApiOperationSort(5)

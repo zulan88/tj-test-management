@@ -693,8 +693,9 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 duration = DateUtils.secondsToDuration((int) Math.floor(
                         (double) (CollectionUtils.isEmpty(trajectories) ? 0 : trajectories.size()) / 10));
                 ssCaseResultUpdate(action, taskCaseRecord, mainConfig, taskCase, duration, trajectories);
-                log.info("生成openx文件");
+                log.info("开始进行openX场景数据保存");
                 toBuildOpenX.casetoOpenX(trajectories, taskId, caseId, null);
+                log.info("openX场景数据保存结束");
             } finally {
                 if (taskEnd) {
                     log.info("发送ws结束消息");

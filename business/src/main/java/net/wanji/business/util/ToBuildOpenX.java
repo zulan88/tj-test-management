@@ -359,7 +359,6 @@ public class ToBuildOpenX {
             String proj = "+proj=tmerc +lon_0=121.20585769414902 +lat_0=31.290823210868965 +ellps=WGS84";
 
             String outputFolder = WanjiConfig.getScenelibPath() + java.io.File.separator + DateUtils.datePath();
-            ;
             java.io.File folder = new java.io.File(outputFolder);
             if (!folder.exists()) {
                 folder.mkdirs();
@@ -486,17 +485,19 @@ public class ToBuildOpenX {
             Unmarshaller unmarshaller = context.createUnmarshaller();
             Init init = (Init) unmarshaller.unmarshal(new StringReader(xmlInit));
             init.getActions().getGlobalAction().get(0).getEnvironmentAction().getEnvironment().getTimeOfDay().setDateTime(formattedDateTime);
-            for (List<ClientSimulationTrajectoryDto> simulationTrajectoryDtos : trajectories) {
-                if(simulationTrajectoryDtos.size() > 0) {
-                    TrajectoryValueDto trajectoryValueDto = simulationTrajectoryDtos.get(0).getValue().get(0);
-                    ScenarioObject scenarioObject = new ScenarioObject();
-                    scenarioObject.setName(trajectoryValueDto.getId());
-                    Vehicle vehicle = new Vehicle("default", "veh"+trajectoryValueDto.getId());
-                    scenarioObject.setVehicle(vehicle);
-                    scenarioObjectList.add(scenarioObject);
-                    Private privateone = new Private();
-                    privateone.setEntityRef(scenarioObject.getName());
-                    init.getActions().getPrivate().add(privateone);
+            List<ClientSimulationTrajectoryDto> fristsimulationTrajectoryDtos = trajectories.get(0);
+            for(ClientSimulationTrajectoryDto clientSimulationTrajectoryDto : fristsimulationTrajectoryDtos) {
+                if (clientSimulationTrajectoryDto.getValue().size() > 0) {
+                    for (TrajectoryValueDto trajectoryValueDto : clientSimulationTrajectoryDto.getValue()) {
+                        ScenarioObject scenarioObject = new ScenarioObject();
+                        scenarioObject.setName(trajectoryValueDto.getId());
+                        Vehicle vehicle = new Vehicle("default", "veh" + trajectoryValueDto.getId());
+                        scenarioObject.setVehicle(vehicle);
+                        scenarioObjectList.add(scenarioObject);
+                        Private privateone = new Private();
+                        privateone.setEntityRef(scenarioObject.getName());
+                        init.getActions().getPrivate().add(privateone);
+                    }
                 }
             }
             openScenario.setEntities(entities);
@@ -505,41 +506,42 @@ public class ToBuildOpenX {
             story.setName("mystore");
             Double maxTime = 0D;
             DecimalFormat df = new DecimalFormat("0.00");
-            for (List<ClientSimulationTrajectoryDto> simulationTrajectoryDtos : trajectories) {
-                TrajectoryValueDto trajectoryValueDto = simulationTrajectoryDtos.get(0).getValue().get(0);
-                Act act = new Act();
-                act.setName("Act_" + trajectoryValueDto.getId());
-                ManeuverGroup maneuverGroup = new ManeuverGroup();
-                maneuverGroup.setName("Squence_" + trajectoryValueDto.getId());
-                Actors actors = new Actors();
-                actors.setSelectTriggeringEntities("false");
-                EntityRef entityRef = new EntityRef();
-                entityRef.setEntityRef(trajectoryValueDto.getId());
-                actors.getEntityRef().add(entityRef);
-                Maneuver maneuver = new Maneuver();
-                maneuver.setName("Maneuver1");
-                Event event = new Event();
-                event.setName("Event1");
-                event.setPriority("overwrite");
-                Action action = new Action();
-                action.setName("Action1");
-                PrivateAction privateAction = new PrivateAction();
-                RoutingAction routingAction = new RoutingAction();
-                FollowTrajectoryAction followTrajectoryAction = new FollowTrajectoryAction();
-                Trajectory trajectory = new Trajectory();
-                trajectory.setName("Trajectory_" + trajectoryValueDto.getId());
-                trajectory.setClosed("false");
-                Shape shape = new Shape();
-                Polyline polyline = new Polyline();
-                Double base = null;
-                for (ClientSimulationTrajectoryDto clientSimulationTrajectoryDto : simulationTrajectoryDtos) {
-                    if (clientSimulationTrajectoryDto.getValue().size() > 0) {
-                        trajectoryValueDto = clientSimulationTrajectoryDto.getValue().get(0);
+            int index = 0;
+            int bindex = 0;
+            for (ClientSimulationTrajectoryDto clientSimulationTrajectoryDto : fristsimulationTrajectoryDtos){
+                for (TrajectoryValueDto trajectoryValueDto : clientSimulationTrajectoryDto.getValue()){
+                    Act act = new Act();
+                    act.setName("Act_" + trajectoryValueDto.getId());
+                    ManeuverGroup maneuverGroup = new ManeuverGroup();
+                    maneuverGroup.setName("Squence_" + trajectoryValueDto.getId());
+                    Actors actors = new Actors();
+                    actors.setSelectTriggeringEntities("false");
+                    EntityRef entityRef = new EntityRef();
+                    entityRef.setEntityRef(trajectoryValueDto.getId());
+                    actors.getEntityRef().add(entityRef);
+                    Maneuver maneuver = new Maneuver();
+                    maneuver.setName("Maneuver1");
+                    Event event = new Event();
+                    event.setName("Event1");
+                    event.setPriority("overwrite");
+                    Action action = new Action();
+                    action.setName("Action1");
+                    PrivateAction privateAction = new PrivateAction();
+                    RoutingAction routingAction = new RoutingAction();
+                    FollowTrajectoryAction followTrajectoryAction = new FollowTrajectoryAction();
+                    Trajectory trajectory = new Trajectory();
+                    trajectory.setName("Trajectory_" + trajectoryValueDto.getId());
+                    trajectory.setClosed("false");
+                    Shape shape = new Shape();
+                    Polyline polyline = new Polyline();
+                    Double base = null;
+                    for (List<ClientSimulationTrajectoryDto> simulationTrajectoryDtos : trajectories) {
+                        trajectoryValueDto = simulationTrajectoryDtos.get(bindex).getValue().get(index);
                         if (base == null) {
-                            base = Double.valueOf(trajectoryValueDto.getGlobalTimeStamp());
+                            base = Double.valueOf(trajectoryValueDto.getTimestamp());
                         }
                         Vertex vertex = new Vertex();
-                        Double time = Double.valueOf(trajectoryValueDto.getGlobalTimeStamp());
+                        Double time = Double.valueOf(trajectoryValueDto.getTimestamp());
                         vertex.setTime(df.format(time - base));
                         if ((time - base) > maxTime) {
                             maxTime = (time - base);
@@ -549,41 +551,44 @@ public class ToBuildOpenX {
                         vertex.setPosition(position);
                         polyline.getVertex().add(vertex);
                     }
+                    shape.setPolyline(polyline);
+                    trajectory.setShape(shape);
+                    followTrajectoryAction.setTrajectory(trajectory);
+                    TimeReference timeReference = new TimeReference();
+                    Timing timing = new Timing();
+                    timing.setDomainAbsoluteRelative("absolute");
+                    timing.setScale("1.0");
+                    timing.setOffset("0.0");
+                    timeReference.setTiming(timing);
+                    followTrajectoryAction.setTimeReference(timeReference);
+                    TrajectoryFollowingMode trajectoryFollowingMode = new TrajectoryFollowingMode();
+                    trajectoryFollowingMode.setFollowingMode("follow");
+                    followTrajectoryAction.setTrajectoryFollowingMode(trajectoryFollowingMode);
+                    routingAction.setFollowTrajectoryAction(followTrajectoryAction);
+                    privateAction.setRoutingAction(routingAction);
+                    action.setPrivateAction(privateAction);
+                    Trigger startTrigger = new Trigger();
+                    ConditionGroup conditionGroup = new ConditionGroup();
+                    Condition condition = new Condition("none", "0.03");
+                    conditionGroup.getCondition().add(condition);
+                    startTrigger.getConditionGroup().add(conditionGroup);
+                    event.getAction().add(action);
+                    event.setStartTrigger(startTrigger);
+                    maneuver.getEvent().add(event);
+                    maneuverGroup.setActors(actors);
+                    maneuverGroup.getManeuver().add(maneuver);
+                    act.getManeuverGroup().add(maneuverGroup);
+                    Trigger actstartTrigger = new Trigger();
+                    ConditionGroup actconditionGroup = new ConditionGroup();
+                    Condition actcondition = new Condition("rising", "0");
+                    actconditionGroup.getCondition().add(actcondition);
+                    actstartTrigger.getConditionGroup().add(actconditionGroup);
+                    act.setStartTrigger(actstartTrigger);
+                    story.getAct().add(act);
+                    index ++;
                 }
-                shape.setPolyline(polyline);
-                trajectory.setShape(shape);
-                followTrajectoryAction.setTrajectory(trajectory);
-                TimeReference timeReference = new TimeReference();
-                Timing timing = new Timing();
-                timing.setDomainAbsoluteRelative("absolute");
-                timing.setScale("1.0");
-                timing.setOffset("0.0");
-                timeReference.setTiming(timing);
-                followTrajectoryAction.setTimeReference(timeReference);
-                TrajectoryFollowingMode trajectoryFollowingMode = new TrajectoryFollowingMode();
-                trajectoryFollowingMode.setFollowingMode("follow");
-                followTrajectoryAction.setTrajectoryFollowingMode(trajectoryFollowingMode);
-                routingAction.setFollowTrajectoryAction(followTrajectoryAction);
-                privateAction.setRoutingAction(routingAction);
-                action.setPrivateAction(privateAction);
-                Trigger startTrigger = new Trigger();
-                ConditionGroup conditionGroup = new ConditionGroup();
-                Condition condition = new Condition("none", "0.03");
-                conditionGroup.getCondition().add(condition);
-                startTrigger.getConditionGroup().add(conditionGroup);
-                event.getAction().add(action);
-                event.setStartTrigger(startTrigger);
-                maneuver.getEvent().add(event);
-                maneuverGroup.setActors(actors);
-                maneuverGroup.getManeuver().add(maneuver);
-                act.getManeuverGroup().add(maneuverGroup);
-                Trigger actstartTrigger = new Trigger();
-                ConditionGroup actconditionGroup = new ConditionGroup();
-                Condition actcondition = new Condition("rising", "0");
-                actconditionGroup.getCondition().add(actcondition);
-                actstartTrigger.getConditionGroup().add(actconditionGroup);
-                act.setStartTrigger(actstartTrigger);
-                story.getAct().add(act);
+                bindex ++;
+                index = 0;
             }
             storyboard.setInit(init);
             storyboard.getStory().add(story);
@@ -622,9 +627,10 @@ public class ToBuildOpenX {
             TjTaskCase taskCase = taskCaseMapper.selectOne(tjTaskCase);
             taskCase.setXodrPath(xodrfile.getPath());
             taskCase.setXoscPath(file.getPath());
-
+            System.out.println(taskCase.getId());
 
             java.io.File zipfile = new java.io.File(outputFolder, "task_"+ taskId + "_case_"+ caseId + "_" + (int) (System.currentTimeMillis() % 1000) + ".zip");
+            System.out.println(zipfile.getPath());
 
             FileOutputStream fos = new FileOutputStream(zipfile);
             ZipOutputStream zos = new ZipOutputStream(fos);
