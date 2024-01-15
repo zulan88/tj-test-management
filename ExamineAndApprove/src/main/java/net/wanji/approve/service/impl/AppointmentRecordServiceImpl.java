@@ -178,6 +178,10 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
 
     @Override
     public Long getExpenseByCaseIds(String caseIds) {
+        if(StringUtils.isEmpty(caseIds)){
+            return 0L;
+        }
+
         List<Integer> ids = Arrays.stream(caseIds.split(","))
                 .map(Integer::parseInt)
                 .collect(Collectors.toList());
