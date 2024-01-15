@@ -684,8 +684,7 @@ public class TestingServiceImpl implements TestingService {
 
     @Override
     public CommunicationDelayVo communicationDelayVo(Integer recordId) {
-        List<Map<String, Object>> infos = caseRealRecordMapper.recordPartInfo(
-                recordId);
+        List<Map<String, Object>> infos = caseRealRecordMapper.recordPartInfo(recordId);
         CommunicationDelayVo communicationDelayVo = new CommunicationDelayVo();
         List<String> type = new ArrayList<>();
         Date startTime = null;

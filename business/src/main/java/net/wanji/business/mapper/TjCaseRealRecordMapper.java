@@ -18,6 +18,6 @@ public interface TjCaseRealRecordMapper extends BaseMapper<TjCaseRealRecord> {
 
   @Select(
       "SELECT R.START_TIME, R.END_TIME,C.PARTICIPANT_ROLE FROM tj_case_real_record R "
-          + "LEFT JOIN tj_case_part_config C ON R.CASE_ID = C.CASE_ID WHERE R.ID = #{recordId}")
+          + "LEFT JOIN tj_case_part_config C ON R.CASE_ID = C.CASE_ID WHERE R.ID = #{recordId} GROUP BY C.PARTICIPANT_ROLE")
   List<Map<String, Object>> recordPartInfo(Integer recordId);
 }
