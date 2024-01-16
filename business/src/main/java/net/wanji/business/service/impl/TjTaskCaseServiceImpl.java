@@ -387,7 +387,6 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             try {
                 List<SimulationTrajectoryDto> main = routeService.readOriRouteFile(tjTask.getMainPlanFile());
                 mainTrajectories.addAll(main);
-                mainTrajectoryMap.put("main", main);
             } catch (IOException e) {
                 log.error("主车规划路径文件读取失败：{}", e.getMessage());
                 throw new BusinessException("读取主车已规划路径文件失败");
