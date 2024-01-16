@@ -734,33 +734,32 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
     @Override
     public void playback(Integer taskId, Integer caseId, Integer action) throws BusinessException, IOException {
-        // 1.任务用例测试记录
-        TjTaskCase param = new TjTaskCase();
-        param.setTaskId(taskId);
-        param.setCaseId(caseId);
-        List<TaskCaseInfoBo> taskCaseInfos = taskCaseMapper.selectTaskCaseByCondition(param);
-
-        List<List<ClientSimulationTrajectoryDto>> trajectories = new ArrayList<>();
-        for (TaskCaseInfoBo taskCaseInfoBo : taskCaseInfos) {
-            Optional<TjTaskCaseRecord> optional = CollectionUtils.emptyIfNull(taskCaseInfoBo.getRecords()).stream()
-                    .filter(r -> TestingStatusEnum.PASS.getCode().equals(r.getStatus()))
-                    .findFirst();
-            if (!optional.isPresent()) {
-                continue;
-            }
-            TjTaskCaseRecord tjTaskCaseRecord = optional.get();
-            trajectories.addAll(routeService.readRealTrajectoryFromRouteFile2(tjTaskCaseRecord.getRouteFile()));
-        }
-        // 2.数据校验
-        if (CollectionUtils.isEmpty(trajectories)) {
-            throw new BusinessException("未查询到任何可用轨迹文件，请先进行试验");
-        }
-        TjTaskDataConfig dataConfig = taskDataConfigMapper.selectOne(new LambdaQueryWrapper<TjTaskDataConfig>().eq(TjTaskDataConfig::getTaskId, taskId)
-                .eq(TjTaskDataConfig::getType, PartRole.AV));
-        TjDeviceDetail avDevice = deviceDetailService.getById(dataConfig.getDeviceId());
         String key = ChannelBuilder.buildTaskPreviewChannel(SecurityUtils.getUsername(), taskId, caseId);
         switch (action) {
             case PlaybackAction.START:
+                // 1.任务用例测试记录
+                TjTaskCase param = new TjTaskCase();
+                param.setTaskId(taskId);
+                param.setCaseId(caseId);
+                List<TaskCaseInfoBo> taskCaseInfos = taskCaseMapper.selectTaskCaseByCondition(param);
+                List<List<ClientSimulationTrajectoryDto>> trajectories = new ArrayList<>();
+                for (TaskCaseInfoBo taskCaseInfoBo : taskCaseInfos) {
+                    Optional<TjTaskCaseRecord> optional = CollectionUtils.emptyIfNull(taskCaseInfoBo.getRecords()).stream()
+                            .filter(r -> TestingStatusEnum.PASS.getCode().equals(r.getStatus()))
+                            .findFirst();
+                    if (!optional.isPresent()) {
+                        continue;
+                    }
+                    TjTaskCaseRecord tjTaskCaseRecord = optional.get();
+                    trajectories.addAll(routeService.readRealTrajectoryFromRouteFile2(tjTaskCaseRecord.getRouteFile()));
+                }
+                // 2.数据校验
+                if (CollectionUtils.isEmpty(trajectories)) {
+                    throw new BusinessException("未查询到任何可用轨迹文件，请先进行试验");
+                }
+                TjTaskDataConfig dataConfig = taskDataConfigMapper.selectOne(new LambdaQueryWrapper<TjTaskDataConfig>().eq(TjTaskDataConfig::getTaskId, taskId)
+                        .eq(TjTaskDataConfig::getType, PartRole.AV));
+                TjDeviceDetail avDevice = deviceDetailService.getById(dataConfig.getDeviceId());
                 RealPlaybackSchedule.startSendingData(key, avDevice.getDataChannel(), trajectories);
                 break;
             case PlaybackAction.SUSPEND:
