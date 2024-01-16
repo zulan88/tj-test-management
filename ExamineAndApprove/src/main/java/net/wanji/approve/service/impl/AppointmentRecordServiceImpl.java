@@ -55,32 +55,17 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
             return this.list();
         } else {
             QueryWrapper<AppointmentRecord> queryWrapper = new QueryWrapper<>();
-            if (appointmentRecord.getUnitName() != null && !appointmentRecord.getUnitName().isEmpty()) {
-                queryWrapper.eq("unit_name", appointmentRecord.getUnitName());
-            }
-            if (appointmentRecord.getContactPerson() != null && !appointmentRecord.getContactPerson().isEmpty()) {
-                queryWrapper.eq("contact_person", appointmentRecord.getContactPerson());
-            }
-            if (appointmentRecord.getMeasurandType() != null && !appointmentRecord.getMeasurandType().isEmpty()) {
-                queryWrapper.eq("measurand_type", appointmentRecord.getMeasurandType());
-            }
-            if (appointmentRecord.getMeasurandName()!= null &&!appointmentRecord.getMeasurandName().isEmpty()) {
-                queryWrapper.eq("measurand_name", appointmentRecord.getMeasurandName());
-            }
-            if (appointmentRecord.dateExists()) {
-                queryWrapper.between("commit_date", appointmentRecord.getStartDate(), appointmentRecord.getEndDate());
-            }
-            if (appointmentRecord.appDateExists()){
-                queryWrapper.between("last_approval_time", appointmentRecord.getAppstartDate(), appointmentRecord.getAppendDate());
-            }
-            if (appointmentRecord.getCreateBy() != null && !appointmentRecord.getCreateBy().isEmpty()) {
-                queryWrapper.eq("create_by", appointmentRecord.getCreateBy());
-            }
-            if (appointmentRecord.getStatus()!=null && !appointmentRecord.getStatus().equals(99)){
-                queryWrapper.eq("status", appointmentRecord.getStatus());
-            }else if (appointmentRecord.getStatus()!=null && appointmentRecord.getStatus().equals(99)) {
-                queryWrapper.ne("status", 4);
-            }
+            queryWrapper
+                    .eq(!StringUtils.isEmpty(appointmentRecord.getUnitName()), "unit_name", appointmentRecord.getUnitName())
+                    .eq(!StringUtils.isEmpty(appointmentRecord.getContactPerson()), "contact_person", appointmentRecord.getContactPerson())
+                    .eq(!StringUtils.isEmpty(appointmentRecord.getMeasurandType()), "measurand_type", appointmentRecord.getMeasurandType())
+                    .eq(!StringUtils.isEmpty(appointmentRecord.getMeasurandName()), "measurand_name", appointmentRecord.getMeasurandName())
+                    .between(appointmentRecord.dateExists(), "commit_date", appointmentRecord.getStartDate(), appointmentRecord.getEndDate())
+                    .between(appointmentRecord.appDateExists(), "last_approval_time", appointmentRecord.getAppstartDate(), appointmentRecord.getAppendDate())
+                    .eq(!StringUtils.isEmpty(appointmentRecord.getUnitName()), "create_by", appointmentRecord.getCreateBy())
+                    .eq(appointmentRecord.getStatus() != null && !appointmentRecord.getStatus().equals(99), "status", appointmentRecord.getStatus())
+                    .ne(appointmentRecord.getStatus() != null && appointmentRecord.getStatus().equals(99), "status", 4);
+
             queryWrapper.orderByDesc("commit_date");
             return this.list(queryWrapper);
         }
@@ -121,7 +106,7 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
             return 0L;
         }
 
-        if(StringUtils.isEmpty(appointmentRecord.getCaseIds())){
+        if (StringUtils.isEmpty(appointmentRecord.getCaseIds())) {
             return 0L;
         }
 
@@ -133,7 +118,7 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
 
     @Override
     public List<AppointmentRecord> getByids(List<Integer> ids) {
-        if(ids == null||ids.size() == 0){
+        if (ids == null || ids.size() == 0) {
             return new ArrayList<>();
         }
         QueryWrapper<AppointmentRecord> queryWrapper = new QueryWrapper<>();
@@ -144,10 +129,10 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
     @Override
     public List<CasePageVo> pageList(Integer id, Integer treeId) {
         AppointmentRecord appointmentRecord = this.getById(id);
-        if(appointmentRecord.getCaseIds() == null){
+        if (appointmentRecord.getCaseIds() == null) {
             return new ArrayList<>();
         }
-        if(appointmentRecord.getCaseIds().isEmpty()){
+        if (appointmentRecord.getCaseIds().isEmpty()) {
             return new ArrayList<>();
         }
         List<Integer> ids = Arrays.stream(appointmentRecord.getCaseIds().split(","))
@@ -181,7 +166,7 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
 
     @Override
     public Long getExpenseByCaseIds(String caseIds) {
-        if(StringUtils.isEmpty(caseIds)){
+        if (StringUtils.isEmpty(caseIds)) {
             return 0L;
         }
 
@@ -195,15 +180,15 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
     public List<Integer> getdeviceIdsByCase(Integer id) {
         AppointmentRecord appointmentRecord = this.getById(id);
         List<Integer> caseIds = Arrays.stream(appointmentRecord.getCaseIds().split(","))
-               .map(Integer::parseInt)
-               .collect(Collectors.toList());
-        if(caseIds.size() > 0) {
+                .map(Integer::parseInt)
+                .collect(Collectors.toList());
+        if (caseIds.size() > 0) {
             QueryWrapper<TjCasePartConfig> queryWrapper = new QueryWrapper<>();
             queryWrapper.in("case_id", caseIds);
             List<Integer> deviceIds = tjCasePartConfigService.list(queryWrapper).stream().map(TjCasePartConfig::getDeviceId).collect(Collectors.toList());
             List<Integer> distinctDeviceIds = deviceIds.stream().distinct().collect(Collectors.toList());
             return distinctDeviceIds;
-        }else {
+        } else {
             return null;
         }
     }
