@@ -72,8 +72,8 @@ public class KafkaCollector {
 
     public List<List<ClientSimulationTrajectoryDto>> take(String key, Integer caseId) {
         return collectorMap.containsKey(key)
-                ? (collectorMap.get(key).getOrDefault(caseId, null))
-                : null;
+                ? new ArrayList<>((collectorMap.get(key).getOrDefault(caseId, null)))
+                : new ArrayList<>();
     }
 
     public void remove(String key, Integer caseId) {

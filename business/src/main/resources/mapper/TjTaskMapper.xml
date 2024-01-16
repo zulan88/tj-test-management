@@ -91,6 +91,7 @@
         <result property="sign" column="sign" jdbcType="VARCHAR"/>
         <result property="testTotalTime" column="test_total_time" jdbcType="VARCHAR"/>
         <result property="status" column="status" jdbcType="VARCHAR"/>
+        <result property="continuous" column="continuous" jdbcType="TINYINT"/>
         <result property="routeFile" column="route_file" jdbcType="VARCHAR"/>
         <collection property="taskCaseVos" ofType="net.wanji.business.domain.vo.TaskCaseVo" select="selectTaskCaseInfo"
                     column="id"/>
@@ -132,6 +133,7 @@
         tt.create_time,
         tt.test_type,
         tt.case_count,
+        tt.continuous,
         a.device_id,
         a.object_type,
         a.brand,
