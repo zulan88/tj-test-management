@@ -486,11 +486,12 @@ public class ToBuildOpenX {
             Init init = (Init) unmarshaller.unmarshal(new StringReader(xmlInit));
             init.getActions().getGlobalAction().get(0).getEnvironmentAction().getEnvironment().getTimeOfDay().setDateTime(formattedDateTime);
             List<ClientSimulationTrajectoryDto> fristsimulationTrajectoryDtos = trajectories.get(0);
+            char c = 'a';
             for(ClientSimulationTrajectoryDto clientSimulationTrajectoryDto : fristsimulationTrajectoryDtos) {
                 if (clientSimulationTrajectoryDto.getValue().size() > 0) {
                     for (TrajectoryValueDto trajectoryValueDto : clientSimulationTrajectoryDto.getValue()) {
                         ScenarioObject scenarioObject = new ScenarioObject();
-                        scenarioObject.setName(trajectoryValueDto.getId());
+                        scenarioObject.setName(c + trajectoryValueDto.getId());
                         Vehicle vehicle = new Vehicle("default", "veh" + trajectoryValueDto.getId());
                         scenarioObject.setVehicle(vehicle);
                         scenarioObjectList.add(scenarioObject);
@@ -499,6 +500,7 @@ public class ToBuildOpenX {
                         init.getActions().getPrivate().add(privateone);
                     }
                 }
+                c++;
             }
             openScenario.setEntities(entities);
             Storyboard storyboard = new Storyboard();
@@ -508,16 +510,17 @@ public class ToBuildOpenX {
             DecimalFormat df = new DecimalFormat("0.00");
             int index = 0;
             int bindex = 0;
+            c = 'a';
             for (ClientSimulationTrajectoryDto clientSimulationTrajectoryDto : fristsimulationTrajectoryDtos){
                 for (TrajectoryValueDto trajectoryValueDto : clientSimulationTrajectoryDto.getValue()){
                     Act act = new Act();
-                    act.setName("Act_" + trajectoryValueDto.getId());
+                    act.setName("Act_" + c + trajectoryValueDto.getId());
                     ManeuverGroup maneuverGroup = new ManeuverGroup();
-                    maneuverGroup.setName("Squence_" + trajectoryValueDto.getId());
+                    maneuverGroup.setName("Squence_" + c + trajectoryValueDto.getId());
                     Actors actors = new Actors();
                     actors.setSelectTriggeringEntities("false");
                     EntityRef entityRef = new EntityRef();
-                    entityRef.setEntityRef(trajectoryValueDto.getId());
+                    entityRef.setEntityRef(c + trajectoryValueDto.getId());
                     actors.getEntityRef().add(entityRef);
                     Maneuver maneuver = new Maneuver();
                     maneuver.setName("Maneuver1");
@@ -530,7 +533,7 @@ public class ToBuildOpenX {
                     RoutingAction routingAction = new RoutingAction();
                     FollowTrajectoryAction followTrajectoryAction = new FollowTrajectoryAction();
                     Trajectory trajectory = new Trajectory();
-                    trajectory.setName("Trajectory_" + trajectoryValueDto.getId());
+                    trajectory.setName("Trajectory_" + c + trajectoryValueDto.getId());
                     trajectory.setClosed("false");
                     Shape shape = new Shape();
                     Polyline polyline = new Polyline();
@@ -542,9 +545,9 @@ public class ToBuildOpenX {
                         }
                         Vertex vertex = new Vertex();
                         Double time = Double.valueOf(trajectoryValueDto.getTimestamp());
-                        vertex.setTime(df.format(time - base));
-                        if ((time - base) > maxTime) {
-                            maxTime = (time - base);
+                        vertex.setTime(df.format((time - base)/1000));
+                        if ((time - base) / 1000 > maxTime) {
+                            maxTime = (time - base) / 1000;
                         }
                         Position position = new Position();
                         position.setWorldPosition(totrans(trajectoryValueDto.getLongitude(), trajectoryValueDto.getLatitude(), proj, trajectoryValueDto.getCourseAngle()));
@@ -589,6 +592,7 @@ public class ToBuildOpenX {
                 }
                 bindex ++;
                 index = 0;
+                c ++;
             }
             storyboard.setInit(init);
             storyboard.getStory().add(story);

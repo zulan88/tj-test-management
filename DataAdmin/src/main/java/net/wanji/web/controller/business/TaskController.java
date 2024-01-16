@@ -283,6 +283,9 @@ public class TaskController extends BaseController {
     public AjaxResult resetStatus(@RequestBody TjTaskCase param) throws BusinessException {
         if(param.getTaskId() != null) {
             TjTask task = tjTaskService.getById(param.getTaskId());
+            if(!task.getLastStatus().equals("prepping")) {
+                task.setLastStatus("prepping");
+            }
             task.setLastStatus(task.getStatus());
             task.setStatus("prepping");
             tjTaskService.updateById(task);

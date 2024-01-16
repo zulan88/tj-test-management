@@ -48,7 +48,9 @@ public class OpenDriveProjExtractor {
 //        } catch (Exception e) {
 //            e.printStackTrace();
 //        }
-        System.out.println(getMaxRepetitions("abab", 11, "abba", 1));
+//        System.out.println(getMaxRepetitions("abab", 11, "abba", 1));
+        char c = 'a';
+        System.out.println(c+"是什么");
     }
 
     public static int getMaxRepetitions(String s1, int n1, String s2, int n2) {
