@@ -9,6 +9,7 @@ import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiOperationSort;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import net.wanji.business.common.Constants.TaskStatusEnum;
 import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
@@ -51,10 +52,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -315,6 +313,9 @@ public class TaskController extends BaseController {
         if(param.getTaskId() != null) {
             TjTask task = tjTaskService.getById(param.getTaskId());
             task.setStatus("running");
+            Date data = new Date();
+            data.setTime(data.getTime() + 3000);
+            task.setStartTime(data);
             tjTaskService.updateById(task);
         }
         return AjaxResult.success(taskCaseService.prepare(param));
@@ -469,6 +470,14 @@ public class TaskController extends BaseController {
         return AjaxResult.success(taskCaseService.getEvaluation(taskId, id));
     }
 
+    //孪生
+    @GetMapping("/getEvaluationResultTW")
+    public AjaxResult getEvaluationResultTW(Integer taskId) throws BusinessException {
+        Random random = new Random();
+        Integer id = random.nextInt(101);
+        return AjaxResult.success(taskCaseService.getEvaluation(taskId, id));
+    }
+
     @ApiOperationSort(29)
     @ApiOperation(value = "29.保存记录状态（废弃）")
     @GetMapping("/saveRecordStatus")
@@ -504,19 +513,24 @@ public class TaskController extends BaseController {
         wrapper.eq("status", "prepping");
         wrapper.or().eq("status", "running");
         List<TjTask> list = tjTaskService.list(wrapper);
-        for(TjTask task:list){
-            if(task.getTestType().equals("virtualRealFusion")){
-                task.setTestType("虚实融合测试");
-            }else if(task.getTestType().equals("virtualRealContrast")){
-                task.setTestType("虚实对比测试");
-            }else if(task.getTestType().equals("mainInLoop")){
-                task.setTestType("人在环路测试");
-            }else if(task.getTestType().equals("parallelDeduction")){
-                task.setTestType("平行推演测试");
-            }else if(task.getTestType().equals("threeTermMapping")){
-                task.setTestType("三项映射测试");
+        for (TjTask task : list) {
+            if(task.getStatus().equals("prepping")){
+                task.setStartTime(null);
             }
         }
+//        for(TjTask task:list){
+//            if(task.getTestType().equals("virtualRealFusion")){
+//                task.setTestType("虚实融合测试");
+//            }else if(task.getTestType().equals("virtualRealContrast")){
+//                task.setTestType("虚实对比测试");
+//            }else if(task.getTestType().equals("mainInLoop")){
+//                task.setTestType("人在环路测试");
+//            }else if(task.getTestType().equals("parallelDeduction")){
+//                task.setTestType("平行推演测试");
+//            }else if(task.getTestType().equals("threeTermMapping")){
+//                task.setTestType("三项映射测试");
+//            }
+//        }
         return AjaxResult.success(list);
     }
 

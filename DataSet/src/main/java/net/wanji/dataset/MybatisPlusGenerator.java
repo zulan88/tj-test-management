@@ -12,7 +12,7 @@ public class MybatisPlusGenerator {
     private static final String USERNAME = "root";
     private static final String PASSWORD = "Wanji123456";
     private static final String[] TABLES = {
-            "tj_apprecord_person"
+            "tj_generalize_scene"
     };
     //    private static final String TEMPLATE_PATH = "/templates/mapper.xml.ftl";
     private static final String MAPPER_PATH = "ExamineAndApprove/src/main/resources/mapper";
@@ -31,7 +31,7 @@ public class MybatisPlusGenerator {
                 .packageConfig(builder -> {
                     builder.parent(PARENT); // 设置父包名
                     //.moduleName(null) // 设置父包模块名
-//                            .pathInfo(Collections.singletonMap(OutputFile.mapperXml, MAPPER_PATH)); // 设置mapperXml生成路径
+//                     .pathInfo(Collections.singletonMap(OutputFile.mapperXml, MAPPER_PATH)); // 设置mapperXml生成路径
                 })
                 .strategyConfig(builder -> {
                     builder.addInclude(TABLES) // 设置需要生成的表名
