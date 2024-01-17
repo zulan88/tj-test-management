@@ -203,7 +203,12 @@ public class SceneBaseController extends BaseController {
             return AjaxResult.error("正在连接仿真软件，请稍后再试");
         }
         List<ParticipantTrajectoryBo> participantTrajectoryBos = sceneDebugDto.getTrajectoryJson()
-                .getParticipantTrajectories().stream().filter(item -> item.getIsHide()!=null&&!item.getIsHide()).collect(Collectors.toList());
+                .getParticipantTrajectories().stream().peek(trajectory -> {
+                    if(trajectory.getType().equals("pathwayar")){
+                        trajectory.setType("pathway");
+                    }
+                }).collect(Collectors.toList());
+        sceneDebugDto.getTrajectoryJson().setParticipantTrajectories(participantTrajectoryBos);
         tjFragmentedSceneDetailService.debugging(sceneDebugDto);
         redisCache.unlock2(key, key);
         return AjaxResult.success();

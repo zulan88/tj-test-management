@@ -78,12 +78,16 @@ public class AppointmentRecordServiceImpl extends ServiceImpl<AppointmentRecordM
             AppointmentRecord appointmentRecord = this.getById(id);
             BeanUtils.copyBeanProp(appointmentRecordVo, appointmentRecord);
         } else {
-            throw new BusinessException("没传ID");
+            throw new BusinessException("ID为空");
         }
         if (appointmentRecordVo.getMeasurandId() != null) {
             appointmentRecordVo.setTjTesteeObjectInfo(tjTesteeObjectInfoService.getById(appointmentRecordVo.getMeasurandId()));
         } else {
-            throw new BusinessException("没传测量对象ID");
+            throw new BusinessException("测量对象ID为空");
+        }
+
+        if(appointmentRecordVo.getCaseIds() == null){
+            return appointmentRecordVo;
         }
 
         List<Integer> ids = Arrays.stream(appointmentRecordVo.getCaseIds().split(","))
