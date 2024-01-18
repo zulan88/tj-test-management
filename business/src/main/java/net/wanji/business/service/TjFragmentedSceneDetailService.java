@@ -39,6 +39,13 @@ public interface TjFragmentedSceneDetailService extends IService<TjFragmentedSce
     boolean saveSceneDetail(TjFragmentedSceneDetailDto sceneDetailDto) throws BusinessException;
 
     /**
+     * 场景泛化
+     * @param sceneDetailDto
+     * @throws BusinessException
+     */
+    void generalizeScene(TjFragmentedSceneDetailDto sceneDetailDto) throws BusinessException;
+
+    /**
      * 列表查询场景卡片
      * @param queryDto
      * @return

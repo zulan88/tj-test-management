@@ -19,6 +19,7 @@ public class TrajectoryDetailBo implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    //（开始：start；途径点：pathway；冲突点：conflict；结束点：end）
     private String type;
     private String time;
     private Long frameId;

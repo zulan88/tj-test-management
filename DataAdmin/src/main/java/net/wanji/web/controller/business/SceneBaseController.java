@@ -9,6 +9,7 @@ import net.wanji.business.common.Constants.OtherGroup;
 import net.wanji.business.common.Constants.UpdateGroup;
 import net.wanji.business.domain.BusinessTreeSelect;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
+import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.business.domain.dto.SceneDebugDto;
 import net.wanji.business.domain.dto.SceneQueryDto;
 import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
@@ -204,8 +205,10 @@ public class SceneBaseController extends BaseController {
         }
         List<ParticipantTrajectoryBo> participantTrajectoryBos = sceneDebugDto.getTrajectoryJson()
                 .getParticipantTrajectories().stream().peek(trajectory -> {
-                    if(trajectory.getType().equals("pathwayar")){
-                        trajectory.setType("pathway");
+                    for(TrajectoryDetailBo trajectoryBo : trajectory.getTrajectory()){
+                        if(trajectoryBo.getType().equals("pathwayar")){
+                            trajectoryBo.setType("pathway");
+                        }
                     }
                 }).collect(Collectors.toList());
         sceneDebugDto.getTrajectoryJson().setParticipantTrajectories(participantTrajectoryBos);
@@ -317,6 +320,12 @@ public class SceneBaseController extends BaseController {
     public AjaxResult batchUpdateStatus(@RequestBody SceneDebugDto debugDto)
             throws BusinessException {
         return AjaxResult.success(debugDto);
+    }
+
+    @PostMapping("/generalize")
+    public AjaxResult generalize(@Validated(value = OtherGroup.class)
+                                     @RequestBody TjFragmentedSceneDetailDto sceneDetailDto) throws BusinessException {
+        return AjaxResult.success();
     }
 
 }

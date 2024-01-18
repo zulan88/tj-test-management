@@ -55,10 +55,7 @@ import org.springframework.util.ObjectUtils;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -258,6 +255,18 @@ public class TjFragmentedSceneDetailServiceImpl
         boolean flag = this.saveOrUpdate(detail);
         sceneDetailDto.setId(detail.getId());
         return flag;
+    }
+
+    @Override
+    public void generalizeScene(TjFragmentedSceneDetailDto sceneDetailDto) throws BusinessException {
+        Optional.ofNullable(sceneDetailDto.getStep())
+                .orElseThrow(() -> new BusinessException("参数不完整"));
+        Optional.ofNullable(sceneDetailDto.getMaxSpeed())
+                .orElseThrow(() -> new BusinessException("参数不完整"));
+        Optional.ofNullable(sceneDetailDto.getMinSpeed())
+                .orElseThrow(() -> new BusinessException("参数不完整"));
+        ParticipantTrajectoryBo participantTrajectoryBo = sceneDetailDto.getTrajectoryJson().getParticipantTrajectories().stream()
+                .filter(t -> PartType.MAIN.equals(t.getType())).findFirst().get();
     }
 
     public synchronized String buildSceneNumber() {

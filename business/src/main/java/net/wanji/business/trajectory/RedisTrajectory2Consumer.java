@@ -9,6 +9,8 @@ import net.wanji.business.common.Constants.PartType;
 import net.wanji.business.common.Constants.RedisMessageType;
 import net.wanji.business.domain.WebsocketMessage;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
+import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
+import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.business.domain.dto.SceneDebugDto;
 import net.wanji.business.domain.vo.ParticipantTrajectoryVo;
 import net.wanji.business.service.RouteService;
@@ -200,6 +202,16 @@ public class RedisTrajectory2Consumer {
                         // 更新数据
                         Optional.ofNullable(end.getEvaluationVerify()).ifPresent(sceneDebugDto.getTrajectoryJson()::setEvaluationVerify);
                         sceneDebugDto.getTrajectoryJson().setDuration(duration);
+
+                        List<ParticipantTrajectoryBo> participantTrajectoryBos = sceneDebugDto.getTrajectoryJson()
+                                .getParticipantTrajectories().stream().peek(trajectory -> {
+                                    for(TrajectoryDetailBo trajectoryBo : trajectory.getTrajectory()){
+                                        if(trajectoryBo.getSpeed()==null&&trajectoryBo.getType().equals("pathway")){
+                                            trajectoryBo.setType("pathwayar");
+                                        }
+                                    }
+                                }).collect(Collectors.toList());
+                        sceneDebugDto.getTrajectoryJson().setParticipantTrajectories(participantTrajectoryBos);
                         // send ws
                         WebsocketMessage msg = new WebsocketMessage(RedisMessageType.END, null, sceneDebugDto);
                         WebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));

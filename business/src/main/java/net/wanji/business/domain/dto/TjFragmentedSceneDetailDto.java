@@ -154,4 +154,10 @@ public class TjFragmentedSceneDetailDto {
      */
     private boolean collectStatus;
 
+    private Integer minSpeed;
+
+    private Integer maxSpeed;
+
+    private Integer step;
+
 }
