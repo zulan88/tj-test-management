@@ -62,8 +62,11 @@ public class ToBuildOpenX {
     private static final CRSFactory crsFactory = new CRSFactory();
 
     @Async
-    public void scenetoOpenX(FragmentedScenesDetailVo fragmentedScenesDetailVo, Long id) throws RuntimeException {
+    public void scenetoOpenX(FragmentedScenesDetailVo fragmentedScenesDetailVo, Long id, Integer type) throws RuntimeException {
         try {
+            if (type == null) {
+                type = 0;
+            }
             //入参
             String c1 = "tjtest.xodr";
             String proj = "+proj=tmerc +lon_0=121.20585769414902 +lat_0=31.290823210868965 +ellps=WGS84";
@@ -238,7 +241,7 @@ public class ToBuildOpenX {
                 Shape shape = new Shape();
                 Polyline polyline = new Polyline();
                 Double base = null;
-                List<List<TrajectoryValueDto>> routelist = tjFragmentedSceneDetailService.getroutelist(fragmentedScenesDetailVo.getId(), participantTrajectoryBo.getId());
+                List<List<TrajectoryValueDto>> routelist = tjFragmentedSceneDetailService.getroutelist(fragmentedScenesDetailVo.getId(), participantTrajectoryBo.getId(), type);
                 for (List<TrajectoryValueDto> trajectoryValueDtos : routelist) {
                     if (trajectoryValueDtos.size() > 0) {
                         TrajectoryValueDto trajectoryValueDto = trajectoryValueDtos.get(0);
@@ -693,6 +696,17 @@ public class ToBuildOpenX {
         angleInRadians += Math.PI / 2;
         return new WorldPosition(String.format("%.16e", pout.x), String.format("%.16e", pout.y), String.format("%.16e", angleInRadians));
     }
+
+//    public static void main(String[] args) {
+//        String proj = "+proj=tmerc +lon_0=121.20585769414902 +lat_0=31.290823210868965 +ellps=WGS84";
+//        String WGS84_PARAM = "+proj=longlat +datum=WGS84 +no_defs ";
+//        CoordinateTransform trans = ctFactory
+//                .createTransform(createCRS(proj), createCRS(WGS84_PARAM));
+//        ProjCoordinate pout = new ProjCoordinate();
+//        ProjCoordinate p = new ProjCoordinate(40.46, -3.9);
+//        trans.transform(p, pout);
+//        System.out.println(pout.x + "," + pout.y);
+//    }
 
 
 }

@@ -1,7 +1,10 @@
 package net.wanji.business.service;
 
+import net.wanji.business.domain.vo.TjGeneralizeSceneVo;
 import net.wanji.business.entity.TjGeneralizeScene;
 import com.baomidou.mybatisplus.extension.service.IService;
+
+import java.util.List;
 
 /**
  * <p>
@@ -12,5 +15,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * @since 2024-01-17
  */
 public interface TjGeneralizeSceneService extends IService<TjGeneralizeScene> {
+
+    List<TjGeneralizeSceneVo> selectList(TjGeneralizeScene tjGeneralizeScene);
 
 }

@@ -4,6 +4,7 @@ import com.alibaba.fastjson2.JSON;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiOperationSort;
+import net.wanji.business.common.Constants;
 import net.wanji.business.common.Constants.InsertGroup;
 import net.wanji.business.common.Constants.OtherGroup;
 import net.wanji.business.common.Constants.UpdateGroup;
@@ -15,15 +16,18 @@ import net.wanji.business.domain.dto.SceneQueryDto;
 import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
 import net.wanji.business.domain.dto.TjFragmentedScenesDto;
 import net.wanji.business.domain.dto.TreeTypeDto;
+import net.wanji.business.domain.param.GeneralizeScene;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
 import net.wanji.business.domain.vo.SceneDetailVo;
 import net.wanji.business.domain.vo.TagtoSceneVo;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.entity.TjFragmentedScenes;
+import net.wanji.business.entity.TjGeneralizeScene;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.schedule.SceneLabelMap;
 import net.wanji.business.service.TjFragmentedSceneDetailService;
 import net.wanji.business.service.TjFragmentedScenesService;
+import net.wanji.business.service.TjGeneralizeSceneService;
 import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
@@ -68,6 +72,9 @@ public class SceneBaseController extends BaseController {
 
     @Autowired
     private RedisCache redisCache;
+
+    @Autowired
+    private TjGeneralizeSceneService tjGeneralizeSceneService;
 
     @PostConstruct
     public void initClass(){
@@ -170,6 +177,20 @@ public class SceneBaseController extends BaseController {
             throws BusinessException {
         return tjFragmentedSceneDetailService.saveSceneDetail(sceneDetailDto)
                 ? AjaxResult.success(sceneDetailDto.getId())
+                : AjaxResult.error("失败");
+    }
+
+    @GetMapping("/generalizelist")
+    public AjaxResult generalizelist(TjGeneralizeScene tjGeneralizeScene) throws BusinessException {
+        return AjaxResult.success(tjGeneralizeSceneService.selectList(tjGeneralizeScene));
+    }
+
+    @PostMapping("/saveGeneralScene")
+    public AjaxResult saveGeneralScene(@Validated(value = Constants.BatchGroup.class)
+                                          @RequestBody TjFragmentedSceneDetailDto sceneDetailDto)
+            throws BusinessException {
+        return tjFragmentedSceneDetailService.saveGeneralScene(sceneDetailDto)
+                ? AjaxResult.success("成功")
                 : AjaxResult.error("失败");
     }
 
@@ -323,8 +344,8 @@ public class SceneBaseController extends BaseController {
     }
 
     @PostMapping("/generalize")
-    public AjaxResult generalize(@Validated(value = OtherGroup.class)
-                                     @RequestBody TjFragmentedSceneDetailDto sceneDetailDto) throws BusinessException {
+    public AjaxResult generalize(@RequestBody GeneralizeScene sceneDetailDto) throws BusinessException {
+        tjFragmentedSceneDetailService.generalizeScene(sceneDetailDto);
         return AjaxResult.success();
     }
 

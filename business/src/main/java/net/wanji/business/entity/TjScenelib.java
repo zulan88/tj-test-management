@@ -90,4 +90,6 @@ public class TjScenelib
     @TableField("scene_detail_id")
     private Integer sceneDetailId;
 
+    @TableField("is_gen")
+    private Integer isGen;
 }

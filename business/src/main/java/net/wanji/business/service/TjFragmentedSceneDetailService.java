@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import net.wanji.business.domain.dto.SceneDebugDto;
 import net.wanji.business.domain.dto.SceneQueryDto;
 import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
+import net.wanji.business.domain.param.GeneralizeScene;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
 import net.wanji.business.domain.vo.SceneDetailVo;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
@@ -38,12 +39,14 @@ public interface TjFragmentedSceneDetailService extends IService<TjFragmentedSce
      */
     boolean saveSceneDetail(TjFragmentedSceneDetailDto sceneDetailDto) throws BusinessException;
 
+    boolean saveGeneralScene(TjFragmentedSceneDetailDto sceneDetailDto) throws BusinessException;
+
     /**
      * 场景泛化
      * @param sceneDetailDto
      * @throws BusinessException
      */
-    void generalizeScene(TjFragmentedSceneDetailDto sceneDetailDto) throws BusinessException;
+    void generalizeScene(GeneralizeScene sceneDetailDto) throws BusinessException;
 
     /**
      * 列表查询场景卡片
@@ -84,6 +87,6 @@ public interface TjFragmentedSceneDetailService extends IService<TjFragmentedSce
     List<SceneDetailVo> selectTjSceneDetailListAnd(List<Integer> labellist, Integer fragmentedSceneId);
 
     List<SceneDetailVo> selectTjSceneDetailListOr(List<Integer> labellist, Integer fragmentedSceneId);
-    List<List<TrajectoryValueDto>> getroutelist(Integer id, String participantId) throws BusinessException, IOException;
+    List<List<TrajectoryValueDto>> getroutelist(Integer id, String participantId, int action) throws BusinessException, IOException;
 
 }

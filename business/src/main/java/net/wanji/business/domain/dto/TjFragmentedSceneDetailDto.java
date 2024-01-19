@@ -3,6 +3,7 @@ package net.wanji.business.domain.dto;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
+import net.wanji.business.common.Constants;
 import net.wanji.business.common.Constants.InsertGroup;
 import net.wanji.business.common.Constants.OtherGroup;
 import net.wanji.business.common.Constants.QueryGroup;
@@ -141,7 +142,7 @@ public class TjFragmentedSceneDetailDto {
      * 轨迹信息
      */
     @ApiModelProperty(value = "轨迹信息")
-    @NotNull(message = "请进行点位标记", groups = {OtherGroup.class})
+    @NotNull(message = "请进行点位标记", groups = {OtherGroup.class, Constants.BatchGroup.class})
     private CaseTrajectoryDetailBo trajectoryJson;
 
     /**
@@ -153,11 +154,5 @@ public class TjFragmentedSceneDetailDto {
      * 收藏状态（未收藏：0；已收藏：1；）
      */
     private boolean collectStatus;
-
-    private Integer minSpeed;
-
-    private Integer maxSpeed;
-
-    private Integer step;
 
 }

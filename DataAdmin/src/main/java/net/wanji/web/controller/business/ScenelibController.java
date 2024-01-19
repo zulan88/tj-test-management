@@ -9,14 +9,12 @@ import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
 import net.wanji.business.domain.vo.ScenelibVo;
 import net.wanji.business.domain.vo.TagtoSceneVo;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
+import net.wanji.business.entity.TjGeneralizeScene;
 import net.wanji.business.entity.TjScenelib;
 import net.wanji.business.entity.TjScenelibTree;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.schedule.SceneLabelMap;
-import net.wanji.business.service.ILabelsService;
-import net.wanji.business.service.ITjScenelibService;
-import net.wanji.business.service.TjFragmentedSceneDetailService;
-import net.wanji.business.service.TjScenelibTreeService;
+import net.wanji.business.service.*;
 import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
@@ -61,6 +59,9 @@ public class ScenelibController extends BaseController {
     @Autowired
     private ILabelsService labelsService;
 
+    @Autowired
+    private TjGeneralizeSceneService generalizeSceneService;
+
     @PostMapping("/list")
     public TableDataInfo scenelist(@RequestBody ScenelibVo scenelibVo) throws BusinessException {
         startPage();
@@ -91,15 +92,25 @@ public class ScenelibController extends BaseController {
     @PostMapping("/libadd")
     public AjaxResult add(@RequestBody TjScenelib tjScenelib) throws BusinessException{
         int res = scenelibService.insertTjScenelib(tjScenelib);
-        FragmentedScenesDetailVo detailVo = tjFragmentedSceneDetailService.getDetailVo(tjScenelib.getSceneDetailId());
-        if (StringUtils.isEmpty(detailVo.getRouteFile())) {
-            throw new BusinessException("创建失败：场景未进行仿真验证");
+        if(tjScenelib.getIsGen()==null || tjScenelib.getIsGen().equals(0)) {
+            FragmentedScenesDetailVo detailVo = tjFragmentedSceneDetailService.getDetailVo(tjScenelib.getSceneDetailId());
+            if (StringUtils.isEmpty(detailVo.getRouteFile())) {
+                throw new BusinessException("创建失败：场景未进行仿真验证");
+            }
+            toBuildOpenX.scenetoOpenX(detailVo, tjScenelib.getId(), tjScenelib.getIsGen());
+            TjFragmentedSceneDetail fragmentedSceneDetail = new FragmentedScenesDetailVo();
+            fragmentedSceneDetail.setId(tjScenelib.getSceneDetailId());
+            fragmentedSceneDetail.setSceneStatus(1);
+            tjFragmentedSceneDetailService.updateOne(fragmentedSceneDetail);
+        }else if(tjScenelib.getIsGen().equals(1)) {
+            TjGeneralizeScene generalizeScene = generalizeSceneService.getById(tjScenelib.getSceneDetailId());
+            if (StringUtils.isEmpty(generalizeScene.getRouteFile())) {
+                throw new BusinessException("创建失败：场景未进行仿真验证");
+            }
+            FragmentedScenesDetailVo detailVo = tjFragmentedSceneDetailService.getDetailVo(generalizeScene.getSceneId());
+            detailVo.setId(generalizeScene.getId());
+            toBuildOpenX.scenetoOpenX(detailVo, tjScenelib.getId(), tjScenelib.getIsGen());
         }
-        toBuildOpenX.scenetoOpenX(detailVo, tjScenelib.getId());
-        TjFragmentedSceneDetail fragmentedSceneDetail = new FragmentedScenesDetailVo();
-        fragmentedSceneDetail.setId(tjScenelib.getSceneDetailId());
-        fragmentedSceneDetail.setSceneStatus(1);
-        tjFragmentedSceneDetailService.updateOne(fragmentedSceneDetail);
         return toAjax(res);
     }
 

@@ -11,6 +11,7 @@ import net.wanji.business.common.Constants.PlaybackAction;
 import net.wanji.business.common.Constants.PointTypeEnum;
 import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.YN;
+import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
@@ -18,6 +19,7 @@ import net.wanji.business.domain.dto.SceneDebugDto;
 import net.wanji.business.domain.dto.SceneQueryDto;
 import net.wanji.business.domain.dto.TjDeviceDetailDto;
 import net.wanji.business.domain.dto.TjFragmentedSceneDetailDto;
+import net.wanji.business.domain.param.GeneralizeScene;
 import net.wanji.business.domain.param.TessParam;
 import net.wanji.business.domain.param.TestStartParam;
 import net.wanji.business.domain.vo.DeviceDetailVo;
@@ -25,6 +27,7 @@ import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
 import net.wanji.business.domain.vo.SceneDetailVo;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.entity.TjFragmentedScenes;
+import net.wanji.business.entity.TjGeneralizeScene;
 import net.wanji.business.entity.TjResourcesDetail;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.mapper.TjCaseMapper;
@@ -32,12 +35,7 @@ import net.wanji.business.mapper.TjDeviceDetailMapper;
 import net.wanji.business.mapper.TjFragmentedSceneDetailMapper;
 import net.wanji.business.mapper.TjFragmentedScenesMapper;
 import net.wanji.business.schedule.PlaybackSchedule;
-import net.wanji.business.service.RestService;
-import net.wanji.business.service.RouteService;
-import net.wanji.business.service.TjFragmentedSceneDetailService;
-import net.wanji.business.service.TjFragmentedScenesService;
-import net.wanji.business.service.TjResourcesDetailService;
-import net.wanji.business.socket.WebSocketManage;
+import net.wanji.business.service.*;
 import net.wanji.business.trajectory.RedisTrajectory2Consumer;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.core.redis.RedisCache;
@@ -104,6 +102,9 @@ public class TjFragmentedSceneDetailServiceImpl
     @Autowired
     private RedisCache redisCache;
 
+    @Autowired
+    TjGeneralizeSceneService generalizeSceneService;
+
     @Override
     public FragmentedScenesDetailVo getDetailVo(Integer id) throws BusinessException {
         QueryWrapper<TjFragmentedSceneDetail> queryWrapper = new QueryWrapper();
@@ -158,10 +159,16 @@ public class TjFragmentedSceneDetailServiceImpl
     }
 
     @Override
-    public List<List<TrajectoryValueDto>> getroutelist(Integer id, String participantId) throws IOException, BusinessException {
-        FragmentedScenesDetailVo caseInfoBo = this.getDetailVo(id);
-        return routeService.readTrajectoryFromRouteFile(
-                caseInfoBo.getRouteFile(), participantId);
+    public List<List<TrajectoryValueDto>> getroutelist(Integer id, String participantId, int action) throws IOException, BusinessException {
+        if (action == 0) {
+            FragmentedScenesDetailVo caseInfoBo = this.getDetailVo(id);
+            return routeService.readTrajectoryFromRouteFile(
+                    caseInfoBo.getRouteFile(), participantId);
+        }else {
+            TjGeneralizeScene generalizeScene = generalizeSceneService.getById(id);
+            return routeService.readTrajectoryFromRouteFile(
+                    generalizeScene.getRouteFile(), participantId);
+        }
     }
 
     @Override
@@ -258,15 +265,145 @@ public class TjFragmentedSceneDetailServiceImpl
     }
 
     @Override
-    public void generalizeScene(TjFragmentedSceneDetailDto sceneDetailDto) throws BusinessException {
+    public boolean saveGeneralScene(TjFragmentedSceneDetailDto sceneDetailDto) throws BusinessException {
+        if (StringUtils.isNotEmpty(sceneDetailDto.getRouteFile()) && !ObjectUtils.isEmpty(sceneDetailDto.getTrajectoryJson())) {
+            List<ParticipantTrajectoryBo> list = sceneDetailDto.getTrajectoryJson().getParticipantTrajectories().stream()
+                    .filter(t -> PartType.MAIN.equals(t.getType()))
+                    .filter(p -> ObjectUtils.isEmpty(p.getTrajectory().get(0).getPass())
+                            || ObjectUtils.isEmpty(p.getTrajectory().get(p.getTrajectory().size() - 1).getPass())
+                            || !p.getTrajectory().get(0).getPass()
+                            || !p.getTrajectory().get(p.getTrajectory().size() - 1).getPass())
+                    .collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(list)) {
+                throw new BusinessException("主车起止点校验失败，请检查主车起止点或重新进行仿真验证！");
+            }
+        }
+        TjGeneralizeScene detail = new TjGeneralizeScene();
+        detail.setId(sceneDetailDto.getId());
+
+        List<String> labellist = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(sceneDetailDto.getLabelList())) {
+            for (String id : sceneDetailDto.getLabelList()) {
+                labellist.addAll(this.getalllabel(id));
+            }
+        }
+        if (!StringUtils.isEmpty(sceneDetailDto.getRouteFile())) {
+            detail.setRouteFile(sceneDetailDto.getRouteFile());
+        }
+        detail.setLabel(CollectionUtils.isNotEmpty(sceneDetailDto.getLabelList())
+                ? String.join(",", sceneDetailDto.getLabelList())
+                : null);
+        detail.setAllStageLabel(CollectionUtils.isNotEmpty(labellist)
+                ? labellist.stream().distinct().collect(Collectors.joining(","))
+                : null);
+        detail.setTrajectoryInfo(!ObjectUtils.isEmpty(sceneDetailDto.getTrajectoryJson())
+                ? sceneDetailDto.getTrajectoryJson().buildId().toJsonString()
+                : null);
+        return generalizeSceneService.updateById(detail);
+    }
+
+    /**
+     * 对场景进行泛化
+     *
+     * @param sceneDetailDto 场景详细信息
+     * @throws BusinessException 业务异常
+     */
+    @Override
+    public void generalizeScene(GeneralizeScene sceneDetailDto) throws BusinessException {
+        Optional.ofNullable(sceneDetailDto.getId())
+                .orElseThrow(() -> new BusinessException("参数不完整"));
         Optional.ofNullable(sceneDetailDto.getStep())
                 .orElseThrow(() -> new BusinessException("参数不完整"));
         Optional.ofNullable(sceneDetailDto.getMaxSpeed())
                 .orElseThrow(() -> new BusinessException("参数不完整"));
         Optional.ofNullable(sceneDetailDto.getMinSpeed())
                 .orElseThrow(() -> new BusinessException("参数不完整"));
-        ParticipantTrajectoryBo participantTrajectoryBo = sceneDetailDto.getTrajectoryJson().getParticipantTrajectories().stream()
-                .filter(t -> PartType.MAIN.equals(t.getType())).findFirst().get();
+        FragmentedScenesDetailVo detailVo = getDetailVo(sceneDetailDto.getId());
+        if(sceneDetailDto.getMinSpeed()>=sceneDetailDto.getMaxSpeed()){
+            throw new BusinessException("最小速度不能大于等于最大速度");
+        }
+        List<ParticipantTrajectoryBo> participantTrajectoryBos = detailVo.getTrajectoryJson().getParticipantTrajectories().stream()
+                .filter(t -> PartType.MAIN.equals(t.getType())).collect(Collectors.toList());
+        Optional.of(participantTrajectoryBos)
+                .filter(CollectionUtils::isNotEmpty)
+                .filter(list -> list.size() == 1)
+                .map(list -> list.get(0))
+                .map(ParticipantTrajectoryBo::getTrajectory)
+                .filter(trajectorys -> !trajectorys.isEmpty())
+                .filter(trajectorys -> {
+                    int count = 0;
+                    for (TrajectoryDetailBo trajectoryDetailBo : trajectorys){
+                        if (trajectoryDetailBo.getType().equals("conflict")){
+                            count++;
+                        }
+                    }
+                    return count == 1;
+                })
+                .orElseThrow(() -> new BusinessException("未找到有效的参与者轨迹信息 (需配置一辆主车并配置且仅配置一个冲突点)"));
+        List<TrajectoryDetailBo> trajectorys = participantTrajectoryBos.get(0).getTrajectory();
+        double conflictspeed = trajectorys.stream()
+                .filter(trajectoryDetailBo -> "conflict".equals(trajectoryDetailBo.getType()))
+                .map(TrajectoryDetailBo::getSpeed)
+                .findFirst().get();
+
+        double minSpeed = sceneDetailDto.getMinSpeed();
+        double maxSpeed = sceneDetailDto.getMaxSpeed();
+        int step = sceneDetailDto.getStep();
+
+        if (step > (conflictspeed - minSpeed) && step > (maxSpeed - conflictspeed)) {
+            throw new BusinessException("速度间隔过大，无法依据规则泛化");
+        }
+
+        if (conflictspeed > maxSpeed || conflictspeed < minSpeed) {
+            throw new BusinessException("冲突点速度超出速度区间");
+        }
+
+        //向下泛化
+        int down = (int) ((conflictspeed - minSpeed) / step);
+        double proStep = step / conflictspeed;
+        for (int i = 1; i <= down; i++) {
+            SceneTrajectoryBo caseTrajectoryDetailBo = detailVo.getTrajectoryJson();
+            int finalI = i;
+            caseTrajectoryDetailBo.getParticipantTrajectories().forEach(participantTrajectoryBoList -> {
+                participantTrajectoryBoList.getTrajectory().forEach(trajectoryDetailBo -> {
+                    Double speed = trajectoryDetailBo.getSpeed();
+                    if (speed != null) {
+                        trajectoryDetailBo.setSpeed(speed * (1 - finalI * proStep));
+                    }
+                });
+            });
+            TjGeneralizeScene generalizeScene = new TjGeneralizeScene();
+            generalizeScene.setSceneId(sceneDetailDto.getId());
+            generalizeScene.setNumber(buildSceneNumber());
+            generalizeScene.setLabel(detailVo.getLabel());
+            generalizeScene.setTrajectoryInfo(caseTrajectoryDetailBo.buildId().toJsonString());
+            generalizeScene.setAllStageLabel(detailVo.getAllStageLabel());
+            generalizeScene.setTestSceneDesc(detailVo.getTestSceneDesc());
+            generalizeSceneService.save(generalizeScene);
+        }
+
+        //向上泛化
+        int up = (int) ((maxSpeed - conflictspeed) / step);
+        for (int i = 1; i <= up; i++) {
+            SceneTrajectoryBo caseTrajectoryDetailBo = detailVo.getTrajectoryJson();
+            int finalI = i;
+            caseTrajectoryDetailBo.getParticipantTrajectories().forEach(participantTrajectoryBoList -> {
+                participantTrajectoryBoList.getTrajectory().forEach(trajectoryDetailBo -> {
+                    Double speed = trajectoryDetailBo.getSpeed();
+                    if (speed != null) {
+                        trajectoryDetailBo.setSpeed(speed * (1 + finalI * proStep));
+                    }
+                });
+            });
+            TjGeneralizeScene generalizeScene = new TjGeneralizeScene();
+            generalizeScene.setSceneId(sceneDetailDto.getId());
+            generalizeScene.setNumber(buildSceneNumber());
+            generalizeScene.setLabel(detailVo.getLabel());
+            generalizeScene.setTrajectoryInfo(caseTrajectoryDetailBo.buildId().toJsonString());
+            generalizeScene.setAllStageLabel(detailVo.getAllStageLabel());
+            generalizeScene.setTestSceneDesc(detailVo.getTestSceneDesc());
+            generalizeSceneService.save(generalizeScene);
+        }
     }
 
     public synchronized String buildSceneNumber() {

@@ -1,10 +1,16 @@
 package net.wanji.business.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import net.wanji.business.domain.vo.TjGeneralizeSceneVo;
 import net.wanji.business.entity.TjGeneralizeScene;
 import net.wanji.business.mapper.TjGeneralizeSceneMapper;
 import net.wanji.business.service.TjGeneralizeSceneService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import net.wanji.common.utils.bean.BeanUtils;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -17,4 +23,15 @@ import org.springframework.stereotype.Service;
 @Service
 public class TjGeneralizeSceneServiceImpl extends ServiceImpl<TjGeneralizeSceneMapper, TjGeneralizeScene> implements TjGeneralizeSceneService {
 
+    @Override
+    public List<TjGeneralizeSceneVo> selectList(TjGeneralizeScene tjGeneralizeScene) {
+        QueryWrapper<TjGeneralizeScene> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq(tjGeneralizeScene.getSceneId()!=null,"scene_id",tjGeneralizeScene.getSceneId());
+        List<TjGeneralizeScene> tjGeneralizeSceneList = this.list(queryWrapper);
+        return tjGeneralizeSceneList.stream().map(tjGeneralizeScene1 -> {
+            TjGeneralizeSceneVo tjGeneralizeSceneVo = new TjGeneralizeSceneVo();
+            BeanUtils.copyBeanProp(tjGeneralizeSceneVo, tjGeneralizeScene1);
+            return tjGeneralizeSceneVo;
+        }).collect(Collectors.toList());
+    }
 }
