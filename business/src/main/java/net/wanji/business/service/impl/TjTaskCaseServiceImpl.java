@@ -58,14 +58,7 @@ import net.wanji.business.mapper.TjTaskDataConfigMapper;
 import net.wanji.business.mapper.TjTaskMapper;
 import net.wanji.business.schedule.RealPlaybackSchedule;
 import net.wanji.business.schedule.TwinsPlayback;
-import net.wanji.business.service.ILabelsService;
-import net.wanji.business.service.RestService;
-import net.wanji.business.service.RouteService;
-import net.wanji.business.service.TjCaseService;
-import net.wanji.business.service.TjCaseTreeService;
-import net.wanji.business.service.TjDeviceDetailService;
-import net.wanji.business.service.TjTaskCaseRecordService;
-import net.wanji.business.service.TjTaskCaseService;
+import net.wanji.business.service.*;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.util.RedisLock;
 import net.wanji.business.util.ToBuildOpenX;
@@ -159,6 +152,9 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
     @Autowired
     TwinsPlayback twinsPlayback;
+
+    @Autowired
+    KafkaProducer kafkaProducer;
 
     @Override
     public TaskCaseVerificationPageVo getStatus(TjTaskCase param, boolean hand) throws BusinessException {
@@ -703,7 +699,10 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                     WebSocketManage.sendInfo(key, JSON.toJSONString(endMsg));
                     log.info("移除kafka收集器key：{}", key);
                     kafkaCollector.remove(key, null);
-
+                    JSONObject jsonObject = new JSONObject();
+                    jsonObject.put("taskId", taskId);
+                    jsonObject.put("status", "finish");
+                    kafkaProducer.sendMessage("tj_task_tw_status", jsonObject.toJSONString());
                     log.info("更新任务{}状态 -> 已完成", taskId);
                     QueryWrapper<TjTaskCase> queryMapper = new QueryWrapper<>();
                     queryMapper.eq(ColumnName.TASK_ID, taskCaseRecord.getTaskId());
@@ -963,6 +962,10 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         if (!restService.sendManualTermination(taskId, caseId)) {
             throw new BusinessException("任务终止失败");
         }
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("taskId", taskId);
+        jsonObject.put("status", "break");
+        kafkaProducer.sendMessage("tj_task_tw_status", jsonObject.toJSONString());
     }
 
     @Override
