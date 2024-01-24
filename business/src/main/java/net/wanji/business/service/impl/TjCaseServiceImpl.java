@@ -36,13 +36,7 @@ import net.wanji.business.mapper.TjCasePartConfigMapper;
 import net.wanji.business.mapper.TjResourcesDetailMapper;
 import net.wanji.business.schedule.PlaybackSchedule;
 import net.wanji.business.schedule.SceneLabelMap;
-import net.wanji.business.service.ILabelsService;
-import net.wanji.business.service.RouteService;
-import net.wanji.business.service.TjCasePartConfigService;
-import net.wanji.business.service.TjCaseRealRecordService;
-import net.wanji.business.service.TjCaseService;
-import net.wanji.business.service.TjDeviceDetailService;
-import net.wanji.business.service.TjFragmentedSceneDetailService;
+import net.wanji.business.service.*;
 import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.core.domain.SimpleSelect;
 import net.wanji.common.core.domain.entity.SysDictData;
@@ -126,6 +120,9 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
 
     @Autowired
     private RedisCache redisCache;
+
+    @Autowired
+    private TjGeneralizeSceneService generalizeSceneService;
 
     @Override
     public Map<String, List<SimpleSelect>> init() {
@@ -517,46 +514,88 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
         if (ObjectUtils.isEmpty(tjCaseDto.getId())) {
             BeanUtils.copyBeanProp(tjCase, tjCaseDto);
             tjCase.setCaseNumber(this.buildCaseNumber());
-            TjFragmentedSceneDetail sceneDetail = sceneDetailService.getById(tjCaseDto.getSceneDetailId());
-            if (ObjectUtils.isEmpty(sceneDetail)) {
-                throw new BusinessException("创建失败：场景不存在");
-            }
-            if (StringUtils.isEmpty(sceneDetail.getTrajectoryInfo())) {
-                throw new BusinessException("创建失败：未获取到场景点位配置");
-            }
-            CaseTrajectoryDetailBo trajectoryDetailBo = JSONObject.parseObject(sceneDetail.getTrajectoryInfo(), CaseTrajectoryDetailBo.class);
-            tjCase.setDetailInfo(JSONObject.toJSONString(trajectoryDetailBo));
-
-            if (StringUtils.isEmpty(sceneDetail.getRouteFile())) {
-                throw new BusinessException("创建失败：场景未进行仿真验证");
-            }
-            tjCase.setRouteFile(sceneDetail.getRouteFile());
-
-            StringBuilder labelshows = new StringBuilder();
-            for (String str : sceneDetail.getLabel().split(",")) {
-                try {
-                    long intValue = Long.parseLong(str);
-                    String labelshow = sceneLabelMap.getSceneLabel(intValue);
-                    if (labelshow != null) {
-                        if (labelshows.length() > 0) {
-//                            labelshows.append(",").append(labelshow);
-                        } else {
-                            labelshows.append(labelshow);
-                        }
-                    }
-                } catch (NumberFormatException e) {
-                    // 处理无效的整数字符串
+            if(tjCaseDto.getIsGen()==null || tjCaseDto.getIsGen().equals(0)){
+                TjFragmentedSceneDetail sceneDetail = sceneDetailService.getById(tjCaseDto.getSceneDetailId());
+                if (ObjectUtils.isEmpty(sceneDetail)) {
+                    throw new BusinessException("创建失败：场景不存在");
                 }
+                if (StringUtils.isEmpty(sceneDetail.getTrajectoryInfo())) {
+                    throw new BusinessException("创建失败：未获取到场景点位配置");
+                }
+                CaseTrajectoryDetailBo trajectoryDetailBo = JSONObject.parseObject(sceneDetail.getTrajectoryInfo(), CaseTrajectoryDetailBo.class);
+                tjCase.setDetailInfo(JSONObject.toJSONString(trajectoryDetailBo));
+
+                if (StringUtils.isEmpty(sceneDetail.getRouteFile())) {
+                    throw new BusinessException("创建失败：场景未进行仿真验证");
+                }
+                tjCase.setRouteFile(sceneDetail.getRouteFile());
+
+                StringBuilder labelshows = new StringBuilder();
+                for (String str : sceneDetail.getLabel().split(",")) {
+                    try {
+                        long intValue = Long.parseLong(str);
+                        String labelshow = sceneLabelMap.getSceneLabel(intValue);
+                        if (labelshow != null) {
+                            if (labelshows.length() > 0) {
+//                            labelshows.append(",").append(labelshow);
+                            } else {
+                                labelshows.append(labelshow);
+                            }
+                        }
+                    } catch (NumberFormatException e) {
+                        // 处理无效的整数字符串
+                    }
+                }
+                tjCase.setTestScene(labelshows.toString());
+                LocalDateTime now = LocalDateTime.now();
+                tjCase.setUpdatedDate(now);
+                tjCase.setUpdatedBy(SecurityUtils.getUsername());
+                tjCase.setCreatedBy(SecurityUtils.getUsername());
+                tjCase.setCreatedDate(now);
+                this.save(tjCase);
+                // 创建配置
+                return createPartConfig(tjCase.getId(), trajectoryDetailBo);
+            }else if(tjCaseDto.getIsGen().equals(1)){
+                TjGeneralizeScene sceneDetail = generalizeSceneService.getById(tjCaseDto.getSceneDetailId());
+                if (ObjectUtils.isEmpty(sceneDetail)) {
+                    throw new BusinessException("创建失败：场景不存在");
+                }
+                if (StringUtils.isEmpty(sceneDetail.getTrajectoryInfo())) {
+                    throw new BusinessException("创建失败：未获取到场景点位配置");
+                }
+                CaseTrajectoryDetailBo trajectoryDetailBo = JSONObject.parseObject(sceneDetail.getTrajectoryInfo(), CaseTrajectoryDetailBo.class);
+                tjCase.setDetailInfo(JSONObject.toJSONString(trajectoryDetailBo));
+
+                if (StringUtils.isEmpty(sceneDetail.getRouteFile())) {
+                    throw new BusinessException("创建失败：场景未进行仿真验证");
+                }
+                tjCase.setRouteFile(sceneDetail.getRouteFile());
+                StringBuilder labelshows = new StringBuilder();
+                for (String str : sceneDetail.getLabel().split(",")) {
+                    try {
+                        long intValue = Long.parseLong(str);
+                        String labelshow = sceneLabelMap.getSceneLabel(intValue);
+                        if (labelshow != null) {
+                            if (labelshows.length() > 0) {
+//                            labelshows.append(",").append(labelshow);
+                            } else {
+                                labelshows.append(labelshow);
+                            }
+                        }
+                    } catch (NumberFormatException e) {
+                        // 处理无效的整数字符串
+                    }
+                }
+                tjCase.setTestScene(labelshows.toString());
+                LocalDateTime now = LocalDateTime.now();
+                tjCase.setUpdatedDate(now);
+                tjCase.setUpdatedBy(SecurityUtils.getUsername());
+                tjCase.setCreatedBy(SecurityUtils.getUsername());
+                tjCase.setCreatedDate(now);
+                this.save(tjCase);
+                // 创建配置
+                return createPartConfig(tjCase.getId(), trajectoryDetailBo);
             }
-            tjCase.setTestScene(labelshows.toString());
-            LocalDateTime now = LocalDateTime.now();
-            tjCase.setUpdatedDate(now);
-            tjCase.setUpdatedBy(SecurityUtils.getUsername());
-            tjCase.setCreatedBy(SecurityUtils.getUsername());
-            tjCase.setCreatedDate(now);
-            this.save(tjCase);
-            // 创建配置
-            return createPartConfig(tjCase.getId(), trajectoryDetailBo);
         } else {
 //            String usingKey = "USING_CASE_" + tjCase.getId();
 //            if (redisCache.hasKey(usingKey)) {

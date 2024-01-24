@@ -42,4 +42,6 @@ public class TjCaseDto {
     private List<Integer> ids;
 
     private String remark;
+
+    private Integer isGen;
 }
