@@ -164,6 +164,9 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
     @Autowired
     private TaskChainFactory taskChainFactory;
 
+    @Autowired
+    KafkaProducer kafkaProducer;
+
     @Override
     public TaskCaseVerificationPageVo getStatus(TjTaskCase param, String user, boolean hand) throws BusinessException {
         log.info("查询任务的设备状态>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
@@ -632,6 +635,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 throw new BusinessException("任务状态更新失败");
             }
         }
+
         CaseTrajectoryParam caseTrajectoryParam = new CaseTrajectoryParam();
         for (TaskCaseInfoBo taskCaseInfo : taskCaseInfos) {
             for (TaskCaseConfigBo caseConfig : taskCaseInfo.getDataConfigs()) {
@@ -781,6 +785,10 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                     log.info("移除kafka收集器key：{}", key);
                     kafkaCollector.remove(key, null);
                     if (tjTask.isContinuous()) {
+                        JSONObject jsonObject = new JSONObject();
+                        jsonObject.put("taskId", taskId);
+                        jsonObject.put("status", "finish");
+                        kafkaProducer.sendMessage("tj_task_tw_status", jsonObject.toJSONString());
                         log.info("更新任务{}状态 -> 已完成", taskId);
                         QueryWrapper<TjTaskCase> queryMapper = new QueryWrapper<>();
                         queryMapper.eq(ColumnName.TASK_ID, taskCaseRecord.getTaskId());
@@ -1044,6 +1052,10 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         if (!restService.sendManualTermination(taskId, caseId)) {
             throw new BusinessException("任务终止失败");
         }
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("taskId", taskId);
+        jsonObject.put("status", "break");
+        kafkaProducer.sendMessage("tj_task_tw_status", jsonObject.toJSONString());
     }
 
     @Override
