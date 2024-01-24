@@ -58,7 +58,7 @@ import java.util.stream.Collectors;
 @Component
 public class RedisTrajectory2Consumer {
 
-    private static final Logger log = LoggerFactory.getLogger("business");
+    private static final Logger log = LoggerFactory.getLogger("redis");
 
     private final ConcurrentHashMap<String, ChannelListener<SimulationTrajectoryDto>> runningChannel = new ConcurrentHashMap<>();
 

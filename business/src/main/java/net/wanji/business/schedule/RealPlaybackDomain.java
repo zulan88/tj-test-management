@@ -72,11 +72,14 @@ public class RealPlaybackDomain {
                     return;
                 }
                 if (index >= length) {
-                    RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null,
-                            null, "00:00");
-                    WebSocketManage.sendInfo(key, JSONObject.toJSONString(endMsg));
-                    RealPlaybackSchedule.stopSendingData(key);
-                    return;
+                    try {
+                        RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null,
+                                null, "00:00");
+                        WebSocketManage.sendInfo(key, JSONObject.toJSONString(endMsg));
+                        return;
+                    } finally {
+                        RealPlaybackSchedule.stopSendingData(key);
+                    }
                 }
                 String duration = DateUtils.secondsToDuration((int) Math.floor((double) (length - index) / 10));
                 if (CollectionUtils.isNotEmpty(trajectories)) {

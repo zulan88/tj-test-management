@@ -101,6 +101,8 @@
         <result property="commandChannel" column="command_channel"/>
         <result property="status" column="device_status"/>
         <result property="lastOnlineDate" column="last_online_date"/>
+        <result property="attribute1" column="attribute1"/>
+        <result property="attribute2" column="attribute2"/>
     </resultMap>
 
     <select id="selectTaskCaseByCondition" resultMap="TaskCaseInfoResult">
@@ -165,7 +167,9 @@
                dd.data_channel,
                dd.command_channel,
                dd.`status` AS device_status,
-               dd.last_online_date
+               dd.last_online_date,
+               dd.attribute1,
+               dd.attribute2
         from tj_task_data_config dc
                  LEFT JOIN tj_device_detail dd ON dd.device_id = dc.device_id
         where dc.task_id = #{taskId}

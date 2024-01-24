@@ -26,6 +26,7 @@ spring:
     active: qa
   main:
     allow-bean-definition-overriding: true
+    allow-circular-references: true
   cloud:
     sentinel:
       enabled: false

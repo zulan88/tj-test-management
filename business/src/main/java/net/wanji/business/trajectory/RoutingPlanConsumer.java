@@ -50,7 +50,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class RoutingPlanConsumer {
 
-    private static final Logger log = LoggerFactory.getLogger("business");
+    private static final Logger log = LoggerFactory.getLogger("redis");
 
     private final ConcurrentHashMap<String, ChannelListener<SimulationTrajectoryDto>> runningChannel = new ConcurrentHashMap<>();
 

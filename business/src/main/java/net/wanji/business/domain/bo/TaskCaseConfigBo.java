@@ -83,4 +83,12 @@ public class TaskCaseConfigBo extends TjTaskDataConfig {
      * 是否到达指定位置
      */
     private int positionStatus;
+
+    private String attribute1;
+
+    private String attribute2;
+
+    public boolean isReady() {
+        return this.getStatus() == 1 && this.getPositionStatus() == 1;
+    }
 }

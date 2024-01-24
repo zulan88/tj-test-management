@@ -139,6 +139,7 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
     public Integer selectDeviceState(Integer deviceId, String commandChannel, boolean wait) {
         Integer state = deviceStateToRedis.query(deviceId, DeviceStateToRedis.DEVICE_STATE_PREFIX, ChannelBuilder.DEFAULT_STATUS_CHANNEL);
         if (!ObjectUtils.isEmpty(state) && state == 1) {
+            log.info("缓存查询设备{}状态：{}", deviceId, state);
             return state;
         }
         return handDeviceState(deviceId, commandChannel, wait);
@@ -157,7 +158,7 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
         deviceStateDto.setDeviceId(deviceId);
         deviceStateDto.setType(0);
         deviceStateDto.setTimestamp(System.currentTimeMillis());
-        log.info("查询设备{}状态：{}", deviceId, JSONObject.toJSONString(deviceStateDto));
+        log.info("手动查询设备{}状态：{}", deviceId, JSONObject.toJSONString(deviceStateDto));
         deviceStateSendService.sendData(commandChannel, deviceStateDto);
         if (!wait) {
             Integer state = deviceStateToRedis.query(deviceId, ChannelBuilder.DEFAULT_STATUS_CHANNEL, DeviceStateToRedis.DEVICE_STATE_PREFIX);
@@ -167,7 +168,7 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
         try {
             StatusManage.addCountDownLatch(key, 50);
         } catch (InterruptedException e) {
-            log.error("查询设备{}状态异常：{}", deviceId, e);
+            log.error("手动查询设备{}状态异常：{}", deviceId, e);
         }
         return (Integer) StatusManage.getValue(key);
     }
@@ -176,6 +177,7 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
     public Integer selectDeviceReadyState(Integer deviceId, String statusChannel, DeviceReadyStateParam stateParam, boolean wait) {
         Integer state = deviceStateToRedis.query(deviceId, DeviceStateToRedis.DEVICE_READY_STATE_PREFIX, statusChannel);
         if (!ObjectUtils.isEmpty(state) && state == 1) {
+            log.info("缓存查询设备{}准备状态：{}", deviceId, state);
             return state;
         }
         return handDeviceReadyState(deviceId, statusChannel, stateParam, wait);
@@ -192,7 +194,7 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
         if (!ChannelBuilder.DEFAULT_STATUS_CHANNEL.equals(statusChannel)) {
             deviceStateListener.addDeviceStateListener(statusChannel);
         }
-        log.info("查询设备{}准备状态", deviceId);
+        log.info("手动查询设备{}准备状态", deviceId);
         restService.selectDeviceReadyState(stateParam);
         if (!wait) {
             Integer readyState = deviceStateToRedis.query(deviceId, statusChannel, DeviceStateToRedis.DEVICE_READY_STATE_PREFIX);
@@ -202,7 +204,7 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
         try {
             StatusManage.addCountDownLatch(key, 50);
         } catch (InterruptedException e) {
-            log.error("查询设备{}准备状态异常：{}", deviceId, e);
+            log.error("手动查询设备{}准备状态异常：{}", deviceId, e);
         }
         return (Integer) StatusManage.getValue(key);
     }

@@ -498,8 +498,8 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         result.put("taskId", taskSaveDto.getId());
         result.put("planRoute", mainTrajectories);
         result.put("cases", getCaseContinuousInfo(taskSaveDto.getId()));
-//        result.put("plan", !"域控制器".equals(avDetail.getDeviceType()));
-        result.put("plan", true);
+        result.put("plan", !"域控制器".equals(avDetail.getDeviceType()));
+//        result.put("plan", true);
         return result;
     }
 
@@ -744,17 +744,16 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
             if (ObjectUtils.isEmpty(avDetail)) {
                 throw new BusinessException(StringUtils.format("被测设备查询失败:{}", taskAvConfig.getDeviceId()));
             }
-//            if (!"域控制器".equals(avDetail.getDeviceType())) {
-//
-//            }
-            if (StringUtils.isEmpty(in.getRouteFile())) {
-                throw new BusinessException("请进行路径规划");
+            if (!"域控制器".equals(avDetail.getDeviceType())) {
+                if (StringUtils.isEmpty(in.getRouteFile())) {
+                    throw new BusinessException("请进行路径规划");
+                }
+                if (in.getCases().subList(0, in.getCases().size() - 1).stream()
+                        .anyMatch(t -> CollectionUtils.isEmpty((List) t.getConnectInfo()))) {
+                    throw new BusinessException("请完善用例连接信息");
+                }
+                tjTask.setContinuous(Boolean.TRUE);
             }
-            if (in.getCases().subList(0, in.getCases().size() - 1).stream()
-                    .anyMatch(t -> CollectionUtils.isEmpty((List) t.getConnectInfo()))) {
-                throw new BusinessException("请完善用例连接信息");
-            }
-            tjTask.setContinuous(Boolean.TRUE);
             // 修改任务用例信息
             List<TjTaskCase> tjTaskCases = tjTaskCaseService.listByIds(in.getCases().stream()
                     .map(CaseContinuousVo::getId).collect(Collectors.toList()));
@@ -769,11 +768,15 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 TjTaskCase taskCase = tjTaskCases.get(i);
                 taskCase.setSort(sortMap.get(taskCase.getId()));
                 Object obj = connectMap.get(taskCase.getId());
-                taskCase.setConnectInfo(ObjectUtil.isEmpty(obj) ? null : JSONObject.toJSONString(obj));
+                taskCase.setConnectInfo(ObjectUtil.isEmpty(obj) || "域控制器".equals(avDetail.getDeviceType())
+                        ? null
+                        : JSONObject.toJSONString(obj));
                 tjTaskCaseMapper.updateByCondition(taskCase);
             }
             // 修改连续式场景任务完整轨迹信息
-            tjTask.setMainPlanFile(in.getRouteFile());
+            if (!"域控制器".equals(avDetail.getDeviceType())) {
+                tjTask.setMainPlanFile(in.getRouteFile());
+            }
         }
         tjTask.setProcessNode(TaskProcessNode.VIEW_PLAN);
         updateById(tjTask);
@@ -806,15 +809,15 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         if (CollectionUtils.isEmpty(configs)) {
             throw new BusinessException("请配置任务被测车辆以及用例");
         }
-//        TjTaskDataConfig avConfig = configs.stream().filter(t -> t.getType().equals(PartRole.AV))
-//                .findFirst()
-//                .orElseThrow(() -> new BusinessException("请配置被测设备"));
-//        TjDeviceDetail avDetail = deviceDetailMapper.selectById(avConfig.getDeviceId());
-//        if ("域控制器".equals(Optional.of(avDetail)
-//                .orElseThrow(() -> new BusinessException(StringUtils.format("被测设备查询失败:{}", avConfig.getDeviceId())))
-//                .getDeviceType())) {
-//            throw new BusinessException("域控制器无需进行路径规划（连续性配置）");
-//        }
+        TjTaskDataConfig avConfig = configs.stream().filter(t -> t.getType().equals(PartRole.AV))
+                .findFirst()
+                .orElseThrow(() -> new BusinessException("请配置被测设备"));
+        TjDeviceDetail avDetail = deviceDetailMapper.selectById(avConfig.getDeviceId());
+        if ("域控制器".equals(Optional.of(avDetail)
+                .orElseThrow(() -> new BusinessException(StringUtils.format("被测设备查询失败:{}", avConfig.getDeviceId())))
+                .getDeviceType())) {
+            throw new BusinessException("域控制器无需进行路径规划（连续性配置）");
+        }
         TjTaskDataConfig svConfig = configs.stream().filter(t -> t.getType().equals(PartRole.MV_SIMULATION))
                 .findFirst()
                 .orElseThrow(() -> new BusinessException("请配置仿真设备"));

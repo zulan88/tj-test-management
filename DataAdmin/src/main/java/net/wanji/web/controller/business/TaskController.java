@@ -281,13 +281,13 @@ public class TaskController extends BaseController {
     public AjaxResult resetStatus(@RequestBody TjTaskCase param) throws BusinessException {
         if(param.getTaskId() != null) {
             TjTask task = tjTaskService.getById(param.getTaskId());
-            if(StringUtils.isEmpty(task.getLastStatus())||!task.getStatus().equals("prepping")) {
+            if(StringUtils.isEmpty(task.getLastStatus()) || !task.getLastStatus().equals("prepping")) {
                 task.setLastStatus(task.getStatus());
             }
             task.setStatus("prepping");
             tjTaskService.updateById(task);
         }
-        taskCaseService.getStatus(param, true);
+        taskCaseService.getStatus(param, SecurityUtils.getUsername(), true);
         return AjaxResult.success();
     }
 
@@ -295,7 +295,7 @@ public class TaskController extends BaseController {
     @ApiOperation(value = "15.获取状态")
     @PostMapping("/getStatus")
     public AjaxResult getStatus(@RequestBody TjTaskCase param) throws BusinessException {
-        return AjaxResult.success(taskCaseService.getStatus(param, false));
+        return AjaxResult.success(taskCaseService.getStatus(param, SecurityUtils.getUsername(), false));
     }
 
     //孪生专用
@@ -311,13 +311,12 @@ public class TaskController extends BaseController {
     public AjaxResult prepare(@RequestBody TjTaskCase param) throws BusinessException {
         if(param.getTaskId() != null) {
             TjTask task = tjTaskService.getById(param.getTaskId());
-            task.setStatus("running");
             Date data = new Date();
             data.setTime(data.getTime() + 3000);
             task.setStartTime(data);
             tjTaskService.updateById(task);
         }
-        return AjaxResult.success(taskCaseService.prepare(param));
+        return AjaxResult.success(taskCaseService.prepare(param, SecurityUtils.getUsername()));
     }
 
     //
@@ -325,7 +324,7 @@ public class TaskController extends BaseController {
     @ApiOperation(value = "17.任务控制")
     @GetMapping("/controlTask")
     public AjaxResult controlTask(Integer taskId, Integer id, Integer action) throws BusinessException, IOException {
-        return AjaxResult.success(taskCaseService.controlTask(taskId, id, action));
+        return AjaxResult.success(taskCaseService.controlTask(taskId, id, action, SecurityUtils.getUsername(), null));
     }
 
     @ApiOperationSort(18)

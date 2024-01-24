@@ -26,10 +26,11 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
      * 获取任务用例中参与者状态
      *
      * @param param
+     * @param user 触发人
      * @param hand 是否手动
      * @return
      */
-    TaskCaseVerificationPageVo getStatus(TjTaskCase param, boolean hand) throws BusinessException;
+    TaskCaseVerificationPageVo getStatus(TjTaskCase param, String user, boolean hand) throws BusinessException;
 
     /**
      * 准备（开始倒计时）
@@ -37,7 +38,7 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
      * @param taskId
      * @return
      */
-    CaseRealTestVo prepare(TjTaskCase param) throws BusinessException;
+    CaseRealTestVo prepare(TjTaskCase param, String user) throws BusinessException;
 
 
     /**
@@ -46,9 +47,10 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
      * @param taskId
      * @param taskCaseId
      * @param action
+     * @param taskChainNumber 任务链编号
      * @return
      */
-    CaseRealTestVo controlTask(Integer taskId, Integer taskCaseId, Integer action) throws BusinessException, IOException;
+    CaseRealTestVo controlTask(Integer taskId, Integer taskCaseId, Integer action, String user, String taskChainNumber) throws BusinessException;
 
     CaseRealTestVo getTaskInfo(Integer taskId) throws BusinessException;
 

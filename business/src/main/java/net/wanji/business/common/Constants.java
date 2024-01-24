@@ -458,6 +458,20 @@ public interface Constants {
         public static final int FINISHED = 6;
     }
 
+    /**
+     * 被测车辆测试方式
+     */
+    class AvTestMethod {
+        /**
+         * 连续性测试（规划路径）
+         */
+        public static final String CONTINUITY = "1";
+        /**
+         * 自动化测试
+         */
+        public static final String AUTO = "2";
+    }
+
 
     /**
      * 试验记录状态
