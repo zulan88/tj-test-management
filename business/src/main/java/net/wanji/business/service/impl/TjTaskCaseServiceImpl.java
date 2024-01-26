@@ -686,7 +686,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
 
         Map<String, Object> context = new HashMap<>();
-        context.put("username", user);
+        context.put("user", user);
         context.put("taskChainNumber", taskChainNumber);
         caseTrajectoryParam.setContext(context);
         // 向主控发送主车信息

@@ -15,7 +15,14 @@ public class RedisLock {
 
     public boolean tryLock(String lockKey, String name) {
         Boolean result = stringRedisTemplate.opsForValue().setIfAbsent(lockKey, name, 30, TimeUnit.SECONDS);
-        return result != null && result;
+        if(Boolean.FALSE.equals(result)){
+            String redisName = stringRedisTemplate.opsForValue().get(lockKey);
+            if(redisName != null && redisName.equals(name)){
+                renewLock(lockKey);
+                return true;
+            }
+        }
+        return Boolean.TRUE.equals(result);
     }
 
     public boolean renewLock(String lockKey) {

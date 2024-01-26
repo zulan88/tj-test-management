@@ -1,5 +1,6 @@
 package net.wanji.common.utils;
 
+import java.security.SecureRandom;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -58,7 +59,8 @@ public class CounterUtil {
     // 获取6位随机大写字母
     public static String getRandomChar() {
         StringBuilder result = new StringBuilder();
-        Random random = new Random();
+//        Random random = new Random();
+        SecureRandom random = new SecureRandom();
         for (int i = 0; i < 4; i++) {
             result.append((char) (random.nextInt(26) + 65));
         }

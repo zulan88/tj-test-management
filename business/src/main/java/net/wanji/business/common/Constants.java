@@ -132,7 +132,7 @@ public interface Constants {
          * 创建仿真验证时使用的channel
          * -- 用户名_场景详情ID_2
          * @param username
-         * @param sceneDetailId
+         * @param sceneNumber
          * @return
          */
         public static String buildSimulationChannel(String username, String sceneNumber) {
@@ -399,6 +399,10 @@ public interface Constants {
          * MV-虚拟驾驶车
          */
         public static final String MV_VIRTUAL = "mvVirtual";
+        /**
+         * MV-云控寻迹车
+         */
+        public static final String MV_TRACKING = "mvTracking";
         /**
          * SV-仿真车
          */
