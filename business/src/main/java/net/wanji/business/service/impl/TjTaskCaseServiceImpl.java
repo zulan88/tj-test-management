@@ -59,6 +59,7 @@ import net.wanji.business.mapper.TjTaskMapper;
 import net.wanji.business.schedule.RealPlaybackSchedule;
 import net.wanji.business.schedule.TwinsPlayback;
 import net.wanji.business.service.ILabelsService;
+import net.wanji.business.service.KafkaProducer;
 import net.wanji.business.service.RestService;
 import net.wanji.business.service.RouteService;
 import net.wanji.business.service.TjCaseService;
@@ -382,6 +383,18 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                                  Map<String, List<SimulationTrajectoryDto>> mainTrajectoryMap,
                                  Map<Integer, TaskCaseInfoBo> taskCaseInfoMap) throws BusinessException {
         List<SimulationTrajectoryDto> mainTrajectories = new ArrayList<>();
+        // 8.taskCaseId为空时，则按整体任务进行。连续性任务使用主车规划路径；非连续性任务使用拼接的仿真验证的轨迹
+        if (ObjectUtils.isEmpty(taskCaseId) && tjTask.isContinuous()) {
+            try {
+                List<SimulationTrajectoryDto> main = routeService.readOriRouteFile(tjTask.getMainPlanFile());
+                mainTrajectories.addAll(main);
+            } catch (IOException e) {
+                log.error("主车规划路径文件读取失败：{}", e.getMessage());
+                throw new BusinessException("读取主车已规划路径文件失败");
+            } catch (NullPointerException v2) {
+                throw new BusinessException("主车轨迹未规划");
+            }
+        }
         for (TaskCaseInfoBo taskCaseInfoBo : taskCaseInfos) {
             // 2.数据校验
             validConfig(taskCaseInfoBo);
@@ -413,7 +426,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 List<SimulationTrajectoryDto> trajectories = routeService.readOriRouteFile(taskCaseInfoBo.getRouteFile());
 
                 // 若taskCaseId不为空，则按用例进行，使用用例仿真验证的轨迹
-                if (!ObjectUtils.isEmpty(taskCaseId) && taskCaseId.equals(taskCaseInfoBo.getId())) {
+                if ((!tjTask.isContinuous() || !ObjectUtils.isEmpty(taskCaseId))) {
                     mainTrajectories.addAll(trajectories);
                 }
                 caseMainSize.put(taskCaseInfoBo.getCaseId(), trajectories.size());
@@ -421,20 +434,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 log.error("用例轨迹文件读取失败：{}", e.getMessage());
             }
         }
-        // 8.taskCaseId为空时，则按整体任务进行。连续性任务使用主车规划路径；非连续性任务使用拼接的仿真验证的轨迹
-        if (ObjectUtils.isEmpty(taskCaseId) && tjTask.isContinuous()) {
-            try {
-                List<SimulationTrajectoryDto> main = routeService.readOriRouteFile(tjTask.getMainPlanFile());
-                mainTrajectories.addAll(main);
-            } catch (IOException e) {
-                log.error("主车规划路径文件读取失败：{}", e.getMessage());
-                throw new BusinessException("读取主车已规划路径文件失败");
-            } catch (NullPointerException v2) {
-                throw new BusinessException("主车轨迹未规划");
-            }
-        } else {
-            mainTrajectoryMap.put("main", mainTrajectories);
-        }
+
         mainTrajectories = mainTrajectories.stream()
                 .filter(item -> !CollectionUtils.isEmpty(item.getValue()) && item.getValue().stream()
                         .anyMatch(p -> p.getDriveType() == 1))
@@ -686,7 +686,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
 
         Map<String, Object> context = new HashMap<>();
-        context.put("user", user);
+        context.put("username", user);
         context.put("taskChainNumber", taskChainNumber);
         caseTrajectoryParam.setContext(context);
         // 向主控发送主车信息
@@ -730,7 +730,8 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
     @Transactional(rollbackFor = Exception.class)
     @Override
     public CaseRealTestVo caseStartEnd(Integer taskId, Integer caseId, Integer action, boolean taskEnd, Map<String, Object> context) throws BusinessException {
-        log.info("任务ID:{} 用例ID:{} ,action:{}, 上下文：{}, 任务终止:{}", taskId, caseId, action, JSONObject.toJSONString(context), taskEnd);
+        log.info("任务ID:{} 用例ID:{} {}, 上下文：{}", taskId, caseId, 1 == action ? "开始" : "结束",
+                JSONObject.toJSONString(context));
         TjTask tjTask = taskMapper.selectById(taskId);
         if (ObjectUtils.isEmpty(tjTask)) {
             throw new BusinessException("任务不存在");
@@ -759,7 +760,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         }
         // 6.业务处理
         String taskChainNumber = (String) context.get("taskChainNumber");
-        String user = (String) context.get("user");
+        String user = (String) context.get("username");
         if (1 == action) {
             if (!tjTask.isContinuous()) {
                 taskChainFactory.start(taskChainNumber);
@@ -778,13 +779,13 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 log.info("openX场景数据保存结束");
             } finally {
                 if (taskEnd) {
-                    log.info("发送ws结束消息");
+                    log.info("任务{}终止 发送ws结束消息", taskId);
                     duration = DateUtils.secondsToDuration((int) Math.floor((double) kafkaCollector.getSize(key) / 10));
-                    RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null, null, duration);
-                    WebSocketManage.sendInfo(key, JSON.toJSONString(endMsg));
-                    log.info("移除kafka收集器key：{}", key);
-                    kafkaCollector.remove(key, null);
-                    if (tjTask.isContinuous()) {
+                    if (tjTask.isContinuous() || ObjectUtils.isEmpty(taskChainFactory.next(taskChainNumber))) {
+                        RealWebsocketMessage endMsg = new RealWebsocketMessage(RedisMessageType.END, null, null, duration);
+                        WebSocketManage.sendInfo(key, JSON.toJSONString(endMsg));
+                        log.info("移除kafka收集器key：{}", key);
+                        kafkaCollector.remove(key, null);
                         JSONObject jsonObject = new JSONObject();
                         jsonObject.put("taskId", taskId);
                         jsonObject.put("status", "finish");
@@ -809,10 +810,9 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                                     taskCaseMapper.updateById(v);
                                 });
                     } else {
-                        taskChainFactory.next(taskChainNumber);
-
+                        taskChainFactory.confirmState(taskChainNumber);
+                        taskChainFactory.selectState(taskChainNumber);
                     }
-
                 }
             }
         }

@@ -51,7 +51,7 @@ public class KafkaTrajectoryConsumer {
     @Autowired
     private RedisLock redisLock;
 
-    @KafkaListener(id = "singleTrajectory", topics = {"tj_master_fusion_data"}, groupId = "local1")
+    @KafkaListener(id = "singleTrajectory", topics = {"tj_master_fusion_data"}, groupId = "trajectory")
     public void listen(ConsumerRecord<String, String> record) {
         JSONObject jsonObject = JSONObject.parseObject(record.value());
         Integer taskId = jsonObject.getInteger("taskId");
@@ -84,6 +84,7 @@ public class KafkaTrajectoryConsumer {
         // todo 可以使用缓存：taskId_caseId -> userName
         String userName = null;
         if (0 < taskId) {
+            // todo 场景中间会传上一个已结束的caseId，导致中间轨迹丢失
             TjTaskCaseRecord taskCaseRecord = taskCaseRecordMapper.selectOne(new LambdaQueryWrapper<TjTaskCaseRecord>()
                     .eq(TjTaskCaseRecord::getTaskId, taskId)
                     .eq(TjTaskCaseRecord::getCaseId, caseId)

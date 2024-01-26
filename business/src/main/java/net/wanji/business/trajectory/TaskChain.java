@@ -5,6 +5,7 @@ import net.wanji.business.trajectory.TaskChain.TaskItem;
 import net.wanji.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.ObjectUtils;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -17,35 +18,53 @@ import java.util.stream.Collectors;
  * @descriptoin:
  */
 
-public class TaskChain extends LinkedList<TaskItem> {
+public class TaskChain {
 
     private String taskChainNumber;
 
     private String createdBy;
 
+    private LinkedList<TaskItem> taskNodes;
+
     public TaskChain(String taskChainNumber, String createdBy, List<TjTaskCase> taskCases) {
-        super(taskCases.stream().map(TaskItem::new).collect(Collectors.toList()));
         this.taskChainNumber = taskChainNumber;
         this.createdBy = createdBy;
+        this.taskNodes = taskCases.stream().map(TaskItem::new).collect(Collectors.toCollection(LinkedList::new));
     }
 
     public void confirm() {
-        this.getFirst().stage = 1;
-        this.getFirst().stageStartTime = System.currentTimeMillis();
+        this.taskNodes.getFirst().stage = 1;
+        this.taskNodes.getFirst().stageStartTime = System.currentTimeMillis();
+        this.taskNodes.getFirst().stageState = false;
     }
 
     public void prepare() {
-        this.getFirst().stage = 2;
-        this.getFirst().stageStartTime = System.currentTimeMillis();
+        this.taskNodes.getFirst().stage = 2;
+        this.taskNodes.getFirst().stageStartTime = System.currentTimeMillis();
+        this.taskNodes.getFirst().stageState = false;
     }
 
     public void start() {
-        this.getFirst().stage = 3;
-        this.getFirst().stageStartTime = System.currentTimeMillis();
+        this.taskNodes.getFirst().stage = 3;
+        this.taskNodes.getFirst().stageStartTime = System.currentTimeMillis();
+        this.taskNodes.getFirst().stageState = false;
+    }
+
+    public boolean hasNext() {
+        return this.taskNodes.size() > 1;
+    }
+
+    public TaskItem next() {
+        this.taskNodes.removeFirst();
+        return this.taskNodes.peek();
     }
 
     public void stageComplete() {
-        this.getFirst().stageState = true;
+        this.taskNodes.getFirst().stageState = true;
+    }
+
+    public TaskItem currentNode() {
+        return this.taskNodes.getFirst();
     }
 
     public String getTaskChainNumber() {
@@ -54,6 +73,10 @@ public class TaskChain extends LinkedList<TaskItem> {
 
     public String getCreatedBy() {
         return createdBy;
+    }
+
+    public int getChainSize() {
+        return this.taskNodes.size();
     }
 
     public static class TaskItem {
@@ -85,6 +108,17 @@ public class TaskChain extends LinkedList<TaskItem> {
         TaskItem(TjTaskCase taskCase) {
             this.taskCase = taskCase;
             this.sort = taskCase.getSort();
+        }
+
+        @Override
+        public String toString() {
+            return "{" +
+                    "stage: " + stage +
+                    ", stageState: " + stageState +
+                    ", sort: " + sort +
+                    ", stageStartTime: " + stageStartTime +
+                    ", taskCase: " + taskCase +
+                    '}';
         }
 
     }
