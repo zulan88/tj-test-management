@@ -488,6 +488,9 @@ public class ToBuildOpenX {
             Unmarshaller unmarshaller = context.createUnmarshaller();
             Init init = (Init) unmarshaller.unmarshal(new StringReader(xmlInit));
             init.getActions().getGlobalAction().get(0).getEnvironmentAction().getEnvironment().getTimeOfDay().setDateTime(formattedDateTime);
+            if(trajectories.size() == 0){
+                return;
+            }
             List<ClientSimulationTrajectoryDto> fristsimulationTrajectoryDtos = trajectories.get(0);
             char c = 'a';
             for(ClientSimulationTrajectoryDto clientSimulationTrajectoryDto : fristsimulationTrajectoryDtos) {

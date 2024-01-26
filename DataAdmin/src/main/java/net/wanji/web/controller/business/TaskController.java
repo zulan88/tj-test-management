@@ -52,6 +52,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -471,7 +472,8 @@ public class TaskController extends BaseController {
     //孪生
     @GetMapping("/getEvaluationResultTW")
     public AjaxResult getEvaluationResultTW(Integer taskId) throws BusinessException {
-        Random random = new Random();
+//        Random random = new Random();
+        SecureRandom random = new SecureRandom();
         Integer id = random.nextInt(101);
         return AjaxResult.success(taskCaseService.getEvaluation(taskId, id));
     }
