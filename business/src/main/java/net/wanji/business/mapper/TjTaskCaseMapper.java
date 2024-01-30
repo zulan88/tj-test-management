@@ -25,6 +25,8 @@ public interface TjTaskCaseMapper extends BaseMapper<TjTaskCase> {
 
 
     int reset(@Param("ids") List<Integer> ids);
+
+    int prepare(@Param("ids") List<Integer> ids);
 }
 
 

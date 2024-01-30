@@ -118,7 +118,7 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
      * @param taskCaseId
      * @throws BusinessException
      */
-    void stop(Integer taskId, Integer taskCaseId) throws BusinessException;
+    void stop(Integer taskId, Integer taskCaseId, String user) throws BusinessException;
 
     /**
      * 手动终止任务

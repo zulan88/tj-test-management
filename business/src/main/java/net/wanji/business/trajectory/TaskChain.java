@@ -55,8 +55,7 @@ public class TaskChain {
     }
 
     public TaskItem next() {
-        this.taskNodes.removeFirst();
-        return this.taskNodes.peek();
+        return this.taskNodes.pollFirst();
     }
 
     public void stageComplete() {

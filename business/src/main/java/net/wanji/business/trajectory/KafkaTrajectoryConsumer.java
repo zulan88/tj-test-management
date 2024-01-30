@@ -16,6 +16,7 @@ import net.wanji.business.mapper.TjTaskCaseRecordMapper;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.util.RedisLock;
 import net.wanji.common.common.ClientSimulationTrajectoryDto;
+import net.wanji.common.core.redis.RedisCache;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.StringUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -27,6 +28,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -50,6 +52,9 @@ public class KafkaTrajectoryConsumer {
 
     @Autowired
     private RedisLock redisLock;
+
+    @Autowired
+    private RedisCache redisCache;
 
     @KafkaListener(id = "singleTrajectory", topics = {"tj_master_fusion_data"}, groupId = "trajectory")
     public void listen(ConsumerRecord<String, String> record) {
@@ -83,6 +88,10 @@ public class KafkaTrajectoryConsumer {
     private String selectUserOfTask(Integer taskId, Integer caseId) {
         // todo 可以使用缓存：taskId_caseId -> userName
         String userName = null;
+        String key = "USER_OF_TASK_" + taskId + "_" + caseId;
+        if (redisCache.hasKey(key)) {
+            return redisCache.getCacheObject(key);
+        }
         if (0 < taskId) {
             // todo 场景中间会传上一个已结束的caseId，导致中间轨迹丢失
             TjTaskCaseRecord taskCaseRecord = taskCaseRecordMapper.selectOne(new LambdaQueryWrapper<TjTaskCaseRecord>()
@@ -102,6 +111,7 @@ public class KafkaTrajectoryConsumer {
                 userName = caseRealRecord.getCreatedBy();
             }
         }
+        redisCache.setCacheObject(key, userName, 5, TimeUnit.SECONDS);
         return userName;
     }
 

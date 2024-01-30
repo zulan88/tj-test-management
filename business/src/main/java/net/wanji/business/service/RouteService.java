@@ -187,8 +187,8 @@ public class RouteService {
 
 
     public boolean saveTaskRouteFile2(TjTaskCaseRecord taskCaseRecord, List<List<ClientSimulationTrajectoryDto>> data, Integer action) throws Exception {
-        log.info("保存任务 {} 用例 {} 测试记录 {} 轨迹长度:{}", taskCaseRecord.getTaskId(),
-                taskCaseRecord.getCaseId(), taskCaseRecord.getId(), data.size());
+        log.info("保存任务 {} 用例 {} 测试记录 {} 轨迹长度:{} action:{}", taskCaseRecord.getTaskId(),
+                taskCaseRecord.getCaseId(), taskCaseRecord.getId(), data.size(), action);
         String path = FileUtils.writeRoute(data, WanjiConfig.getRoutePath(), Extension.TXT);
         log.info("路径文件:{}", path);
         log.info("评价文件:{}", path);
@@ -201,8 +201,8 @@ public class RouteService {
         taskCaseRecord.setEvaluatePath(path);
         taskCaseRecord.setStatus(0 == action ? TestingStatusEnum.PASS.getCode() : TestingStatusEnum.NO_PASS.getCode());
         taskCaseRecord.setEndTime(LocalDateTime.now());
-        taskCaseRecord.setEndTime(LocalDateTime.now());
         int result = taskCaseRecordMapper.updateById(taskCaseRecord);
+        log.info("测试记录{}更新完毕:{}", taskCaseRecord.getId(), result);
         return result > 0;
     }
 

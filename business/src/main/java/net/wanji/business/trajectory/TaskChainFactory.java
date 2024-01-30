@@ -60,8 +60,12 @@ public class TaskChainFactory {
         TaskChain taskChain = getTaskChain(taskChainNumber);
         TaskItem currentNode = getCurrentNode(taskChainNumber);
         taskCaseService.getStatus(currentNode.taskCase, taskChain.getCreatedBy(), true);
-        // 查询状态 todo 循环 直到状态为准备好
+        // 查询状态
         while (!this.isConfirmed(taskChainNumber)) {
+            if (System.currentTimeMillis() - currentNode.stageStartTime > 1000 * 60 * 5) {
+                log.error("任务链{}状态查询超时：{}", taskChainNumber, printStageWithDuration(taskChainNumber));
+                throw new BusinessException("任务链状态查询超时");
+            }
             try {
                 Thread.sleep(500);
                 taskCaseService.getStatus(currentNode.taskCase, taskChain.getCreatedBy(), false);
@@ -74,7 +78,7 @@ public class TaskChainFactory {
         // 准备
         taskCaseService.prepare(currentNode.taskCase, taskChain.getCreatedBy());
         // 开始
-        taskCaseService.controlTask(currentNode.taskCase.getTaskId(), currentNode.taskCase.getTaskId(), 1,
+        taskCaseService.controlTask(currentNode.taskCase.getTaskId(), currentNode.taskCase.getId(), 1,
                 taskChain.getCreatedBy(), taskChainNumber);
     }
 
@@ -155,7 +159,7 @@ public class TaskChainFactory {
      * @return
      */
     public boolean hasNext(String taskChainNumber) {
-        return !ObjectUtils.isEmpty(getNextNode(taskChainNumber));
+        return getTaskChain(taskChainNumber).hasNext();
     }
 
     /**
@@ -195,13 +199,14 @@ public class TaskChainFactory {
 
 
     public void printStage(String taskChainNumber) {
-        log.info("任务链{} 第{}节点 当前阶段：{}", taskChainNumber, getCurrentNodeSort(taskChainNumber),
-                Stage.getName(getCurrentNodeStage(taskChainNumber)));
+        log.info("任务链{} 第{}节点 当前阶段：{} 是否完成：{}", taskChainNumber, getCurrentNodeSort(taskChainNumber),
+                Stage.getName(getCurrentNodeStage(taskChainNumber)), getCurrentNodeStageState(taskChainNumber));
     }
 
     public String printStageWithDuration(String taskChainNumber) {
-        return StringUtils.format("任务链{} 第{}节点 当前阶段：{} 持续时长：{}ms", taskChainNumber, getCurrentNodeSort(taskChainNumber),
-                Stage.getName(getCurrentNodeStage(taskChainNumber)), getStageDuration(taskChainNumber));
+        return StringUtils.format("任务链{} 第{}节点 当前阶段：{} 是否完成：{} 持续时长：{}ms", taskChainNumber, getCurrentNodeSort(taskChainNumber),
+                Stage.getName(getCurrentNodeStage(taskChainNumber)), getCurrentNodeStageState(taskChainNumber),
+                getStageDuration(taskChainNumber));
     }
 
     /**
@@ -284,6 +289,15 @@ public class TaskChainFactory {
         return hasChain(taskChainNumber)
                 ? getCurrentNode(taskChainNumber).stage
                 : -1;
+    }
+
+    /**
+     * 获取当前节点所处阶段是否完成
+     * @param taskChainNumber
+     * @return
+     */
+    public boolean getCurrentNodeStageState(String taskChainNumber) {
+        return hasChain(taskChainNumber) && getCurrentNode(taskChainNumber).stageState;
     }
 
     public TaskItem getNextNode(String taskChainNumber) {

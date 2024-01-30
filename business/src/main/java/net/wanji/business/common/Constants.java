@@ -578,6 +578,7 @@ public interface Constants {
      */
     enum TaskCaseStatusEnum {
         WAITING("waiting", "待测试"),
+        PREPARING("preparing", "准备中"),
         RUNNING("running", "测试中"),
         FINISHED("finished", "已完成");
 

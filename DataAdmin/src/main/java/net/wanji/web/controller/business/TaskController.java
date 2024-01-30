@@ -337,9 +337,9 @@ public class TaskController extends BaseController {
         }
         if (platformSSDto.getTaskId() == 0) {
             if (platformSSDto.getState() == 1) {
-                testingService.start(platformSSDto.getCaseId(), platformSSDto.getState(), (String) platformSSDto.getContext().get("username"));
+                testingService.start(platformSSDto.getCaseId(), platformSSDto.getState(), (String) platformSSDto.getContext().get("user"));
             } else {
-                testingService.end(platformSSDto.getCaseId(), platformSSDto.getState(), (String) platformSSDto.getContext().get("username"));
+                testingService.end(platformSSDto.getCaseId(), platformSSDto.getState(), (String) platformSSDto.getContext().get("user"));
             }
         } else {
             taskCaseService.caseStartEnd(platformSSDto.getTaskId(),
@@ -403,7 +403,7 @@ public class TaskController extends BaseController {
     @ApiOperation(value = "24.停止任务")
     @GetMapping("/stop")
     public AjaxResult stop(Integer taskId, Integer id, Integer action) throws BusinessException {
-        taskCaseService.stop(taskId, id);
+        taskCaseService.stop(taskId, id, SecurityUtils.getUsername());
         return AjaxResult.success();
     }
 
@@ -498,9 +498,9 @@ public class TaskController extends BaseController {
             @ApiImplicitParam(name = "taskId", value = "任务ID", dataType = "Integer", paramType = "query", example = "499"),
             @ApiImplicitParam(name = "id", value = "用例ID/任务用例ID", dataType = "Integer", paramType = "query", example = "1")
     })
-    public AjaxResult manualTermination(@RequestParam("taskId") Integer taskId, @RequestParam("id") Integer id) throws BusinessException {
+    public AjaxResult manualTermination(@RequestParam("taskId") Integer taskId, @RequestParam(value = "id", required = false) Integer id) throws BusinessException {
         if (taskId > 0) {
-            taskCaseService.manualTermination(taskId, id);
+            taskCaseService.manualTermination(taskId, 0);
         } else {
             testingService.manualTermination(id);
         }
