@@ -96,6 +96,9 @@ public class RestServiceImpl implements RestService {
     @Value("${masterControl.manualTermination}")
     private String sendManualTerminationUrl;
 
+    @Value("${tess.cartestResult}")
+    private String carTestResult;
+
     @Override
     public boolean startServer(String ip, Integer port, TessParam tessParam) {
         try {
@@ -184,6 +187,30 @@ public class RestServiceImpl implements RestService {
         result.put("latitude", 31.291084438789756);
         result.put("courseAngle", 0.3);
         return result;
+    }
+
+    @Override
+    public JSONObject getCarTestResult(Integer taskId) {
+        // 使用 UriComponentsBuilder 构建带参数的 URL
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(carTestResult)
+                .queryParam("senceCode", "sideOn")
+                .queryParam("taskId", taskId);
+
+        // 构建最终的 URL
+        String url = builder.toUriString();
+
+        log.info("============================== sceneIndexSchemeUrl：{}", url);
+        ResponseEntity<String> response =
+                restTemplate.exchange(url, HttpMethod.GET, null, String.class);
+
+        if (response.getStatusCodeValue() == 200) {
+            JSONObject result = JSONObject.parseObject(response.getBody(), JSONObject.class);
+            return result;
+        }else {
+            JSONObject result = new JSONObject();
+            result.put("msg","获取测试结果失败");
+            return result;
+        }
     }
 
     @Override
