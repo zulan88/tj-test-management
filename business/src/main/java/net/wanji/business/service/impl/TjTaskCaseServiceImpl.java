@@ -80,9 +80,13 @@ import net.wanji.system.service.ISysDictDataService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
@@ -890,35 +894,38 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         }
     }
 
+
+
     @Override
     public Object getEvaluation(Integer taskId, Integer id) throws BusinessException {
-        Map<String, Object> result = new HashMap<>();
-        try {
-            result.put("taskId", taskId);
-            result.put("id", id);
-            result.put("score", "90.00");
-            result.put("time", 60);
-            result.put("startTime", "2024-01-05 14:00:00");
-            result.put("endTime", "2024-01-05 14:01:00");
-            result.put("hazardRatio", "52");
-
-            HistogramVo histogramVo = new HistogramVo();
-            histogramVo.setType(Arrays.asList("优秀", "良好", "一般", "较差", "很差"));
-            List<Object> data = new ArrayList<>();
-            data.add(Arrays.asList(1, 0, 1));
-            data.add(Arrays.asList(0, 1, 1));
-            data.add(Arrays.asList(1, 1, 0));
-            data.add(Arrays.asList(0, 0, 1));
-            data.add(Arrays.asList(0, 1, 0));
-            histogramVo.setData(data);
-            histogramVo.setXAxis(Arrays.asList("安全性", "舒适性", "效率性"));
-            result.put("chart", histogramVo);
-        } catch (Exception e) {
-            throw new BusinessException("获取评价信息失败");
-        } finally {
-            unLock(taskId);
-        }
-        return result;
+//        Map<String, Object> result = new HashMap<>();
+//        try {
+//            result.put("taskId", taskId);
+//            result.put("id", id);
+//            result.put("score", "90.00");
+//            result.put("time", 60);
+//            result.put("startTime", "2024-01-05 14:00:00");
+//            result.put("endTime", "2024-01-05 14:01:00");
+//            result.put("hazardRatio", "52");
+//
+//            HistogramVo histogramVo = new HistogramVo();
+//            histogramVo.setType(Arrays.asList("优秀", "良好", "一般", "较差", "很差"));
+//            List<Object> data = new ArrayList<>();
+//            data.add(Arrays.asList(1, 0, 1));
+//            data.add(Arrays.asList(0, 1, 1));
+//            data.add(Arrays.asList(1, 1, 0));
+//            data.add(Arrays.asList(0, 0, 1));
+//            data.add(Arrays.asList(0, 1, 0));
+//            histogramVo.setData(data);
+//            histogramVo.setXAxis(Arrays.asList("安全性", "舒适性", "效率性"));
+//            result.put("chart", histogramVo);
+//        } catch (Exception e) {
+//            throw new BusinessException("获取评价信息失败");
+//        } finally {
+//            unLock(taskId);
+//        }
+//        return result;
+        return restService.getCarTestResult(taskId);
     }
 
     @Override

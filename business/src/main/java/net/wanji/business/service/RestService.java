@@ -1,5 +1,6 @@
 package net.wanji.business.service;
 
+import com.alibaba.fastjson.JSONObject;
 import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.bo.SaveTaskSchemeBo;
@@ -166,4 +167,6 @@ public interface RestService {
      * @return
      */
     Map<String, Object> searchDeviceInfo(String ip, HttpMethod method);
+
+    JSONObject getCarTestResult(Integer taskId);
 }
