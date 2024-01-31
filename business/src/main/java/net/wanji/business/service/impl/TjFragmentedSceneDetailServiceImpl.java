@@ -46,6 +46,7 @@ import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.bean.BeanUtils;
 import net.wanji.system.service.ISysDictDataService;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.poi.ss.formula.functions.T;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -358,6 +359,8 @@ public class TjFragmentedSceneDetailServiceImpl
             throw new BusinessException("冲突点速度超出速度区间");
         }
 
+        int count = 0;
+
         //向下泛化
         int down = (int) ((conflictspeed - minSpeed) / step);
         double proStep = step / conflictspeed;
@@ -380,6 +383,7 @@ public class TjFragmentedSceneDetailServiceImpl
             generalizeScene.setAllStageLabel(detailVo.getAllStageLabel());
             generalizeScene.setTestSceneDesc(detailVo.getTestSceneDesc());
             generalizeSceneService.save(generalizeScene);
+            count++;
         }
 
         //向上泛化
@@ -403,7 +407,12 @@ public class TjFragmentedSceneDetailServiceImpl
             generalizeScene.setAllStageLabel(detailVo.getAllStageLabel());
             generalizeScene.setTestSceneDesc(detailVo.getTestSceneDesc());
             generalizeSceneService.save(generalizeScene);
+            count++;
         }
+        TjFragmentedSceneDetail fragmentedScene = new TjFragmentedSceneDetail();
+        fragmentedScene.setId(sceneDetailDto.getId());
+        fragmentedScene.setLaneNum(count);
+        this.updateOne(fragmentedScene);
     }
 
     public synchronized String buildSceneNumber() {

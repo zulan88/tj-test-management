@@ -349,4 +349,9 @@ public class SceneBaseController extends BaseController {
         return AjaxResult.success();
     }
 
+    @DeleteMapping("/generalize")
+    public AjaxResult deleteGeneralize(Integer id) throws BusinessException {
+        return toAjax(tjGeneralizeSceneService.removeById(id));
+    }
+
 }
