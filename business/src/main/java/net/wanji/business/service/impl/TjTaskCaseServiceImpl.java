@@ -1065,7 +1065,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
     @Override
     public void manualTermination(Integer taskId, Integer taskCaseId) throws BusinessException {
         Integer caseId = 0;
-        if (!ObjectUtils.isEmpty(taskCaseId)) {
+        if (!ObjectUtils.isEmpty(taskCaseId) && taskCaseId > 0) {
             TjTaskCase taskCase = this.getById(taskCaseId);
             if (ObjectUtils.isEmpty(taskCase)) {
                 throw new BusinessException("未查询到任务用例信息");
