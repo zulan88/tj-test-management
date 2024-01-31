@@ -409,10 +409,6 @@ public class TjFragmentedSceneDetailServiceImpl
             generalizeSceneService.save(generalizeScene);
             count++;
         }
-        TjFragmentedSceneDetail fragmentedScene = new TjFragmentedSceneDetail();
-        fragmentedScene.setId(sceneDetailDto.getId());
-        fragmentedScene.setLaneNum(count);
-        this.updateOne(fragmentedScene);
     }
 
     public synchronized String buildSceneNumber() {

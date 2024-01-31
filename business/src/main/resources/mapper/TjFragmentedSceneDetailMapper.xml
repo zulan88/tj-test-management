@@ -90,20 +90,57 @@
     </sql>
 
     <select id="selectTjFragmentedSceneDetailList" parameterType="net.wanji.business.domain.vo.SceneDetailVo" resultType="net.wanji.business.domain.vo.SceneDetailVo">
-        <include refid="selectTjFragmentedSceneDetailVo"/>
+        SELECT
+        tfsd.id,
+        tfsd.fragmented_scene_id,
+        tfsd.number,
+        tfsd.lane_num,
+        tfsd.resources_detail_id,
+        tfsd.scene_source,
+        tfsd.img_url,
+        tfsd.scene_type,
+        tfsd.scene_complexity,
+        tfsd.traffic_flow_status,
+        tfsd.road_type,
+        tfsd.weather,
+        tfsd.road_condition,
+        tfsd.finished,
+        tfsd.collect_status,
+        tfsd.label,
+        tfsd.trajectory_info,
+        tfsd.route_file,
+        tfsd.road_way_type,
+        tfsd.hazard_index,
+        tfsd.video_data_file_path,
+        tfsd.rada_data_file_path,
+        tfsd.gps_data_file_path,
+        tfsd.driver_data_file_path,
+        tfsd.test_scene_desc,
+        tfsd.created_by,
+        tfsd.created_date,
+        tfsd.updated_by,
+        tfsd.updated_date,
+        tfsd.scene_status,
+        tfsd.all_stage_label,
+        COUNT(tgs.scene_id) AS count
+        FROM
+        tj_fragmented_scene_detail tfsd
+        LEFT JOIN
+        tj_generalize_scene tgs ON tfsd.id = tgs.scene_id
         <where>
-            <if test="fragmentedSceneId != null "> and fragmented_scene_id = #{fragmentedSceneId}</if>
-            <if test="number != null  and number != ''"> and number = #{number}</if>
-            <if test="sceneSource != null  and sceneSource != ''"> and scene_source = #{sceneSource}</if>
-            <if test="sceneType != null  and sceneType != ''"> and scene_type = #{sceneType}</if>
-            <if test="finished != null "> and finished = #{finished}</if>
-            <if test="sceneStatus != null "> and scene_status = #{sceneStatus}</if>
-            <if test="collectStatus != null "> and collect_status = #{collectStatus}</if>
-            <if test="labels != null  and labels != ''"> and FIND_IN_SET(#{labels},all_stage_label)</if>
-            <if test="startDate != null and startDate != '' and endDate != null"> and created_date between #{startDate} and #{endDate}</if>
-            <if test="updatedDate != null "> and updated_date = #{updatedDate}</if>
-            <if test="createdBy != null and createdBy != '' "> and created_by = #{createdBy}</if>
+            <if test="fragmentedSceneId != null "> and tfsd.fragmented_scene_id = #{fragmentedSceneId}</if>
+            <if test="number != null  and number != ''"> and tfsd.number = #{number}</if>
+            <if test="sceneSource != null  and sceneSource != ''"> and tfsd.scene_source = #{sceneSource}</if>
+            <if test="sceneType != null  and sceneType != ''"> and tfsd.scene_type = #{sceneType}</if>
+            <if test="finished != null "> and tfsd.finished = #{finished}</if>
+            <if test="sceneStatus != null "> and tfsd.scene_status = #{sceneStatus}</if>
+            <if test="collectStatus != null "> and tfsd.collect_status = #{collectStatus}</if>
+            <if test="labels != null  and labels != ''"> and FIND_IN_SET(#{labels},tfsd.all_stage_label)</if>
+            <if test="startDate != null and startDate != '' and endDate != null"> and tfsd.created_date between #{startDate} and #{endDate}</if>
+            <if test="updatedDate != null "> and tfsd.updated_date = #{updatedDate}</if>
+            <if test="createdBy != null and createdBy != '' "> and tfsd.created_by = #{createdBy}</if>
         </where>
+        GROUP BY tfsd.id
         order by created_date desc
     </select>
 
