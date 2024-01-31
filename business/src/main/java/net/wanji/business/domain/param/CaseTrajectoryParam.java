@@ -15,6 +15,7 @@ public class CaseTrajectoryParam {
 
     private Integer taskId;
     private Integer caseId;
+    private boolean isContinuous;
 
     private Map<String, String> vehicleIdTypeMap;
 
