@@ -1047,19 +1047,19 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         for (TaskCaseConfigBo filterConfig : filterConfigs) {
             deviceStateToRedis.delete(filterConfig.getDeviceId(), DeviceStateToRedis.DEVICE_READY_STATE_PREFIX);
         }
-        Optional<TaskCaseConfigBo> first = CollectionUtils.emptyIfNull(filterConfigs)
-                .stream().filter(e -> PartRole.AV.equals(e.getType())).findFirst();
-        if (!first.isPresent()) {
-            throw new BusinessException("未查询到主车配置信息");
-        }
-        TessParam tessParam = buildTessServerParam(1, user, taskId);
-        if (!restService.sendRuleUrl(
-                new CaseRuleControl(System.currentTimeMillis(),
-                        taskId, 0, 0,
-                        generateDeviceConnRules(filterConfigs, tessParam.getCommandChannel(), tessParam.getDataChannel()),
-                        first.get().getCommandChannel(), true))) {
-            throw new BusinessException("主控响应异常");
-        }
+//        Optional<TaskCaseConfigBo> first = CollectionUtils.emptyIfNull(filterConfigs)
+//                .stream().filter(e -> PartRole.AV.equals(e.getType())).findFirst();
+//        if (!first.isPresent()) {
+//            throw new BusinessException("未查询到主车配置信息");
+//        }
+//        TessParam tessParam = buildTessServerParam(1, user, taskId);
+//        if (!restService.sendRuleUrl(
+//                new CaseRuleControl(System.currentTimeMillis(),
+//                        taskId, 0, 0,
+//                        generateDeviceConnRules(filterConfigs, tessParam.getCommandChannel(), tessParam.getDataChannel()),
+//                        first.get().getCommandChannel(), true))) {
+//            throw new BusinessException("主控响应异常");
+//        }
     }
 
     @Override
