@@ -17,6 +17,7 @@ import net.wanji.business.common.Constants.RedisMessageType;
 import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.TaskCaseStatusEnum;
 import net.wanji.business.common.Constants.TaskStatusEnum;
+import net.wanji.business.common.Constants.TestMode;
 import net.wanji.business.common.Constants.TestingStatusEnum;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.component.DeviceStateToRedis;
@@ -663,7 +664,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             throw new BusinessException("任务数据配置异常");
         }
         caseTrajectoryParam.setTaskId(taskId);
-        caseTrajectoryParam.setContinuous(tjTask.isContinuous());
+        caseTrajectoryParam.setTestMode(tjTask.isContinuous() ? TestMode.CONTINUOUS_TEST : TestMode.BATCH_TEST);
         caseTrajectoryParam.setCaseId(taskCaseId);
 
         List<CaseSSInfo> caseSSInfos = new ArrayList<>();

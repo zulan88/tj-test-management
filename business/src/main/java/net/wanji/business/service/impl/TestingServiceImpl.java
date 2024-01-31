@@ -12,6 +12,7 @@ import net.wanji.business.common.Constants.PlaybackAction;
 import net.wanji.business.common.Constants.PointTypeEnum;
 import net.wanji.business.common.Constants.RedisMessageType;
 import net.wanji.business.common.Constants.SysType;
+import net.wanji.business.common.Constants.TestMode;
 import net.wanji.business.common.Constants.TestingStatusEnum;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.Label;
@@ -528,6 +529,7 @@ public class TestingServiceImpl implements TestingService {
         CaseTrajectoryParam caseTrajectoryParam = new CaseTrajectoryParam();
         caseTrajectoryParam.setTaskId(0);
         caseTrajectoryParam.setCaseId(caseId);
+        caseTrajectoryParam.setTestMode(TestMode.CASE_TEST);
         SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(realRecord.getDetailInfo(),
                 SceneTrajectoryBo.class);
 
