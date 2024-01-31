@@ -1066,13 +1066,20 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
     @Override
     public void manualTermination(Integer taskId, Integer taskCaseId) throws BusinessException {
-        Integer caseId = 0;
+        Integer caseId;
         if (!ObjectUtils.isEmpty(taskCaseId) && taskCaseId > 0) {
             TjTaskCase taskCase = this.getById(taskCaseId);
             if (ObjectUtils.isEmpty(taskCase)) {
                 throw new BusinessException("未查询到任务用例信息");
             }
             caseId = taskCase.getCaseId();
+        } else {
+            TjTaskCase currentNodeCase = taskChainFactory.getCurrentNodeCase(
+                    ChannelBuilder.buildTaskDataChannel(SecurityUtils.getUsername(), taskId));
+            if (ObjectUtils.isEmpty(currentNodeCase) || ObjectUtils.isEmpty(currentNodeCase.getCaseId())) {
+                throw new BusinessException("未查询到任务链当前用例信息");
+            }
+            caseId = currentNodeCase.getCaseId();
         }
         if (!restService.sendManualTermination(taskId, caseId)) {
             throw new BusinessException("任务终止失败");
