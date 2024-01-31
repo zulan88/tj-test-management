@@ -1,6 +1,8 @@
 package net.wanji.business.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import net.wanji.business.common.Constants.ChannelBuilder;
 import net.wanji.business.common.Constants.ColumnName;
@@ -358,6 +360,10 @@ public class TjFragmentedSceneDetailServiceImpl
         if (conflictspeed > maxSpeed || conflictspeed < minSpeed) {
             throw new BusinessException("冲突点速度超出速度区间");
         }
+
+        QueryWrapper<TjGeneralizeScene> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("scene_id", sceneDetailDto.getId());
+        generalizeSceneService.remove(queryWrapper);
 
         int count = 0;
 
