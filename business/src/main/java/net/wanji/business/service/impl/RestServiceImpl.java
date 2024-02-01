@@ -286,13 +286,14 @@ public class RestServiceImpl implements RestService {
     }
 
     @Override
-    public boolean sendManualTermination(Integer taskId, Integer caseId) {
+    public boolean sendManualTermination(Integer taskId, Integer caseId, Integer testMode) {
         try {
             String resultUrl = sendManualTerminationUrl;
             log.info("============================== sendManualTerminationUrl：{}", resultUrl);
             Map<String, Object> param = new HashMap<>();
             param.put("taskId", taskId);
             param.put("caseId", caseId);
+            param.put("testMode", testMode);
             HttpHeaders httpHeaders = new HttpHeaders();
             httpHeaders.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<Map<String, Object>> resultHttpEntity = new HttpEntity<>(param, httpHeaders);

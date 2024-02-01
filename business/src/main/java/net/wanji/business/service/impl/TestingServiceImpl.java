@@ -756,7 +756,7 @@ public class TestingServiceImpl implements TestingService {
 
     @Override
     public void manualTermination(Integer caseId) throws BusinessException {
-        if (!restService.sendManualTermination(0, caseId)) {
+        if (!restService.sendManualTermination(0, caseId, TestMode.CASE_TEST)) {
             throw new BusinessException("任务终止失败");
         }
     }

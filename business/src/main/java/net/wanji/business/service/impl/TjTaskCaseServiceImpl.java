@@ -41,7 +41,6 @@ import net.wanji.business.domain.param.TessParam;
 import net.wanji.business.domain.vo.CaseRealTestVo;
 import net.wanji.business.domain.vo.CaseTreeVo;
 import net.wanji.business.domain.vo.CommunicationDelayVo;
-import net.wanji.business.domain.vo.HistogramVo;
 import net.wanji.business.domain.vo.RealTestResultVo;
 import net.wanji.business.domain.vo.TaskCaseVerificationPageVo;
 import net.wanji.business.domain.vo.TaskCaseVo;
@@ -82,13 +81,9 @@ import net.wanji.system.service.ISysDictDataService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
@@ -1066,6 +1061,10 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
     @Override
     public void manualTermination(Integer taskId, Integer taskCaseId) throws BusinessException {
+        TjTask tjTask = taskMapper.selectById(taskId);
+        if (ObjectUtils.isEmpty(tjTask)) {
+            throw new BusinessException("未查询到任务信息");
+        }
         Integer caseId;
         if (!ObjectUtils.isEmpty(taskCaseId) && taskCaseId > 0) {
             TjTaskCase taskCase = this.getById(taskCaseId);
@@ -1081,7 +1080,9 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             }
             caseId = currentNodeCase.getCaseId();
         }
-        if (!restService.sendManualTermination(taskId, caseId)) {
+        if (!restService.sendManualTermination(taskId, caseId, tjTask.isContinuous()
+                ? TestMode.CONTINUOUS_TEST
+                : TestMode.BATCH_TEST)) {
             throw new BusinessException("任务终止失败");
         }
         JSONObject jsonObject = new JSONObject();
