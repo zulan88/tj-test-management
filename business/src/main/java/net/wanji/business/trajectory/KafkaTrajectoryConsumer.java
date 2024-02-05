@@ -16,6 +16,7 @@ import net.wanji.business.mapper.TjTaskCaseRecordMapper;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.util.RedisLock;
 import net.wanji.common.common.ClientSimulationTrajectoryDto;
+import net.wanji.common.constant.CacheConstants;
 import net.wanji.common.core.redis.RedisCache;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.StringUtils;
@@ -88,9 +89,10 @@ public class KafkaTrajectoryConsumer {
     private String selectUserOfTask(Integer taskId, Integer caseId) {
         // todo 可以使用缓存：taskId_caseId -> userName
         String userName = null;
-        String key = "USER_OF_TASK_" + taskId + "_" + caseId;
+        String key = CacheConstants.USER_OF_CONTINUOUS_TASK_PREFIX + taskId;
         if (redisCache.hasKey(key)) {
-            return redisCache.getCacheObject(key);
+            return String.valueOf(redisCache.redisTemplate.opsForHash()
+                .get(key, String.valueOf(caseId)));
         }
         if (0 < taskId) {
             // todo 场景中间会传上一个已结束的caseId，导致中间轨迹丢失
@@ -111,7 +113,7 @@ public class KafkaTrajectoryConsumer {
                 userName = caseRealRecord.getCreatedBy();
             }
         }
-        redisCache.setCacheObject(key, userName, 5, TimeUnit.SECONDS);
+        // redisCache.setCacheObject(key, userName, 5, TimeUnit.SECONDS);
         return userName;
     }
 
