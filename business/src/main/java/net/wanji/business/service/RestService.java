@@ -157,7 +157,7 @@ public interface RestService {
      * @param caseId
      * @return
      */
-    boolean sendManualTermination(Integer taskId, Integer caseId);
+    boolean sendManualTermination(Integer taskId, Integer caseId, Integer testMode);
 
     // ========================= 设备 =========================
     /**

@@ -46,6 +46,24 @@ public interface Constants {
     }
 
     /**
+     * 测试模式
+     */
+    class TestMode {
+        /**
+         * 单用例测试（实车试验）
+         */
+        public static final int CASE_TEST = 0;
+        /**
+         * 连续性场景测试（多场景任务一次启停）
+         */
+        public static final int CONTINUOUS_TEST = 1;
+        /**
+         * 批量测试（n场景任务n次启停）
+         */
+        public static final int BATCH_TEST = 2;
+    }
+
+    /**
      * 内容模板
      */
     class ContentTemplate {

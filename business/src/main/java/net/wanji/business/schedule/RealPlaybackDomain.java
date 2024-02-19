@@ -81,10 +81,10 @@ public class RealPlaybackDomain {
                         RealPlaybackSchedule.stopSendingData(key);
                     }
                 }
-                String duration = DateUtils.secondsToDuration((int) Math.floor((double) (length - index) / 10));
-                if (CollectionUtils.isNotEmpty(trajectories)) {
+                if (CollectionUtils.isEmpty(trajectories)) {
                     return;
                 }
+                String duration = DateUtils.secondsToDuration((int) Math.floor((double) (length - index) / 10));
                 List<ClientSimulationTrajectoryDto> data = trajectories.get(index);
 //                    CountDownDto countDownDto = countDown.countDown(data.get(0).getSpeed(),
 //                            new Point2D.Double(data.get(0).getLongitude(), data.get(0).getLatitude()));

@@ -2,7 +2,7 @@ package net.wanji.common.constant;
 
 /**
  * 缓存的key 常量
- * 
+ *
  * @author ruoyi
  */
 public class CacheConstants
@@ -41,4 +41,8 @@ public class CacheConstants
      * 登录账户密码错误次数 redis key
      */
     public static final String PWD_ERR_CNT_KEY = "pwd_err_cnt:";
+    /**
+     * 连续性场景测试，任务缓存前缀
+     */
+    public static final String USER_OF_CONTINUOUS_TASK_PREFIX = "USER_OF_CONTINUOUS_TASK_";
 }

@@ -30,6 +30,7 @@ import net.wanji.business.service.TestingService;
 import net.wanji.business.service.TjTaskCaseRecordService;
 import net.wanji.business.service.TjTaskCaseService;
 import net.wanji.business.service.TjTaskService;
+import net.wanji.common.constant.CacheConstants;
 import net.wanji.common.constant.HttpStatus;
 import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
@@ -39,6 +40,8 @@ import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
 import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.HashOperations;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -342,6 +345,7 @@ public class TaskController extends BaseController {
                 testingService.end(platformSSDto.getCaseId(), platformSSDto.getState(), (String) platformSSDto.getContext().get("user"));
             }
         } else {
+            taskCaseCache(platformSSDto);
             taskCaseService.caseStartEnd(platformSSDto.getTaskId(),
                     platformSSDto.getCaseId(), platformSSDto.getState(),
                     platformSSDto.isTaskEnd(), platformSSDto.getContext());
@@ -542,5 +546,20 @@ public class TaskController extends BaseController {
         String topic = "tj_playback_tw_"+substring;
         taskCaseService.playbackTW(taskId,caseId,topic);
         return AjaxResult.success(topic);
+    }
+
+    private void taskCaseCache(PlatformSSDto platformSSDto) {
+        HashOperations hashOperations = redisCache.redisTemplate.opsForHash();
+        String key = CacheConstants.USER_OF_CONTINUOUS_TASK_PREFIX + platformSSDto.getTaskId();
+        String caseId = String.valueOf(platformSSDto.getCaseId());
+        if (!platformSSDto.isTaskEnd()) {
+            if(1 == platformSSDto.getState()){
+                hashOperations.put(key, caseId, platformSSDto.getContext().get("user"));
+            }else if(-1 == platformSSDto.getState()){
+                redisCache.redisTemplate.delete(key);
+            }
+        }else {
+            redisCache.redisTemplate.delete(key);
+        }
     }
 }

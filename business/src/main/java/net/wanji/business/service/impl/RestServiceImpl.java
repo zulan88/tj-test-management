@@ -18,6 +18,7 @@ import net.wanji.business.domain.vo.IndexWeightDetailsVo;
 import net.wanji.business.domain.vo.SceneIndexSchemeVo;
 import net.wanji.business.domain.vo.SceneWeightDetailsVo;
 import net.wanji.business.service.RestService;
+import net.wanji.business.service.SendTessNgRequestService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -99,6 +101,9 @@ public class RestServiceImpl implements RestService {
     @Value("${tess.cartestResult}")
     private String carTestResult;
 
+    @Resource
+    private SendTessNgRequestService sendTessNgRequestService;
+
     @Override
     public boolean startServer(String ip, Integer port, TessParam tessParam) {
         try {
@@ -115,8 +120,10 @@ public class RestServiceImpl implements RestService {
                 log.info("============================== tess server start result:{}", JSONObject.toJSONString(result));
                 if (Objects.isNull(result) || !"success".equals(result.get("status"))) {
                     log.error("远程服务调用失败:{}", result.get("msg"));
+                    sendTessNgRequestService.saveTessNgRequest("失败", resultUrl, tessParam);
                     return false;
                 }
+                sendTessNgRequestService.saveTessNgRequest("成功", resultUrl, tessParam);
                 return true;
             }
         } catch (Exception e) {
@@ -206,9 +213,9 @@ public class RestServiceImpl implements RestService {
         if (response.getStatusCodeValue() == 200) {
             JSONObject result = JSONObject.parseObject(response.getBody(), JSONObject.class);
             return result;
-        }else {
+        } else {
             JSONObject result = new JSONObject();
-            result.put("msg","获取测试结果失败");
+            result.put("msg", "获取测试结果失败");
             return result;
         }
     }
@@ -286,13 +293,14 @@ public class RestServiceImpl implements RestService {
     }
 
     @Override
-    public boolean sendManualTermination(Integer taskId, Integer caseId) {
+    public boolean sendManualTermination(Integer taskId, Integer caseId, Integer testMode) {
         try {
             String resultUrl = sendManualTerminationUrl;
             log.info("============================== sendManualTerminationUrl：{}", resultUrl);
             Map<String, Object> param = new HashMap<>();
             param.put("taskId", taskId);
             param.put("caseId", caseId);
+            param.put("testMode", testMode);
             HttpHeaders httpHeaders = new HttpHeaders();
             httpHeaders.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<Map<String, Object>> resultHttpEntity = new HttpEntity<>(param, httpHeaders);
@@ -335,7 +343,7 @@ public class RestServiceImpl implements RestService {
                     return sceneIndexSchemeVos;
                 }
 
-                if (result.get("data") != null){
+                if (result.get("data") != null) {
                     sceneIndexSchemeVos = JSONObject.parseArray(result.get("data").toString(), SceneIndexSchemeVo.class);
                 }
                 return sceneIndexSchemeVos;
@@ -368,7 +376,7 @@ public class RestServiceImpl implements RestService {
                     log.error("远程服务调用失败:{}", result.get("msg"));
                     return sceneWeightDetailsVos;
                 }
-                if (result.get("data") != null){
+                if (result.get("data") != null) {
                     JSONObject data = JSONObject.parseObject(result.get("data").toString());
                     sceneWeightDetailsVos = JSONObject.parseArray(data.get("list").toString(), SceneWeightDetailsVo.class);
                 }
@@ -402,12 +410,12 @@ public class RestServiceImpl implements RestService {
                     log.error("远程服务调用失败:{}", result.get("msg"));
                     return indexWeightDetailsVos;
                 }
-                if (result.get("data") != null){
+                if (result.get("data") != null) {
                     JSONObject data = JSONObject.parseObject(result.get("data").toString());
 
                     JSONArray listTop = JSONObject.parseArray(data.get("list_top").toString());
                     IndexWeightDetailsVo indexWeightDetailsVo;
-                    for(Object value : listTop){
+                    for (Object value : listTop) {
                         JSONObject value1 = JSONObject.parseObject(value.toString());
 
                         indexWeightDetailsVo = new IndexWeightDetailsVo();
@@ -460,11 +468,11 @@ public class RestServiceImpl implements RestService {
                     log.error("远程服务调用失败:{}", result.get("msg"));
                     return indexCustomWeightVos;
                 }
-                if (result.get("data") != null){
+                if (result.get("data") != null) {
                     JSONArray data = JSONObject.parseArray(result.get("data").toString());
 
                     IndexCustomWeightVo indexCustomWeightVo;
-                    for(Object value : data){
+                    for (Object value : data) {
                         JSONObject value1 = JSONObject.parseObject(value.toString());
 
                         indexCustomWeightVo = new IndexCustomWeightVo();
@@ -510,7 +518,7 @@ public class RestServiceImpl implements RestService {
                     log.error("远程服务调用失败:{}", result.get("msg"));
                     return indexWeightDetailsVos;
                 }
-                if (result.get("data") != null){
+                if (result.get("data") != null) {
                     List<IndexCustomWeightVo.IndexWeightDetails> list = JSONObject.parseArray(result.get("data").toString(), IndexCustomWeightVo.IndexWeightDetails.class);
 
                     // 使用 Stream API 过滤出年龄等于 0 的人
@@ -631,15 +639,15 @@ public class RestServiceImpl implements RestService {
             String url = downloadTestReportUrl + "/" + taskId;
             // 发送HTTP GET请求获取文件字节数组
             ResponseEntity<byte[]> responseEntity = restTemplate.exchange(url, HttpMethod.GET, null, byte[].class);
-            if(CollectionUtils.isEmpty(responseEntity.getHeaders().get(HttpHeaders.CONTENT_DISPOSITION))){
-               return;
+            if (CollectionUtils.isEmpty(responseEntity.getHeaders().get(HttpHeaders.CONTENT_DISPOSITION))) {
+                return;
             }
 
             MediaType contentType = responseEntity.getHeaders().getContentType();
             String contentTypeStr;
-            if(contentType != null){
+            if (contentType != null) {
                 contentTypeStr = contentType.toString();
-            }else{
+            } else {
                 contentTypeStr = "multipart/form-data";
             }
             // 设置响应头
@@ -648,10 +656,10 @@ public class RestServiceImpl implements RestService {
 
             // 将文件字节数组写入响应流
             response.getOutputStream().write(Objects.requireNonNull(responseEntity.getBody()));
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
-        }finally {
-            if(response != null){
+        } finally {
+            if (response != null) {
                 try {
                     response.getOutputStream().flush();
                     response.getOutputStream().close();
