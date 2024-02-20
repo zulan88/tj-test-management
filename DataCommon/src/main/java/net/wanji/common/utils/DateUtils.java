@@ -232,9 +232,8 @@ public class DateUtils extends org.apache.commons.lang3.time.DateUtils
      * @return
      */
     public static String dateToString(Date date, String format) {
-        LocalTime time = date.toInstant().atZone(ZoneId.systemDefault()).toLocalTime();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
-        return time.format(formatter);
+        SimpleDateFormat formatter = new SimpleDateFormat(format);
+        return formatter.format(date);
     }
 
     /**

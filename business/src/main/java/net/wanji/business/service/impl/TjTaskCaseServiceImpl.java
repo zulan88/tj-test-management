@@ -909,8 +909,8 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
     @Override
     public Object getEvaluation(Integer taskId, Integer id) throws BusinessException {
-//        Map<String, Object> result = new HashMap<>();
-//        try {
+        JSONObject jsonObject = restService.getCarTestResult(taskId);
+        try {
 //            result.put("taskId", taskId);
 //            result.put("id", id);
 //            result.put("score", "90.00");
@@ -918,25 +918,19 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 //            result.put("startTime", "2024-01-05 14:00:00");
 //            result.put("endTime", "2024-01-05 14:01:00");
 //            result.put("hazardRatio", "52");
-//
-//            HistogramVo histogramVo = new HistogramVo();
-//            histogramVo.setType(Arrays.asList("优秀", "良好", "一般", "较差", "很差"));
-//            List<Object> data = new ArrayList<>();
-//            data.add(Arrays.asList(1, 0, 1));
-//            data.add(Arrays.asList(0, 1, 1));
-//            data.add(Arrays.asList(1, 1, 0));
-//            data.add(Arrays.asList(0, 0, 1));
-//            data.add(Arrays.asList(0, 1, 0));
-//            histogramVo.setData(data);
-//            histogramVo.setXAxis(Arrays.asList("安全性", "舒适性", "效率性"));
-//            result.put("chart", histogramVo);
-//        } catch (Exception e) {
-//            throw new BusinessException("获取评价信息失败");
-//        } finally {
+            TjTask task = taskMapper.selectById(taskId);
+            Duration duration = Duration.between(task.getStartTime().toInstant(), task.getEndTime().toInstant());
+            jsonObject.put("taskId", taskId);
+            jsonObject.put("id", id);
+            jsonObject.put("time", duration.toMillis()/1000);
+            jsonObject.put("startTime", DateUtils.dateToString(task.getStartTime(), "yyyy-MM-dd HH:mm:ss"));
+            jsonObject.put("endTime", DateUtils.dateToString(task.getEndTime(), "yyyy-MM-dd HH:mm:ss"));
+        } catch (Exception e) {
+            throw new BusinessException("获取评价信息失败");
+        } finally {
 //            unLock(taskId);
-//        }
-//        return result;
-        return restService.getCarTestResult(taskId);
+        }
+        return jsonObject;
     }
 
     @Override
