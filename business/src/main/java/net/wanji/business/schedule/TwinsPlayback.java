@@ -2,6 +2,7 @@ package net.wanji.business.schedule;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import net.wanji.business.service.KafkaProducer;
 import net.wanji.common.common.ClientSimulationTrajectoryDto;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +23,9 @@ public class TwinsPlayback {
         Gson gson = new Gson();
         for(List<ClientSimulationTrajectoryDto> trajectory : trajectories) {
             JsonArray jsonArray = gson.toJsonTree(trajectory).getAsJsonArray();
-            kafkaProducer.sendMessage(topic, jsonArray.toString());
+            JsonObject jsonObject = new JsonObject();
+            jsonObject.add("participantTrajectories", jsonArray);
+            kafkaProducer.sendMessage(topic, jsonObject.toString());
             Thread.sleep(99);
         }
     }
