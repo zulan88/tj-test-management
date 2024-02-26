@@ -1,8 +1,6 @@
 package net.wanji.business.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import net.wanji.business.common.Constants.ChannelBuilder;
 import net.wanji.business.common.Constants.ColumnName;
@@ -13,7 +11,6 @@ import net.wanji.business.common.Constants.PlaybackAction;
 import net.wanji.business.common.Constants.PointTypeEnum;
 import net.wanji.business.common.Constants.SysType;
 import net.wanji.business.common.Constants.YN;
-import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
@@ -48,7 +45,6 @@ import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.bean.BeanUtils;
 import net.wanji.system.service.ISysDictDataService;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.poi.ss.formula.functions.T;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,6 +53,7 @@ import org.springframework.util.ObjectUtils;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -365,55 +362,92 @@ public class TjFragmentedSceneDetailServiceImpl
         queryWrapper.eq("scene_id", sceneDetailDto.getId());
         generalizeSceneService.remove(queryWrapper);
 
-        int count = 0;
+        int num = detailVo.getTrajectoryJson().getParticipantTrajectories().size();
+        List<Integer> numList = new ArrayList<>();
+        for (int i = 1; i <= num; i++) {
+            numList.add(i);
+        }
+        List<List<Integer>> combinations = findCombinations(numList);
+        for (List<Integer> combination : combinations) {
+            Collections.sort(combination);
+        }
+        Set<List<Integer>> combinationset = new HashSet<>(combinations);
 
-        //向下泛化
-        int down = (int) ((conflictspeed - minSpeed) / step);
-        double proStep = step / conflictspeed;
-        for (int i = 1; i <= down; i++) {
-            SceneTrajectoryBo caseTrajectoryDetailBo = detailVo.getTrajectoryJson();
-            int finalI = i;
-            caseTrajectoryDetailBo.getParticipantTrajectories().forEach(participantTrajectoryBoList -> {
-                participantTrajectoryBoList.getTrajectory().forEach(trajectoryDetailBo -> {
-                    Double speed = trajectoryDetailBo.getSpeed();
-                    if (speed != null) {
-                        trajectoryDetailBo.setSpeed(speed * (1 - finalI * proStep));
+        for (List<Integer> combination : combinationset) {
+            //向下泛化
+            int down = (int) ((conflictspeed - minSpeed) / step);
+            double proStep = step / conflictspeed;
+            for (int i = 1; i <= down; i++) {
+                SceneTrajectoryBo caseTrajectoryDetailBo = detailVo.getTrajectoryJson();
+                int finalI = i;
+                AtomicInteger index = new AtomicInteger(1);
+                caseTrajectoryDetailBo.getParticipantTrajectories().forEach(participantTrajectoryBoList -> {
+                    if (combination.contains(index.get())) {
+                        participantTrajectoryBoList.getTrajectory().forEach(trajectoryDetailBo -> {
+                            Double speed = trajectoryDetailBo.getSpeed();
+                            if (speed != null) {
+                                trajectoryDetailBo.setSpeed(speed * (1 - finalI * proStep));
+                            }
+                        });
                     }
+                    index.getAndIncrement();
                 });
-            });
-            TjGeneralizeScene generalizeScene = new TjGeneralizeScene();
-            generalizeScene.setSceneId(sceneDetailDto.getId());
-            generalizeScene.setNumber(buildSceneNumber());
-            generalizeScene.setLabel(detailVo.getLabel());
-            generalizeScene.setTrajectoryInfo(caseTrajectoryDetailBo.buildId().toJsonString());
-            generalizeScene.setAllStageLabel(detailVo.getAllStageLabel());
-            generalizeScene.setTestSceneDesc(detailVo.getTestSceneDesc());
-            generalizeSceneService.save(generalizeScene);
-            count++;
+                TjGeneralizeScene generalizeScene = new TjGeneralizeScene();
+                generalizeScene.setSceneId(sceneDetailDto.getId());
+                generalizeScene.setNumber(buildSceneNumber());
+                generalizeScene.setLabel(detailVo.getLabel());
+                generalizeScene.setTrajectoryInfo(caseTrajectoryDetailBo.buildId().toJsonString());
+                generalizeScene.setAllStageLabel(detailVo.getAllStageLabel());
+                generalizeScene.setTestSceneDesc(detailVo.getTestSceneDesc());
+                generalizeSceneService.save(generalizeScene);
+            }
+
+            //向上泛化
+            int up = (int) ((maxSpeed - conflictspeed) / step);
+            for (int i = 1; i <= up; i++) {
+                SceneTrajectoryBo caseTrajectoryDetailBo = detailVo.getTrajectoryJson();
+                int finalI = i;
+                AtomicInteger index = new AtomicInteger(1);
+                caseTrajectoryDetailBo.getParticipantTrajectories().forEach(participantTrajectoryBoList -> {
+                    if (combination.contains(index.get())) {
+                        participantTrajectoryBoList.getTrajectory().forEach(trajectoryDetailBo -> {
+                            Double speed = trajectoryDetailBo.getSpeed();
+                            if (speed != null) {
+                                trajectoryDetailBo.setSpeed(speed * (1 - finalI * proStep));
+                            }
+                        });
+                    }
+                    index.getAndIncrement();
+                });
+                TjGeneralizeScene generalizeScene = new TjGeneralizeScene();
+                generalizeScene.setSceneId(sceneDetailDto.getId());
+                generalizeScene.setNumber(buildSceneNumber());
+                generalizeScene.setLabel(detailVo.getLabel());
+                generalizeScene.setTrajectoryInfo(caseTrajectoryDetailBo.buildId().toJsonString());
+                generalizeScene.setAllStageLabel(detailVo.getAllStageLabel());
+                generalizeScene.setTestSceneDesc(detailVo.getTestSceneDesc());
+                generalizeSceneService.save(generalizeScene);
+            }
+        }
+    }
+
+    private static List<List<Integer>> findCombinations(List<Integer> nums) {
+        List<List<Integer>> result = new ArrayList<>();
+        backtracking(nums, new ArrayList<>(), result);
+        return result;
+    }
+
+    private static void backtracking(List<Integer> nums, List<Integer> tempResult, List<List<Integer>> result) {
+        if (!tempResult.isEmpty()) {
+            result.add(new ArrayList<>(tempResult));
         }
 
-        //向上泛化
-        int up = (int) ((maxSpeed - conflictspeed) / step);
-        for (int i = 1; i <= up; i++) {
-            SceneTrajectoryBo caseTrajectoryDetailBo = detailVo.getTrajectoryJson();
-            int finalI = i;
-            caseTrajectoryDetailBo.getParticipantTrajectories().forEach(participantTrajectoryBoList -> {
-                participantTrajectoryBoList.getTrajectory().forEach(trajectoryDetailBo -> {
-                    Double speed = trajectoryDetailBo.getSpeed();
-                    if (speed != null) {
-                        trajectoryDetailBo.setSpeed(speed * (1 + finalI * proStep));
-                    }
-                });
-            });
-            TjGeneralizeScene generalizeScene = new TjGeneralizeScene();
-            generalizeScene.setSceneId(sceneDetailDto.getId());
-            generalizeScene.setNumber(buildSceneNumber());
-            generalizeScene.setLabel(detailVo.getLabel());
-            generalizeScene.setTrajectoryInfo(caseTrajectoryDetailBo.buildId().toJsonString());
-            generalizeScene.setAllStageLabel(detailVo.getAllStageLabel());
-            generalizeScene.setTestSceneDesc(detailVo.getTestSceneDesc());
-            generalizeSceneService.save(generalizeScene);
-            count++;
+        for (int i = 0; i < nums.size(); i++) {
+            tempResult.add(nums.get(i));
+            List<Integer> remainingNums = new ArrayList<>(nums);
+            remainingNums.remove(i);
+            backtracking(remainingNums, tempResult, result);
+            tempResult.remove(tempResult.size() - 1);
         }
     }
 

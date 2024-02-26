@@ -545,20 +545,24 @@ public class ToBuildOpenX {
                     Polyline polyline = new Polyline();
                     Double base = null;
                     for (List<ClientSimulationTrajectoryDto> simulationTrajectoryDtos : trajectories) {
-                        trajectoryValueDto = simulationTrajectoryDtos.get(bindex).getValue().get(index);
-                        if (base == null) {
-                            base = Double.valueOf(trajectoryValueDto.getTimestamp());
+                        try {
+                            trajectoryValueDto = simulationTrajectoryDtos.get(bindex).getValue().get(index);
+                            if (base == null) {
+                                base = Double.valueOf(trajectoryValueDto.getTimestamp());
+                            }
+                            Vertex vertex = new Vertex();
+                            Double time = Double.valueOf(trajectoryValueDto.getTimestamp());
+                            vertex.setTime(df.format((time - base)/1000));
+                            if ((time - base) / 1000 > maxTime) {
+                                maxTime = (time - base) / 1000;
+                            }
+                            Position position = new Position();
+                            position.setWorldPosition(totrans(trajectoryValueDto.getLongitude(), trajectoryValueDto.getLatitude(), proj, trajectoryValueDto.getCourseAngle()));
+                            vertex.setPosition(position);
+                            polyline.getVertex().add(vertex);
+                        }catch (Exception e) {
+                            e.printStackTrace();
                         }
-                        Vertex vertex = new Vertex();
-                        Double time = Double.valueOf(trajectoryValueDto.getTimestamp());
-                        vertex.setTime(df.format((time - base)/1000));
-                        if ((time - base) / 1000 > maxTime) {
-                            maxTime = (time - base) / 1000;
-                        }
-                        Position position = new Position();
-                        position.setWorldPosition(totrans(trajectoryValueDto.getLongitude(), trajectoryValueDto.getLatitude(), proj, trajectoryValueDto.getCourseAngle()));
-                        vertex.setPosition(position);
-                        polyline.getVertex().add(vertex);
                     }
                     shape.setPolyline(polyline);
                     trajectory.setShape(shape);
