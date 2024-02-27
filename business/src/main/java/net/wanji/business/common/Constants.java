@@ -71,6 +71,8 @@ public interface Constants {
         public static final String REAL_KEY_TEMPLATE = "{}_{}_{}_{}";
         public static final String EXPORT_NAME_TEMPLATE = "{}_{}";
         public static final String SCENE_NUMBER_TEMPLATE = "SC{}{}";
+
+        public static final String INFINTE_NUMBER_TEMPLATE = "IM{}{}";
         public static final String CASE_NUMBER_TEMPLATE = "CASE{}{}";
         public static final String TASK_NUMBER_TEMPLATE = "TA{}{}";
         public static final String SCENE_NAME_TEMPLATE = "{}_{}";

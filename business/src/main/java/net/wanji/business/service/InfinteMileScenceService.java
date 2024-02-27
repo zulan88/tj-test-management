@@ -1,7 +1,10 @@
 package net.wanji.business.service;
 
+import net.wanji.business.domain.InfinteMileScenceExo;
 import net.wanji.business.entity.InfinteMileScence;
 import com.baomidou.mybatisplus.extension.service.IService;
+
+import java.util.List;
 
 /**
  * <p>
@@ -12,5 +15,11 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * @since 2024-02-23
  */
 public interface InfinteMileScenceService extends IService<InfinteMileScence> {
+
+    List<InfinteMileScence> selectInfinteMileScenceList();
+
+    String buildSceneNumber();
+
+    Boolean saveInfinteMileScence(InfinteMileScenceExo infinteMileScence);
 
 }

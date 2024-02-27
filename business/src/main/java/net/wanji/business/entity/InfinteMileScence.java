@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -42,7 +44,7 @@ public class InfinteMileScence implements Serializable {
     private String viewId;
 
     /**
-     * 测试难度 0-简单 1-中等 2-困难
+     * 测试难度 1-简单 2-较简单 3-中等 4-较困难 5-困难
      */
     @TableField("difficulty")
     private Integer difficulty;
@@ -78,9 +80,11 @@ public class InfinteMileScence implements Serializable {
     private Integer status;
 
     @TableField("create_date")
+    @JsonFormat(shape= JsonFormat.Shape.STRING, pattern="yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createDate;
 
     @TableField("update_date")
+    @JsonFormat(shape= JsonFormat.Shape.STRING, pattern="yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updateDate;
 
 
