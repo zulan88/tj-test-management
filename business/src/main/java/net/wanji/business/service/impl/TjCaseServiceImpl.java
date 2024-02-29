@@ -529,7 +529,7 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
                     throw new BusinessException("创建失败：场景未进行仿真验证");
                 }
                 tjCase.setRouteFile(sceneDetail.getRouteFile());
-
+                tjCase.setMapFile(sceneDetail.getMapFile());
                 StringBuilder labelshows = new StringBuilder();
                 for (String str : sceneDetail.getLabel().split(",")) {
                     try {

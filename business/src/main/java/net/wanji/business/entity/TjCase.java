@@ -45,6 +45,12 @@ public class TjCase implements Serializable {
     @TableField("resources_detail_id")
     private Integer resourcesDetailId;
 
+    /**
+     * 场地地图
+     */
+    @TableField("map_file")
+    private String mapFile;
+
     @TableField("test_target")
     @Excel(name = "测试说明")
     private String testTarget;

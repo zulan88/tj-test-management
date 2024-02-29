@@ -44,6 +44,8 @@ public class TjFragmentedSceneDetailDto {
     @ApiModelProperty(value = "地图id")
     private Integer mapId;
 
+    private String mapFile;
+
     /**
      * 场景描述
      */

@@ -45,6 +45,9 @@ public class TjScenelib
     @TableField("scene_status")
     private Integer sceneStatus;
 
+    @TableField("geojson_path")
+    private String geojsonPath;
+
     /** 压缩包目录 */
     @TableField("zip_path")
     private String zipPath;

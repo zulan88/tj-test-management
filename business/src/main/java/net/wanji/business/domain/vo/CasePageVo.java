@@ -31,4 +31,6 @@ public class CasePageVo extends CaseDetailVo {
     private List<TjCaseRealRecord> caseRealRecords;
 
     private Boolean selected;
+
+    private String mapFile;
 }

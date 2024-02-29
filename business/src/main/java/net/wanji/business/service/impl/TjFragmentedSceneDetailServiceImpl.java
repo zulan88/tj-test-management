@@ -24,10 +24,7 @@ import net.wanji.business.domain.param.TestStartParam;
 import net.wanji.business.domain.vo.DeviceDetailVo;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
 import net.wanji.business.domain.vo.SceneDetailVo;
-import net.wanji.business.entity.TjFragmentedSceneDetail;
-import net.wanji.business.entity.TjFragmentedScenes;
-import net.wanji.business.entity.TjGeneralizeScene;
-import net.wanji.business.entity.TjResourcesDetail;
+import net.wanji.business.entity.*;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjDeviceDetailMapper;
@@ -104,6 +101,9 @@ public class TjFragmentedSceneDetailServiceImpl
 
     @Autowired
     TjGeneralizeSceneService generalizeSceneService;
+
+    @Autowired
+    private ITjAtlasVenueService tjAtlasVenueService;
 
     @Override
     public FragmentedScenesDetailVo getDetailVo(Integer id) throws BusinessException {
@@ -240,7 +240,11 @@ public class TjFragmentedSceneDetailServiceImpl
             detail.setUpdatedBy(SecurityUtils.getUsername());
             detail.setUpdatedDate(LocalDateTime.now());
         }
-        detail.setMapId(sceneDetailDto.getMapId());
+        if(ObjectUtils.isEmpty(sceneDetailDto.getMapId())){
+            TjAtlasVenue tjAtlasVenue = tjAtlasVenueService.getById(sceneDetailDto.getMapId());
+            detail.setMapFile(tjAtlasVenue.getGeoJsonPath());
+        }
+//        detail.setMapId(sceneDetailDto.getMapId());
         List<String> labellist = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(sceneDetailDto.getLabelList())) {
             for (String id : sceneDetailDto.getLabelList()) {

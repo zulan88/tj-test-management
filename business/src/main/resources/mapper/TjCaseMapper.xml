@@ -18,6 +18,7 @@
         <result property="imgUrl" column="img_url" jdbcType="VARCHAR"/>
         <result property="testSceneDesc" column="test_scene_desc" jdbcType="VARCHAR"/>
         <result property="label" column="label" jdbcType="VARCHAR"/>
+        <result property="mapFile" column="map_file" jdbcType="VARCHAR" />
         <result property="detailInfo" column="detail_info" jdbcType="VARCHAR"/>
         <result property="routeFile" column="route_file" jdbcType="VARCHAR"/>
         <result property="testTarget" column="test_target" jdbcType="VARCHAR"/>
@@ -59,6 +60,7 @@
         c.test_target,
         c.detail_info,
         c.route_file,
+        c.map_file,
         c.status,
         c.remark,
         c.updated_date,

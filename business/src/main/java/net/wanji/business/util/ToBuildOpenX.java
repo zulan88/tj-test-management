@@ -295,6 +295,7 @@ public class ToBuildOpenX {
 
             tjScenelib.setZipPath(FileUploadUtils.getPathFileName(outputFolder, zipfile.getName()));
             tjScenelib.setImgPath(fragmentedScenesDetailVo.getImgUrl());
+            tjScenelib.setGeojsonPath(fragmentedScenesDetailVo.getMapFile());
             scenelibService.updateTjScenelib(tjScenelib);
 
 
