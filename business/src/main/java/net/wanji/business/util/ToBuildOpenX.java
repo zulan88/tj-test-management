@@ -1,6 +1,7 @@
 package net.wanji.business.util;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import lombok.extern.slf4j.Slf4j;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
 import net.wanji.business.entity.TjResourcesDetail;
@@ -44,6 +45,7 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 @Component
+@Slf4j
 public class ToBuildOpenX {
 
     @Autowired
@@ -546,6 +548,11 @@ public class ToBuildOpenX {
                     Double base = null;
                     for (List<ClientSimulationTrajectoryDto> simulationTrajectoryDtos : trajectories) {
                         try {
+                            if (bindex >= simulationTrajectoryDtos.size() ||
+                                index >= simulationTrajectoryDtos.get(bindex).getValue()
+                                    .size() ) {
+                                continue;
+                            }
                             trajectoryValueDto = simulationTrajectoryDtos.get(bindex).getValue().get(index);
                             if (base == null) {
                                 base = Double.valueOf(trajectoryValueDto.getTimestamp());
@@ -561,7 +568,9 @@ public class ToBuildOpenX {
                             vertex.setPosition(position);
                             polyline.getVertex().add(vertex);
                         }catch (Exception e) {
-                            e.printStackTrace();
+                            if(log.isErrorEnabled()){
+                                log.error("", e);
+                            }
                         }
                     }
                     shape.setPolyline(polyline);
