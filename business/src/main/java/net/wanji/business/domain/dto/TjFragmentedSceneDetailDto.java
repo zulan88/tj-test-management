@@ -41,8 +41,8 @@ public class TjFragmentedSceneDetailDto {
     @ApiModelProperty(value = "车道数（已过期）")
     private Integer laneNum;
 
-    @ApiModelProperty(value = "地图id（已过期）")
-    private Integer resourcesDetailId;
+    @ApiModelProperty(value = "地图id")
+    private Integer mapId;
 
     /**
      * 场景描述

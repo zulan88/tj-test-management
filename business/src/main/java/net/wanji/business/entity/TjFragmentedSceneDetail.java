@@ -59,10 +59,16 @@ public class TjFragmentedSceneDetail implements Serializable {
     private Integer laneNum;
 
     /**
-     * 地图
+     * 地图id
      */
-    @TableField("resources_detail_id")
-    private Integer resourcesDetailId;
+    @TableField("map_id")
+    private Integer mapId;
+
+    /**
+     * 场地地图
+     */
+    @TableField("map_file")
+    private String mapFile;
 
     /**
      * 场景描述
@@ -125,11 +131,6 @@ public class TjFragmentedSceneDetail implements Serializable {
     @TableField("rada_data_file_path")
     private String radaDataFilePath;
 
-    /**
-     * GPS数据
-     */
-    @TableField("gps_data_file_path")
-    private String gpsDataFilePath;
 
     /**
      * 行驶数据
