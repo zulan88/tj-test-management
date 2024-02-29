@@ -320,29 +320,6 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
         return saveOrUpdate(tjFragmentedScenes);
     }
 
-    @Transactional(rollbackFor = Exception.class)
-    @Override
-    public boolean completeScene(TjFragmentedSceneDetailDto sceneDetailDto) throws BusinessException {
-        if (ObjectUtils.isEmpty(sceneDetailDto.getFragmentedSceneId())
-                || ObjectUtils.isEmpty(sceneDetailDto.getResourcesDetailId())) {
-            throw new BusinessException("保存失败");
-        }
-        TjFragmentedScenes scenes = getById(sceneDetailDto.getFragmentedSceneId());
-        if (ObjectUtils.isEmpty(scenes)) {
-            throw new BusinessException("未找到对应场景");
-        }
-        TjResourcesDetail resourcesDetail = resourcesDetailService.getById(sceneDetailDto.getResourcesDetailId());
-        if (ObjectUtils.isEmpty(resourcesDetail)) {
-            throw new BusinessException("未找到对应地图");
-        }
-        scenes.setUpdatedBy(SecurityUtils.getUsername());
-        scenes.setUpdatedDate(LocalDateTime.now());
-        boolean success = this.updateById(scenes);
-        if (!success) {
-            throw new BusinessException("修改失败");
-        }
-        return success;
-    }
 
     /**
      *

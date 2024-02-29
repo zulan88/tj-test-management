@@ -6,10 +6,10 @@
         SELECT
             sd.*,
             rd.name as resourcesName,
-            rd.img_path as resourcesImgPath,
-            rd.attribute4 as geoJsonPath
+            rd.field_img_path as resourcesImgPath,
+            rd.geo_json_path as geoJsonPath
         FROM tj_fragmented_scene_detail sd
-        LEFT JOIN tj_resources_detail rd ON rd.id = sd.resources_detail_id
+        LEFT JOIN tj_atlas_venue rd ON rd.id = sd.map_id
         <where>
             <if test="fragmentedSceneId != null and fragmentedSceneId > 0 ">
                 AND sd.fragmented_scene_id=#{fragmentedSceneId}
@@ -23,9 +23,9 @@
             <if test="hazardIndex != null and hazardIndex > 0 ">
                 AND sd.hazard_index=#{hazardIndex}
             </if>
-            <if test="resourcesDetailId != null and resourcesDetailId != '' ">
-                AND sd.resources_detail_id in
-                <foreach collection="resourcesDetailId.split(',')" item="detailId" open="(" separator="," close=")">
+            <if test="mapId != null and mapId != '' ">
+                AND sd.map_id in
+                <foreach collection="mapId.split(',')" item="detailId" open="(" separator="," close=")">
                     #{detailId}
                 </foreach>
             </if>
@@ -73,7 +73,7 @@
     </select>
 
     <select id="selectUsingResources" resultType="java.lang.Integer">
-        select distinct resources_detail_id
+        select distinct map_id
         from tj_fragmented_scene_detail
     </select>
 
@@ -86,7 +86,7 @@
     </delete>
 
     <sql id="selectTjFragmentedSceneDetailVo">
-        select id, fragmented_scene_id, number, lane_num, resources_detail_id, scene_source, img_url, scene_type, scene_complexity, traffic_flow_status, road_type, weather, road_condition, finished, collect_status, label, trajectory_info, route_file, road_way_type, hazard_index, video_data_file_path, rada_data_file_path, gps_data_file_path, driver_data_file_path, test_scene_desc, created_by, created_date, updated_by, updated_date, scene_status from tj_fragmented_scene_detail
+        select id, fragmented_scene_id, number, lane_num, map_id, map_file, scene_source, img_url, scene_type, scene_complexity, traffic_flow_status, road_type, weather, road_condition, finished, collect_status, label, trajectory_info, route_file, road_way_type, hazard_index, video_data_file_path, rada_data_file_path, driver_data_file_path, test_scene_desc, created_by, created_date, updated_by, updated_date, scene_status from tj_fragmented_scene_detail
     </sql>
 
     <select id="selectTjFragmentedSceneDetailList" parameterType="net.wanji.business.domain.vo.SceneDetailVo" resultType="net.wanji.business.domain.vo.SceneDetailVo">
@@ -95,7 +95,8 @@
         tfsd.fragmented_scene_id,
         tfsd.number,
         tfsd.lane_num,
-        tfsd.resources_detail_id,
+        tfsd.map_id,
+        tfsd.map_file,
         tfsd.scene_source,
         tfsd.img_url,
         tfsd.scene_type,
@@ -113,7 +114,6 @@
         tfsd.hazard_index,
         tfsd.video_data_file_path,
         tfsd.rada_data_file_path,
-        tfsd.gps_data_file_path,
         tfsd.driver_data_file_path,
         tfsd.test_scene_desc,
         tfsd.created_by,

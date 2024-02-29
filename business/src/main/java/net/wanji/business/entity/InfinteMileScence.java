@@ -56,6 +56,12 @@ public class InfinteMileScence implements Serializable {
     private Integer mapId;
 
     /**
+     * 场地地图
+     */
+    @TableField("map_file")
+    private String mapFile;
+
+    /**
      * 元素
      */
     @TableField("element")

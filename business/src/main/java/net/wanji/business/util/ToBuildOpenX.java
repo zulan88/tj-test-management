@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.vo.FragmentedScenesDetailVo;
+import net.wanji.business.entity.TjAtlasVenue;
 import net.wanji.business.entity.TjResourcesDetail;
 import net.wanji.business.entity.TjScenelib;
 import net.wanji.business.entity.TjTaskCase;
@@ -55,7 +56,7 @@ public class ToBuildOpenX {
     ITjScenelibService scenelibService;
 
     @Autowired
-    private TjResourcesDetailService tjResourcesDetailService;
+    private ITjAtlasVenueService atlasVenueService;
 
     @Autowired
     private TjTaskCaseMapper taskCaseMapper;
@@ -82,63 +83,15 @@ public class ToBuildOpenX {
 
             java.io.File xodrfile = new java.io.File(WanjiConfig.getScenelibPath(), c1);
 
-            if (fragmentedScenesDetailVo.getResourcesDetailId() != null) {
-                TjResourcesDetail tjResourcesDetail = tjResourcesDetailService.getById(fragmentedScenesDetailVo.getResourcesDetailId());
-                if (tjResourcesDetail.getAttribute5().isEmpty()) {
-                    String localPath = WanjiConfig.getProfile();
-                    String downloadPath = localPath + StringUtils.substringAfter(tjResourcesDetail.getFilePath(), Constants.RESOURCE_PREFIX);
-                    java.io.File file = new java.io.File(downloadPath);
-                    ZipFile zipFile = new ZipFile(file);
-                    Enumeration<? extends ZipEntry> entries = zipFile.entries();
-                    while (entries.hasMoreElements()) {
-                        ZipEntry entry = entries.nextElement();
-                        String entryName = (int) (System.currentTimeMillis() % 1000) + "_" + entry.getName();
-                        java.io.File entryFile = new java.io.File(outputFolder, entryName);
-
-                        if (entry.isDirectory()) {
-                            entryFile.mkdirs();
-                        } else {
-                            InputStream inputStream = zipFile.getInputStream(entry);
-                            FileOutputStream outputStream = new FileOutputStream(entryFile);
-
-                            byte[] buffer = new byte[1024];
-                            int length;
-                            while ((length = inputStream.read(buffer)) > 0) {
-                                outputStream.write(buffer, 0, length);
-                            }
-
-                            inputStream.close();
-                            outputStream.close();
-                        }
-                        String filepath = entryFile.getAbsolutePath();
-                        if (filepath.endsWith("xodr")) {
-                            tjResourcesDetail.setAttribute5(filepath);
-                            xodrfile = new java.io.File(filepath);
-                            c1 = entryName;
-                            BufferedReader reader = new BufferedReader(new FileReader(filepath));
-                            StringBuilder fileContent = new StringBuilder();
-                            String line;
-                            while ((line = reader.readLine()) != null) {
-                                fileContent.append(line);
-                            }
-                            reader.close();
-                            // 使用正则表达式提取proj参数值
-                            String regex = "\\+proj=[^\\s]+.*?\\]";
-                            Pattern pattern = Pattern.compile(regex);
-                            Matcher matcher = pattern.matcher(fileContent.toString());
-                            if (matcher.find()) {
-                                String projValue = matcher.group();
-                                proj = projValue.substring(0, projValue.length() - 1);
-                            } else {
-                                //异常处理
-                                System.out.println("未提取到proj参数");
-                            }
-                            break;
-                        }
-                    }
-                    tjResourcesDetailService.updateById(tjResourcesDetail);
+            if (fragmentedScenesDetailVo.getMapId() != null) {
+                TjAtlasVenue tjResourcesDetail = atlasVenueService.getById(fragmentedScenesDetailVo.getMapId());
+                if (tjResourcesDetail == null) {
+                    throw new BusinessException("地图不存在");
+                }
+                if (tjResourcesDetail.getOpenDrivePath().isEmpty()) {
+                    return;
                 } else {
-                    String filepath = tjResourcesDetail.getAttribute5();
+                    String filepath = tjResourcesDetail.getOpenDrivePath();
                     xodrfile = new java.io.File(filepath);
                     c1 = StringUtils.substringAfterLast(filepath, java.io.File.separator);
                     BufferedReader reader = new BufferedReader(new FileReader(filepath));
@@ -357,7 +310,7 @@ public class ToBuildOpenX {
     }
 
     @Async
-    public void casetoOpenX(List<List<ClientSimulationTrajectoryDto>> trajectories, Integer taskId, Integer caseId, TjResourcesDetail tjResourcesDetail) {
+    public void casetoOpenX(List<List<ClientSimulationTrajectoryDto>> trajectories, Integer taskId, Integer caseId, TjAtlasVenue tjAtlasVenue) {
         try {
             //入参
             String c1 = "tjtest.xodr";
@@ -371,62 +324,11 @@ public class ToBuildOpenX {
 
             java.io.File xodrfile = new java.io.File(WanjiConfig.getScenelibPath(), c1);
 
-            if(tjResourcesDetail!=null){
-                if (tjResourcesDetail.getAttribute5().isEmpty()) {
-                    String localPath = WanjiConfig.getProfile();
-                    String downloadPath = localPath + StringUtils.substringAfter(tjResourcesDetail.getFilePath(), Constants.RESOURCE_PREFIX);
-                    java.io.File file = new java.io.File(downloadPath);
-                    ZipFile zipFile = new ZipFile(file);
-                    Enumeration<? extends ZipEntry> entries = zipFile.entries();
-                    while (entries.hasMoreElements()) {
-                        ZipEntry entry = entries.nextElement();
-                        String entryName = (int) (System.currentTimeMillis() % 1000) + "_" + entry.getName();
-                        java.io.File entryFile = new java.io.File(outputFolder, entryName);
-
-                        if (entry.isDirectory()) {
-                            entryFile.mkdirs();
-                        } else {
-                            InputStream inputStream = zipFile.getInputStream(entry);
-                            FileOutputStream outputStream = new FileOutputStream(entryFile);
-
-                            byte[] buffer = new byte[1024];
-                            int length;
-                            while ((length = inputStream.read(buffer)) > 0) {
-                                outputStream.write(buffer, 0, length);
-                            }
-
-                            inputStream.close();
-                            outputStream.close();
-                        }
-                        String filepath = entryFile.getAbsolutePath();
-                        if (filepath.endsWith("xodr")) {
-                            tjResourcesDetail.setAttribute5(filepath);
-                            xodrfile = new java.io.File(filepath);
-                            c1 = entryName;
-                            BufferedReader reader = new BufferedReader(new FileReader(filepath));
-                            StringBuilder fileContent = new StringBuilder();
-                            String line;
-                            while ((line = reader.readLine()) != null) {
-                                fileContent.append(line);
-                            }
-                            reader.close();
-                            // 使用正则表达式提取proj参数值
-                            String regex = "\\+proj=[^\\s]+.*?\\]";
-                            Pattern pattern = Pattern.compile(regex);
-                            Matcher matcher = pattern.matcher(fileContent.toString());
-                            if (matcher.find()) {
-                                String projValue = matcher.group();
-                                proj = projValue.substring(0, projValue.length() - 1);
-                            } else {
-                                //异常处理
-                                System.out.println("未提取到proj参数");
-                            }
-                            break;
-                        }
-                    }
-                    tjResourcesDetailService.updateById(tjResourcesDetail);
+            if(tjAtlasVenue!=null){
+                if (tjAtlasVenue.getOpenDrivePath().isEmpty()) {
+                    throw new BusinessException("未上传OpenDrive文件");
                 } else {
-                    String filepath = tjResourcesDetail.getAttribute5();
+                    String filepath = tjAtlasVenue.getOpenDrivePath();
                     xodrfile = new java.io.File(filepath);
                     c1 = StringUtils.substringAfterLast(filepath, java.io.File.separator);
                     BufferedReader reader = new BufferedReader(new FileReader(filepath));
@@ -669,6 +571,8 @@ public class ToBuildOpenX {
         } catch (JAXBException e) {
             e.printStackTrace();
         } catch (IOException | TransformerException e) {
+            throw new RuntimeException(e);
+        } catch (BusinessException e) {
             throw new RuntimeException(e);
         }
     }

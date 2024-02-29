@@ -193,11 +193,11 @@ public class TjFragmentedSceneDetailServiceImpl
 
     private void detailVoTranslate(FragmentedScenesDetailVo detailVo) {
         // 地图
-        TjResourcesDetail tjResourcesDetail = tjResourcesDetailService.getById(
-                detailVo.getResourcesDetailId());
-        detailVo.setResourcesName(tjResourcesDetail.getName());
-        detailVo.setFilePath(tjResourcesDetail.getFilePath());
-        detailVo.setGeoJsonPath(tjResourcesDetail.getAttribute4());
+//        TjResourcesDetail tjResourcesDetail = tjResourcesDetailService.getById(
+//                detailVo.getResourcesDetailId());
+//        detailVo.setResourcesName(tjResourcesDetail.getName());
+//        detailVo.setFilePath(tjResourcesDetail.getFilePath());
+//        detailVo.setGeoJsonPath(tjResourcesDetail.getAttribute4());
         // 道路类型
         detailVo.setRoadTypeName(dictDataService.selectDictLabel(SysType.ROAD_TYPE
                 , detailVo.getRoadType()));
@@ -240,7 +240,7 @@ public class TjFragmentedSceneDetailServiceImpl
             detail.setUpdatedBy(SecurityUtils.getUsername());
             detail.setUpdatedDate(LocalDateTime.now());
         }
-        detail.setResourcesDetailId(sceneDetailDto.getResourcesDetailId());
+        detail.setMapId(sceneDetailDto.getMapId());
         List<String> labellist = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(sceneDetailDto.getLabelList())) {
             for (String id : sceneDetailDto.getLabelList()) {

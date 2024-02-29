@@ -99,10 +99,4 @@ public interface TjScenelibTreeService extends IService<TjScenelibTree> {
      */
     boolean saveSceneTree(TjFragmentedScenesDto fragmentedScenesDto);
 
-    /**
-     * 场景构建完成
-     * @param sceneDetailDto
-     * @return
-     */
-    boolean completeScene(TjFragmentedSceneDetailDto sceneDetailDto) throws BusinessException;
 }
