@@ -240,7 +240,7 @@ public class TjFragmentedSceneDetailServiceImpl
             detail.setUpdatedBy(SecurityUtils.getUsername());
             detail.setUpdatedDate(LocalDateTime.now());
         }
-        if(ObjectUtils.isEmpty(sceneDetailDto.getMapId())){
+        if(!ObjectUtils.isEmpty(sceneDetailDto.getMapId())){
             TjAtlasVenue tjAtlasVenue = tjAtlasVenueService.getById(sceneDetailDto.getMapId());
             detail.setMapFile(tjAtlasVenue.getGeoJsonPath());
         }
