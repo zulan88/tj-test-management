@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import io.swagger.models.auth.In;
 import lombok.extern.slf4j.Slf4j;
 import net.wanji.business.common.Constants.ChannelBuilder;
 import net.wanji.business.common.Constants.ColumnName;
@@ -207,6 +208,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 log.info("非连续性测试任务，使用第一个任务用例：{}", taskCaseInfos.get(0).getId());
             }
         }
+        List<Integer> taskCaseIds = taskCaseInfos.stream().map(TaskCaseInfoBo::getCaseId).collect(Collectors.toList());
         // 2.数据填充
         List<TaskCaseConfigBo> allTaskCaseConfigs = new ArrayList<>();
         Map<Integer, Map<String, String>> caseBusinessIdAndRoleMap = new HashMap<>();
@@ -230,7 +232,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         List<TaskCaseConfigBo> filteredTaskCaseConfigs = distTaskCaseConfigs.stream()
                 .filter(t -> !PartRole.MV_SIMULATION.equals(t.getType())).collect(Collectors.toList());
         if (hand) {
-            handServer(param, tjTask, simulationConfig, filteredTaskCaseConfigs, user, tjTask.isContinuous());
+            handServer(param, tjTask, simulationConfig, filteredTaskCaseConfigs, user, tjTask.isContinuous(), taskCaseIds);
         }
         // 5.状态查询
         for (TaskCaseConfigBo taskCaseConfigBo : distTaskCaseConfigs) {
@@ -268,12 +270,21 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
     private void handServer(TjTaskCase param, TjTask tjTask, TaskCaseConfigBo simulationConfig,
                             List<TaskCaseConfigBo> filteredTaskCaseConfigs, String user,
-                            boolean deviceValid) throws BusinessException {
+                            boolean deviceValid, List<Integer> caseIds) throws BusinessException {
+        List<String> mapList = new ArrayList<>();
+        for (Integer caseId : caseIds){
+            TjCase caseInfo = caseService.getById(caseId);
+            if (caseInfo.getMapId()!= null) {
+                mapList.add(String.valueOf(caseInfo.getMapId()));
+            }else {
+                mapList.add("10");
+            }
+        }
         // 先停止
         stop(param.getTaskId(), param.getId(), user);
         // 4.唤醒仿真服务
         if (!restService.startServer(simulationConfig.getIp(), Integer.valueOf(simulationConfig.getServiceAddress()),
-                buildTessServerParam(1, tjTask.getCreatedBy(), param.getTaskId()))) {
+                buildTessServerParam(1, tjTask.getCreatedBy(), param.getTaskId(), mapList))) {
             throw new BusinessException("唤醒仿真服务失败");
         }
         for (TaskCaseConfigBo taskCaseConfigBo : filteredTaskCaseConfigs) {
@@ -317,12 +328,13 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
      * @param taskId
      * @return
      */
-    private TessParam buildTessServerParam(Integer roadNum, String username, Integer taskId) {
+    private TessParam buildTessServerParam(Integer roadNum, String username, Integer taskId, List<String> mapList) {
         return new TessParam().buildTaskParam(roadNum,
                 ChannelBuilder.buildTaskDataChannel(username, taskId),
                 ChannelBuilder.buildTaskControlChannel(username, taskId),
                 ChannelBuilder.buildTaskEvaluateChannel(username, taskId),
-                ChannelBuilder.buildTaskStatusChannel(username, taskId));
+                ChannelBuilder.buildTaskStatusChannel(username, taskId),
+                mapList);
     }
 
     /**
@@ -760,7 +772,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         List<TaskCaseConfigBo> filterConfigs = taskCaseInfoBo.getDataConfigs().stream()
                 .filter(distinctByKey(TjTaskDataConfig::getDeviceId)).collect(Collectors.toList());
         TaskCaseConfigBo mainConfig = first.get();
-        TessParam tessParam = buildTessServerParam(1, (String) context.get("user"), taskId);
+        TessParam tessParam = buildTessServerParam(1, (String) context.get("user"), taskId, null);
         if (!restService.sendRuleUrl(
                 new CaseRuleControl(System.currentTimeMillis(), taskId, caseId, action > 0 ? action : 0,
                         generateDeviceConnRules(filterConfigs, tessParam.getCommandChannel(), tessParam.getDataChannel()),

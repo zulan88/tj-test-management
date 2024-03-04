@@ -159,9 +159,15 @@ public class TestingServiceImpl implements TestingService {
         if (hand) {
             // 先停止
             stop(caseId);
+            List<String> mapList = new ArrayList<>();
+            if(ObjectUtils.isEmpty(caseInfoBo.getMapId())){
+                mapList.add("10");
+            }else {
+                mapList.add(String.valueOf(caseInfoBo.getMapId()));
+            }
             // 4.唤醒仿真服务
             if (!restService.startServer(simulationConfig.getIp(), Integer.valueOf(simulationConfig.getServiceAddress()),
-                    buildTessServerParam(1, SecurityUtils.getUsername(), caseId))) {
+                    buildTessServerParam(1, SecurityUtils.getUsername(), caseId, mapList))) {
                 throw new BusinessException("唤起仿真服务失败");
             }
             if (!redisLock.tryLock("case_" + caseId, SecurityUtils.getUsername())) {
@@ -230,12 +236,13 @@ public class TestingServiceImpl implements TestingService {
      * @param caseId
      * @return
      */
-    private TessParam buildTessServerParam(Integer roadNum, String username, Integer caseId) {
+    private TessParam buildTessServerParam(Integer roadNum, String username, Integer caseId, List<String> mapList) {
         return new TessParam().buildRealTestParam(roadNum,
                 ChannelBuilder.buildTestingDataChannel(username, caseId),
                 ChannelBuilder.buildTestingControlChannel(username, caseId),
                 ChannelBuilder.buildTestingEvaluateChannel(username, caseId),
-                ChannelBuilder.buildTestingStatusChannel(username, caseId));
+                ChannelBuilder.buildTestingStatusChannel(username, caseId),
+                mapList);
     }
 
     /**
@@ -447,7 +454,7 @@ public class TestingServiceImpl implements TestingService {
         CaseConfigBo mainConfig = caseInfoBo.getCaseConfigs().stream().filter(t ->
                 PartRole.AV.equals(t.getParticipantRole())).findFirst().orElseThrow(() ->
                 new BusinessException("用例主车配置信息异常"));
-        TessParam tessParam = buildTessServerParam(1, username, caseId);
+        TessParam tessParam = buildTessServerParam(1, username, caseId,null);
         if (!restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(),
                 0, caseId, action,
                 generateDeviceConnRules(caseInfoBo, tessParam.getCommandChannel(), tessParam.getDataChannel()),
@@ -489,7 +496,7 @@ public class TestingServiceImpl implements TestingService {
         CaseConfigBo mainConfig = caseInfoBo.getCaseConfigs().stream().filter(t ->
                 PartRole.AV.equals(t.getParticipantRole())).findFirst().orElseThrow(() ->
                 new BusinessException("用例主车配置信息异常"));
-        TessParam tessParam = buildTessServerParam(1, username, caseId);
+        TessParam tessParam = buildTessServerParam(1, username, caseId,null);
         if (!restService.sendRuleUrl(
                 new CaseRuleControl(System.currentTimeMillis(), 0, caseId, action,
                         generateDeviceConnRules(caseInfoBo, tessParam.getCommandChannel(), tessParam.getDataChannel()),
@@ -590,7 +597,7 @@ public class TestingServiceImpl implements TestingService {
             throw new BusinessException("未查询到主车配置信息");
         }
         String commandChannel = avConfig.get().getCommandChannel();
-        TessParam tessParam = buildTessServerParam(1, caseInfoBo.getCreatedBy(), caseId);
+        TessParam tessParam = buildTessServerParam(1, caseInfoBo.getCreatedBy(), caseId, null);
         if (!restService.sendRuleUrl(
                 new CaseRuleControl(System.currentTimeMillis(), 0, caseId, 0,
                         generateDeviceConnRules(caseInfoBo, tessParam.getCommandChannel(), tessParam.getDataChannel()),

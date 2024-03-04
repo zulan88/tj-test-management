@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 import net.wanji.business.common.Constants.ChannelBuilder;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -57,10 +58,12 @@ public class TessParam {
      */
     private Object params;
 
+    private List<String> mapList;
+
     public TessParam() {
     }
 
-    public TessParam buildSimulationParam(Integer roadNum, String dataChannel, Object params) {
+    public TessParam buildSimulationParam(Integer roadNum, String dataChannel, Object params, List<String> mapList) {
         this.simulateType = ChannelBuilder.SIMULATION;
         this.roadNum = roadNum;
         this.dataChannel = dataChannel;
@@ -70,12 +73,13 @@ public class TessParam {
         this.statusChannel = "1";
         this.routingChannel = "1";
         this.evaluateChannel = "1";
+        this.mapList = mapList;
 
         return this;
     }
 
     public TessParam buildRealTestParam(Integer roadNum, String dataChannel, String commandChannel, String evaluateChannel,
-                                   String statusChannel) {
+                                   String statusChannel, List<String> mapList) {
         this.simulateType = ChannelBuilder.REAL;
         this.roadNum = roadNum;
         this.dataChannel = dataChannel;
@@ -85,6 +89,7 @@ public class TessParam {
 
         this.routingChannel = "1";
         this.params = JSONObject.parseObject("{\"params\":{\"params\": []}}");
+        this.mapList = mapList;
         return this;
     }
 
@@ -102,7 +107,7 @@ public class TessParam {
     }
 
     public TessParam buildTaskParam(Integer roadNum, String dataChannel, String commandChannel, String evaluateChannel,
-                                    String statusChannel) {
+                                    String statusChannel, List<String> mapList) {
         this.simulateType = ChannelBuilder.TASK;
         this.roadNum = roadNum;
         this.dataChannel = dataChannel;
@@ -112,6 +117,7 @@ public class TessParam {
 
         this.routingChannel = "1";
         this.params = JSONObject.parseObject("{\"params\":{\"params\": []}}");
+        this.mapList = mapList;
         return this;
     }
 }

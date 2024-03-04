@@ -40,4 +40,6 @@ public class SceneDebugDto {
     private String routePath;
     private String routeFile;
 
+    private Integer mapId;
+
 }
