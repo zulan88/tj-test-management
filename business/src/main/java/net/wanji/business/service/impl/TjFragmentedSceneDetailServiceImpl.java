@@ -533,7 +533,6 @@ public class TjFragmentedSceneDetailServiceImpl
                 }else {
                     mapList.add(String.valueOf(sceneDebugDto.getMapId()));
                 }
-                mapList.add(String.valueOf(sceneDebugDto.getMapId()));
 
                 DeviceDetailVo detailVo = deviceDetailVos.get(0);
                 boolean start = restService.startServer(detailVo.getIp(), Integer.valueOf(detailVo.getServiceAddress()),
