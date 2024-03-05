@@ -1061,6 +1061,11 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         return StringUtils.format(ContentTemplate.TASK_NUMBER_TEMPLATE, DateUtils.getNowDayString(),
                 CounterUtil.getNextNumber(ContentTemplate.TASK_NUMBER_TEMPLATE));
     }
+
+    @Override
+    public TjTask selectOneById(Integer id) {
+        return tjTaskMapper.selectById(id);
+    }
 }
 
 

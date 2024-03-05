@@ -1,7 +1,13 @@
 package net.wanji.business.socket;
 
+import lombok.extern.slf4j.Slf4j;
+import net.wanji.business.common.Constants;
 import net.wanji.business.common.Constants.ChannelBuilder;
+import net.wanji.business.entity.TjCase;
+import net.wanji.business.entity.TjTask;
 import net.wanji.business.exception.BusinessException;
+import net.wanji.business.service.TjCaseService;
+import net.wanji.business.service.TjTaskService;
 import net.wanji.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,9 +26,16 @@ import java.time.LocalDateTime;
  * @Descriptoin:
  */
 @Component
+@Slf4j
 public class MyWebSocketHandle extends TextWebSocketHandler {
+    private final TjTaskService tjTaskService;
+    private final TjCaseService tjCaseService;
 
-    private static final Logger log = LoggerFactory.getLogger("business");
+    public MyWebSocketHandle(TjTaskService tjTaskService,
+        TjCaseService tjCaseService) {
+        this.tjTaskService = tjTaskService;
+        this.tjCaseService = tjCaseService;
+    }
 
     /**
      * socket 建立成功事件 @OnOpen
@@ -73,9 +86,9 @@ public class MyWebSocketHandle extends TextWebSocketHandler {
         System.out.println("断开连接 ");
         String userName = (String) session.getAttributes().get("userName");
         String id = (String) session.getAttributes().get("id");
-        Integer clientType = Integer.parseInt((String) session.getAttributes().get("clientType")) ;
+        int clientType = Integer.parseInt((String) session.getAttributes().get("clientType")) ;
         String signId = (String) session.getAttributes().get("signId");
-        WebSocketManage.remove(buildKey(userName, id, clientType, signId));
+        WebSocketManage.remove(buildKey(userName, id, clientType, signId), getRunningStatus(id));
     }
 
     private String buildKey(String userName, String id, int clientType, String signId) throws BusinessException {
@@ -102,5 +115,37 @@ public class MyWebSocketHandle extends TextWebSocketHandler {
             return ChannelBuilder.buildTestingPreviewChannel(userName, Integer.valueOf(id));
         }
         throw new BusinessException("无法创建ws连接：客户端类型异常");
+    }
+
+    private Constants.TaskStatusEnum getRunningStatus(String id) {
+        try {
+            if (id.contains("_")) {
+                String[] tags = id.split("_");
+                if (tags.length == 5 && ("3".equals(tags[3]) || "5".equals(
+                    tags[3]))) {
+                    String taskId = tags[1];
+                    String caseId = tags[2];
+                    // 查询测试任务状态
+                    if ("0".equals(taskId)) {
+                        // 测试配置-实车实验
+                        TjCase byId = tjCaseService.getById(
+                            Integer.valueOf(caseId));
+                        return byId.getTaskStatus();
+                    } else {
+                        // 测试任务
+                        TjTask tjTask = tjTaskService.selectOneById(
+                            Integer.valueOf(taskId));
+                        if ("running".equals(tjTask.getStatus())) {
+                            return Constants.TaskStatusEnum.RUNNING;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            if (log.isErrorEnabled()) {
+                log.error("id [{}] parse error!", id, e);
+            }
+        }
+        return null;
     }
 }

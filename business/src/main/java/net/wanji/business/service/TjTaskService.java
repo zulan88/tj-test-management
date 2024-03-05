@@ -111,4 +111,6 @@ public interface TjTaskService extends IService<TjTask> {
 
 
     String getTestReportOuterChain(HttpServletRequest request);
+
+    TjTask selectOneById(Integer id);
 }

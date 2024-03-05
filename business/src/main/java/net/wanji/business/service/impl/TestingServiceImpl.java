@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.extern.slf4j.Slf4j;
+import net.wanji.business.common.Constants;
 import net.wanji.business.common.Constants.ChannelBuilder;
 import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.business.common.Constants.PartRole;
@@ -458,6 +459,7 @@ public class TestingServiceImpl implements TestingService {
 
         stopWatch.start("3.更新业务数据，构建结果集");
         // 3.更新业务数据
+        updateTaskStatus(caseId, 1);
         TjCaseRealRecord realRecord = caseInfoBo.getCaseRealRecord();
         realRecord.setStartTime(LocalDateTime.now());
         caseRealRecordMapper.updateById(realRecord);
@@ -498,6 +500,7 @@ public class TestingServiceImpl implements TestingService {
         }
         stopWatch.stop();
 
+        updateTaskStatus(caseId, 0);
         stopWatch.start("2.保存实车测试记录点位详情信息");
         String key = ChannelBuilder.buildTestingDataChannel(caseInfoBo.getCreatedBy(), caseId);
         List<List<ClientSimulationTrajectoryDto>> trajectories = kafkaCollector.take(key, caseId);
@@ -869,6 +872,21 @@ public class TestingServiceImpl implements TestingService {
         for (CaseConfigBo taskCaseConfigBo : filteredTaskCaseConfigs) {
             redisLock.releaseLock("task_" + taskCaseConfigBo.getDataChannel(), SecurityUtils.getUsername());
         }
+    }
+
+    /**
+     * 测试配置运行状态记录
+     * @param caseId
+     * @param status，0：stop;1:start
+     */
+    private void updateTaskStatus(Integer caseId, int status) {
+        TjCase byId = caseService.getById(caseId);
+        if(1 == status){
+            byId.setTaskStatus(Constants.TaskStatusEnum.RUNNING);
+        }else {
+            byId.setTaskStatus(Constants.TaskStatusEnum.FINISHED);
+        }
+        caseService.updateById(byId);
     }
 
 }

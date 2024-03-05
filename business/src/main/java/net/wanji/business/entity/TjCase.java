@@ -11,11 +11,12 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import net.wanji.business.common.Constants;
 import net.wanji.common.annotation.Excel;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author wj
@@ -86,6 +87,12 @@ public class TjCase implements Serializable {
      */
     @TableField("status")
     private String status;
+
+  /**
+   * 运行状态
+   */
+  @TableField("task_status")
+    private Constants.TaskStatusEnum taskStatus;
 
     /**
      * 创建人
