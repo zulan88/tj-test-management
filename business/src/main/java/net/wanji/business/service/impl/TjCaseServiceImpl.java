@@ -530,6 +530,7 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
                 }
                 tjCase.setRouteFile(sceneDetail.getRouteFile());
                 tjCase.setMapFile(sceneDetail.getMapFile());
+                tjCase.setMapId(sceneDetail.getMapId());
                 StringBuilder labelshows = new StringBuilder();
                 for (String str : sceneDetail.getLabel().split(",")) {
                     try {

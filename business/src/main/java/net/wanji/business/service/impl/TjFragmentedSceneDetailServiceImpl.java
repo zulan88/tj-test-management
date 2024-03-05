@@ -240,7 +240,7 @@ public class TjFragmentedSceneDetailServiceImpl
             detail.setUpdatedBy(SecurityUtils.getUsername());
             detail.setUpdatedDate(LocalDateTime.now());
         }
-        if(ObjectUtils.isEmpty(sceneDetailDto.getMapId())){
+        if(!ObjectUtils.isEmpty(sceneDetailDto.getMapId())){
             TjAtlasVenue tjAtlasVenue = tjAtlasVenueService.getById(sceneDetailDto.getMapId());
             detail.setMapFile(tjAtlasVenue.getGeoJsonPath());
         }
@@ -527,9 +527,17 @@ public class TjFragmentedSceneDetailServiceImpl
                         testStartParam.getAvNum(), testStartParam.getSimulationNum(), testStartParam.getPedestrianNum()));
                 redisTrajectoryConsumer.subscribeAndSend(sceneDebugDto);
 
+                List<String> mapList = new ArrayList<>();
+                if (ObjectUtils.isEmpty(sceneDebugDto.getMapId())) {
+                    mapList.add("10");
+                }else {
+                    mapList.add(String.valueOf(sceneDebugDto.getMapId()));
+                }
+                mapList.add(String.valueOf(sceneDebugDto.getMapId()));
+
                 DeviceDetailVo detailVo = deviceDetailVos.get(0);
                 boolean start = restService.startServer(detailVo.getIp(), Integer.valueOf(detailVo.getServiceAddress()),
-                        new TessParam().buildSimulationParam(1, testStartParam.getChannel(), testStartParam));
+                        new TessParam().buildSimulationParam(1, testStartParam.getChannel(), testStartParam, mapList));
                 if (!start) {
                     String repeatKey = "DEBUGGING_SCENE_" + sceneDebugDto.getNumber();
                     redisCache.deleteObject(repeatKey);
