@@ -566,7 +566,7 @@ public class TestingServiceImpl implements TestingService {
         kafkaCollector.remove(key, caseId);
 
         Map<String, Object> context = new HashMap<>();
-        context.put("username", SecurityUtils.getUsername());
+        context.put("user", SecurityUtils.getUsername());
         caseTrajectoryParam.setContext(context);
         restService.sendCaseTrajectoryInfo(caseTrajectoryParam);
         CaseTestStartVo startVo = new CaseTestStartVo();
