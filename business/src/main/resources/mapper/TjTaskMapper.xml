@@ -110,6 +110,8 @@
         <result property="endTime" column="end_time" jdbcType="TIMESTAMP"/>
         <result property="status" column="status" jdbcType="VARCHAR"/>
         <result property="detailInfo" column="detail_info" jdbcType="VARCHAR"/>
+        <result property="mapFile" column="map_file" jdbcType="VARCHAR" />
+        <result property="mapId" column="map_id" jdbcType="INTEGER" />
     </resultMap>
 
     <resultMap id="TaskCaseConfigResult" type="net.wanji.business.entity.TjTaskDataConfig">
@@ -223,6 +225,8 @@
                b.case_number,
                b.scene_detail_id,
                b.label,
+               b.map_id,
+               b.map_file,
                b.detail_info
         from tj_task_case ttc
                  left join (
@@ -230,6 +234,8 @@
                    tc.case_number,
                    tc.scene_detail_id,
                    tc.detail_info,
+                   tc.map_id,
+                   tc.map_file,
                    sd.label
             from tj_case tc
             inner join tj_fragmented_scene_detail sd on tc.scene_detail_id = sd.id

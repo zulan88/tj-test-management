@@ -59,6 +59,10 @@ public class TaskCaseVo extends TjTaskCase {
     @ApiModelProperty(value = "所属文件", dataType = "Integer", example = "1", position = 6)
     private Integer treeId;
 
+    private String mapFile;
+
+    private Integer mapId;
+
 
 
 }
