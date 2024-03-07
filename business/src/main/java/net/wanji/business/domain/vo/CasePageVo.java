@@ -33,4 +33,6 @@ public class CasePageVo extends CaseDetailVo {
     private Boolean selected;
 
     private String mapFile;
+
+    private Integer mapId;
 }

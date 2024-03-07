@@ -13,9 +13,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * <p>
@@ -45,6 +43,7 @@ public class TjAtlasVenueServiceImpl extends ServiceImpl<TjAtlasVenueMapper, TjA
             tjAtlasVenue.setIsField(tjAtlasVenueDto.getIsField());
             tjAtlasVenue.setGeoJsonPath(tjAtlasVenueDto.getGeoJsonPath());
             tjAtlasVenue.setOpenDrivePath(tjAtlasVenueDto.getOpenDrivePath());
+            tjAtlasVenue.setFieldImgPath(tjAtlasVenueDto.getFieldImgPath());
             tjAtlasVenue.setUpdatedBy(SecurityUtils.getUsername());
             tjAtlasVenue.setUpdatedDate(LocalDateTime.now());
             return this.updateById(tjAtlasVenue);

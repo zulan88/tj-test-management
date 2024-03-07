@@ -13,10 +13,7 @@ import net.wanji.business.domain.PartConfigSelect;
 import net.wanji.business.domain.dto.CaseQueryDto;
 import net.wanji.business.domain.dto.CaseTreeDto;
 import net.wanji.business.domain.dto.TjCaseDto;
-import net.wanji.business.domain.vo.CaseDetailVo;
-import net.wanji.business.domain.vo.CasePartConfigVo;
-import net.wanji.business.domain.vo.RoleVo;
-import net.wanji.business.domain.vo.SceneDetailVo;
+import net.wanji.business.domain.vo.*;
 import net.wanji.business.entity.TjCaseOp;
 import net.wanji.business.entity.TjCasePartConfig;
 import net.wanji.business.exception.BusinessException;
@@ -297,7 +294,19 @@ public class CaseController extends BaseController {
     @ApiOperation(value = "21.查询")
     @GetMapping("/getCasesByTaskId")
     public AjaxResult saveCaseDeviceNew(Integer taskId) {
-        return AjaxResult.success(caseService.selectCaseOp(taskId));
+        CaseOpVo caseOpVo = new CaseOpVo();
+        List<TjCaseOp> list = caseService.selectCaseOp(taskId);
+        caseOpVo.setCaseOpList(list);
+        for (TjCaseOp tjCaseOp : list) {
+            if (!tjCaseOp.getOpStatus().equals("finished")){
+                caseOpVo.setNowMapId(tjCaseOp.getMapId());
+                break;
+            }
+        }
+        if(caseOpVo.getNowMapId() == null){
+            caseOpVo.setNowMapId(list.get(0).getMapId());
+        }
+        return AjaxResult.success(caseOpVo);
     }
 
     //孪生专用

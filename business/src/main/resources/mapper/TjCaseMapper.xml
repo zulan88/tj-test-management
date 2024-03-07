@@ -19,6 +19,7 @@
         <result property="testSceneDesc" column="test_scene_desc" jdbcType="VARCHAR"/>
         <result property="label" column="label" jdbcType="VARCHAR"/>
         <result property="mapFile" column="map_file" jdbcType="VARCHAR" />
+        <result property="mapId" column="map_id" jdbcType="INTEGER" />
         <result property="detailInfo" column="detail_info" jdbcType="VARCHAR"/>
         <result property="routeFile" column="route_file" jdbcType="VARCHAR"/>
         <result property="testTarget" column="test_target" jdbcType="VARCHAR"/>
@@ -61,6 +62,7 @@
         c.detail_info,
         c.route_file,
         c.map_file,
+        c.map_id,
         c.status,
         c.remark,
         c.updated_date,
@@ -231,6 +233,8 @@
         <result property="status" column="status"/>
         <result property="createdBy" column="created_by"/>
         <result property="number" column="number"/>
+        <result property="mapFile" column="map_file" jdbcType="VARCHAR" />
+        <result property="mapId" column="map_id" jdbcType="INTEGER" />
         <association property="caseRealRecord" javaType="net.wanji.business.entity.TjCaseRealRecord">
             <id property="id" column="r_id"/>
             <result property="caseId" column="case_id"/>
@@ -273,6 +277,8 @@
                tc.detail_info,
                tc.route_file,
                tc.created_by,
+               tc.map_id,
+               tc.map_file,
                sd.number,
                sd.img_url,
                sd.test_scene_desc,
