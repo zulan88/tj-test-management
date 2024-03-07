@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 import java.util.Date;
 
 /**
- * 
+ *
  * @TableName tj_device
  */
 @Getter
@@ -83,6 +83,12 @@ public class TjDeviceDetail implements Serializable {
      */
     @TableField("status")
     private Integer status;
+
+    /**
+     * 设备使用状态：0：空闲，1：使用中
+     */
+    @TableField("busy_status")
+    private Integer busyStatus;
 
     /**
      * 最后上线时间

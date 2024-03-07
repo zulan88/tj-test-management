@@ -9,8 +9,6 @@ import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.TjCaseService;
 import net.wanji.business.service.TjTaskService;
 import net.wanji.common.utils.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.socket.CloseStatus;
@@ -130,7 +128,7 @@ public class MyWebSocketHandle extends TextWebSocketHandler {
                         // 测试配置-实车实验
                         TjCase byId = tjCaseService.getById(
                             Integer.valueOf(caseId));
-                        return byId.getTaskStatus();
+                        return byId.getRunningStatus();
                     } else {
                         // 测试任务
                         TjTask tjTask = tjTaskService.selectOneById(

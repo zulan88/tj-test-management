@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
@@ -66,6 +67,11 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
 
     @Autowired
     private RedisCache redisCache;
+
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+
+    private final static String DEVICE_BUSY_STATUS =  "device_busy_status_%d";
 
     @PostConstruct
     public void initDeviceState() {
@@ -208,4 +214,28 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
         }
         return (Integer) StatusManage.getValue(key);
     }
+
+    @Override
+    public Integer selectDeviceBusyStatus(Integer deviceId) {
+        String key = String.format(DEVICE_BUSY_STATUS, deviceId);
+        int status = 0;
+        if (redisCache.hasKey(key)) {
+            status = redisCache.getCacheObject(key);
+        }
+        return status;
+    }
+
+    @Override
+    public synchronized Boolean setDeviceBusyStatus(Integer deviceId,
+        Integer busyStatus) {
+        Integer status = this.selectDeviceBusyStatus(deviceId);
+        if(0 == status){
+            Boolean result = redisTemplate.opsForValue()
+                .setIfAbsent(String.format(DEVICE_BUSY_STATUS, deviceId),
+                    busyStatus);
+            return Boolean.TRUE.equals(result);
+        }
+        return false;
+    }
+
 }

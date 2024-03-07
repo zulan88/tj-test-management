@@ -28,6 +28,11 @@ public class RealVehicleVerificationPageVo {
 
     private boolean canStart;
 
+    /**
+     * 测试用例运行状态：运行中：true，闲置之中：false
+     */
+    private boolean running;
+
     private String message;
 
     public void setMessage(String message) {

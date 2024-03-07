@@ -94,11 +94,11 @@ public class TjCase implements Serializable {
     @TableField("status")
     private String status;
 
-  /**
-   * 运行状态
-   */
-  @TableField("task_status")
-    private Constants.TaskStatusEnum taskStatus;
+    /**
+     * 运行状态
+     */
+    @TableField("running_status")
+    private Constants.TaskStatusEnum runningStatus;
 
     /**
      * 创建人

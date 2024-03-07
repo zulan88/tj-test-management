@@ -83,4 +83,8 @@ public class CaseConfigBo extends TjCasePartConfig {
      * 是否到达指定位置
      */
     private Integer positionStatus;
+    /**
+     * 车辆运行状态，0：空闲，1：运行
+     */
+    private Integer running;
 }
