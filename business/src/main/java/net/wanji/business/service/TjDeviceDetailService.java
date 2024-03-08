@@ -97,18 +97,30 @@ public interface TjDeviceDetailService extends IService<TjDeviceDetail> {
     Integer handDeviceReadyState(Integer deviceId, String statusChannel, DeviceReadyStateParam stateParam, boolean wait);
 
     /**
-     * 设备
-     * @param deviceId
+     * 设备状态查询
+     * @param deviceId 虚拟设备ID
      * @return
      */
-    Integer selectDeviceBusyStatus(Integer deviceId);
+    Integer selectDeviceBusyStatus(String deviceId);
+
+    /**
+     * 设备集合空闲状态
+     * @param deviceIds 虚拟设备ID
+     * @return
+     */
+    boolean allDevicesIdle(List<String> deviceIds);
 
     /**
      * 设备使用状态修改
-     * @param deviceId
+     *
+     * @param deviceId 虚拟设备ID
+     * @param taskId
+     * @param caseId
      * @param busyStatus，0：空闲，1：使用中
+     * @param occupy，true：申请该设备，false：释放设备。区分多设备申请失败，回滚操作
      * @return
      */
-    Boolean setDeviceBusyStatus(Integer deviceId, Integer busyStatus);
+    Boolean setDeviceBusyStatus(String deviceId, Integer taskId,
+        Integer caseId, Integer busyStatus, boolean occupy);
 
 }

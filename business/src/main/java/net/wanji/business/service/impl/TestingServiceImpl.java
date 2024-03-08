@@ -37,10 +37,7 @@ import net.wanji.business.domain.vo.CaseTestStartVo;
 import net.wanji.business.domain.vo.CommunicationDelayVo;
 import net.wanji.business.domain.vo.RealTestResultVo;
 import net.wanji.business.domain.vo.RealVehicleVerificationPageVo;
-import net.wanji.business.entity.TjCase;
-import net.wanji.business.entity.TjCaseRealRecord;
-import net.wanji.business.entity.TjCaseTree;
-import net.wanji.business.entity.TjFragmentedSceneDetail;
+import net.wanji.business.entity.*;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.listener.KafkaCollector;
 import net.wanji.business.mapper.TjCaseRealRecordMapper;
@@ -55,7 +52,9 @@ import net.wanji.business.service.TjCaseTreeService;
 import net.wanji.business.service.TjDeviceDetailService;
 import net.wanji.business.service.TjFragmentedSceneDetailService;
 import net.wanji.business.socket.WebSocketManage;
+import net.wanji.business.util.DeviceUtils;
 import net.wanji.business.util.RedisLock;
+import net.wanji.business.util.TessngUtils;
 import net.wanji.common.common.ClientSimulationTrajectoryDto;
 import net.wanji.common.common.SimulationTrajectoryDto;
 import net.wanji.common.utils.DateUtils;
@@ -154,14 +153,14 @@ public class TestingServiceImpl implements TestingService {
         List<SimulationTrajectoryDto> mainTrajectories = new ArrayList<>();
         fillStatusParam(caseInfoBo, allCaseConfigs, caseBusinessIdAndRoleMap, startMap, mainTrajectories);
         // 3.设备过滤
-        List<CaseConfigBo> distCaseConfigs = filterConfigs(allCaseConfigs);
+        List<CaseConfigBo> distCaseConfigs = DeviceUtils.deWeightConfigsByDeviceId(allCaseConfigs);
         List<CaseConfigBo> filteredTaskCaseConfigs = distCaseConfigs.stream()
                 .filter(t -> !PartRole.MV_SIMULATION.equals(t.getParticipantRole())).collect(Collectors.toList());
         CaseConfigBo simulationConfig = distCaseConfigs.stream()
                 .filter(t -> PartRole.MV_SIMULATION.equals(t.getParticipantRole()))
                 .findFirst()
                 .orElseThrow(() -> new BusinessException("未找到仿真设备"));
-        if (!running && hand) {
+        if (!running && hand && isDevicesIdle(filteredTaskCaseConfigs)) {
             caseReset(caseId, caseInfoBo, simulationConfig,
                 filteredTaskCaseConfigs);
         }
@@ -171,6 +170,15 @@ public class TestingServiceImpl implements TestingService {
         stopWatch.stop();
         // 6.返回结果集
         return buildPageVo(caseInfoBo, startMap, allCaseConfigs, distCaseConfigs, running);
+    }
+
+    private boolean isDevicesIdle(List<CaseConfigBo> caseConfigBos) {
+        if (null == caseConfigBos) {
+            return true;
+        }
+        return deviceDetailService.allDevicesIdle(caseConfigBos.stream().map(
+            e -> DeviceUtils.getVisualDeviceId(e.getCaseId(), e.getDeviceId(),
+                e.getSupportRoles())).collect(Collectors.toList()));
     }
 
     /**
@@ -248,20 +256,6 @@ public class TestingServiceImpl implements TestingService {
         }
         result.setRunning(running);
         return result;
-    }
-
-
-    /**
-     * 筛选重复设备
-     *
-     * @param caseConfigs
-     * @return
-     */
-    private List<CaseConfigBo> filterConfigs(List<CaseConfigBo> caseConfigs) {
-        return caseConfigs.stream().filter(info ->
-                !ObjectUtils.isEmpty(info.getDeviceId())).collect(Collectors.collectingAndThen(
-                Collectors.toCollection(() ->
-                        new TreeSet<>(Comparator.comparing(CaseConfigBo::getDeviceId))), ArrayList::new));
     }
 
     /**
@@ -441,7 +435,7 @@ public class TestingServiceImpl implements TestingService {
 
         stopWatch.start("3.更新业务数据，构建结果集");
         // 3.更新业务数据
-        updateTaskStatus(caseInfoBo, 1);
+        updateTaskStatus(caseInfoBo, 1, username);
         TjCaseRealRecord realRecord = caseInfoBo.getCaseRealRecord();
         realRecord.setStartTime(LocalDateTime.now());
         caseRealRecordMapper.updateById(realRecord);
@@ -482,7 +476,7 @@ public class TestingServiceImpl implements TestingService {
         }
         stopWatch.stop();
 
-        updateTaskStatus(caseInfoBo, 0);
+        updateTaskStatus(caseInfoBo, 0, username);
         stopWatch.start("2.保存实车测试记录点位详情信息");
         String key = ChannelBuilder.buildTestingDataChannel(caseInfoBo.getCreatedBy(), caseId);
         List<List<ClientSimulationTrajectoryDto>> trajectories = kafkaCollector.take(key, caseId);
@@ -786,7 +780,7 @@ public class TestingServiceImpl implements TestingService {
     }
 
     private List<DeviceConnRule> generateDeviceConnRules(CaseInfoBo caseInfoBo, String commandChannel, String dataChannel) {
-        List<CaseConfigBo> configs = filterConfigs(caseInfoBo.getCaseConfigs());
+        List<CaseConfigBo> configs = DeviceUtils.deWeightConfigsByDeviceId(caseInfoBo.getCaseConfigs());
         List<DeviceConnRule> rules = new ArrayList<>();
         for (int i = 0; i < configs.size(); i++) {
             CaseConfigBo sourceDevice = configs.get(i);
@@ -848,7 +842,7 @@ public class TestingServiceImpl implements TestingService {
         for (CaseConfigBo caseConfig : CollectionUtils.emptyIfNull(caseInfoBo.getCaseConfigs())) {
             caseConfigs.add(caseConfig);
         }
-        caseConfigs = filterConfigs(caseConfigs);
+        caseConfigs = DeviceUtils.deWeightConfigsByDeviceId(caseConfigs);
         List<CaseConfigBo> filteredTaskCaseConfigs = caseConfigs.stream()
                 .filter(t -> !PartRole.MV_SIMULATION.equals(t.getParticipantRole())).collect(Collectors.toList());
         for (CaseConfigBo taskCaseConfigBo : filteredTaskCaseConfigs) {
@@ -858,30 +852,38 @@ public class TestingServiceImpl implements TestingService {
 
     /**
      * 测试配置运行状态记录
+     *
      * @param caseInfoBo
      * @param status，0：stop;1:start
      */
-    private synchronized Boolean updateTaskStatus(CaseInfoBo caseInfoBo, int status) {
+    private synchronized Boolean updateTaskStatus(CaseInfoBo caseInfoBo,
+        int status, String username) {
         TjCase byId = caseService.getById(caseInfoBo.getId());
-        if(1 == status){
+        if (1 == status) {
             byId.setRunningStatus(Constants.TaskStatusEnum.RUNNING);
-        }else {
+        } else {
             byId.setRunningStatus(Constants.TaskStatusEnum.FINISHED);
         }
         // 暂时在任务运行阶段处理，添加准备状态后移动至准备状态
-        Boolean result = setDevicesBusyStatus(caseInfoBo, status);
-        if(!result){
-            setDevicesBusyStatusRollBack(caseInfoBo, status == 0 ? 1 : 0);
+        List<CaseConfigBo> caseConfigs = DeviceUtils.deWeightConfigsByDeviceId(
+            caseInfoBo.getCaseConfigs());
+        Boolean result = setDevicesBusyStatus(caseInfoBo.getId(), caseConfigs,
+            status, username);
+        if (!result) {
+            setDevicesBusyStatusRollBack(caseInfoBo.getId(), caseConfigs,
+                status == 0 ? 1 : 0, username);
         }
         return result && caseService.updateById(byId);
     }
 
-    private Boolean setDevicesBusyStatus(CaseInfoBo caseInfoBo, int status) {
-        List<CaseConfigBo> caseConfigs = caseInfoBo.getCaseConfigs();
+    private Boolean setDevicesBusyStatus(Integer caseId,
+        List<CaseConfigBo> caseConfigs, int status, String username) {
         if (!CollectionUtils.isEmpty(caseConfigs)) {
             for (CaseConfigBo caseConfig : caseConfigs) {
                 if (!deviceDetailService.setDeviceBusyStatus(
-                    caseConfig.getDeviceId(), status)) {
+                    DeviceUtils.getVisualDeviceId(caseId,
+                        caseConfig.getDeviceId(), caseConfig.getSupportRoles(),
+                        username), 0, caseId, status, true)) {
                     return false;
                 }
             }
@@ -889,12 +891,13 @@ public class TestingServiceImpl implements TestingService {
         return true;
     }
 
-    private void setDevicesBusyStatusRollBack(CaseInfoBo caseInfoBo,
-        Integer status) {
-        List<CaseConfigBo> caseConfigs = caseInfoBo.getCaseConfigs();
+    private void setDevicesBusyStatusRollBack(Integer caseId,
+        List<CaseConfigBo> caseConfigs, Integer status, String username) {
         for (CaseConfigBo caseConfig : caseConfigs) {
             deviceDetailService.setDeviceBusyStatus(
-                caseConfig.getDeviceId(), status);
+                DeviceUtils.getVisualDeviceId(caseId, caseConfig.getDeviceId(),
+                    caseConfig.getSupportRoles(), username), 0, caseId, status,
+                false);
         }
     }
 
@@ -929,6 +932,14 @@ public class TestingServiceImpl implements TestingService {
         List<SimulationTrajectoryDto> mainTrajectories, CaseInfoBo caseInfoBo,
         Map<String, String> caseBusinessIdAndRoleMap) {
         for (CaseConfigBo caseConfigBo : distCaseConfigs) {
+            Integer running = deviceDetailService.selectDeviceBusyStatus(
+                DeviceUtils.getVisualDeviceId(caseConfigBo.getCaseId(),
+                    caseConfigBo.getDeviceId(),
+                    caseConfigBo.getSupportRoles()));
+            caseConfigBo.setRunning(running);
+            if (1 == running) {
+                continue;
+            }
             // 查询设备状态
             Integer status = hand
                 ? deviceDetailService.handDeviceState(caseConfigBo.getDeviceId(), getCommandChannelByRole(caseConfigBo), false)
@@ -947,8 +958,6 @@ public class TestingServiceImpl implements TestingService {
                 ? deviceDetailService.handDeviceReadyState(caseConfigBo.getDeviceId(), getReadyStatusChannelByRole(caseConfigBo), stateParam, false)
                 : deviceDetailService.selectDeviceReadyState(caseConfigBo.getDeviceId(), getReadyStatusChannelByRole(caseConfigBo), stateParam, false);
             caseConfigBo.setPositionStatus(positionStatus);
-
-            caseConfigBo.setRunning(deviceDetailService.selectDeviceBusyStatus(caseConfigBo.getDeviceId()));
         }
     }
 

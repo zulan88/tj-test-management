@@ -34,6 +34,7 @@ import org.springframework.util.ObjectUtils;
 import javax.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -71,7 +72,8 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
 
-    private final static String DEVICE_BUSY_STATUS =  "device_busy_status_%d";
+    private final static String DEVICE_BUSY_STATUS =  "device_busy_status_%s";
+    private final static String DEVICE_BUSY_STATUS_KET = "device_busy_status_key_%d_%d";
 
     @PostConstruct
     public void initDeviceState() {
@@ -210,30 +212,63 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
         try {
             StatusManage.addCountDownLatch(key, 50);
         } catch (InterruptedException e) {
-            log.error("手动查询设备{}准备状态异常：{}", deviceId, e);
+            log.error("手动查询设备{}准备状态异常", deviceId, e);
         }
         return (Integer) StatusManage.getValue(key);
     }
 
     @Override
-    public Integer selectDeviceBusyStatus(Integer deviceId) {
-        String key = String.format(DEVICE_BUSY_STATUS, deviceId);
+    public Integer selectDeviceBusyStatus(String deviceId) {
+        String redisKey = String.format(DEVICE_BUSY_STATUS, deviceId);
         int status = 0;
-        if (redisCache.hasKey(key)) {
-            status = redisCache.getCacheObject(key);
+        if (redisCache.hasKey(redisKey)) {
+            Map<String, Integer> cacheMap = redisCache.getCacheMap(redisKey);
+            if(!cacheMap.isEmpty()){
+                for (Integer value : cacheMap.values()) {
+                    if(1 == value){
+                        status = 1;
+                        break;
+                    }
+                }
+            }
         }
         return status;
     }
 
     @Override
-    public synchronized Boolean setDeviceBusyStatus(Integer deviceId,
-        Integer busyStatus) {
-        Integer status = this.selectDeviceBusyStatus(deviceId);
-        if(0 == status){
-            Boolean result = redisTemplate.opsForValue()
-                .setIfAbsent(String.format(DEVICE_BUSY_STATUS, deviceId),
-                    busyStatus);
-            return Boolean.TRUE.equals(result);
+    public synchronized boolean allDevicesIdle(List<String> deviceIds) {
+        if (null != deviceIds) {
+            for (String deviceId : deviceIds) {
+                if (1 == this.selectDeviceBusyStatus(deviceId)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public synchronized Boolean setDeviceBusyStatus(String deviceId, Integer taskId,
+        Integer caseId, Integer busyStatus, boolean occupy) {
+        String redisKey = String.format(DEVICE_BUSY_STATUS, deviceId);
+        String valueKey = String.format(DEVICE_BUSY_STATUS_KET, taskId, caseId);
+        Object valueResult = redisTemplate.opsForHash().get(redisKey, valueKey);
+        if (!occupy) {
+            if (null != valueResult) {
+                redisTemplate.opsForHash().put(redisKey, valueKey, busyStatus);
+                return true;
+            }
+        } else if (0 == busyStatus) {
+            redisTemplate.opsForHash().delete(redisKey, valueKey);
+            return true;
+        } else {
+            Integer status = this.selectDeviceBusyStatus(deviceId);
+            if (0 == status) {
+                Boolean result = redisTemplate.opsForHash()
+                    .putIfAbsent(redisKey, valueKey, busyStatus);
+                return Boolean.TRUE.equals(result);
+            }
         }
         return false;
     }

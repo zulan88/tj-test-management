@@ -231,6 +231,7 @@
         <result property="detailInfo" column="detail_info"/>
         <result property="routeFile" column="route_file"/>
         <result property="status" column="status"/>
+        <result property="runningStatus" column="running_status"/>
         <result property="createdBy" column="created_by"/>
         <result property="number" column="number"/>
         <result property="mapFile" column="map_file" jdbcType="VARCHAR" />
@@ -279,6 +280,7 @@
                tc.created_by,
                tc.map_id,
                tc.map_file,
+               tc.running_status,
                sd.number,
                sd.img_url,
                sd.test_scene_desc,
