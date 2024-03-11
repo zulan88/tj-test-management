@@ -2,18 +2,15 @@ package net.wanji.business.domain;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class DeparturePoint {
 
     String name;
 
-    String carType;
+    Float weight;
 
-    String timePeriod;
-
-    Integer carNumber;
-
-    String latitude;
-    String longitude;
+    List<SitePoint> route;
 
 }

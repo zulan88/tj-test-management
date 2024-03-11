@@ -47,8 +47,8 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
         if (infinteMileScence.getInElements()!= null && infinteMileScence.getInElements().size() > 0){
             infinteMileScence.setElement(gson.toJson(infinteMileScence.getInElements()));
         }
-        if (infinteMileScence.getTrafficFlowObject()!= null){
-            infinteMileScence.setTrafficFlow(gson.toJson(infinteMileScence.getTrafficFlowObject()));
+        if (infinteMileScence.getTrafficFlows()!= null && infinteMileScence.getTrafficFlows().size() > 0){
+            infinteMileScence.setTrafficFlow(gson.toJson(infinteMileScence.getTrafficFlows()));
         }
         if (infinteMileScence.getSiteSlices()!= null && infinteMileScence.getSiteSlices().size() > 0){
             infinteMileScence.setSiteSlice(gson.toJson(infinteMileScence.getSiteSlices()));

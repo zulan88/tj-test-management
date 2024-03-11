@@ -1,12 +1,11 @@
 package net.wanji.business.domain;
 
 import lombok.Data;
-import net.wanji.business.entity.InfinteMileScence;
 
 import java.util.List;
 
 @Data
-public class InfinteMileScenceExo extends InfinteMileScence {
+public class InfiniteTessParm {
 
     List<InElement> inElements;
 

@@ -6,6 +6,8 @@ import java.util.List;
 @Data
 public class SiteSlice {
 
+    Integer sliceId;
+
     String sliceName;
 
     List<SitePoint> route;
