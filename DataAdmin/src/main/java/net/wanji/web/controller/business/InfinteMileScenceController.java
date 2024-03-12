@@ -10,6 +10,7 @@ import net.wanji.business.service.InfinteMileScenceService;
 import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
+import org.apache.poi.ss.formula.functions.T;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -38,8 +39,8 @@ public class InfinteMileScenceController extends BaseController {
                 infinteMileScenceExo.setInElements(inElements);
             }
             if(infinteMileScenceExo.getTrafficFlow()!= null&&infinteMileScenceExo.getTrafficFlow().length() > 0){
-                TrafficFlow trafficFlow = gson.fromJson(infinteMileScenceExo.getTrafficFlow(), TrafficFlow.class);
-                infinteMileScenceExo.setTrafficFlowObject(trafficFlow);
+                List<TrafficFlow> trafficFlows = Arrays.asList(gson.fromJson(infinteMileScenceExo.getTrafficFlow(), TrafficFlow[].class));
+                infinteMileScenceExo.setTrafficFlows(trafficFlows);
             }
             if(infinteMileScenceExo.getSiteSlice()!= null&&infinteMileScenceExo.getSiteSlice().length() > 0){
                 List<SiteSlice> siteSlices = Arrays.asList(gson.fromJson(infinteMileScenceExo.getSiteSlice(), SiteSlice[].class));

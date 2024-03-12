@@ -7,6 +7,8 @@ import java.util.List;
 @Data
 public class InElement {
 
+    Integer id;
+
     String name;
 
     Integer expectedSpeed;
