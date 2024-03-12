@@ -9,18 +9,18 @@ import lombok.extern.slf4j.Slf4j;
 import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.bo.SaveTaskSchemeBo;
-import net.wanji.business.domain.bo.TaskBo;
 import net.wanji.business.domain.dto.TaskDto;
-import net.wanji.business.domain.vo.TaskListVo;
-import net.wanji.business.entity.TjInfinityTask;
+import net.wanji.business.domain.vo.ShardingInOutVo;
+import net.wanji.business.entity.TjShardingChangeRecord;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.RestService;
 import net.wanji.business.service.TjInfinityTaskService;
+import net.wanji.business.service.TjShardingChangeRecordService;
 import net.wanji.common.constant.HttpStatus;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
 import net.wanji.common.utils.SecurityUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.BeanUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -45,13 +45,17 @@ import java.util.Map;
 @RequestMapping("/taskInfinite")
 public class InfiniteTaskController {
 
-    @Autowired
-    private RestService restService;
+    private final RestService restService;
 
     private final TjInfinityTaskService tjInfinityTaskService;
+    private final TjShardingChangeRecordService tjShardingChangeRecordService;
 
-    public InfiniteTaskController(TjInfinityTaskService tjInfinityTaskService) {
+    public InfiniteTaskController(RestService restService,
+        TjInfinityTaskService tjInfinityTaskService,
+        TjShardingChangeRecordService tjShardingChangeRecordService) {
+        this.restService = restService;
         this.tjInfinityTaskService = tjInfinityTaskService;
+        this.tjShardingChangeRecordService = tjShardingChangeRecordService;
     }
 
     // 任务删除
@@ -126,6 +130,17 @@ public class InfiniteTaskController {
             return AjaxResult.error(map.get("msg"));
         }
         tjInfinityTaskService.saveCustomIndexWeight(saveCustomIndexWeightBo);
+        return AjaxResult.success();
+    }
+
+    @ApiOperationSort(12)
+    @ApiOperation("分片进出通知")
+    @PostMapping("/shardingInOut")
+    public AjaxResult shardingRangeInOut(
+        @RequestBody ShardingInOutVo shardingInOutVo) {
+        TjShardingChangeRecord tjShardingChangeRecord = new TjShardingChangeRecord();
+        BeanUtils.copyProperties(shardingInOutVo, tjShardingChangeRecord);
+        tjShardingChangeRecordService.save(tjShardingChangeRecord);
         return AjaxResult.success();
     }
 }
