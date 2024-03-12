@@ -59,6 +59,12 @@ public class TjInfinityTask implements Serializable {
   /**
    * 测试场景名称
    */
+  @TableField(value = "CASE_ID")
+  private String caseId;
+
+  /**
+   * 测试场景名称
+   */
   @TableField(value = "CASE_NAME")
   private String caseName;
 
@@ -89,7 +95,7 @@ public class TjInfinityTask implements Serializable {
   @TableField(value = "ENTRUSTER_CONTACT")
   private String entrusterContact;
   /**
-   * 我委托信息
+   * 委托信息
    */
   @TableField(value = "ENTRUST_CONTENT")
   private String entrustContent;

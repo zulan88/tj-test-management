@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 
 /**
- * Created by guodejun on 2018/1/11.
+ * Created by guodejun on 2024/02/02.
  * 保存发送 tessng 请求参数及结果
  */
 @Slf4j

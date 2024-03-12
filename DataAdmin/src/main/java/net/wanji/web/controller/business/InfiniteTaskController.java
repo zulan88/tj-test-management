@@ -1,10 +1,36 @@
 package net.wanji.web.controller.business;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiOperationSort;
 import lombok.extern.slf4j.Slf4j;
+import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
+import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
+import net.wanji.business.domain.bo.SaveTaskSchemeBo;
+import net.wanji.business.domain.bo.TaskBo;
+import net.wanji.business.domain.dto.TaskDto;
+import net.wanji.business.domain.vo.TaskListVo;
+import net.wanji.business.entity.TjInfinityTask;
+import net.wanji.business.exception.BusinessException;
+import net.wanji.business.service.RestService;
 import net.wanji.business.service.TjInfinityTaskService;
+import net.wanji.common.constant.HttpStatus;
+import net.wanji.common.core.domain.AjaxResult;
+import net.wanji.common.core.page.TableDataInfo;
+import net.wanji.common.utils.SecurityUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author hcy
@@ -18,15 +44,88 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/taskInfinite")
 public class InfiniteTaskController {
-  private final TjInfinityTaskService tjInfinityTaskService;
 
-  public InfiniteTaskController(TjInfinityTaskService tjInfinityTaskService) {
-    this.tjInfinityTaskService = tjInfinityTaskService;
-  }
+    @Autowired
+    private RestService restService;
 
-  // 任务新增
+    private final TjInfinityTaskService tjInfinityTaskService;
 
-  // 任务删除
-  // 任务更新
-  // 任务查询
+    public InfiniteTaskController(TjInfinityTaskService tjInfinityTaskService) {
+        this.tjInfinityTaskService = tjInfinityTaskService;
+    }
+
+    // 任务删除
+
+    // 任务更新
+
+    // 任务查询
+    @ApiOperationSort(5)
+    @ApiOperation(value = "5.列表")
+    @PostMapping("/pageList")
+    public Map<String, Object> pageList(@Validated @RequestBody TaskDto taskDto, HttpServletRequest request) {
+        taskDto.setCreatedBy(SecurityUtils.getUsername());
+        Map<String, Object> result = new HashMap<>();
+        Map<String, Long> countMap = tjInfinityTaskService.selectCount(taskDto);
+        result.put("statistics", countMap);
+
+        PageHelper.startPage(taskDto.getPageNum(), taskDto.getPageSize());
+        TableDataInfo tableDataInfo = new TableDataInfo();
+        tableDataInfo.setCode(HttpStatus.SUCCESS);
+        tableDataInfo.setMsg("查询成功");
+        List<Map<String, Object>> list = tjInfinityTaskService.pageList(taskDto);
+        tableDataInfo.setData(list);
+        tableDataInfo.setTotal(new PageInfo(list).getTotal());
+        result.put("tableData", tableDataInfo);
+        // 添加测试报告的跳转外链
+        result.put("testReportOuterChain", tjInfinityTaskService.getTestReportOuterChain(request));
+        return result;
+    }
+
+
+    // 任务新增
+    @ApiOperationSort(3)
+    @ApiOperation(value = "3-1.保存")
+    @PostMapping("/save")
+    public AjaxResult save(@Validated @RequestBody Map<String, Object> task) throws BusinessException {
+        int id = tjInfinityTaskService.saveTask(task);
+        if (id == 0) {
+            return AjaxResult.error("保存失败");
+        }
+        return AjaxResult.success(id);
+    }
+
+    @ApiOperationSort(9)
+    @ApiOperation(value = "3-2.创建任务和方案关联")
+    @PostMapping("/saveTaskScheme")
+    public AjaxResult saveTaskScheme(@RequestBody SaveTaskSchemeBo saveTaskSchemeBo) throws BusinessException {
+        Map<String, String> map = restService.saveTaskScheme(saveTaskSchemeBo);
+        if ("500".equals(map.get("code"))) {
+            return AjaxResult.error(map.get("msg"));
+        }
+        return AjaxResult.success("成功");
+    }
+
+    @ApiOperationSort(10)
+    @ApiOperation(value = "3-3.自定义-场景权重创建")
+    @PostMapping("/saveCustomScenarioWeight")
+    public AjaxResult saveCustomScenarioWeight(@RequestBody SaveCustomScenarioWeightBo saveCustomScenarioWeightBo) throws BusinessException {
+        Map<String, String> map = restService.saveCustomScenarioWeight(saveCustomScenarioWeightBo);
+        if ("500".equals(map.get("code"))) {
+            return AjaxResult.error(map.get("msg"));
+        }
+        tjInfinityTaskService.saveCustomScenarioWeight(saveCustomScenarioWeightBo);
+        return AjaxResult.success();
+    }
+
+    @ApiOperationSort(11)
+    @ApiOperation(value = "3-4.自定义-指标权重创建")
+    @PostMapping("/saveCustomIndexWeight")
+    public AjaxResult saveCustomIndexWeight(@RequestBody SaveCustomIndexWeightBo saveCustomIndexWeightBo) throws BusinessException {
+        Map<String, String> map = restService.saveCustomIndexWeight(saveCustomIndexWeightBo);
+        if ("500".equals(map.get("code"))) {
+            return AjaxResult.error(map.get("msg"));
+        }
+        tjInfinityTaskService.saveCustomIndexWeight(saveCustomIndexWeightBo);
+        return AjaxResult.success();
+    }
 }
