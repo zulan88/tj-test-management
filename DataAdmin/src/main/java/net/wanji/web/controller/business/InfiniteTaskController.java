@@ -1,10 +1,13 @@
 package net.wanji.web.controller.business;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiOperationSort;
+import io.swagger.util.Json;
 import lombok.extern.slf4j.Slf4j;
 import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
@@ -86,12 +89,17 @@ public class InfiniteTaskController {
     @ApiOperationSort(3)
     @ApiOperation(value = "3-1.保存")
     @PostMapping("/save")
-    public AjaxResult save(@Validated @RequestBody Map<String, Object> task) throws BusinessException {
-        int id = tjInfinityTaskService.saveTask(task);
-        if (id == 0) {
+    public AjaxResult save(@Validated @RequestBody Map<String, Object> taskData, HttpServletRequest request) throws BusinessException {
+        try {
+            taskData.put("createdBy", SecurityUtils.getUsername());
+            String taskId = String.valueOf(tjInfinityTaskService.saveTask(taskData));
+            saveEvaluationScheme(taskData, taskId);
+            return AjaxResult.success(0);
+
+        } catch (Exception e) {
+            e.printStackTrace();
             return AjaxResult.error("保存失败");
         }
-        return AjaxResult.success(id);
     }
 
     @ApiOperationSort(9)
@@ -127,5 +135,31 @@ public class InfiniteTaskController {
         }
         tjInfinityTaskService.saveCustomIndexWeight(saveCustomIndexWeightBo);
         return AjaxResult.success();
+    }
+
+    private void saveEvaluationScheme(Map<String, Object> taskData, String taskId) throws BusinessException {
+        // 创建任务和方案关联
+        if (taskData.containsKey("taskScheme")) {
+            SaveTaskSchemeBo taskScheme = JSONObject.parseObject(JSONObject.toJSONString(
+                    taskData.get("taskScheme")), SaveTaskSchemeBo.class);
+            taskScheme.setTaskId(taskId);
+            saveTaskScheme(taskScheme);
+        }
+
+        // 3-3.自定义-场景权重创建
+        if (taskData.containsKey("customScenarioWeight")) {
+            SaveCustomScenarioWeightBo customScenarioWeight = JSONObject.parseObject(JSONObject.toJSONString(
+                    taskData.get("customScenarioWeight")), SaveCustomScenarioWeightBo.class);
+            customScenarioWeight.setTask_id(taskId);
+            saveCustomScenarioWeight(customScenarioWeight);
+        }
+
+        // 3-3.自定义-指标权重创建
+        if (taskData.containsKey("customIndexWeight")) {
+            SaveCustomIndexWeightBo customIndexWeight = JSONObject.parseObject(JSONObject.toJSONString(
+                    taskData.get("customIndexWeight")), SaveCustomIndexWeightBo.class);
+            customIndexWeight.setTask_id(taskId);
+            saveCustomIndexWeight(customIndexWeight);
+        }
     }
 }

@@ -76,7 +76,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
     public int saveTask(Map<String, Object> task) {
         String caseId = task.get("caseId").toString();
 
-        int res = tjInfinityMapper.saveTask(task);
+        tjInfinityMapper.saveTask(task);
         int id = Integer.parseInt(task.get("id").toString());
 
         // 保存参与者数据
@@ -92,7 +92,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
             tjTaskDataConfigService.save(newAvConfig);
         }
 
-        return res;
+        return id;
     }
 
 
