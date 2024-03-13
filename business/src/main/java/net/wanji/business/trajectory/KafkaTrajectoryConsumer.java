@@ -57,7 +57,9 @@ public class KafkaTrajectoryConsumer {
     @Autowired
     private RedisCache redisCache;
 
-    @KafkaListener(id = "singleTrajectory", topics = {"tj_master_fusion_data"})
+    @KafkaListener(id = "singleTrajectory",
+        topics = { "tj_master_fusion_data" },
+        groupId = "#{T(java.lang.String).valueOf(new java.util.Random().nextInt(1000))}")
     public void listen(ConsumerRecord<String, String> record) {
         JSONObject jsonObject = JSONObject.parseObject(record.value());
         Integer taskId = jsonObject.getInteger("taskId");
