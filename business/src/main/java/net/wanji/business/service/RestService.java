@@ -1,6 +1,7 @@
 package net.wanji.business.service;
 
 import com.alibaba.fastjson.JSONObject;
+import net.wanji.business.domain.TrafficFlow;
 import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.bo.SaveTaskSchemeBo;
@@ -168,5 +169,28 @@ public interface RestService {
      */
     Map<String, Object> searchDeviceInfo(String ip, HttpMethod method);
 
+    /**
+     * 获取评价结果
+     * @param taskId
+     * @return
+     */
     JSONObject getCarTestResult(Integer taskId);
+
+    /**
+     * 启动无限里程tess服务
+     * @param ip
+     * @param port
+     * @param tessParam
+     * @return
+     */
+    public boolean startInfinite(String ip, Integer port, TessParam tessParam);
+
+    /**
+     * 获取发车点信息
+     * @param ip
+     * @param port
+     * @param mapId
+     * @return
+     */
+    List<TrafficFlow> getTrafficFlow(String ip, Integer port, Integer mapId);
 }

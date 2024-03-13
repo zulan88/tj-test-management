@@ -80,13 +80,13 @@ public class TessParam {
         return this;
     }
 
-    public TessParam buildnfiniteSimulationParam(String dataChannel, Object params, List<String> mapList, String infiniteId) {
+    public TessParam buildnfiniteSimulationParam(String commandChannel, String dataChannel, Object params, List<String> mapList, String infiniteId) {
         this.simulateType = 6;
         this.roadNum = 1;
         this.dataChannel = dataChannel;
         this.params = params;
 
-        this.commandChannel = "1";
+        this.commandChannel = commandChannel;
         this.statusChannel = "1";
         this.routingChannel = "1";
         this.evaluateChannel = "1";
