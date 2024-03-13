@@ -112,6 +112,9 @@ public class MyWebSocketHandle extends TextWebSocketHandler {
         if (ChannelBuilder.TESTING_PREVIEW == clientType) {
             return ChannelBuilder.buildTestingPreviewChannel(userName, Integer.valueOf(id));
         }
+        if (ChannelBuilder.INFINITE_SIMULATION == clientType) {
+            return ChannelBuilder.buildInfiniteSimulationChannel(userName, id);
+        }
         throw new BusinessException("无法创建ws连接：客户端类型异常");
     }
 

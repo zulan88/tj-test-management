@@ -29,4 +29,6 @@ public class WebsocketMessage {
     private Object data;
 
     private List<ParticipantTrajectoryVo> objlist;
+
+    private Boolean canStop;
 }
