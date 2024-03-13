@@ -3,6 +3,7 @@ package net.wanji.business.service.impl;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import net.wanji.business.common.Constants.YN;
+import net.wanji.business.domain.TrafficFlow;
 import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.bo.SaveTaskSchemeBo;
@@ -71,6 +72,9 @@ public class RestServiceImpl implements RestService {
     @Value("${tess.server}")
     private String tessServerUrl;
 
+    @Value("${tess.infiniteServer}")
+    private String infiniteServerUrl;
+
     @Value("${tess.sceneIndexScheme}")
     private String sceneIndexSchemeUrl;
 
@@ -101,6 +105,9 @@ public class RestServiceImpl implements RestService {
     @Value("${tess.cartestResult}")
     private String carTestResult;
 
+    @Value("${tess.infiniteSite}")
+    private String infiniteSite;
+
     @Resource
     private SendTessNgRequestService sendTessNgRequestService;
 
@@ -130,6 +137,62 @@ public class RestServiceImpl implements RestService {
             log.error("远程服务调用失败:{}", e);
         }
         return false;
+    }
+
+    @Override
+    public boolean startInfinite(String ip, Integer port, TessParam tessParam) {
+        try {
+            String resultUrl = ip + ":" + port + infiniteServerUrl;
+            log.info("============================== tessServerUrl：{}", resultUrl);
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<TessParam> resultHttpEntity = new HttpEntity<>(tessParam, httpHeaders);
+            log.info("============================== tessServerUrl：{}", JSONObject.toJSONString(tessParam));
+            ResponseEntity<String> response =
+                    restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);
+            if (response.getStatusCodeValue() == 200) {
+                JSONObject result = JSONObject.parseObject(response.getBody(), JSONObject.class);
+                log.info("============================== tess server start result:{}", JSONObject.toJSONString(result));
+                if (Objects.isNull(result) || !"success".equals(result.get("status"))) {
+                    log.error("远程服务调用失败:{}", result.get("msg"));
+                    sendTessNgRequestService.saveTessNgRequest("失败", resultUrl, tessParam);
+                    return false;
+                }
+                sendTessNgRequestService.saveTessNgRequest("成功", resultUrl, tessParam);
+                return true;
+            }
+        } catch (Exception e) {
+            log.error("远程服务调用失败:{}", e);
+        }
+        return false;
+    }
+
+    @Override
+    public List<TrafficFlow> getTrafficFlow(String ip, Integer port, Integer mapId) {
+        try{
+            String resultUrl = ip + ":" + port + infiniteSite;
+            UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(resultUrl)
+                    .queryParam("mapId", mapId);
+
+            // 构建最终的 URL
+            String url = builder.toUriString();
+
+            log.info("============================== 无限里程获取发车点：{}", url);
+            ResponseEntity<String> response =
+                    restTemplate.exchange(url, HttpMethod.GET, null, String.class);
+
+            if (response.getStatusCodeValue() == 200) {
+                JSONObject jsonObject = JSONObject.parseObject(response.getBody(), JSONObject.class);
+                if(jsonObject.getInteger("code").equals(200)) {
+                    List<TrafficFlow> result = jsonObject.getJSONArray("data").toJavaList(TrafficFlow.class);
+                    return result;
+                }
+            }
+        }
+        catch (Exception e) {
+            log.error("远程服务调用失败:{}", e);
+        }
+        return null;
     }
 
     @Override

@@ -1,9 +1,8 @@
 package net.wanji.web.controller.business;
 
+import com.alibaba.fastjson.JSON;
 import com.google.gson.Gson;
 import net.wanji.business.domain.*;
-import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
-import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.business.entity.InfinteMileScence;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.InfinteMileScenceService;
@@ -12,7 +11,6 @@ import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
 import net.wanji.common.core.redis.RedisCache;
 import net.wanji.common.utils.SecurityUtils;
-import org.apache.poi.ss.formula.functions.T;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -90,6 +88,13 @@ public class InfinteMileScenceController extends BaseController {
         infinteMileScenceService.debugging(infinteMileScence);
         redisCache.unlock2(key, key);
         return AjaxResult.success();
+    }
+
+    @GetMapping("/getflowsite")
+    public AjaxResult getflowsite(@RequestParam("mapId") Integer mapId) {
+        String moke = "[{\"id\":7,\"name\":\"7\",\"startPoint\":{\"latitude\":121.20179539912456,\"longitude\":31.2910261296821},\"type\":1},{\"id\":8,\"name\":\"8\",\"startPoint\":{\"latitude\":121.20181228668544,\"longitude\":31.291037422714275},\"type\":2},{\"id\":9,\"name\":\"9\",\"startPoint\":{\"latitude\":121.20142762827838,\"longitude\":31.291983384728443},\"type\":1},{\"id\":10,\"name\":\"10\",\"startPoint\":{\"latitude\":121.20144629248955,\"longitude\":31.291976102859635},\"type\":2},{\"id\":12,\"name\":\"12\",\"startPoint\":{\"latitude\":121.20206564155686,\"longitude\":31.292184832786365},\"type\":0},{\"id\":14,\"name\":\"14\",\"startPoint\":{\"latitude\":121.20234765030777,\"longitude\":31.292390163345196},\"type\":0},{\"id\":15,\"name\":\"15\",\"startPoint\":{\"latitude\":121.20171693874268,\"longitude\":31.29174209683225},\"type\":0}]";
+        List<TrafficFlow> jsonArray = JSON.parseArray(moke, TrafficFlow.class);
+        return AjaxResult.success(jsonArray);
     }
 
 }
