@@ -3,7 +3,6 @@ package net.wanji.web.controller.business;
 import com.alibaba.fastjson.JSON;
 import com.google.gson.Gson;
 import net.wanji.business.domain.*;
-import net.wanji.business.entity.InfinteMileScence;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.InfinteMileScenceService;
 import net.wanji.common.core.controller.BaseController;
@@ -11,7 +10,6 @@ import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
 import net.wanji.common.core.redis.RedisCache;
 import net.wanji.common.utils.SecurityUtils;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -52,8 +50,9 @@ public class InfinteMileScenceController extends BaseController {
                 List<TrafficFlowConfig> trafficFlowConfigs = Arrays.asList(gson.fromJson(infinteMileScenceExo.getTrafficFlowConfig(), TrafficFlowConfig[].class));
                 infinteMileScenceExo.setTrafficFlowConfigs(trafficFlowConfigs);
             }
-            infinteMileScenceExo.setTestNum(infinteMileScenceExo.getInElements().stream().filter(inElement -> inElement.getType().equals(0)).count());
-            infinteMileScenceExo.setOtherNum(infinteMileScenceExo.getInElements().size() - infinteMileScenceExo.getTestNum());
+            long testNum = infinteMileScenceExo.getInElements().stream().filter(inElement -> inElement.getType().equals(0)).count();
+            infinteMileScenceExo.setTestNum(testNum);
+            infinteMileScenceExo.setOtherNum(infinteMileScenceExo.getInElements().size() - testNum);
         }).collect(Collectors.toList());
         return getDataTable(infinteMileScenceExoList, list);
     }
