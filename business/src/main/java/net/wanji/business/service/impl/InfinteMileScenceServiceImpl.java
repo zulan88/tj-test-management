@@ -61,10 +61,8 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
     private RestService restService;
 
     @Override
-    public List<InfinteMileScence> selectInfinteMileScenceList() {
-        QueryWrapper<InfinteMileScence> queryWrapper = new QueryWrapper<>();
-        queryWrapper.orderByDesc("create_date");
-        List<InfinteMileScence> list = this.list(queryWrapper);
+    public List<InfinteMileScenceExo> selectInfinteMileScenceList() {
+        List<InfinteMileScenceExo> list = baseMapper.selectInfinteMileScenceExo();
         return list;
     }
 

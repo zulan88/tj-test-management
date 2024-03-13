@@ -33,11 +33,9 @@ public class InfinteMileScenceController extends BaseController {
     @GetMapping("/list")
     public TableDataInfo list() {
         startPage();
-        List<InfinteMileScence> list = infinteMileScenceService.selectInfinteMileScenceList();
+        List<InfinteMileScenceExo> list = infinteMileScenceService.selectInfinteMileScenceList();
         Gson gson = new Gson();
-        List<InfinteMileScenceExo> infinteMileScenceExoList = list.stream().map(item -> {
-            InfinteMileScenceExo infinteMileScenceExo = new InfinteMileScenceExo();
-            BeanUtils.copyProperties(item, infinteMileScenceExo);
+        List<InfinteMileScenceExo> infinteMileScenceExoList = list.stream().peek(infinteMileScenceExo -> {
             if(infinteMileScenceExo.getElement()!= null&&infinteMileScenceExo.getElement().length() > 0){
                 List<InElement> inElements = Arrays.asList(gson.fromJson(infinteMileScenceExo.getElement(), InElement[].class));
                 infinteMileScenceExo.setInElements(inElements);
@@ -54,7 +52,8 @@ public class InfinteMileScenceController extends BaseController {
                 List<TrafficFlowConfig> trafficFlowConfigs = Arrays.asList(gson.fromJson(infinteMileScenceExo.getTrafficFlowConfig(), TrafficFlowConfig[].class));
                 infinteMileScenceExo.setTrafficFlowConfigs(trafficFlowConfigs);
             }
-            return infinteMileScenceExo;
+            infinteMileScenceExo.setTestNum(infinteMileScenceExo.getInElements().stream().filter(inElement -> inElement.getType().equals(0)).count());
+            infinteMileScenceExo.setOtherNum(infinteMileScenceExo.getInElements().size() - infinteMileScenceExo.getTestNum());
         }).collect(Collectors.toList());
         return getDataTable(infinteMileScenceExoList, list);
     }

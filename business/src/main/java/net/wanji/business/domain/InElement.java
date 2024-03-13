@@ -16,6 +16,8 @@ public class InElement {
     // 0-被测对象，1-其他对象
     Integer type;
 
+    int carType=0;
+
     List<SitePoint> route;
 
 }
