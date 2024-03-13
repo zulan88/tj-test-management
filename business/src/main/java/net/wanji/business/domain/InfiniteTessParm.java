@@ -13,4 +13,6 @@ public class InfiniteTessParm {
 
     List<SiteSlice> siteSlices;
 
+    List<TrafficFlowConfig> trafficFlowConfigs;
+
 }

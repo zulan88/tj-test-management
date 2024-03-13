@@ -7,6 +7,8 @@ import net.wanji.business.common.Constants.ChannelBuilder;
 import net.wanji.business.common.Constants.Extension;
 import net.wanji.business.common.Constants.PartType;
 import net.wanji.business.common.Constants.RedisMessageType;
+import net.wanji.business.domain.InElement;
+import net.wanji.business.domain.InfinteMileScenceExo;
 import net.wanji.business.domain.WebsocketMessage;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
@@ -38,16 +40,14 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -106,6 +106,19 @@ public class RedisTrajectory2Consumer {
         }
         MessageListener listener = createListener(channel, sceneDebugDto);
         this.runningChannel.put(channel, new ChannelListener(sceneDebugDto.getNumber(), channel, SecurityUtils.getUsername(),
+                System.currentTimeMillis(), listener));
+        redisMessageListenerContainer.addMessageListener(listener, new ChannelTopic(channel));
+        log.info("添加监听器 {} 成功", channel);
+    }
+
+    public void addRunningChannelInfinite(InfinteMileScenceExo infinteMileScenceExo) {
+        String channel = ChannelBuilder.buildInfiniteSimulationChannel(SecurityUtils.getUsername(), infinteMileScenceExo.getViewId());
+        if (this.runningChannel.containsKey(channel)) {
+            log.info("通道 {} 已存在", channel);
+            return;
+        }
+        MessageListener listener = createListenerInfinite(channel, infinteMileScenceExo);
+        this.runningChannel.put(channel, new ChannelListener(infinteMileScenceExo.getViewId(), channel, SecurityUtils.getUsername(),
                 System.currentTimeMillis(), listener));
         redisMessageListenerContainer.addMessageListener(listener, new ChannelTopic(channel));
         log.info("添加监听器 {} 成功", channel);
@@ -224,6 +237,129 @@ public class RedisTrajectory2Consumer {
                 removeListener(channel);
             } catch (ParseException e) {
                 throw new RuntimeException(e);
+            }
+        };
+    }
+
+    public MessageListener createListenerInfinite(String channel, InfinteMileScenceExo infinteMileScenceExo) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        String methodLog = StringUtils.format("{}仿真验证 - ", infinteMileScenceExo.getViewId());
+        Long nowtime = System.currentTimeMillis();
+        Map<String, Boolean> mainId = new HashMap<>();
+        infinteMileScenceExo.getInElements().stream().filter(p -> Integer.valueOf(0).equals(p.getType())).findFirst().ifPresent(p -> {
+            mainId.put(p.getId().toString(),true);
+        });
+        AtomicInteger count = new AtomicInteger(60);
+        return (message, pattern) -> {
+            try {
+                // 解析消息
+                SimulationMessage simulationMessage = objectMapper.readValue(
+                        message.toString(),
+                        SimulationMessage.class);
+//                log.info(StringUtils.format("{}收到消息：{}", methodLog, JSONObject.toJSONString(simulationMessage)));
+                // 计时
+                String duration = DateUtils.secondsToDuration(
+                        (int) Math.ceil((double) (getDataSize(channel)) / 10));
+                ChannelListener<SimulationTrajectoryDto> channelListener = this.runningChannel.get(channel);
+                count.getAndDecrement();
+                switch (simulationMessage.getType()) {
+                    // 开始消息
+                    case RedisMessageType.START:
+                        log.info(StringUtils.format("{}开始", methodLog));
+                        channelListener.start();
+                        break;
+                    // 轨迹消息
+                    case RedisMessageType.TRAJECTORY:
+                        if (!channelListener.started) {
+                            break;
+                        }
+                        SimulationTrajectoryDto simulationTrajectory = objectMapper.readValue(String.valueOf(simulationMessage.getValue()),
+                                SimulationTrajectoryDto.class);
+                        if (CollectionUtils.isNotEmpty(simulationTrajectory.getValue())) {
+                            // 实际轨迹消息
+                            List<TrajectoryValueDto> data = simulationTrajectory.getValue();
+
+                            List<InElement> inElements = infinteMileScenceExo.getInElements().stream().filter(p -> {
+                                if (mainId.containsKey(p.getId().toString())) {
+                                    return true;
+                                }
+                                return false;
+                            }).collect(Collectors.toList());
+
+                            if(count.intValue()<=0){
+                                routeService.checkinfinite(mainId,data,inElements);
+                            }
+
+                            List<TrajectoryValueDto> save = new ArrayList<>();
+
+                            // 保存轨迹(本地)
+                            for (TrajectoryValueDto value : data) {
+                                if (mainId.containsKey(value.getId())) {
+                                    if(mainId.get(value.getId())) {
+                                        value.setTimestamp(value.getTimestamp() + nowtime);
+                                        save.add(value);
+                                    }
+                                }
+                            }
+                            if (CollectionUtils.isNotEmpty(save)) {
+                                simulationTrajectory.setValue(save);
+                                receiveData(channel, simulationTrajectory);
+                            }
+
+                            // send ws
+                            WebsocketMessage msg = new WebsocketMessage(
+                                    RedisMessageType.TRAJECTORY,
+                                    duration,
+                                    data);
+
+                            AtomicBoolean canStop = new AtomicBoolean(true);
+                            mainId.forEach((k,v)->{
+                                if(v){
+                                    canStop.set(false);
+                                }
+                            });
+                            msg.setCanStop(canStop.get());
+
+                            WebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));
+                        }
+                        break;
+                    case RedisMessageType.OPTIMIZE:
+                        log.info("{}接收到轨迹优化消息：{}", methodLog, String.valueOf(simulationMessage.getValue()));
+                        handleOptimize(String.valueOf(simulationMessage.getValue()));
+                        break;
+                    // 结束消息
+                    case RedisMessageType.END:
+                        if (!channelListener.started) {
+                            break;
+                        }
+                        if (StringUtils.isNotEmpty(infinteMileScenceExo.getRouteFile())) {
+                            FileUtils.deleteFile(infinteMileScenceExo.getRouteFile());
+                        }
+                        try {
+                            String path = FileUtils.writeRoute(getData(channel), WanjiConfig.getRoutePath(), Extension.TXT);
+                            log.info("routeFile:{}", path);
+                            infinteMileScenceExo.setRouteFile(path);
+                        } catch (Exception e) {
+                            log.error("保存轨迹文件失败：{}", e);
+                        }
+                        // 移除监听器
+                        removeListener(channel);
+                        String repeatKey = "DEBUGGING_INSCENE_" + infinteMileScenceExo.getViewId();
+                        redisCache.deleteObject(repeatKey);
+                        // 解析消息
+                        CaseTrajectoryDetailBo end = objectMapper.readValue(String.valueOf(simulationMessage.getValue()),
+                                CaseTrajectoryDetailBo.class);
+                        log.info(StringUtils.format("{}结束：{}", methodLog, JSONObject.toJSONString(end)));
+                        // send ws
+                        WebsocketMessage msg = new WebsocketMessage(RedisMessageType.END, null, infinteMileScenceExo);
+                        WebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));
+                        break;
+                    default:
+                        break;
+                }
+            } catch (IOException e) {
+                log.error("解析消息失败：{}", e);
+                removeListener(channel);
             }
         };
     }

@@ -96,6 +96,7 @@ public interface Constants {
         public static final int TASK = 5;
         public static final int TASK_PREVIEW = 6;
         public static final int TESTING_PREVIEW = 7;
+        public static final int INFINITE_SIMULATION = 8;
         public static final String STATUS_SUFFIX = "status";
         public static final String CONTROL_SUFFIX = "control";
         public static final String DATA_SUFFIX = "data";
@@ -105,7 +106,7 @@ public interface Constants {
         public static boolean validClientType(Integer clientType) {
             return !ObjectUtils.isEmpty(clientType) && (clientType == SCENE_PREVIEW || clientType == SIMULATION
                     || clientType == REAL || clientType == PLAN || clientType == TASK || clientType == TASK_PREVIEW
-                    || clientType == TESTING_PREVIEW);
+                    || clientType == TESTING_PREVIEW|| clientType == INFINITE_SIMULATION);
         }
 
 
@@ -157,6 +158,17 @@ public interface Constants {
          */
         public static String buildSimulationChannel(String username, String sceneNumber) {
             return StringUtils.format(SIMULATION_CHANNEL_TEMPLATE, username, sceneNumber, SIMULATION);
+        }
+
+        /**
+         * 创建仿真验证时使用的channel
+         * -- 用户名_场景详情ID_8
+         * @param username
+         * @param sceneNumber
+         * @return
+         */
+        public static String buildInfiniteSimulationChannel(String username, String sceneNumber) {
+            return StringUtils.format(SIMULATION_CHANNEL_TEMPLATE, username, sceneNumber, INFINITE_SIMULATION);
         }
 
         /**

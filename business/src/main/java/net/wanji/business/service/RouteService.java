@@ -8,6 +8,7 @@ import net.wanji.business.common.Constants.Extension;
 import net.wanji.business.common.Constants.TaskCaseStatusEnum;
 import net.wanji.business.common.Constants.TaskStatusEnum;
 import net.wanji.business.common.Constants.TestingStatusEnum;
+import net.wanji.business.domain.InElement;
 import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
@@ -302,6 +303,26 @@ public class RouteService {
             }
         }
         return update;
+    }
+
+    public void checkinfinite(Map<String, Boolean> mainId, List<TrajectoryValueDto> data, List<InElement> inElements){
+        for (TrajectoryValueDto value : data) {
+            if (mainId.containsKey(value.getId())){
+                if (mainId.get(value.getId())) {
+                    for (InElement inElement : inElements) {
+                        if (StringUtils.equals(value.getId(), inElement.getId().toString())) {
+                            double longitude = Double.parseDouble(inElement.getRoute().get(0).getLongitude());
+                            double latitude = Double.parseDouble(inElement.getRoute().get(0).getLatitude());
+                            double instance = GeoUtil.calculateDistance(latitude, longitude,
+                                    value.getLatitude(), value.getLongitude());
+                            if (instance <= 2){
+                                mainId.put(value.getId(), false);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**

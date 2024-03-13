@@ -14,4 +14,8 @@ public class InfinteMileScenceExo extends InfinteMileScence {
 
     List<SiteSlice> siteSlices;
 
+    List<TrafficFlowConfig> trafficFlowConfigs;
+
+    private Integer action;
+
 }

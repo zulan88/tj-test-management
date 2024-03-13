@@ -73,11 +73,20 @@ public class InfinteMileScence implements Serializable {
     @TableField("traffic_flow")
     private String trafficFlow;
 
+    @TableField("traffic_flow_config")
+    private String trafficFlowConfig;
+
     /**
      * 场地切片
      */
     @TableField("site_slice")
     private String siteSlice;
+
+    /**
+     *  主车轨迹
+     */
+    @TableField("route_file")
+    private String routeFile;
 
     /**
      * 场景状态
