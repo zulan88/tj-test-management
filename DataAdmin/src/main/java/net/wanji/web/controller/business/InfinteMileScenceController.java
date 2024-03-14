@@ -1,7 +1,9 @@
 package net.wanji.web.controller.business;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;
+import io.swagger.models.auth.In;
 import net.wanji.business.domain.*;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.InfinteMileScenceService;
@@ -64,7 +66,10 @@ public class InfinteMileScenceController extends BaseController {
 
     @PostMapping("/save")
     public AjaxResult save(@RequestBody InfinteMileScenceExo infinteMileScence) {
-        return toAjax(infinteMileScenceService.saveInfinteMileScence(infinteMileScence));
+        Integer id = infinteMileScenceService.saveInfinteMileScence(infinteMileScence);
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("id", id);
+        return AjaxResult.success(jsonObject);
     }
 
     @DeleteMapping("/delete/{id}")
@@ -93,6 +98,12 @@ public class InfinteMileScenceController extends BaseController {
         String moke = "[{\"id\":7,\"name\":\"7\",\"startPoint\":{\"latitude\":121.20179539912456,\"longitude\":31.2910261296821},\"type\":1},{\"id\":8,\"name\":\"8\",\"startPoint\":{\"latitude\":121.20181228668544,\"longitude\":31.291037422714275},\"type\":2},{\"id\":9,\"name\":\"9\",\"startPoint\":{\"latitude\":121.20142762827838,\"longitude\":31.291983384728443},\"type\":1},{\"id\":10,\"name\":\"10\",\"startPoint\":{\"latitude\":121.20144629248955,\"longitude\":31.291976102859635},\"type\":2},{\"id\":12,\"name\":\"12\",\"startPoint\":{\"latitude\":121.20206564155686,\"longitude\":31.292184832786365},\"type\":0},{\"id\":14,\"name\":\"14\",\"startPoint\":{\"latitude\":121.20234765030777,\"longitude\":31.292390163345196},\"type\":0},{\"id\":15,\"name\":\"15\",\"startPoint\":{\"latitude\":121.20171693874268,\"longitude\":31.29174209683225},\"type\":0}]";
         List<TrafficFlow> jsonArray = JSON.parseArray(moke, TrafficFlow.class);
         return AjaxResult.success(jsonArray);
+    }
+
+    @GetMapping("/test")
+    public AjaxResult test(@RequestParam("id") Integer id) {
+        InfinteMileScenceExo infinteMileScenceExo = infinteMileScenceService.selectInfinteMileScenceById(id);
+        return AjaxResult.success(infinteMileScenceExo);
     }
 
 }

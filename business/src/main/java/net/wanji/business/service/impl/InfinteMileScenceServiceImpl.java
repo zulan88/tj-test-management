@@ -3,10 +3,7 @@ package net.wanji.business.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.google.gson.Gson;
 import net.wanji.business.common.Constants;
-import net.wanji.business.domain.InElement;
-import net.wanji.business.domain.InfiniteTessParm;
-import net.wanji.business.domain.InfinteMileScenceExo;
-import net.wanji.business.domain.SitePoint;
+import net.wanji.business.domain.*;
 import net.wanji.business.domain.dto.SceneDebugDto;
 import net.wanji.business.domain.dto.TjDeviceDetailDto;
 import net.wanji.business.domain.param.TessParam;
@@ -35,6 +32,7 @@ import org.springframework.util.ObjectUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -73,7 +71,7 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
     }
 
     @Override
-    public Boolean saveInfinteMileScence(InfinteMileScenceExo infinteMileScence) {
+    public Integer saveInfinteMileScence(InfinteMileScenceExo infinteMileScence) {
         Gson gson = new Gson();
         infinteMileScence.setViewId(StringUtils.format(Constants.ContentTemplate.INFINTE_NUMBER_TEMPLATE, DateUtils.getNowDayString(),
                 CounterUtil.getRandomChar()));
@@ -91,11 +89,12 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
         }
         if (null == infinteMileScence.getId()){
             infinteMileScence.setCreateDate(LocalDateTime.now());
-            return this.save(infinteMileScence);
+            this.save(infinteMileScence);
         }else{
             infinteMileScence.setUpdateDate(LocalDateTime.now());
-            return this.updateById(infinteMileScence);
+            this.updateById(infinteMileScence);
         }
+        return infinteMileScence.getId();
     }
 
     @Override
@@ -149,6 +148,31 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
                 break;
 
         }
+    }
+
+    @Override
+    public InfinteMileScenceExo selectInfinteMileScenceById(Integer id) {
+        InfinteMileScence infinteMileScence = this.getById(id);
+        InfinteMileScenceExo infinteMileScenceExo = new InfinteMileScenceExo();
+        BeanUtils.copyBeanProp(infinteMileScenceExo, infinteMileScence);
+        Gson gson = new Gson();
+        if(infinteMileScenceExo.getElement()!= null&&infinteMileScenceExo.getElement().length() > 0){
+            List<InElement> inElements = Arrays.asList(gson.fromJson(infinteMileScenceExo.getElement(), InElement[].class));
+            infinteMileScenceExo.setInElements(inElements);
+        }
+        if(infinteMileScenceExo.getTrafficFlow()!= null&&infinteMileScenceExo.getTrafficFlow().length() > 0){
+            List<TrafficFlow> trafficFlows = Arrays.asList(gson.fromJson(infinteMileScenceExo.getTrafficFlow(), TrafficFlow[].class));
+            infinteMileScenceExo.setTrafficFlows(trafficFlows);
+        }
+        if(infinteMileScenceExo.getSiteSlice()!= null&&infinteMileScenceExo.getSiteSlice().length() > 0){
+            List<SiteSlice> siteSlices = Arrays.asList(gson.fromJson(infinteMileScenceExo.getSiteSlice(), SiteSlice[].class));
+            infinteMileScenceExo.setSiteSlices(siteSlices);
+        }
+        if(infinteMileScenceExo.getTrafficFlowConfig()!= null&&infinteMileScenceExo.getTrafficFlowConfig().length() > 0){
+            List<TrafficFlowConfig> trafficFlowConfigs = Arrays.asList(gson.fromJson(infinteMileScenceExo.getTrafficFlowConfig(), TrafficFlowConfig[].class));
+            infinteMileScenceExo.setTrafficFlowConfigs(trafficFlowConfigs);
+        }
+        return infinteMileScenceExo;
     }
 
     private void validDebugParam(InfinteMileScenceExo infinteMileScenceExo) throws BusinessException{
