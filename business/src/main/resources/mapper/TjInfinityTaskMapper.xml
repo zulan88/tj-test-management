@@ -66,36 +66,15 @@
         tt.entruster_contact,
         tt.orderNumber,
         tt.plan_date,
-        tt.created_date,
-        a.device_id,
-        a.object_type,
-        a.brand,
-        a.plate_number,
-        a.sign,
+        tt.plan_test_time,
+        tt.case_id,
+        tt.case_name,
         tt.status,
         tt.main_plan_file
         FROM tj_infinity_task tt
-        LEFT JOIN (
-        SELECT
-        dc.task_id,
-        dd.device_id,
-        dd.device_type as object_type,
-        dd.device_name as brand,
-        dd.ip as plate_number,
-        dd.service_address as sign
-        FROM tj_task_data_config dc
-        LEFT JOIN tj_device_detail dd ON dd.device_id = dc.device_id
-        WHERE dc.type = 'av'
-        ) a ON a.task_id = tt.id
         <where>
             <if test="taskCode != null and taskCode != ''">
                 AND tt.orderNumber LIKE CONCAT('%', #{taskCode}, '%')
-            </if>
-            <if test="plateNumber != null and plateNumber != ''">
-                AND a.plate_number LIKE CONCAT('%', #{plateNumber}, '%')
-            </if>
-            <if test="sign != null and sign != ''">
-                AND a.sign LIKE CONCAT('%', #{sign}, '%')
             </if>
             <if test="client != null and client != ''">
                 AND tt.entrust_org LIKE CONCAT('%', #{client}, '%')
@@ -111,9 +90,6 @@
             </if>
             <if test="endPlanDate != null">
                 AND tt.plan_date &lt;= #{endPlanDate}
-            </if>
-            <if test="objectType != null and objectType != ''">
-                AND a.object_type = #{objectType}
             </if>
             <if test="status != null and status != ''">
                 AND tt.status = #{status}
@@ -135,13 +111,13 @@
             `case_id`, `case_name`, `tested_type`, `tested_name`, `entrust_org`,
             `entruster`, `entruster_contact`, `entrust_content`, `status`,
             `route_file`, `main_plan_file`, `created_by`, `created_date`,
-            `updated_by`, `updated_date`
+            `updated_by`, `updated_date`, `status`, `created_date`
         ) VALUES (
                      #{orderNumber}, #{planTestTime}, #{testStartTime}, #{testEndTime},
                      #{caseId}, #{caseName}, #{testedType}, #{testedName}, #{entrustOrg},
                      #{entruster}, #{entrusterContact}, #{entrustContent}, #{status},
                      #{routeFile}, #{mainPlanFile}, #{createdBy}, #{createdDate},
-                     #{updatedBy}, #{updatedDate}
+                     #{updatedBy}, #{updatedDate}, #{status}, #{createdDate}
                  )
 
     </insert>

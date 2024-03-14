@@ -22,6 +22,7 @@ import net.wanji.business.service.TjShardingChangeRecordService;
 import net.wanji.common.constant.HttpStatus;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
+import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.validation.annotation.Validated;
@@ -54,8 +55,8 @@ public class InfiniteTaskController {
     private final TjShardingChangeRecordService tjShardingChangeRecordService;
 
     public InfiniteTaskController(RestService restService,
-        TjInfinityTaskService tjInfinityTaskService,
-        TjShardingChangeRecordService tjShardingChangeRecordService) {
+                                  TjInfinityTaskService tjInfinityTaskService,
+                                  TjShardingChangeRecordService tjShardingChangeRecordService) {
         this.restService = restService;
         this.tjInfinityTaskService = tjInfinityTaskService;
         this.tjShardingChangeRecordService = tjShardingChangeRecordService;
@@ -96,6 +97,9 @@ public class InfiniteTaskController {
     public AjaxResult save(@Validated @RequestBody Map<String, Object> taskData, HttpServletRequest request) throws BusinessException {
         try {
             taskData.put("createdBy", SecurityUtils.getUsername());
+            taskData.put("status", "waiting");
+            taskData.put("orderNumber", "task-" + DateUtils.getDate());
+            taskData.put("createdDate", DateUtils.getTime());
             String taskId = String.valueOf(tjInfinityTaskService.saveTask(taskData));
             saveEvaluationScheme(taskData, taskId);
             return AjaxResult.success(0);
@@ -171,7 +175,7 @@ public class InfiniteTaskController {
     @ApiOperation("分片进出通知")
     @PostMapping("/shardingInOut")
     public AjaxResult shardingRangeInOut(
-        @RequestBody ShardingInOutVo shardingInOutVo) {
+            @RequestBody ShardingInOutVo shardingInOutVo) {
         TjShardingChangeRecord tjShardingChangeRecord = new TjShardingChangeRecord();
         BeanUtils.copyProperties(shardingInOutVo, tjShardingChangeRecord);
         tjShardingChangeRecordService.save(tjShardingChangeRecord);
