@@ -89,6 +89,18 @@ public class InfinteMileScence implements Serializable {
     private String routeFile;
 
     /**
+     * 测试说明
+     */
+    @TableField("test_explain")
+    private String testExplain;
+
+    /**
+     * 图片路径
+     */
+    @TableField("img_url")
+    private String imgUrl;
+
+    /**
      * 场景状态
      */
     @TableField("status")

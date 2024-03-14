@@ -1,5 +1,6 @@
 package net.wanji.business.domain;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
 import net.wanji.business.entity.InfinteMileScence;
 
@@ -17,5 +18,12 @@ public class InfinteMileScenceExo extends InfinteMileScence {
     List<TrafficFlowConfig> trafficFlowConfigs;
 
     private Integer action;
+
+    @TableField("map_name")
+    private String mapName;
+
+    private Long testNum;
+
+    private Long otherNum;
 
 }

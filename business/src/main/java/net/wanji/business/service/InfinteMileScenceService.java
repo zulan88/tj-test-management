@@ -17,7 +17,7 @@ import java.util.List;
  */
 public interface InfinteMileScenceService extends IService<InfinteMileScence> {
 
-    List<InfinteMileScence> selectInfinteMileScenceList();
+    List<InfinteMileScenceExo> selectInfinteMileScenceList();
 
     String buildSceneNumber();
 
