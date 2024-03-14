@@ -21,8 +21,15 @@ public interface InfinteMileScenceService extends IService<InfinteMileScence> {
 
     String buildSceneNumber();
 
-    Boolean saveInfinteMileScence(InfinteMileScenceExo infinteMileScence);
+    Integer saveInfinteMileScence(InfinteMileScenceExo infinteMileScence);
 
     void debugging(InfinteMileScenceExo infinteMileScence) throws BusinessException;
+
+    /**
+     * 根据id查询
+     * @param id
+     * @return
+     */
+    InfinteMileScenceExo selectInfinteMileScenceById(Integer id);
 
 }
