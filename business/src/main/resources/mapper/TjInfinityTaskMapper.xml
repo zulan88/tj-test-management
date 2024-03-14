@@ -107,17 +107,17 @@
 
     <insert id="saveTask" parameterType="java.util.Map" keyProperty="id" useGeneratedKeys="true">
         INSERT INTO `tj_infinity_task` (
-            `orderNumber`, `plan_test_time`, `test_start_time`, `test_end_time`,
+            `orderNumber`,`plan_date`, `plan_test_time`, `test_start_time`, `test_end_time`,
             `case_id`, `case_name`, `tested_type`, `tested_name`, `entrust_org`,
             `entruster`, `entruster_contact`, `entrust_content`, `status`,
             `route_file`, `main_plan_file`, `created_by`, `created_date`,
-            `updated_by`, `updated_date`, `status`, `created_date`
+            `updated_by`, `updated_date`
         ) VALUES (
-                     #{orderNumber}, #{planTestTime}, #{testStartTime}, #{testEndTime},
+                     #{orderNumber}, #{planDate}, #{planTestTime}, #{testStartTime}, #{testEndTime},
                      #{caseId}, #{caseName}, #{testedType}, #{testedName}, #{entrustOrg},
                      #{entruster}, #{entrusterContact}, #{entrustContent}, #{status},
                      #{routeFile}, #{mainPlanFile}, #{createdBy}, #{createdDate},
-                     #{updatedBy}, #{updatedDate}, #{status}, #{createdDate}
+                     #{updatedBy}, #{updatedDate}
                  )
 
     </insert>

@@ -60,4 +60,6 @@ public interface TjInfinityTaskService {
     void saveCustomScenarioWeight(SaveCustomScenarioWeightBo saveCustomScenarioWeightBo);
 
     void saveCustomIndexWeight(SaveCustomIndexWeightBo saveCustomIndexWeightBo);
+
+    int updateTaskStatus(String status, int id);
 }

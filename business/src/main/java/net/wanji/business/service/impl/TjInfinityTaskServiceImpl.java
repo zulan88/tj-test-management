@@ -136,4 +136,12 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         tjInfinityMapper.saveCustomScenarioWeight(saveCustomIndexWeightBo.getTask_id(), weights, "1");
     }
 
+    @Override
+    public int updateTaskStatus(String status, int id) {
+        TjInfinityTask tjInfinityTask = new TjInfinityTask();
+        tjInfinityTask.setId(id);
+        tjInfinityTask.setStatus(status);
+        return tjInfinityMapper.updateById(tjInfinityTask);
+    }
+
 }

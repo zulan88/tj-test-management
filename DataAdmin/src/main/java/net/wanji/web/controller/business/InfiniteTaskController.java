@@ -26,10 +26,7 @@ import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
@@ -98,7 +95,7 @@ public class InfiniteTaskController {
         try {
             taskData.put("createdBy", SecurityUtils.getUsername());
             taskData.put("status", "waiting");
-            taskData.put("orderNumber", "task-" + DateUtils.getDate());
+            taskData.put("orderNumber", "task-" + DateUtils.getTime());
             taskData.put("createdDate", DateUtils.getTime());
             String taskId = String.valueOf(tjInfinityTaskService.saveTask(taskData));
             saveEvaluationScheme(taskData, taskId);
@@ -107,6 +104,19 @@ public class InfiniteTaskController {
         } catch (Exception e) {
             e.printStackTrace();
             return AjaxResult.error("保存失败");
+        }
+    }
+
+    @ApiOperationSort(4)
+    @ApiOperation(value = "3-2.修改状态")
+    @GetMapping("/updateTaskStatus")
+    public AjaxResult updateTaskStatus(String status, int id) throws BusinessException {
+        try {
+            int msg = tjInfinityTaskService.updateTaskStatus(status, id);
+            return AjaxResult.success(msg);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return AjaxResult.error("修改状态失败");
         }
     }
 
