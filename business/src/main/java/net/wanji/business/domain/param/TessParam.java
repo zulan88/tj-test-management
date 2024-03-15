@@ -28,6 +28,8 @@ public class TessParam {
      */
     private Integer roadNum;
 
+    private String infiniteId;
+
     /**
      * 数据通道
      */
@@ -109,6 +111,7 @@ public class TessParam {
         this.routingChannel = "1";
         this.evaluateChannel = "1";
         this.mapList = mapList;
+        this.infiniteId = dataChannel;
 
         return this;
     }
