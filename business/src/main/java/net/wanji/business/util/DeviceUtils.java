@@ -2,12 +2,13 @@ package net.wanji.business.util;
 
 import net.wanji.business.common.Constants;
 import net.wanji.business.domain.bo.CaseConfigBo;
+import net.wanji.business.domain.bo.CaseInfoBo;
+import net.wanji.business.domain.param.DeviceConnInfo;
+import net.wanji.business.domain.param.DeviceConnRule;
+import net.wanji.business.entity.TjDeviceDetail;
 import org.springframework.util.ObjectUtils;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -54,5 +55,48 @@ public class DeviceUtils {
                     () -> new TreeSet<>(
                         Comparator.comparing(CaseConfigBo::getDeviceId))),
                 ArrayList::new));
+  }
+
+  public static List<DeviceConnRule> generateDeviceConnRules(
+      List<TjDeviceDetail> deviceDetails, String commandChannel,
+      String dataChannel) {
+    List<DeviceConnRule> rules = new ArrayList<>();
+    for (int i = 0; i < deviceDetails.size(); i++) {
+      TjDeviceDetail deviceDetail = deviceDetails.get(i);
+      for (int j = 0; j < deviceDetails.size(); j++) {
+        if (j == i) {
+          continue;
+        }
+        Map<String, Object> sourceParams = new HashMap<>();
+        Map<String, Object> targetParams = new HashMap<>();
+
+        TjDeviceDetail targetDevice = deviceDetails.get(j);
+
+        DeviceConnRule rule = new DeviceConnRule();
+        rule.setSource(createConnInfo(deviceDetail, commandChannel, dataChannel,
+            sourceParams));
+        rule.setTarget(createConnInfo(targetDevice, commandChannel, dataChannel,
+            targetParams));
+        rules.add(rule);
+      }
+    }
+    return rules;
+  }
+
+  public static DeviceConnInfo createConnInfo(TjDeviceDetail deviceDetail,
+      String commandChannel, String dataChannel, Map<String, Object> params) {
+    return Constants.PartRole.MV_SIMULATION.equals(
+        deviceDetail.getSupportRoles()) ?
+        createSimulationConnInfo(String.valueOf(deviceDetail.getDeviceId()),
+            commandChannel, dataChannel, params) :
+        new DeviceConnInfo(String.valueOf(deviceDetail.getDeviceId()),
+            deviceDetail.getCommandChannel(), deviceDetail.getDataChannel(),
+            deviceDetail.getSupportRoles(), params);
+  }
+
+  public static DeviceConnInfo createSimulationConnInfo(String deviceId,
+      String commandChannel, String dataChannel, Map<String, Object> params) {
+    return new DeviceConnInfo(deviceId, commandChannel, dataChannel,
+        Constants.PartRole.MV_SIMULATION, params);
   }
 }

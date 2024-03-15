@@ -20,6 +20,7 @@ import net.wanji.business.entity.TjCaseRealRecord;
 import net.wanji.business.entity.TjTask;
 import net.wanji.business.entity.TjTaskCase;
 import net.wanji.business.entity.TjTaskCaseRecord;
+import net.wanji.business.exception.BusinessException;
 import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjCaseRealRecordMapper;
 import net.wanji.business.mapper.TjTaskCaseMapper;
@@ -447,6 +448,27 @@ public class RouteService {
     public List<SimulationTrajectoryDto> readOriRouteFile(String fileName) throws IOException {
         String routeFile = FileUploadUtils.getAbsolutePathFileName(fileName);
         return FileUtils.readOriTrajectory(routeFile);
+    }
+
+    public List<SimulationTrajectoryDto> mainTrajectory(String fileName)
+        throws BusinessException {
+        List<SimulationTrajectoryDto> participantTrajectories = null;
+        try {
+            participantTrajectories = this.readOriRouteFile(fileName);
+            participantTrajectories = participantTrajectories.stream()
+                .filter(item -> !ObjectUtils.isEmpty(item.getValue())
+                    && item.getValue().stream().anyMatch(p -> "1".equals(p.getId())))
+                .peek(s -> s.setValue(s.getValue().stream().filter(p -> "1".equals(p.getId()))
+                    .collect(Collectors.toList())))
+                .collect(Collectors.toList());
+        } catch (IOException e) {
+            throw new BusinessException("查询主车轨迹失败");
+        }
+        if (CollectionUtils.isEmpty(participantTrajectories)) {
+            throw new BusinessException("查询主车轨迹失败");
+        }
+
+        return participantTrajectories;
     }
 
     public List<SimulationTrajectoryDto> readOriTrajectoryFromData(List<SimulationTrajectoryDto> data, String participantId) {

@@ -1,4 +1,4 @@
-package net.wanji.business.domain.vo;
+package net.wanji.business.domain.vo.task.infinity;
 
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;

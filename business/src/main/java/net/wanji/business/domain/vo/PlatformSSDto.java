@@ -3,6 +3,7 @@ package net.wanji.business.domain.vo;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
+import net.wanji.business.common.Constants;
 
 import javax.validation.constraints.NotNull;
 import java.util.Map;
@@ -53,14 +54,20 @@ public class PlatformSSDto {
   private boolean taskEnd = false;
 
   @ApiModelProperty(value = "上下文参数",
-          dataType = "Object",
-          example = "",
-          position = 5)
+      dataType = "Object",
+      example = "",
+      position = 5)
   private Map<String, Object> context;
 
   @ApiModelProperty(value = "错误信息",
-          dataType = "String",
-          example = "",
-          position = 6)
+      dataType = "String",
+      example = "",
+      position = 6)
   private String message;
+
+  @ApiModelProperty(value = "测试类型",
+      dataType = "Itring",
+      example = "Constants.TestMode",
+      position = 7)
+  private Integer testMode;
 }

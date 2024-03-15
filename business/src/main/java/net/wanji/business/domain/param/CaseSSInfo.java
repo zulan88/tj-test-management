@@ -13,5 +13,6 @@ import java.util.Map;
 @Data
 public class CaseSSInfo {
     private Integer caseId;
+    private Integer shardingId;
     private List<Map<String, Object>> trajectoryPoints;
 }

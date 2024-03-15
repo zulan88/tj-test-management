@@ -1,5 +1,6 @@
 package net.wanji.business.domain.param;
 
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 import java.util.List;
@@ -16,8 +17,14 @@ public class CaseTrajectoryParam {
     private Integer taskId;
     private Integer caseId;
     private boolean isContinuous;
+    /**
+     * 测试类型：0：单用例测试（实车试验）；1：连续性场景测试（多场景任务一次启停）；2：批量测试（n场景任务n次启停；3：无限里程）
+     */
     private int testMode;
 
+    /**
+     * 车辆类型与车辆ID的对应关系<类型：ID>
+     */
     private Map<String, String> vehicleIdTypeMap;
 
     /**
@@ -25,9 +32,24 @@ public class CaseTrajectoryParam {
      */
     private Map<String, Object> context;
 
+    /**
+     * 主车数据频道
+     */
     private String dataChannel;
 
+    /**
+     * 主车场景轨迹点位信息/切片位置信息
+     */
     private List<CaseSSInfo> caseTrajectorySSVoList;
+
+    /**
+     * 任务持续时间(S)
+     */
+    private Long taskDuration;
+    /**
+     * 控制频道（tessng专用）
+     */
+    private String controlChannel;
 
     public List<CaseSSInfo> getCaseTrajectorySSVoList() {
         if (caseTrajectorySSVoList == null) {

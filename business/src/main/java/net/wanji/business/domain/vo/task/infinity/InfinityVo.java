@@ -1,6 +1,7 @@
 package net.wanji.business.domain.vo.task.infinity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
@@ -15,6 +16,7 @@ import java.util.Date;
  * @date 2024/3/11 13:38
  **/
 
+@ApiModel
 @Data
 public class InfinityVo implements Serializable {
   private static final long serialVersionUID = 2134844207273740138L;

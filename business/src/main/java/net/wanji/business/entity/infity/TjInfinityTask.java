@@ -1,15 +1,13 @@
-package net.wanji.business.entity;
+package net.wanji.business.entity.infity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
-import net.wanji.common.annotation.Excel;
+import net.wanji.business.entity.common.Lifecycle;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
 import java.util.Date;
 
 /**
@@ -21,7 +19,7 @@ import java.util.Date;
  **/
 @TableName(value = "tj_infinity_task")
 @Data
-public class TjInfinityTask implements Serializable {
+public class TjInfinityTask extends Lifecycle implements Serializable {
 
   private static final long serialVersionUID = 1665544527646456087L;
 
@@ -60,7 +58,7 @@ public class TjInfinityTask implements Serializable {
    * 测试场景名称
    */
   @TableField(value = "CASE_ID")
-  private String caseId;
+  private Integer caseId;
 
   /**
    * 测试场景名称
@@ -116,31 +114,4 @@ public class TjInfinityTask implements Serializable {
    */
   @TableField(value = "route_file")
   private String routeFile;
-
-  /**
-   * 创建人
-   */
-  @TableField("created_by")
-  @Excel(name = "创建人")
-  private String createdBy;
-  /**
-   * 创建日期
-   */
-  @TableField("created_date")
-  @Excel(name = "创建日期")
-  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-  private LocalDateTime createdDate;
-  /**
-   * 修改人
-   */
-  @TableField("updated_by")
-  @Excel(name = "修改人")
-  private String updatedBy;
-  /**
-   * 修改日期
-   */
-  @TableField("updated_date")
-  @Excel(name = "修改日期")
-  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-  private LocalDateTime updatedDate;
 }

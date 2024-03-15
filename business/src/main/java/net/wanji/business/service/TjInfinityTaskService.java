@@ -1,11 +1,15 @@
 package net.wanji.business.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
+import net.wanji.business.domain.SiteSlice;
 import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.dto.TaskDto;
 import net.wanji.business.domain.vo.CasePageVo;
-import net.wanji.business.domain.vo.TaskListVo;
-import net.wanji.business.entity.TjInfinityTask;
+import net.wanji.business.domain.vo.task.infinity.InfinityTaskInitVo;
+import net.wanji.business.domain.vo.task.infinity.InfinityTaskPreparedVo;
+import net.wanji.business.entity.infity.TjInfinityTask;
+import net.wanji.business.exception.BusinessException;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
@@ -20,7 +24,7 @@ import java.util.Map;
  * @date 2024/3/11 13:11
  **/
 @Service
-public interface TjInfinityTaskService {
+public interface TjInfinityTaskService extends IService<TjInfinityTask> {
 
 
     /**
@@ -60,4 +64,35 @@ public interface TjInfinityTaskService {
     void saveCustomScenarioWeight(SaveCustomScenarioWeightBo saveCustomScenarioWeightBo);
 
     void saveCustomIndexWeight(SaveCustomIndexWeightBo saveCustomIndexWeightBo);
+
+    /**
+     * 运行任务初始化
+     * @param taskId
+     */
+    InfinityTaskInitVo init(Integer taskId) throws BusinessException;
+
+    /**
+     * 准备（状态检查）
+     * @param taskId
+     * @return
+     */
+    InfinityTaskPreparedVo prepare(Integer taskId) throws BusinessException;
+
+    /**
+     * 任务预开始
+     * @param taskId
+     * @return
+     */
+    boolean preStart(Integer taskId);
+
+    /**
+     *
+     * @param taskId 0
+     * @param caseId 代替taskId
+     * @param action
+     * @param username
+     * @return
+     */
+    boolean startStop(Integer taskId, Integer caseId, Integer action, String username)
+        throws BusinessException;
 }

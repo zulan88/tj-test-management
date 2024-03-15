@@ -1,7 +1,10 @@
 package net.wanji.business.util;
 
 import net.wanji.business.common.Constants;
+import net.wanji.business.domain.param.TessParam;
 import net.wanji.common.utils.SecurityUtils;
+
+import java.util.List;
 
 /**
  * @author hcy
@@ -15,14 +18,17 @@ public class TessngUtils {
   public static String virtualDeviceId(Integer taskId, Integer caseId) {
     return virtualDeviceId(taskId, caseId, null);
   }
+
   /**
    * tessng交互通信虚拟设备ID（控制通道）
+   *
    * @param taskId
    * @param caseId
    * @return
    */
-  public static String virtualDeviceId(Integer taskId, Integer caseId, String username) {
-    if(null == username){
+  public static String virtualDeviceId(Integer taskId, Integer caseId,
+      String username) {
+    if (null == username) {
       username = SecurityUtils.getUsername();
     }
     if (null == taskId || 0 == taskId) {
@@ -30,5 +36,22 @@ public class TessngUtils {
           caseId);
     }
     return Constants.ChannelBuilder.buildTaskControlChannel(username, taskId);
+  }
+
+  /**
+   * 构建唤醒tess服务的参数
+   *
+   * @param roadNum
+   * @param caseId
+   * @return
+   */
+  public static TessParam buildTessServerParam(Integer roadNum, String username,
+      Integer caseId, List<String> mapList) {
+    return new TessParam().buildRealTestParam(roadNum,
+        Constants.ChannelBuilder.buildTestingDataChannel(username, caseId),
+        Constants.ChannelBuilder.buildTestingControlChannel(username, caseId),
+        Constants.ChannelBuilder.buildTestingEvaluateChannel(username, caseId),
+        Constants.ChannelBuilder.buildTestingStatusChannel(username, caseId),
+        mapList);
   }
 }

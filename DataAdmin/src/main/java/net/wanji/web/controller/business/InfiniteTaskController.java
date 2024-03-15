@@ -2,15 +2,18 @@ package net.wanji.web.controller.business;
 
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiOperationSort;
+import io.swagger.annotations.*;
 import lombok.extern.slf4j.Slf4j;
+import net.wanji.business.domain.SiteSlice;
 import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.bo.SaveTaskSchemeBo;
 import net.wanji.business.domain.dto.TaskDto;
-import net.wanji.business.domain.vo.ShardingInOutVo;
+import net.wanji.business.domain.vo.PlatformSSDto;
+import net.wanji.business.domain.vo.task.infinity.InfinityTaskInitVo;
+import net.wanji.business.domain.vo.task.infinity.InfinityTaskPreparedVo;
+import net.wanji.business.domain.vo.task.infinity.ShardingInOutVo;
+import net.wanji.business.domain.vo.task.infinity.ShardingInfoVo;
 import net.wanji.business.entity.TjShardingChangeRecord;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.RestService;
@@ -20,17 +23,18 @@ import net.wanji.common.constant.HttpStatus;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
 import net.wanji.common.utils.SecurityUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.awt.geom.Point2D;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author hcy
@@ -143,4 +147,55 @@ public class InfiniteTaskController {
         tjShardingChangeRecordService.save(tjShardingChangeRecord);
         return AjaxResult.success();
     }
+
+    @ApiOperation("1、初始化")
+    @GetMapping("/init")
+    @ApiImplicitParam(name = "taskId",
+        value = "任务ID",
+        required = true,
+        dataType = "integer")
+    public AjaxResult init(Integer taskId) {
+        try {
+            InfinityTaskInitVo infinityTaskInitVo = tjInfinityTaskService.init(
+                taskId);
+            if (CollectionUtils.isEmpty(
+                infinityTaskInitVo.getShardingInfos())) {
+                throw new BusinessException("分片信息未设置");
+            }
+            return AjaxResult.success(infinityTaskInitVo);
+        } catch (BusinessException be) {
+            return AjaxResult.error(be.getMessage());
+        } catch (Exception e) {
+            return AjaxResult.error("查询任务配置信息异常！");
+        }
+    }
+
+    @ApiOperation("2、准备（状态检查）")
+    @PostMapping("/prepare")
+    public AjaxResult prepare(Integer taskId) {
+      try {
+        tjInfinityTaskService.prepare(taskId);
+      } catch (BusinessException e) {
+
+      }
+      // 1、状态检查
+            //	1、设备在线状态 #平台定时获取，存在redis
+            //	2、获取设备准备状态 #发送至主控
+            //	3、获取任务运行状态 #平台自己管理
+        // 2、状态校验
+            // 1、可测试，发送重置状态
+            // 2、返回不可开始状态
+        return AjaxResult.success(new InfinityTaskPreparedVo());
+    }
+
+    @ApiOperation("3、任务控制-预开始")
+    @PostMapping("/preStart")
+    public  AjaxResult preStart(Integer taskId) {
+        //	1、发送任务轨迹/规则到主控
+      return AjaxResult.success(tjInfinityTaskService.preStart(taskId));
+    }
+
+    //4、主控接管任务
+        //	1、开始任务
+        //	2、结束任务
 }

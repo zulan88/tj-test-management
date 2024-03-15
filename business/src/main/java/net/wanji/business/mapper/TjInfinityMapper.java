@@ -2,9 +2,7 @@ package net.wanji.business.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import net.wanji.business.domain.dto.TaskDto;
-import net.wanji.business.domain.vo.TaskListVo;
-import net.wanji.business.domain.vo.TaskReportVo;
-import net.wanji.business.entity.TjInfinityTask;
+import net.wanji.business.entity.infity.TjInfinityTask;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;

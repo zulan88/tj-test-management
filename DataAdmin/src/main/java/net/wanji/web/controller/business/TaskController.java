@@ -26,11 +26,8 @@ import net.wanji.business.entity.TjTask;
 import net.wanji.business.entity.TjTaskCase;
 import net.wanji.business.entity.TjTaskCaseRecord;
 import net.wanji.business.exception.BusinessException;
-import net.wanji.business.service.RestService;
-import net.wanji.business.service.TestingService;
-import net.wanji.business.service.TjTaskCaseRecordService;
-import net.wanji.business.service.TjTaskCaseService;
-import net.wanji.business.service.TjTaskService;
+import net.wanji.business.service.*;
+import net.wanji.business.service.impl.TjInfinityTaskServiceImpl;
 import net.wanji.common.constant.CacheConstants;
 import net.wanji.common.constant.HttpStatus;
 import net.wanji.common.core.controller.BaseController;
@@ -81,6 +78,9 @@ public class TaskController extends BaseController {
 
     @Autowired
     private RedisCache redisCache;
+
+    @Autowired
+    private TjInfinityTaskService tjInfinityTaskService;
 
     @ApiOperationSort(1)
     @ApiOperation(value = "1.节点初始化")
@@ -332,6 +332,12 @@ public class TaskController extends BaseController {
     public AjaxResult caseStartEnd(@RequestBody PlatformSSDto platformSSDto) throws BusinessException, IOException {
         if (platformSSDto.getState() == -1) {
             log.error("用例异常结束原因：{}", platformSSDto.getMessage());
+        }
+        Integer testMode = platformSSDto.getTestMode();
+        if(null != testMode && testMode.equals(3)){
+            tjInfinityTaskService.startStop(platformSSDto.getTaskId(),
+                platformSSDto.getCaseId(), platformSSDto.getState(),
+                (String) platformSSDto.getContext().get("user"));
         }
         if (platformSSDto.getTaskId() == 0) {
             if (platformSSDto.getState() == 1) {

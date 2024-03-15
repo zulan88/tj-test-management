@@ -61,6 +61,10 @@ public interface Constants {
          * 批量测试（n场景任务n次启停）
          */
         public static final int BATCH_TEST = 2;
+        /**
+         * 无线里程
+         */
+        public static final int INFINITY_TEST = 3;
     }
 
     /**

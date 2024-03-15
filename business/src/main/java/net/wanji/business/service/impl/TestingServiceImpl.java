@@ -53,6 +53,7 @@ import net.wanji.business.service.TjDeviceDetailService;
 import net.wanji.business.service.TjFragmentedSceneDetailService;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.util.DeviceUtils;
+import net.wanji.business.util.RedisChannelUtils;
 import net.wanji.business.util.RedisLock;
 import net.wanji.business.util.TessngUtils;
 import net.wanji.common.common.ClientSimulationTrajectoryDto;
@@ -182,18 +183,6 @@ public class TestingServiceImpl implements TestingService {
     }
 
     /**
-     * 根据角色获取指令通道
-     *
-     * @param caseConfigBo
-     * @return
-     */
-    private String getCommandChannelByRole(CaseConfigBo caseConfigBo) {
-        return PartRole.MV_SIMULATION.equals(caseConfigBo.getSupportRoles())
-                ? ChannelBuilder.buildTestingControlChannel(SecurityUtils.getUsername(), caseConfigBo.getCaseId())
-                : caseConfigBo.getCommandChannel();
-    }
-
-    /**
      * 根据角色获取准备状态通道
      *
      * @param caseConfigBo
@@ -203,22 +192,6 @@ public class TestingServiceImpl implements TestingService {
         return PartRole.MV_SIMULATION.equals(caseConfigBo.getSupportRoles())
                 ? ChannelBuilder.buildTestingStatusChannel(SecurityUtils.getUsername(), caseConfigBo.getCaseId())
                 : ChannelBuilder.DEFAULT_STATUS_CHANNEL;
-    }
-
-    /**
-     * 构建唤醒tess服务的参数
-     *
-     * @param roadNum
-     * @param caseId
-     * @return
-     */
-    private TessParam buildTessServerParam(Integer roadNum, String username, Integer caseId, List<String> mapList) {
-        return new TessParam().buildRealTestParam(roadNum,
-                ChannelBuilder.buildTestingDataChannel(username, caseId),
-                ChannelBuilder.buildTestingControlChannel(username, caseId),
-                ChannelBuilder.buildTestingEvaluateChannel(username, caseId),
-                ChannelBuilder.buildTestingStatusChannel(username, caseId),
-                mapList);
     }
 
     /**
@@ -287,22 +260,7 @@ public class TestingServiceImpl implements TestingService {
             caseBusinessIdAndRoleMap.put(caseConfig.getBusinessId(), caseConfig.getParticipantRole());
         }
         // 3.主车轨迹 -- av车需要主车全部轨迹
-        List<SimulationTrajectoryDto> participantTrajectories = null;
-        try {
-            participantTrajectories = routeService.readOriRouteFile(caseInfoBo.getRouteFile());
-            participantTrajectories = participantTrajectories.stream()
-                    .filter(item -> !ObjectUtils.isEmpty(item.getValue())
-                            && item.getValue().stream().anyMatch(p -> "1".equals(p.getId())))
-                    .peek(s -> s.setValue(s.getValue().stream().filter(p -> "1".equals(p.getId()))
-                            .collect(Collectors.toList())))
-                    .collect(Collectors.toList());
-        } catch (IOException e) {
-            log.error("查询主车轨迹失败");
-        }
-        if (CollectionUtils.isEmpty(participantTrajectories)) {
-            throw new BusinessException("查询主车轨迹失败");
-        }
-        mainTrajectories.addAll(participantTrajectories);
+        mainTrajectories.addAll(routeService.mainTrajectory(caseInfoBo.getRouteFile()));
     }
 
     /**
@@ -424,7 +382,7 @@ public class TestingServiceImpl implements TestingService {
         CaseConfigBo mainConfig = caseInfoBo.getCaseConfigs().stream().filter(t ->
                 PartRole.AV.equals(t.getParticipantRole())).findFirst().orElseThrow(() ->
                 new BusinessException("用例主车配置信息异常"));
-        TessParam tessParam = buildTessServerParam(1, username, caseId,null);
+        TessParam tessParam = TessngUtils.buildTessServerParam(1, username, caseId,null);
         if (!restService.sendRuleUrl(new CaseRuleControl(System.currentTimeMillis(),
                 0, caseId, action,
                 generateDeviceConnRules(caseInfoBo, tessParam.getCommandChannel(), tessParam.getDataChannel()),
@@ -467,7 +425,7 @@ public class TestingServiceImpl implements TestingService {
         CaseConfigBo mainConfig = caseInfoBo.getCaseConfigs().stream().filter(t ->
                 PartRole.AV.equals(t.getParticipantRole())).findFirst().orElseThrow(() ->
                 new BusinessException("用例主车配置信息异常"));
-        TessParam tessParam = buildTessServerParam(1, username, caseId,null);
+        TessParam tessParam = TessngUtils.buildTessServerParam(1, username, caseId,null);
         if (!restService.sendRuleUrl(
                 new CaseRuleControl(System.currentTimeMillis(), 0, caseId, action,
                         generateDeviceConnRules(caseInfoBo, tessParam.getCommandChannel(), tessParam.getDataChannel()),
@@ -569,7 +527,7 @@ public class TestingServiceImpl implements TestingService {
             throw new BusinessException("未查询到主车配置信息");
         }
         String commandChannel = avConfig.get().getCommandChannel();
-        TessParam tessParam = buildTessServerParam(1, caseInfoBo.getCreatedBy(), caseId, null);
+        TessParam tessParam = TessngUtils.buildTessServerParam(1, caseInfoBo.getCreatedBy(), caseId, null);
         if (!restService.sendRuleUrl(
                 new CaseRuleControl(System.currentTimeMillis(), 0, caseId, 0,
                         generateDeviceConnRules(caseInfoBo, tessParam.getCommandChannel(), tessParam.getDataChannel()),
@@ -915,7 +873,7 @@ public class TestingServiceImpl implements TestingService {
         // 4.唤醒仿真服务
         if (!restService.startServer(
             simulationConfig.getIp(), Integer.valueOf(simulationConfig.getServiceAddress()),
-            buildTessServerParam(1, SecurityUtils.getUsername(), caseId, mapList))) {
+            TessngUtils.buildTessServerParam(1, SecurityUtils.getUsername(), caseId, mapList))) {
             throw new BusinessException("唤起仿真服务失败");
         }
         if (!redisLock.tryLock("case_" + caseId, SecurityUtils.getUsername())) {
@@ -941,22 +899,43 @@ public class TestingServiceImpl implements TestingService {
                 continue;
             }
             // 查询设备状态
-            Integer status = hand
-                ? deviceDetailService.handDeviceState(caseConfigBo.getDeviceId(), getCommandChannelByRole(caseConfigBo), false)
-                : deviceDetailService.selectDeviceState(caseConfigBo.getDeviceId(), getCommandChannelByRole(caseConfigBo), false);
+            Integer status = hand ?
+                deviceDetailService.handDeviceState(caseConfigBo.getDeviceId(),
+                    RedisChannelUtils.getCommandChannelByRole(0,
+                        caseConfigBo.getCaseId(),
+                        caseConfigBo.getSupportRoles(),
+                        caseConfigBo.getCommandChannel()), false) :
+                deviceDetailService.selectDeviceState(
+                    caseConfigBo.getDeviceId(),
+                    RedisChannelUtils.getCommandChannelByRole(0,
+                        caseConfigBo.getCaseId(),
+                        caseConfigBo.getSupportRoles(),
+                        caseConfigBo.getCommandChannel()), false);
             caseConfigBo.setStatus(status);
             // 查询设备准备状态
-            DeviceReadyStateParam stateParam = new DeviceReadyStateParam(caseConfigBo.getDeviceId(), getCommandChannelByRole(caseConfigBo));
+            DeviceReadyStateParam stateParam = new DeviceReadyStateParam(
+                caseConfigBo.getDeviceId(),
+                RedisChannelUtils.getCommandChannelByRole(0,
+                    caseConfigBo.getCaseId(), caseConfigBo.getSupportRoles(),
+                    caseConfigBo.getCommandChannel()));
             if (PartRole.AV.equals(caseConfigBo.getParticipantRole())) {
                 stateParam.setParams(new ParamsDto("1", mainTrajectories));
             }
-            if (PartRole.MV_SIMULATION.equals(caseConfigBo.getParticipantRole())) {
-                stateParam.setParams(buildTessStateParam(caseInfoBo,
-                    caseBusinessIdAndRoleMap, mainTrajectories.size()));
+            if (PartRole.MV_SIMULATION.equals(
+                caseConfigBo.getParticipantRole())) {
+                stateParam.setParams(
+                    buildTessStateParam(caseInfoBo, caseBusinessIdAndRoleMap,
+                        mainTrajectories.size()));
             }
-            Integer positionStatus = hand
-                ? deviceDetailService.handDeviceReadyState(caseConfigBo.getDeviceId(), getReadyStatusChannelByRole(caseConfigBo), stateParam, false)
-                : deviceDetailService.selectDeviceReadyState(caseConfigBo.getDeviceId(), getReadyStatusChannelByRole(caseConfigBo), stateParam, false);
+            Integer positionStatus = hand ?
+                deviceDetailService.handDeviceReadyState(
+                    caseConfigBo.getDeviceId(),
+                    getReadyStatusChannelByRole(caseConfigBo), stateParam,
+                    false) :
+                deviceDetailService.selectDeviceReadyState(
+                    caseConfigBo.getDeviceId(),
+                    getReadyStatusChannelByRole(caseConfigBo), stateParam,
+                    false);
             caseConfigBo.setPositionStatus(positionStatus);
         }
     }
