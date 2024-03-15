@@ -123,9 +123,17 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
                 }else {
                     mapList.add(String.valueOf(infinteMileScence.getMapId()));
                 }
+
+                List<TrafficFlow> trafficFlows = new ArrayList<>();
+                for(TrafficFlow trafficFlow : infinteMileScence.getTrafficFlows()){
+                    if (trafficFlow.getDeparturePoints()!= null && trafficFlow.getDeparturePoints().size() > 0){
+                        trafficFlows.add(trafficFlow);
+                    }
+                }
+
                 InfiniteTessParm testStartParam = new InfiniteTessParm();
                 testStartParam.setInElements(infinteMileScence.getInElements());
-                testStartParam.setTrafficFlows(infinteMileScence.getTrafficFlows());
+                testStartParam.setTrafficFlows(trafficFlows);
                 for(InElement element : testStartParam.getInElements()){
                     SitePoint point = element.getRoute().get(0);
                     element.getRoute().add(point);
