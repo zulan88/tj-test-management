@@ -134,7 +134,7 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
                 String channel = Constants.ChannelBuilder.buildInfiniteSimulationChannel(SecurityUtils.getUsername(), infinteMileScence.getViewId());
                 DeviceDetailVo detailVo = deviceDetailVos.get(0);
                 boolean start = restService.startServer(detailVo.getIp(), Integer.valueOf(detailVo.getServiceAddress()),
-                        new TessParam().buildnfiniteSimulationParam("1", channel, testStartParam, mapList, infinteMileScence.getViewId()));
+                        new TessParam().buildnfiniteSimulationParam("1", channel, testStartParam, mapList));
                 if (!start) {
                     String repeatKey = "DEBUGGING_INSCENE_" + infinteMileScence.getViewId();
                     redisCache.deleteObject(repeatKey);

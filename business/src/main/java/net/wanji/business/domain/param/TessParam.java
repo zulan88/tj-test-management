@@ -28,8 +28,6 @@ public class TessParam {
      */
     private Integer roadNum;
 
-    private String infiniteId;
-
     /**
      * 数据通道
      */
@@ -98,10 +96,9 @@ public class TessParam {
      * @param dataChannel 数据传输通道
      * @param params 模拟参数 对应 net.wanji.business.domain.InfiniteTessParm
      * @param mapList 地图id列表
-     * @param infiniteId 无限循环模板标识
      * @return 返回配置好的TessParam对象
      */
-    public TessParam buildnfiniteSimulationParam(String commandChannel, String dataChannel, Object params, List<String> mapList, String infiniteId) {
+    public TessParam buildnfiniteSimulationParam(String commandChannel, String dataChannel, Object params, List<String> mapList) {
         this.simulateType = 6;
         this.roadNum = 1;
         this.dataChannel = dataChannel;
@@ -112,7 +109,6 @@ public class TessParam {
         this.routingChannel = "1";
         this.evaluateChannel = "1";
         this.mapList = mapList;
-        this.infiniteId = infiniteId;
 
         return this;
     }
