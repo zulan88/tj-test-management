@@ -65,6 +65,8 @@ public interface TjInfinityTaskService extends IService<TjInfinityTask> {
 
     void saveCustomIndexWeight(SaveCustomIndexWeightBo saveCustomIndexWeightBo);
 
+    int updateTaskStatus(String status, int id);
+
     /**
      * 运行任务初始化
      * @param taskId

@@ -1,5 +1,7 @@
 package net.wanji.web.controller.business;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import io.swagger.annotations.*;
@@ -22,6 +24,7 @@ import net.wanji.business.service.TjShardingChangeRecordService;
 import net.wanji.common.constant.HttpStatus;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
+import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.BeanUtils;
@@ -94,12 +97,33 @@ public class InfiniteTaskController {
     @ApiOperationSort(3)
     @ApiOperation(value = "3-1.保存")
     @PostMapping("/save")
-    public AjaxResult save(@Validated @RequestBody Map<String, Object> task) throws BusinessException {
-        int id = tjInfinityTaskService.saveTask(task);
-        if (id == 0) {
+    public AjaxResult save(@Validated @RequestBody Map<String, Object> taskData, HttpServletRequest request) throws BusinessException {
+        try {
+            taskData.put("createdBy", SecurityUtils.getUsername());
+            taskData.put("status", "waiting");
+            taskData.put("orderNumber", "task-" + DateUtils.getTime());
+            taskData.put("createdDate", DateUtils.getTime());
+            String taskId = String.valueOf(tjInfinityTaskService.saveTask(taskData));
+            saveEvaluationScheme(taskData, taskId);
+            return AjaxResult.success(0);
+
+        } catch (Exception e) {
+            e.printStackTrace();
             return AjaxResult.error("保存失败");
         }
-        return AjaxResult.success(id);
+    }
+
+    @ApiOperationSort(4)
+    @ApiOperation(value = "3-2.修改状态")
+    @GetMapping("/updateTaskStatus")
+    public AjaxResult updateTaskStatus(String status, int id) throws BusinessException {
+        try {
+            int msg = tjInfinityTaskService.updateTaskStatus(status, id);
+            return AjaxResult.success(msg);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return AjaxResult.error("修改状态失败");
+        }
     }
 
     @ApiOperationSort(9)
@@ -135,6 +159,32 @@ public class InfiniteTaskController {
         }
         tjInfinityTaskService.saveCustomIndexWeight(saveCustomIndexWeightBo);
         return AjaxResult.success();
+    }
+
+    private void saveEvaluationScheme(Map<String, Object> taskData, String taskId) throws BusinessException {
+        // 创建任务和方案关联
+        if (taskData.containsKey("taskScheme")) {
+            SaveTaskSchemeBo taskScheme = JSONObject.parseObject(JSONObject.toJSONString(
+                    taskData.get("taskScheme")), SaveTaskSchemeBo.class);
+            taskScheme.setTaskId(taskId);
+            saveTaskScheme(taskScheme);
+        }
+
+        // 3-3.自定义-场景权重创建
+        if (taskData.containsKey("customScenarioWeight")) {
+            SaveCustomScenarioWeightBo customScenarioWeight = JSONObject.parseObject(JSONObject.toJSONString(
+                    taskData.get("customScenarioWeight")), SaveCustomScenarioWeightBo.class);
+            customScenarioWeight.setTask_id(taskId);
+            saveCustomScenarioWeight(customScenarioWeight);
+        }
+
+        // 3-3.自定义-指标权重创建
+        if (taskData.containsKey("customIndexWeight")) {
+            SaveCustomIndexWeightBo customIndexWeight = JSONObject.parseObject(JSONObject.toJSONString(
+                    taskData.get("customIndexWeight")), SaveCustomIndexWeightBo.class);
+            customIndexWeight.setTask_id(taskId);
+            saveCustomIndexWeight(customIndexWeight);
+        }
     }
 
     @ApiOperationSort(12)

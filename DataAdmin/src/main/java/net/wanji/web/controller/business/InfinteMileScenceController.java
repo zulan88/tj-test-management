@@ -5,7 +5,9 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;
 import io.swagger.models.auth.In;
 import net.wanji.business.domain.*;
+import net.wanji.business.entity.TjAtlasVenue;
 import net.wanji.business.exception.BusinessException;
+import net.wanji.business.service.ITjAtlasVenueService;
 import net.wanji.business.service.InfinteMileScenceService;
 import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
@@ -28,30 +30,17 @@ public class InfinteMileScenceController extends BaseController {
     private InfinteMileScenceService infinteMileScenceService;
 
     @Autowired
+    private ITjAtlasVenueService tjAtlasVenueService;
+
+    @Autowired
     private RedisCache redisCache;
 
     @GetMapping("/list")
     public TableDataInfo list() {
         startPage();
         List<InfinteMileScenceExo> list = infinteMileScenceService.selectInfinteMileScenceList();
-        Gson gson = new Gson();
         List<InfinteMileScenceExo> infinteMileScenceExoList = list.stream().peek(infinteMileScenceExo -> {
-            if(infinteMileScenceExo.getElement()!= null&&infinteMileScenceExo.getElement().length() > 0){
-                List<InElement> inElements = Arrays.asList(gson.fromJson(infinteMileScenceExo.getElement(), InElement[].class));
-                infinteMileScenceExo.setInElements(inElements);
-            }
-            if(infinteMileScenceExo.getTrafficFlow()!= null&&infinteMileScenceExo.getTrafficFlow().length() > 0){
-                List<TrafficFlow> trafficFlows = Arrays.asList(gson.fromJson(infinteMileScenceExo.getTrafficFlow(), TrafficFlow[].class));
-                infinteMileScenceExo.setTrafficFlows(trafficFlows);
-            }
-            if(infinteMileScenceExo.getSiteSlice()!= null&&infinteMileScenceExo.getSiteSlice().length() > 0){
-                List<SiteSlice> siteSlices = Arrays.asList(gson.fromJson(infinteMileScenceExo.getSiteSlice(), SiteSlice[].class));
-                infinteMileScenceExo.setSiteSlices(siteSlices);
-            }
-            if(infinteMileScenceExo.getTrafficFlowConfig()!= null&&infinteMileScenceExo.getTrafficFlowConfig().length() > 0){
-                List<TrafficFlowConfig> trafficFlowConfigs = Arrays.asList(gson.fromJson(infinteMileScenceExo.getTrafficFlowConfig(), TrafficFlowConfig[].class));
-                infinteMileScenceExo.setTrafficFlowConfigs(trafficFlowConfigs);
-            }
+            infinteMileScenceService.dualInfiniteSimulation(infinteMileScenceExo);
             long testNum = infinteMileScenceExo.getInElements().stream().filter(inElement -> inElement.getType().equals(0)).count();
             infinteMileScenceExo.setTestNum(testNum);
             infinteMileScenceExo.setOtherNum(infinteMileScenceExo.getInElements().size() - testNum);
@@ -95,8 +84,8 @@ public class InfinteMileScenceController extends BaseController {
 
     @GetMapping("/getflowsite")
     public AjaxResult getflowsite(@RequestParam("mapId") Integer mapId) {
-        String moke = "[{\"id\":7,\"name\":\"7\",\"startPoint\":{\"latitude\":121.20179539912456,\"longitude\":31.2910261296821},\"type\":1},{\"id\":8,\"name\":\"8\",\"startPoint\":{\"latitude\":121.20181228668544,\"longitude\":31.291037422714275},\"type\":2},{\"id\":9,\"name\":\"9\",\"startPoint\":{\"latitude\":121.20142762827838,\"longitude\":31.291983384728443},\"type\":1},{\"id\":10,\"name\":\"10\",\"startPoint\":{\"latitude\":121.20144629248955,\"longitude\":31.291976102859635},\"type\":2},{\"id\":12,\"name\":\"12\",\"startPoint\":{\"latitude\":121.20206564155686,\"longitude\":31.292184832786365},\"type\":0},{\"id\":14,\"name\":\"14\",\"startPoint\":{\"latitude\":121.20234765030777,\"longitude\":31.292390163345196},\"type\":0},{\"id\":15,\"name\":\"15\",\"startPoint\":{\"latitude\":121.20171693874268,\"longitude\":31.29174209683225},\"type\":0}]";
-        List<TrafficFlow> jsonArray = JSON.parseArray(moke, TrafficFlow.class);
+        TjAtlasVenue tjAtlasVenue = tjAtlasVenueService.getById(mapId);
+        List<TrafficFlow> jsonArray = JSON.parseArray(tjAtlasVenue.getAttribute3(), TrafficFlow.class);
         return AjaxResult.success(jsonArray);
     }
 

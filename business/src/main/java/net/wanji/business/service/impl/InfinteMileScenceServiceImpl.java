@@ -123,9 +123,17 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
                 }else {
                     mapList.add(String.valueOf(infinteMileScence.getMapId()));
                 }
+
+                List<TrafficFlow> trafficFlows = new ArrayList<>();
+                for(TrafficFlow trafficFlow : infinteMileScence.getTrafficFlows()){
+                    if (trafficFlow.getDeparturePoints()!= null && trafficFlow.getDeparturePoints().size() > 0){
+                        trafficFlows.add(trafficFlow);
+                    }
+                }
+
                 InfiniteTessParm testStartParam = new InfiniteTessParm();
                 testStartParam.setInElements(infinteMileScence.getInElements());
-                testStartParam.setTrafficFlows(infinteMileScence.getTrafficFlows());
+                testStartParam.setTrafficFlows(trafficFlows);
                 for(InElement element : testStartParam.getInElements()){
                     SitePoint point = element.getRoute().get(0);
                     element.getRoute().add(point);
@@ -133,8 +141,8 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
 
                 String channel = Constants.ChannelBuilder.buildInfiniteSimulationChannel(SecurityUtils.getUsername(), infinteMileScence.getViewId());
                 DeviceDetailVo detailVo = deviceDetailVos.get(0);
-                boolean start = restService.startInfinite(detailVo.getIp(), Integer.valueOf(detailVo.getServiceAddress()),
-                        new TessParam().buildnfiniteSimulationParam("1", channel, testStartParam, mapList, infinteMileScence.getViewId()));
+                boolean start = restService.startServer(detailVo.getIp(), Integer.valueOf(detailVo.getServiceAddress()),
+                        new TessParam().buildnfiniteSimulationParam("1", channel, testStartParam, mapList));
                 if (!start) {
                     String repeatKey = "DEBUGGING_INSCENE_" + infinteMileScence.getViewId();
                     redisCache.deleteObject(repeatKey);
@@ -155,6 +163,19 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
         InfinteMileScence infinteMileScence = this.getById(id);
         InfinteMileScenceExo infinteMileScenceExo = new InfinteMileScenceExo();
         BeanUtils.copyBeanProp(infinteMileScenceExo, infinteMileScence);
+        dualInfiniteSimulation(infinteMileScenceExo);
+        return infinteMileScenceExo;
+    }
+
+    private void validDebugParam(InfinteMileScenceExo infinteMileScenceExo) throws BusinessException{
+        if (infinteMileScenceExo.getInElements()== null || infinteMileScenceExo.getInElements().size() == 0){
+            throw new BusinessException("参与者轨迹不能为空");
+        }else if (infinteMileScenceExo.getTrafficFlows()== null || infinteMileScenceExo.getTrafficFlows().size() == 0){
+            throw new BusinessException("车流量信息不能为空");
+        }
+    }
+
+    public void dualInfiniteSimulation(InfinteMileScenceExo infinteMileScenceExo) {
         Gson gson = new Gson();
         if(infinteMileScenceExo.getElement()!= null&&infinteMileScenceExo.getElement().length() > 0){
             List<InElement> inElements = Arrays.asList(gson.fromJson(infinteMileScenceExo.getElement(), InElement[].class));
@@ -171,15 +192,6 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
         if(infinteMileScenceExo.getTrafficFlowConfig()!= null&&infinteMileScenceExo.getTrafficFlowConfig().length() > 0){
             List<TrafficFlowConfig> trafficFlowConfigs = Arrays.asList(gson.fromJson(infinteMileScenceExo.getTrafficFlowConfig(), TrafficFlowConfig[].class));
             infinteMileScenceExo.setTrafficFlowConfigs(trafficFlowConfigs);
-        }
-        return infinteMileScenceExo;
-    }
-
-    private void validDebugParam(InfinteMileScenceExo infinteMileScenceExo) throws BusinessException{
-        if (infinteMileScenceExo.getInElements()== null || infinteMileScenceExo.getInElements().size() == 0){
-            throw new BusinessException("参与者轨迹不能为空");
-        }else if (infinteMileScenceExo.getTrafficFlows()== null || infinteMileScenceExo.getTrafficFlows().size() == 0){
-            throw new BusinessException("车流量信息不能为空");
         }
     }
 

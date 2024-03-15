@@ -2,6 +2,8 @@ package net.wanji.business.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import net.wanji.business.common.Constants;
 import net.wanji.business.common.DeviceStatus;
@@ -46,6 +48,10 @@ import javax.servlet.http.HttpServletRequest;
 import java.awt.geom.Point2D;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -87,6 +93,9 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         this.kafkaCollector = kafkaCollector;
     }
 
+    @Autowired
+    private TjTaskDataConfigService tjTaskDataConfigService;
+
     @Override
     public Map<String, Long> selectCount(TaskDto taskDto) {
         List<Map<String, String>> statusMaps = tjInfinityMapper.selectCountByStatus(taskDto);
@@ -100,7 +109,32 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
 
     @Override
     public List<Map<String, Object>> pageList(TaskDto in) {
-        return tjInfinityMapper.getPageList(in);
+
+        List<Map<String, Object>> pageList = tjInfinityMapper.getPageList(in);
+        for (Map<String, Object> task : pageList) {
+            String id = task.get("id").toString();
+            List<TjTaskDataConfig> list = tjTaskDataConfigService.list(new QueryWrapper<TjTaskDataConfig>().eq("task_id", id));
+            task.put("avDeviceIds", list);
+
+            // TODO 任务历史记录
+            List<Map<String, Object>> historyRecords = new ArrayList<>();
+            historyRecords.add(new HashMap<String, Object>() {{
+                put("taskStartTime", "2024-03-15 00:00:00");
+                put("taskRunningTime", "00:15:24");
+                put("record", "1");
+            }});
+
+            historyRecords.add(new HashMap<String, Object>() {{
+                put("taskStartTime", "2024-03-15 00:00:00");
+                put("taskRunningTime", "00:15:24");
+                put("record", "2");
+            }});
+
+            task.put("historyRecords", historyRecords);
+        }
+
+
+        return pageList;
     }
 
     @Override
@@ -116,8 +150,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
     @Override
     public int saveTask(Map<String, Object> task) {
         String caseId = task.get("caseId").toString();
-
-        int res = tjInfinityMapper.saveTask(task);
+        tjInfinityMapper.saveTask(task);
         int id = Integer.parseInt(task.get("id").toString());
 
         // 保存参与者数据
@@ -133,7 +166,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
             tjTaskDataConfigService.save(newAvConfig);
         }
 
-        return res;
+        return id;
     }
 
 
@@ -147,6 +180,14 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
     public void saveCustomIndexWeight(SaveCustomIndexWeightBo saveCustomIndexWeightBo) {
         String weights = JSON.toJSONString(saveCustomIndexWeightBo.getList());
         tjInfinityMapper.saveCustomScenarioWeight(saveCustomIndexWeightBo.getTask_id(), weights, "1");
+    }
+
+    @Override
+    public int updateTaskStatus(String status, int id) {
+        TjInfinityTask tjInfinityTask = new TjInfinityTask();
+        tjInfinityTask.setId(id);
+        tjInfinityTask.setStatus(status);
+        return tjInfinityMapper.updateById(tjInfinityTask);
     }
 
     @Override

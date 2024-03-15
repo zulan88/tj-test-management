@@ -346,10 +346,8 @@ public class RedisTrajectory2Consumer {
                         removeListener(channel);
                         String repeatKey = "DEBUGGING_INSCENE_" + infinteMileScenceExo.getViewId();
                         redisCache.deleteObject(repeatKey);
-                        // 解析消息
-                        CaseTrajectoryDetailBo end = objectMapper.readValue(String.valueOf(simulationMessage.getValue()),
-                                CaseTrajectoryDetailBo.class);
-                        log.info(StringUtils.format("{}结束：{}", methodLog, JSONObject.toJSONString(end)));
+
+                        log.info(StringUtils.format("{}结束：{}", methodLog, JSONObject.toJSONString(simulationMessage)));
                         // send ws
                         WebsocketMessage msg = new WebsocketMessage(RedisMessageType.END, null, infinteMileScenceExo);
                         WebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));

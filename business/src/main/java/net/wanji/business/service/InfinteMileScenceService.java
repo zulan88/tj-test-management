@@ -32,4 +32,10 @@ public interface InfinteMileScenceService extends IService<InfinteMileScence> {
      */
     InfinteMileScenceExo selectInfinteMileScenceById(Integer id);
 
+    /**
+     * 处理实体格式
+     * @param infinteMileScenceExo
+     */
+    void dualInfiniteSimulation(InfinteMileScenceExo infinteMileScenceExo);
+
 }
