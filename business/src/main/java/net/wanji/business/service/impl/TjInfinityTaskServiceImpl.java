@@ -2,14 +2,13 @@ package net.wanji.business.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import net.wanji.business.common.Constants;
 import net.wanji.business.common.DeviceStatus;
 import net.wanji.business.domain.InfinteMileScenceExo;
 import net.wanji.business.domain.SiteSlice;
-import net.wanji.business.domain.bo.*;
+import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
+import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.dto.TaskDto;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.InfinityReadyDto;
@@ -23,11 +22,9 @@ import net.wanji.business.domain.vo.task.infinity.DeviceInfo;
 import net.wanji.business.domain.vo.task.infinity.InfinityTaskInitVo;
 import net.wanji.business.domain.vo.task.infinity.InfinityTaskPreparedVo;
 import net.wanji.business.domain.vo.task.infinity.ShardingInfoVo;
-import net.wanji.business.entity.TjCase;
-import net.wanji.business.entity.TjCaseRealRecord;
 import net.wanji.business.entity.TjDeviceDetail;
-import net.wanji.business.entity.infity.TjInfinityTask;
 import net.wanji.business.entity.TjTaskDataConfig;
+import net.wanji.business.entity.infity.TjInfinityTask;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.listener.KafkaCollector;
 import net.wanji.business.mapper.TjInfinityMapper;
@@ -39,6 +36,7 @@ import net.wanji.business.util.TessngUtils;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
 import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
@@ -46,8 +44,6 @@ import org.springframework.util.ObjectUtils;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.awt.geom.Point2D;
-import java.time.LocalDateTime;
-import java.util.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -71,7 +67,6 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
     private final RestService restService;
     private final RedisLock redisLock;
     private final KafkaCollector kafkaCollector;
-
     @Resource
     private TjInfinityMapper tjInfinityMapper;
 
@@ -92,9 +87,6 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         this.redisLock = redisLock;
         this.kafkaCollector = kafkaCollector;
     }
-
-    @Autowired
-    private TjTaskDataConfigService tjTaskDataConfigService;
 
     @Override
     public Map<String, Long> selectCount(TaskDto taskDto) {

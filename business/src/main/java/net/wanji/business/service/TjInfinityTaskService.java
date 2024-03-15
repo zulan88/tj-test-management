@@ -1,7 +1,6 @@
 package net.wanji.business.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import net.wanji.business.domain.SiteSlice;
 import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.dto.TaskDto;
