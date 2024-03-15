@@ -114,7 +114,11 @@ public class RestServiceImpl implements RestService {
     @Override
     public boolean startServer(String ip, Integer port, TessParam tessParam) {
         try {
-            String resultUrl = ip + ":" + port + tessServerUrl;
+            String url = tessServerUrl;
+            if (tessParam.getSimulateType().equals(6)){
+                url = infiniteServerUrl;
+            }
+            String resultUrl = ip + ":" + port + url;
             log.info("============================== tessServerUrl：{}", resultUrl);
             HttpHeaders httpHeaders = new HttpHeaders();
             httpHeaders.setContentType(MediaType.APPLICATION_JSON);
@@ -139,33 +143,6 @@ public class RestServiceImpl implements RestService {
         return false;
     }
 
-    @Override
-    public boolean startInfinite(String ip, Integer port, TessParam tessParam) {
-        try {
-            String resultUrl = ip + ":" + port + infiniteServerUrl;
-            log.info("============================== tessServerUrl：{}", resultUrl);
-            HttpHeaders httpHeaders = new HttpHeaders();
-            httpHeaders.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<TessParam> resultHttpEntity = new HttpEntity<>(tessParam, httpHeaders);
-            log.info("============================== tessServerUrl：{}", JSONObject.toJSONString(tessParam));
-            ResponseEntity<String> response =
-                    restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);
-            if (response.getStatusCodeValue() == 200) {
-                JSONObject result = JSONObject.parseObject(response.getBody(), JSONObject.class);
-                log.info("============================== tess server start result:{}", JSONObject.toJSONString(result));
-                if (Objects.isNull(result) || !"success".equals(result.get("status"))) {
-                    log.error("远程服务调用失败:{}", result.get("msg"));
-                    sendTessNgRequestService.saveTessNgRequest("失败", resultUrl, tessParam);
-                    return false;
-                }
-                sendTessNgRequestService.saveTessNgRequest("成功", resultUrl, tessParam);
-                return true;
-            }
-        } catch (Exception e) {
-            log.error("远程服务调用失败:{}", e);
-        }
-        return false;
-    }
 
     @Override
     public List<TrafficFlow> getTrafficFlow(String ip, Integer port, Integer mapId) {
@@ -195,31 +172,6 @@ public class RestServiceImpl implements RestService {
         return null;
     }
 
-    @Override
-    public boolean start(String ip, Integer port, TestStartParam startParam) {
-        try {
-            String resultUrl = ip + ":" + port + tessStartUrl;
-            log.info("============================== tess start：{}", resultUrl);
-            HttpHeaders httpHeaders = new HttpHeaders();
-            httpHeaders.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<TestStartParam> resultHttpEntity = new HttpEntity<>(startParam, httpHeaders);
-            log.info("============================== tess start param：{}", JSONObject.toJSONString(startParam));
-            ResponseEntity<String> response =
-                    restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);
-            if (response.getStatusCodeValue() == 200) {
-                JSONObject result = JSONObject.parseObject(response.getBody(), JSONObject.class);
-                log.info("============================== tess start result:{}", JSONObject.toJSONString(result));
-                if (Objects.isNull(result) || !"success".equals(result.get("status"))) {
-                    log.error("远程服务调用失败:{}", result.get("msg"));
-                    return false;
-                }
-                return true;
-            }
-        } catch (Exception e) {
-            log.error("远程服务调用失败:{}", e);
-        }
-        return false;
-    }
 
     @Override
     public boolean startRoutingPlan(String ip, Integer port, Map<String, Object> params) {

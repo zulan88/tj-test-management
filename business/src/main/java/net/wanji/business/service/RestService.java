@@ -40,14 +40,15 @@ public interface RestService {
      */
     boolean startServer(String ip, Integer port, TessParam tessParam);
 
+
     /**
-     * 开始仿真
+     * 获取发车点信息
      * @param ip
      * @param port
-     * @param startParam
+     * @param mapId
      * @return
      */
-    boolean start(String ip, Integer port, TestStartParam startParam);
+    List<TrafficFlow> getTrafficFlow(String ip, Integer port, Integer mapId);
 
     /**
      * 多场景路径规划
@@ -176,21 +177,4 @@ public interface RestService {
      */
     JSONObject getCarTestResult(Integer taskId);
 
-    /**
-     * 启动无限里程tess服务
-     * @param ip
-     * @param port
-     * @param tessParam
-     * @return
-     */
-    public boolean startInfinite(String ip, Integer port, TessParam tessParam);
-
-    /**
-     * 获取发车点信息
-     * @param ip
-     * @param port
-     * @param mapId
-     * @return
-     */
-    List<TrafficFlow> getTrafficFlow(String ip, Integer port, Integer mapId);
 }

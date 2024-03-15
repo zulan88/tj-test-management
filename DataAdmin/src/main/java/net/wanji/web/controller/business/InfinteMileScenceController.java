@@ -39,24 +39,8 @@ public class InfinteMileScenceController extends BaseController {
     public TableDataInfo list() {
         startPage();
         List<InfinteMileScenceExo> list = infinteMileScenceService.selectInfinteMileScenceList();
-        Gson gson = new Gson();
         List<InfinteMileScenceExo> infinteMileScenceExoList = list.stream().peek(infinteMileScenceExo -> {
-            if(infinteMileScenceExo.getElement()!= null&&infinteMileScenceExo.getElement().length() > 0){
-                List<InElement> inElements = Arrays.asList(gson.fromJson(infinteMileScenceExo.getElement(), InElement[].class));
-                infinteMileScenceExo.setInElements(inElements);
-            }
-            if(infinteMileScenceExo.getTrafficFlow()!= null&&infinteMileScenceExo.getTrafficFlow().length() > 0){
-                List<TrafficFlow> trafficFlows = Arrays.asList(gson.fromJson(infinteMileScenceExo.getTrafficFlow(), TrafficFlow[].class));
-                infinteMileScenceExo.setTrafficFlows(trafficFlows);
-            }
-            if(infinteMileScenceExo.getSiteSlice()!= null&&infinteMileScenceExo.getSiteSlice().length() > 0){
-                List<SiteSlice> siteSlices = Arrays.asList(gson.fromJson(infinteMileScenceExo.getSiteSlice(), SiteSlice[].class));
-                infinteMileScenceExo.setSiteSlices(siteSlices);
-            }
-            if(infinteMileScenceExo.getTrafficFlowConfig()!= null&&infinteMileScenceExo.getTrafficFlowConfig().length() > 0){
-                List<TrafficFlowConfig> trafficFlowConfigs = Arrays.asList(gson.fromJson(infinteMileScenceExo.getTrafficFlowConfig(), TrafficFlowConfig[].class));
-                infinteMileScenceExo.setTrafficFlowConfigs(trafficFlowConfigs);
-            }
+            infinteMileScenceService.dualInfiniteSimulation(infinteMileScenceExo);
             long testNum = infinteMileScenceExo.getInElements().stream().filter(inElement -> inElement.getType().equals(0)).count();
             infinteMileScenceExo.setTestNum(testNum);
             infinteMileScenceExo.setOtherNum(infinteMileScenceExo.getInElements().size() - testNum);
