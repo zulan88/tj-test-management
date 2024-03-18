@@ -73,7 +73,7 @@ public class TjAtlasVenueServiceImpl extends ServiceImpl<TjAtlasVenueMapper, TjA
         queryWrapper.like(ObjectUtils.isNotEmpty(tjAtlasVenue.getName()),
                 TjAtlasVenue::getName,tjAtlasVenue.getName());
 
-        queryWrapper.orderByAsc(TjAtlasVenue::getId);
+        queryWrapper.orderByDesc(TjAtlasVenue::getId);
         return this.list(queryWrapper);
     }
 

@@ -1,6 +1,7 @@
 package net.wanji.business.service;
 
 import net.wanji.business.domain.InfinteMileScenceExo;
+import net.wanji.business.domain.TrafficFlow;
 import net.wanji.business.entity.InfinteMileScence;
 import com.baomidou.mybatisplus.extension.service.IService;
 import net.wanji.business.exception.BusinessException;
@@ -37,5 +38,15 @@ public interface InfinteMileScenceService extends IService<InfinteMileScence> {
      * @param infinteMileScenceExo
      */
     void dualInfiniteSimulation(InfinteMileScenceExo infinteMileScenceExo);
+
+    /**
+     * 停止仿真
+     * @param id
+     * @return
+     * @throws BusinessException
+     */
+    boolean stopInfinteSimulation(Integer id) throws BusinessException;
+
+    List<TrafficFlow> getTrafficFlow(Integer mapid) throws BusinessException;
 
 }

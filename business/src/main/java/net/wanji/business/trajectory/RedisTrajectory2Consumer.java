@@ -455,7 +455,7 @@ public class RedisTrajectory2Consumer {
     public static class ChannelListener<T> implements MessageListener {
         private final String sceneNumber;
         private final String channel;
-        private boolean started;
+        private boolean started = false;
         private final String userName;
         private Long timestamp;
         private final MessageListener listener;

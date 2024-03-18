@@ -4,7 +4,9 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;
 import io.swagger.models.auth.In;
+import net.wanji.business.common.Constants;
 import net.wanji.business.domain.*;
+import net.wanji.business.entity.InfinteMileScence;
 import net.wanji.business.entity.TjAtlasVenue;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.ITjAtlasVenueService;
@@ -41,9 +43,11 @@ public class InfinteMileScenceController extends BaseController {
         List<InfinteMileScenceExo> list = infinteMileScenceService.selectInfinteMileScenceList();
         List<InfinteMileScenceExo> infinteMileScenceExoList = list.stream().peek(infinteMileScenceExo -> {
             infinteMileScenceService.dualInfiniteSimulation(infinteMileScenceExo);
-            long testNum = infinteMileScenceExo.getInElements().stream().filter(inElement -> inElement.getType().equals(0)).count();
-            infinteMileScenceExo.setTestNum(testNum);
-            infinteMileScenceExo.setOtherNum(infinteMileScenceExo.getInElements().size() - testNum);
+            if (infinteMileScenceExo.getInElements()!= null) {
+                long testNum = infinteMileScenceExo.getInElements().stream().filter(inElement -> inElement.getType().equals(0)).count();
+                infinteMileScenceExo.setTestNum(testNum);
+                infinteMileScenceExo.setOtherNum(infinteMileScenceExo.getInElements().size() - testNum);
+            }
         }).collect(Collectors.toList());
         return getDataTable(infinteMileScenceExoList, list);
     }
@@ -83,16 +87,22 @@ public class InfinteMileScenceController extends BaseController {
     }
 
     @GetMapping("/getflowsite")
-    public AjaxResult getflowsite(@RequestParam("mapId") Integer mapId) {
-        TjAtlasVenue tjAtlasVenue = tjAtlasVenueService.getById(mapId);
-        List<TrafficFlow> jsonArray = JSON.parseArray(tjAtlasVenue.getAttribute3(), TrafficFlow.class);
-        return AjaxResult.success(jsonArray);
+    public AjaxResult getflowsite(@RequestParam("mapId") Integer mapId) throws BusinessException {
+//        TjAtlasVenue tjAtlasVenue = tjAtlasVenueService.getById(mapId);
+//        List<TrafficFlow> jsonArray = JSON.parseArray(tjAtlasVenue.getAttribute3(), TrafficFlow.class);
+        List<TrafficFlow> list = infinteMileScenceService.getTrafficFlow(mapId);
+        return AjaxResult.success(list);
     }
 
     @GetMapping("/test")
     public AjaxResult test(@RequestParam("id") Integer id) {
         InfinteMileScenceExo infinteMileScenceExo = infinteMileScenceService.selectInfinteMileScenceById(id);
         return AjaxResult.success(infinteMileScenceExo);
+    }
+
+    @GetMapping("/simustop")
+    public AjaxResult simustop(@RequestParam("id") Integer id) throws BusinessException {
+        return toAjax(infinteMileScenceService.stopInfinteSimulation(id));
     }
 
 }

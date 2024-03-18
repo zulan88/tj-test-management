@@ -17,8 +17,6 @@ public class InfinteMileScenceExo extends InfinteMileScence {
 
     List<TrafficFlowConfig> trafficFlowConfigs;
 
-    private Integer action;
-
     @TableField("map_name")
     private String mapName;
 

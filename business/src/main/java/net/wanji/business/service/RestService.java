@@ -10,7 +10,6 @@ import net.wanji.business.domain.dto.device.TaskSaveDto;
 import net.wanji.business.domain.param.CaseRuleControl;
 import net.wanji.business.domain.param.CaseTrajectoryParam;
 import net.wanji.business.domain.param.TessParam;
-import net.wanji.business.domain.param.TestStartParam;
 import net.wanji.business.domain.vo.IndexCustomWeightVo;
 import net.wanji.business.domain.vo.IndexWeightDetailsVo;
 import net.wanji.business.domain.vo.SceneIndexSchemeVo;
@@ -48,7 +47,7 @@ public interface RestService {
      * @param mapId
      * @return
      */
-    List<TrafficFlow> getTrafficFlow(String ip, Integer port, Integer mapId);
+    List<TrafficFlow> getTrafficFlow(String ip, String port, Integer mapId);
 
     /**
      * 多场景路径规划
@@ -58,6 +57,14 @@ public interface RestService {
      * @return
      */
     boolean startRoutingPlan(String ip, Integer port, Map<String, Object> params);
+
+    /**
+     * 停止无限里程tess服务
+     * @param ip
+     * @param port
+     * @return
+     */
+    boolean stopInfinite(String ip, String port, String dataChannel);
 
     /**
      * 查询设备准备状态

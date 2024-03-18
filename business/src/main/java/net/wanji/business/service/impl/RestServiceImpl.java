@@ -13,7 +13,6 @@ import net.wanji.business.domain.dto.device.TaskSaveDto;
 import net.wanji.business.domain.param.CaseRuleControl;
 import net.wanji.business.domain.param.CaseTrajectoryParam;
 import net.wanji.business.domain.param.TessParam;
-import net.wanji.business.domain.param.TestStartParam;
 import net.wanji.business.domain.vo.IndexCustomWeightVo;
 import net.wanji.business.domain.vo.IndexWeightDetailsVo;
 import net.wanji.business.domain.vo.SceneIndexSchemeVo;
@@ -145,18 +144,18 @@ public class RestServiceImpl implements RestService {
 
 
     @Override
-    public List<TrafficFlow> getTrafficFlow(String ip, Integer port, Integer mapId) {
+    public List<TrafficFlow> getTrafficFlow(String ip, String port, Integer mapId) {
         try{
             String resultUrl = ip + ":" + port + infiniteSite;
-            UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(resultUrl)
-                    .queryParam("mapId", mapId);
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+            JSONObject tessParam = new JSONObject();
+            tessParam.put("mapId", mapId);
+            HttpEntity<JSONObject> resultHttpEntity = new HttpEntity<>(tessParam, httpHeaders);
 
-            // 构建最终的 URL
-            String url = builder.toUriString();
-
-            log.info("============================== 无限里程获取发车点：{}", url);
+            log.info("============================== 无限里程获取发车点：{}", resultUrl);
             ResponseEntity<String> response =
-                    restTemplate.exchange(url, HttpMethod.GET, null, String.class);
+                    restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);
 
             if (response.getStatusCodeValue() == 200) {
                 JSONObject jsonObject = JSONObject.parseObject(response.getBody(), JSONObject.class);
@@ -197,6 +196,29 @@ public class RestServiceImpl implements RestService {
             }
         } catch (Exception e) {
             log.error("远程服务调用失败:{}", e);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean stopInfinite(String ip, String port, String dataChannel) {
+        String resultUrl = ip + ":" + port + infiniteServerUrl + "/StopSimu";
+        log.info("============================== tessServerUrl：{}", resultUrl);
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+        JSONObject tessParam = new JSONObject();
+        tessParam.put("dataChannel", dataChannel);
+        HttpEntity<JSONObject> resultHttpEntity = new HttpEntity<>(tessParam, httpHeaders);
+        ResponseEntity<String> response =
+                restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);
+        if (response.getStatusCodeValue() == 200) {
+            JSONObject result = JSONObject.parseObject(response.getBody(), JSONObject.class);
+            log.info("============================== tess server start result:{}", JSONObject.toJSONString(result));
+            if (Objects.isNull(result) || !"success".equals(result.get("msg"))) {
+                log.error("远程服务调用失败:{}", result.get("msg"));
+                return false;
+            }
+            return true;
         }
         return false;
     }

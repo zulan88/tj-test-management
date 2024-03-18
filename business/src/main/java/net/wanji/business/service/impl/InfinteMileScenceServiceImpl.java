@@ -99,63 +99,54 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
 
     @Override
     public void debugging(InfinteMileScenceExo infinteMileScence) throws BusinessException {
-        String key = Constants.ChannelBuilder.buildSimulationChannel(SecurityUtils.getUsername(), infinteMileScence.getViewId());
-        switch (infinteMileScence.getAction()) {
-            case Constants.PlaybackAction.START:
-                validDebugParam(infinteMileScence);
-                InfinteMileScence scenes = this.getById(infinteMileScence.getId());
-                if (ObjectUtils.isEmpty(scenes)) {
-                    throw new BusinessException("模板信息不存在，请先保存");
-                }
-                TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
-                deviceDetailDto.setSupportRoles(Constants.PartRole.MV_SIMULATION);
-                List<DeviceDetailVo> deviceDetailVos = deviceDetailMapper.selectByCondition(deviceDetailDto);
-                if (CollectionUtils.isEmpty(deviceDetailVos)) {
-                    throw new BusinessException("当前无可用仿真程序");
-                }
-                BeanUtils.copyBeanProp(infinteMileScence, scenes);
-
-                redisTrajectoryConsumer.addRunningChannelInfinite(infinteMileScence);
-
-                List<String> mapList = new ArrayList<>();
-                if (ObjectUtils.isEmpty(infinteMileScence.getMapId())) {
-                    mapList.add("10");
-                }else {
-                    mapList.add(String.valueOf(infinteMileScence.getMapId()));
-                }
-
-                List<TrafficFlow> trafficFlows = new ArrayList<>();
-                for(TrafficFlow trafficFlow : infinteMileScence.getTrafficFlows()){
-                    if (trafficFlow.getDeparturePoints()!= null && trafficFlow.getDeparturePoints().size() > 0){
-                        trafficFlows.add(trafficFlow);
-                    }
-                }
-
-                InfiniteTessParm testStartParam = new InfiniteTessParm();
-                testStartParam.setInElements(infinteMileScence.getInElements());
-                testStartParam.setTrafficFlows(trafficFlows);
-                for(InElement element : testStartParam.getInElements()){
-                    SitePoint point = element.getRoute().get(0);
-                    element.getRoute().add(point);
-                }
-
-                String channel = Constants.ChannelBuilder.buildInfiniteSimulationChannel(SecurityUtils.getUsername(), infinteMileScence.getViewId());
-                DeviceDetailVo detailVo = deviceDetailVos.get(0);
-                boolean start = restService.startServer(detailVo.getIp(), Integer.valueOf(detailVo.getServiceAddress()),
-                        new TessParam().buildnfiniteSimulationParam("1", channel, testStartParam, mapList));
-                if (!start) {
-                    String repeatKey = "DEBUGGING_INSCENE_" + infinteMileScence.getViewId();
-                    redisCache.deleteObject(repeatKey);
-                    throw new BusinessException("仿真程序连接失败");
-                }
-                break;
-            case Constants.PlaybackAction.STOP:
-                redisTrajectoryConsumer.removeListener(key);
-                break;
-            default:
-                break;
-
+        validDebugParam(infinteMileScence);
+        InfinteMileScence scenes = this.getById(infinteMileScence.getId());
+        if (ObjectUtils.isEmpty(scenes)) {
+            throw new BusinessException("模板信息不存在，请先保存");
         }
+        TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
+        deviceDetailDto.setSupportRoles(Constants.PartRole.MV_SIMULATION);
+        List<DeviceDetailVo> deviceDetailVos = deviceDetailMapper.selectByCondition(deviceDetailDto);
+        if (CollectionUtils.isEmpty(deviceDetailVos)) {
+            throw new BusinessException("当前无可用仿真程序");
+        }
+        BeanUtils.copyBeanProp(infinteMileScence, scenes);
+
+        redisTrajectoryConsumer.addRunningChannelInfinite(infinteMileScence);
+
+        List<String> mapList = new ArrayList<>();
+        if (ObjectUtils.isEmpty(infinteMileScence.getMapId())) {
+            mapList.add("10");
+        }else {
+            mapList.add(String.valueOf(infinteMileScence.getMapId()));
+        }
+
+        List<TrafficFlow> trafficFlows = new ArrayList<>();
+        for(TrafficFlow trafficFlow : infinteMileScence.getTrafficFlows()){
+            if (trafficFlow.getDeparturePoints()!= null && trafficFlow.getDeparturePoints().size() > 0){
+                trafficFlows.add(trafficFlow);
+            }
+        }
+
+        InfiniteTessParm testStartParam = new InfiniteTessParm();
+        testStartParam.setInElements(infinteMileScence.getInElements());
+        testStartParam.setTrafficFlows(trafficFlows);
+        testStartParam.setTrafficFlowConfigs(infinteMileScence.getTrafficFlowConfigs());
+        for(InElement element : testStartParam.getInElements()){
+            SitePoint point = element.getRoute().get(0);
+            element.getRoute().add(point);
+        }
+
+        String channel = Constants.ChannelBuilder.buildInfiniteSimulationChannel(SecurityUtils.getUsername(), infinteMileScence.getViewId());
+        DeviceDetailVo detailVo = deviceDetailVos.get(0);
+        boolean start = restService.startServer(detailVo.getIp(), Integer.valueOf(detailVo.getServiceAddress()),
+                new TessParam().buildnfiniteSimulationParam("1", channel, testStartParam, mapList));
+        if (!start) {
+            String repeatKey = "DEBUGGING_INSCENE_" + infinteMileScence.getViewId();
+            redisCache.deleteObject(repeatKey);
+            throw new BusinessException("仿真程序连接失败");
+        }
+
     }
 
     @Override
@@ -193,6 +184,33 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
             List<TrafficFlowConfig> trafficFlowConfigs = Arrays.asList(gson.fromJson(infinteMileScenceExo.getTrafficFlowConfig(), TrafficFlowConfig[].class));
             infinteMileScenceExo.setTrafficFlowConfigs(trafficFlowConfigs);
         }
+    }
+
+    @Override
+    public boolean stopInfinteSimulation(Integer id) throws BusinessException {
+        InfinteMileScence infinteMileScence = this.getById(id);
+        String channel = Constants.ChannelBuilder.buildInfiniteSimulationChannel(SecurityUtils.getUsername(), infinteMileScence.getViewId());
+        TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
+        deviceDetailDto.setSupportRoles(Constants.PartRole.MV_SIMULATION);
+        List<DeviceDetailVo> deviceDetailVos = deviceDetailMapper.selectByCondition(deviceDetailDto);
+        if (CollectionUtils.isEmpty(deviceDetailVos)) {
+            throw new BusinessException("当前无可用仿真程序");
+        }
+        DeviceDetailVo detailVo = deviceDetailVos.get(0);
+        return restService.stopInfinite(detailVo.getIp(), detailVo.getServiceAddress(),channel);
+    }
+
+    @Override
+    public List<TrafficFlow> getTrafficFlow(Integer maoid) throws BusinessException {
+        TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
+        deviceDetailDto.setSupportRoles(Constants.PartRole.MV_SIMULATION);
+        List<DeviceDetailVo> deviceDetailVos = deviceDetailMapper.selectByCondition(deviceDetailDto);
+        if (CollectionUtils.isEmpty(deviceDetailVos)) {
+            throw new BusinessException("当前无可用仿真程序");
+        }
+        DeviceDetailVo detailVo = deviceDetailVos.get(0);
+        List<TrafficFlow> list =  restService.getTrafficFlow(detailVo.getIp(), detailVo.getServiceAddress(),maoid);
+        return list;
     }
 
 }
