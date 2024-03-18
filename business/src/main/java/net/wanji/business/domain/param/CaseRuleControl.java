@@ -26,7 +26,7 @@ public class CaseRuleControl {
      */
     private Integer caseId;
     /**
-     * 任务类型
+     * 任务类型，1：开始，0：结束,2：无限里程开始
      */
     private Integer taskType;
     /**

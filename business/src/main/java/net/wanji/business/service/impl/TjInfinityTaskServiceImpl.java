@@ -244,7 +244,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         throws BusinessException {
         InfinityTaskPreparedVo infinityTaskPreparedVo = new InfinityTaskPreparedVo();
         TjInfinityTask byId = this.getById(taskId);
-        checkDevicesStatus(taskId, infinityTaskPreparedVo, byId.getRouteFile());
+        checkDevicesStatus(taskId, infinityTaskPreparedVo, byId.getMainPlanFile());
         return infinityTaskPreparedVo;
     }
 
@@ -302,12 +302,12 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
     }
 
     @Override
-    public boolean startStop(Integer taskId, Integer caseId, Integer action, String username)
+        public boolean startStop(Integer taskId, Integer caseId, Integer action, String username)
         throws BusinessException {
         // 1.用例详情
         TjInfinityTask tjInfinityTask = this.getById(caseId);
         // 2.向主控发送规则
-        List<TjTaskDataConfig> tjTaskDataConfigs = taskDevices(tjInfinityTask.getCaseId());
+        List<TjTaskDataConfig> tjTaskDataConfigs = taskDevices(caseId);
         List<TjDeviceDetail> tjDeviceDetails = tjDeviceDetailService.listByIds(
             tjTaskDataConfigs.stream().map(TjTaskDataConfig::getDeviceId)
                 .collect(Collectors.toList()));
@@ -328,7 +328,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
     }
 
     private void checkDevicesStatus(Integer taskId,
-        InfinityTaskPreparedVo infinityTaskPreparedVo, String routeFile)
+        InfinityTaskPreparedVo infinityTaskPreparedVo, String mainPlanFile)
         throws BusinessException {
         List<TjTaskDataConfig> configList = taskDevices(taskId);
 
@@ -344,7 +344,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
             if(!infinityTaskPreparedVo.isCanStart()){
                 continue;
             }
-            checkDevicePosition(infinityTaskPreparedVo, taskId, dataConfig, deviceInfo, routeFile);
+            checkDevicePosition(infinityTaskPreparedVo, taskId, dataConfig, deviceInfo, mainPlanFile);
 
             deviceInfos.add(deviceInfo);
         }
@@ -352,27 +352,28 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         infinityTaskPreparedVo.setDevicesInfo(deviceInfos);
     }
 
-    private void checkDevicePosition(InfinityTaskPreparedVo infinityTaskPreparedVo, Integer taskId,
-        TjTaskDataConfig dataConfig, DeviceInfo deviceInfo, String routeFile)
+    private void checkDevicePosition(
+        InfinityTaskPreparedVo infinityTaskPreparedVo, Integer taskId,
+        TjTaskDataConfig dataConfig, DeviceInfo deviceInfo, String mainPlanFile)
         throws BusinessException {
         DeviceReadyStateParam stateParam = new DeviceReadyStateParam(
             deviceInfo.getId(),
             RedisChannelUtils.getCommandChannelByRole(0, taskId,
                 dataConfig.getType(), deviceInfo.getCommandChannel()));
         if (Constants.PartRole.AV.equals(deviceInfo.getType())) {
-            stateParam.setParams(
-                new ParamsDto("1", routeService.mainTrajectory(routeFile)));
+            stateParam.setParams(new ParamsDto(dataConfig.getParticipatorId(),
+                routeService.mainTrajectory(mainPlanFile)));
         }
         if (Constants.PartRole.MV_SIMULATION.equals(deviceInfo.getType())) {
-           // 无限里程不发送其它自定参数
+            // 无限里程不发送其它自定参数
         }
         Integer i = tjDeviceDetailService.selectDeviceReadyState(
             deviceInfo.getId(), RedisChannelUtils.getReadyStatusChannelByRole(
                 dataConfig.getCaseId(), dataConfig.getType()), stateParam,
             false);
-        if(1== i){
+        if (1 == i) {
             deviceInfo.setDeviceStatus(DeviceStatus.ARRIVED);
-        }else {
+        } else {
             deviceInfo.setDeviceStatus(DeviceStatus.NOT_ARRIVED);
             infinityTaskPreparedVo.setCanStart(false);
             infinityTaskPreparedVo.setMessage(
@@ -472,9 +473,12 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
     private static InfiniteTessParm verifiedInfiniteTessParm(
         InfinteMileScenceExo infinteMileScenceExo) {
         InfiniteTessParm infiniteTessParm = new InfiniteTessParm();
+        infiniteTessParm.setInElements(infinteMileScenceExo.getInElements());
         infiniteTessParm.setSiteSlices(infinteMileScenceExo.getSiteSlices());
-        infiniteTessParm.setTrafficFlowConfigs(infinteMileScenceExo.getTrafficFlowConfigs());
-        infiniteTessParm.setTrafficFlows(infinteMileScenceExo.getTrafficFlows());
+        infiniteTessParm.setTrafficFlowConfigs(
+            infinteMileScenceExo.getTrafficFlowConfigs());
+        infiniteTessParm.setTrafficFlows(
+            infinteMileScenceExo.getTrafficFlows());
         return infiniteTessParm;
     }
 
