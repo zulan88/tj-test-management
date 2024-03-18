@@ -22,7 +22,7 @@
         ) a ON a.task_id = tt.id
         <where>
             <if test="taskCode != null and taskCode != ''">
-                AND tt.orderNumber LIKE CONCAT('%', #{taskCode}, '%')
+                AND tt.order_number LIKE CONCAT('%', #{taskCode}, '%')
             </if>
             <if test="plateNumber != null and plateNumber != ''">
                 AND a.plate_number LIKE CONCAT('%', #{plateNumber}, '%')
@@ -64,7 +64,7 @@
         tt.entrust_org,
         tt.entruster,
         tt.entruster_contact,
-        tt.orderNumber,
+        tt.order_number,
         tt.plan_date,
         tt.plan_test_time,
         tt.case_id,
@@ -74,7 +74,7 @@
         FROM tj_infinity_task tt
         <where>
             <if test="taskCode != null and taskCode != ''">
-                AND tt.orderNumber LIKE CONCAT('%', #{taskCode}, '%')
+                AND tt.order_number LIKE CONCAT('%', #{taskCode}, '%')
             </if>
             <if test="client != null and client != ''">
                 AND tt.entrust_org LIKE CONCAT('%', #{client}, '%')
@@ -107,13 +107,13 @@
 
     <insert id="saveTask" parameterType="java.util.Map" keyProperty="id" useGeneratedKeys="true">
         INSERT INTO `tj_infinity_task` (
-            `orderNumber`,`plan_date`, `plan_test_time`, `test_start_time`, `test_end_time`,
+            `order_number`,`plan_date`, `plan_test_time`, `test_start_time`, `test_end_time`,
             `case_id`, `case_name`, `tested_type`, `tested_name`, `entrust_org`,
             `entruster`, `entruster_contact`, `entrust_content`, `status`,
             `route_file`, `main_plan_file`, `created_by`, `created_date`,
             `updated_by`, `updated_date`
         ) VALUES (
-                     #{orderNumber}, #{planDate}, #{planTestTime}, #{testStartTime}, #{testEndTime},
+                     #{order_number}, #{planDate}, #{planTestTime}, #{testStartTime}, #{testEndTime},
                      #{caseId}, #{caseName}, #{testedType}, #{testedName}, #{entrustOrg},
                      #{entruster}, #{entrusterContact}, #{entrustContent}, #{status},
                      #{routeFile}, #{mainPlanFile}, #{createdBy}, #{createdDate},

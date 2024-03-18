@@ -26,13 +26,13 @@ public class TjInfinityTask extends Lifecycle implements Serializable {
   /**
    * 主键
    */
-  @TableId(value = "ID", type = IdType.AUTO)
+  @TableId(value = "id", type = IdType.AUTO)
   private Integer id;
 
   /**
    * 流程单号
    */
-  @TableField(value = "ORDER_NUMBER")
+  @TableField(value = "order_number")
   private String orderNumber;
 
   // 排期开始时间
@@ -40,68 +40,68 @@ public class TjInfinityTask extends Lifecycle implements Serializable {
   /**
    * 计划测试时长
    */
-  @TableField(value = "PLAN_TEST_TIME")
+  @TableField(value = "plan_test_time")
   private Long planTestTime;
   /**
    * 测试开始时间
    */
-  @TableField(value = "TEST_START_TIME")
+  @TableField(value = "test_start_time")
   private Date testStartTime;
 
   /**
    * 测试结束时间
    */
-  @TableField(value = "TEST_END_TIME")
+  @TableField(value = "test_end_time")
   private Data testEndTime;
 
   /**
    * 测试场景名称
    */
-  @TableField(value = "CASE_ID")
+  @TableField(value = "case_id")
   private Integer caseId;
 
   /**
    * 测试场景名称
    */
-  @TableField(value = "CASE_NAME")
+  @TableField(value = "case_name")
   private String caseName;
 
   /**
    * 被测试对象类型
    */
-  @TableField(value = "TESTED_TYPE")
+  @TableField(value = "tested_type")
   private String testedType;
   /**
    * 被测试对象名称
    */
-  @TableField(value = "TESTED_NAME")
+  @TableField(value = "tested_name")
   private String testedName;
 
   /**
    * 委托单位
    */
-  @TableField(value = "ENTRUST_ORG")
+  @TableField(value = "entrust_org")
   private String entrustOrg;
   /**
    * 委托人
    */
-  @TableField(value = "ENTRUSTER")
+  @TableField(value = "entruster")
   private String entruster;
   /**
    * 联系方式
    */
-  @TableField(value = "ENTRUSTER_CONTACT")
+  @TableField(value = "entruster_contact")
   private String entrusterContact;
   /**
    * 委托信息
    */
-  @TableField(value = "ENTRUST_CONTENT")
+  @TableField(value = "entrust_content")
   private String entrustContent;
 
   /**
    * 任务状态（save：待提交；waiting：待测试；prepping: 准备中； running：进行中；finished：已完成；past_due：逾期）
    */
-  @TableField(value = "STATUS")
+  @TableField(value = "status")
   private String status;
 
   /**

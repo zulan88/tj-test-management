@@ -195,7 +195,7 @@ public class InfiniteTaskController {
     }
 
     @ApiOperation("1、初始化")
-    @GetMapping("/init")
+    @PostMapping("/init")
     @ApiImplicitParam(name = "taskId",
         value = "任务ID",
         required = true,
