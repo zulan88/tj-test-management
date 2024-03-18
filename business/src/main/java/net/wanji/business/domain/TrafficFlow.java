@@ -14,7 +14,7 @@ public class TrafficFlow {
     SitePoint startPoint;
 
     //类型 0-机动车 1-非机动车
-    String  type;
+    Integer  type;
 
     //最大车流量
     Integer  maxFlow;
