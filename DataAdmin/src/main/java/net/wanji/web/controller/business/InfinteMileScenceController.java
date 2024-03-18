@@ -94,7 +94,7 @@ public class InfinteMileScenceController extends BaseController {
         return AjaxResult.success(list);
     }
 
-    @GetMapping("/test")
+    @GetMapping("/getinfo")
     public AjaxResult test(@RequestParam("id") Integer id) {
         InfinteMileScenceExo infinteMileScenceExo = infinteMileScenceService.selectInfinteMileScenceById(id);
         return AjaxResult.success(infinteMileScenceExo);
