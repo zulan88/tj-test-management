@@ -133,7 +133,10 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
         testStartParam.setTrafficFlows(trafficFlows);
         testStartParam.setTrafficFlowConfigs(infinteMileScence.getTrafficFlowConfigs());
         for(InElement element : testStartParam.getInElements()){
-            SitePoint point = element.getRoute().get(0);
+            SitePoint firstpoint = element.getRoute().get(0);
+            SitePoint point = new SitePoint();
+            point.setLatitude(firstpoint.getLatitude());
+            point.setLongitude(firstpoint.getLongitude());
             element.getRoute().add(point);
         }
 

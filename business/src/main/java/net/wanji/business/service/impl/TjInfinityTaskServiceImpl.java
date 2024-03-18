@@ -12,7 +12,6 @@ import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.dto.TaskDto;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
-import net.wanji.business.domain.dto.device.InfinityReadyDto;
 import net.wanji.business.domain.dto.device.ParamsDto;
 import net.wanji.business.domain.param.CaseRuleControl;
 import net.wanji.business.domain.param.CaseSSInfo;
@@ -24,6 +23,7 @@ import net.wanji.business.domain.vo.task.infinity.InfinityTaskInitVo;
 import net.wanji.business.domain.vo.task.infinity.InfinityTaskPreparedVo;
 import net.wanji.business.domain.vo.task.infinity.ShardingInfoVo;
 import net.wanji.business.entity.TjDeviceDetail;
+import net.wanji.business.entity.TjInfinityTaskDataConfig;
 import net.wanji.business.entity.TjTaskDataConfig;
 import net.wanji.business.entity.infity.TjInfinityTask;
 import net.wanji.business.exception.BusinessException;
@@ -37,7 +37,6 @@ import net.wanji.business.util.TessngUtils;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
 import org.apache.commons.collections4.CollectionUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
@@ -61,7 +60,10 @@ import java.util.stream.Collectors;
 @Service
 public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjInfinityTask> implements TjInfinityTaskService {
 
-    private final TjTaskDataConfigService tjTaskDataConfigService;
+//    private final TjTaskDataConfigService tjTaskDataConfigService;
+
+    private final TjInfinityTaskDataConfigService tjInfinityTaskDataConfigService;
+
     private final InfinteMileScenceService infinteMileScenceService;
     private final TjDeviceDetailService tjDeviceDetailService;
     private final RouteService routeService;
@@ -75,12 +77,12 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
     private String testReportOuterChain;
 
     public TjInfinityTaskServiceImpl(
-        TjTaskDataConfigService tjTaskDataConfigService,
+            TjInfinityTaskDataConfigService tjInfinityTaskDataConfigService,
         InfinteMileScenceService infinteMileScenceService,
         TjDeviceDetailService tjDeviceDetailService, RouteService routeService,
         RestService restService, RedisLock redisLock,
         KafkaCollector kafkaCollector) {
-        this.tjTaskDataConfigService = tjTaskDataConfigService;
+        this.tjInfinityTaskDataConfigService = tjInfinityTaskDataConfigService;
         this.infinteMileScenceService = infinteMileScenceService;
         this.tjDeviceDetailService = tjDeviceDetailService;
         this.routeService = routeService;
@@ -106,7 +108,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         List<Map<String, Object>> pageList = tjInfinityMapper.getPageList(in);
         for (Map<String, Object> task : pageList) {
             String id = task.get("id").toString();
-            List<TjTaskDataConfig> list = tjTaskDataConfigService.list(new QueryWrapper<TjTaskDataConfig>().eq("task_id", id));
+            List<TjInfinityTaskDataConfig> list = tjInfinityTaskDataConfigService.list(new QueryWrapper<TjInfinityTaskDataConfig>().eq("task_id", id));
             task.put("avDeviceIds", list);
 
             // TODO 任务历史记录
@@ -149,14 +151,14 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         // 保存参与者数据
         List<Map<String, Object>> configList = (List<Map<String, Object>>) task.get("avDeviceIds");
         for (Map<String, Object> configMap : configList) {
-            TjTaskDataConfig newAvConfig = new TjTaskDataConfig();
+            TjInfinityTaskDataConfig newAvConfig = new TjInfinityTaskDataConfig();
             newAvConfig.setDeviceId(Integer.parseInt(configMap.get("deviceId").toString()));
             newAvConfig.setType(configMap.get("type").toString());
             newAvConfig.setParticipatorId(configMap.get("participatorId").toString());
             newAvConfig.setParticipatorName(configMap.get("participatorName").toString());
             newAvConfig.setTaskId(id);
             newAvConfig.setCaseId(Integer.parseInt(caseId));
-            tjTaskDataConfigService.save(newAvConfig);
+            tjInfinityTaskDataConfigService.save(newAvConfig);
         }
         // 默认添加仿真车（tessng）
         addDefaultTessng(id, 0);
@@ -219,12 +221,12 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
 
         boolean running = checkTaskStatus(byId.getStatus());
         if (!running) {
-            List<TjTaskDataConfig> tjTaskDataConfigs = taskDevices(taskId);
-            List<TjTaskDataConfig> exceptSVDevices = tjTaskDataConfigs.stream()
+            List<TjInfinityTaskDataConfig> tjTaskDataConfigs = taskDevices(taskId);
+            List<TjInfinityTaskDataConfig> exceptSVDevices = tjTaskDataConfigs.stream()
                 .filter(
                     t -> !Constants.PartRole.MV_SIMULATION.equals(t.getType()))
                 .collect(Collectors.toList());
-            TjTaskDataConfig simulationConfig = tjTaskDataConfigs.stream()
+            TjInfinityTaskDataConfig simulationConfig = tjTaskDataConfigs.stream()
                 .filter(
                     t -> Constants.PartRole.MV_SIMULATION.equals(t.getType()))
                 .findFirst()
@@ -259,15 +261,15 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         caseTrajectoryParam.setTaskId(0);
         caseTrajectoryParam.setCaseId(taskId);
         caseTrajectoryParam.setTestMode(Constants.TestMode.INFINITY_TEST);
-        List<TjTaskDataConfig> tjTaskDataConfigs = taskDevices(taskId);
+        List<TjInfinityTaskDataConfig> tjTaskDataConfigs = taskDevices(taskId);
         caseTrajectoryParam.setVehicleIdTypeMap(tjTaskDataConfigs.stream()
             .collect(HashMap::new,
                 (m, v) -> m.put(v.getType(), String.valueOf(v.getDeviceId())),
                 HashMap::putAll));
-        TjTaskDataConfig avConfig = tjTaskDataConfigs.stream()
+        TjInfinityTaskDataConfig avConfig = tjTaskDataConfigs.stream()
             .filter(e -> Constants.PartRole.AV.equals(e.getType())).findFirst()
             .get();
-        TjTaskDataConfig simulationConfig = tjTaskDataConfigs.stream()
+        TjInfinityTaskDataConfig simulationConfig = tjTaskDataConfigs.stream()
             .filter(e -> Constants.PartRole.MV_SIMULATION.equals(e.getType()))
             .findFirst().get();
         caseTrajectoryParam.setDataChannel(
@@ -307,9 +309,9 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         // 1.用例详情
         TjInfinityTask tjInfinityTask = this.getById(caseId);
         // 2.向主控发送规则
-        List<TjTaskDataConfig> tjTaskDataConfigs = taskDevices(caseId);
+        List<TjInfinityTaskDataConfig> tjTaskDataConfigs = taskDevices(caseId);
         List<TjDeviceDetail> tjDeviceDetails = tjDeviceDetailService.listByIds(
-            tjTaskDataConfigs.stream().map(TjTaskDataConfig::getDeviceId)
+            tjTaskDataConfigs.stream().map(TjInfinityTaskDataConfig::getDeviceId)
                 .collect(Collectors.toList()));
         TjDeviceDetail avDetail = tjDeviceDetails.stream()
             .filter(e -> Constants.PartRole.AV.equals(e.getSupportRoles()))
@@ -330,10 +332,10 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
     private void checkDevicesStatus(Integer taskId,
         InfinityTaskPreparedVo infinityTaskPreparedVo, String mainPlanFile)
         throws BusinessException {
-        List<TjTaskDataConfig> configList = taskDevices(taskId);
+        List<TjInfinityTaskDataConfig> configList = taskDevices(taskId);
 
         List<DeviceInfo> deviceInfos = new ArrayList<>();
-        for (TjTaskDataConfig dataConfig : configList) {
+        for (TjInfinityTaskDataConfig dataConfig : configList) {
             DeviceInfo deviceInfo = initDeviceBaseInfo(dataConfig);
             checkDeviceBusyStatus(infinityTaskPreparedVo, dataConfig,
                 deviceInfo);
@@ -354,7 +356,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
 
     private void checkDevicePosition(
         InfinityTaskPreparedVo infinityTaskPreparedVo, Integer taskId,
-        TjTaskDataConfig dataConfig, DeviceInfo deviceInfo, String mainPlanFile)
+        TjInfinityTaskDataConfig dataConfig, DeviceInfo deviceInfo, String mainPlanFile)
         throws BusinessException {
         DeviceReadyStateParam stateParam = new DeviceReadyStateParam(
             deviceInfo.getId(),
@@ -383,7 +385,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
 
     private void checkDeviceOnlineStatus(
         InfinityTaskPreparedVo infinityTaskPreparedVo, Integer taskId,
-        TjTaskDataConfig dataConfig, DeviceInfo deviceInfo) {
+        TjInfinityTaskDataConfig dataConfig, DeviceInfo deviceInfo) {
         Integer i = tjDeviceDetailService.selectDeviceState(
             dataConfig.getDeviceId(),
             RedisChannelUtils.getCommandChannelByRole(0, taskId,
@@ -400,7 +402,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
 
     private void checkDeviceBusyStatus(
         InfinityTaskPreparedVo infinityTaskPreparedVo,
-        TjTaskDataConfig dataConfig, DeviceInfo deviceInfo) {
+        TjInfinityTaskDataConfig dataConfig, DeviceInfo deviceInfo) {
         Integer running = tjDeviceDetailService.selectDeviceBusyStatus(
             DeviceUtils.getVisualDeviceId(0, dataConfig.getDeviceId(),
                 dataConfig.getType()));
@@ -414,7 +416,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         }
     }
 
-    private DeviceInfo initDeviceBaseInfo(TjTaskDataConfig dataConfig) {
+    private DeviceInfo initDeviceBaseInfo(TjInfinityTaskDataConfig dataConfig) {
         DeviceInfo deviceInfo = new DeviceInfo();
         deviceInfo.setId(dataConfig.getDeviceId());
         deviceInfo.setType(dataConfig.getType());
@@ -427,13 +429,13 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
 
     private void devicesReset(Integer taskId, Integer caseId,
         InfinteMileScenceExo infinteMileScenceExo,
-        TjTaskDataConfig simulationConfig,
-        List<TjTaskDataConfig> exceptSVDevicesConf, String createBy)
+                              TjInfinityTaskDataConfig simulationConfig,
+        List<TjInfinityTaskDataConfig> exceptSVDevicesConf, String createBy)
         throws BusinessException {
         TjDeviceDetail svDetail = tjDeviceDetailService.getById(
             simulationConfig.getDeviceId());
         List<TjDeviceDetail> exceptSVDevices = tjDeviceDetailService.listByIds(
-            exceptSVDevicesConf.stream().map(TjTaskDataConfig::getDeviceId)
+            exceptSVDevicesConf.stream().map(TjInfinityTaskDataConfig::getDeviceId)
                 .collect(Collectors.toList()));
         TjDeviceDetail avDeviceDetail = exceptSVDevices.stream()
             .filter(e -> Constants.PartRole.AV.equals(e.getSupportRoles()))
@@ -497,10 +499,10 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         }
     }
 
-    private List<TjTaskDataConfig> taskDevices(Integer taskId) {
-        QueryWrapper<TjTaskDataConfig> tcqw = new QueryWrapper<>();
+    private List<TjInfinityTaskDataConfig> taskDevices(Integer taskId) {
+        QueryWrapper<TjInfinityTaskDataConfig> tcqw = new QueryWrapper<>();
         tcqw.eq("task_id", taskId);
-        return tjTaskDataConfigService.list(tcqw);
+        return tjInfinityTaskDataConfigService.list(tcqw);
     }
 
     private boolean checkTaskStatus(String status) {
