@@ -338,18 +338,19 @@ public class TaskController extends BaseController {
             tjInfinityTaskService.startStop(platformSSDto.getTaskId(),
                 platformSSDto.getCaseId(), platformSSDto.getState(),
                 (String) platformSSDto.getContext().get("user"));
-        }
-        if (platformSSDto.getTaskId() == 0) {
-            if (platformSSDto.getState() == 1) {
-                testingService.start(platformSSDto.getCaseId(), platformSSDto.getState(), (String) platformSSDto.getContext().get("user"));
+        }else {
+            if (platformSSDto.getTaskId() == 0) {
+                if (platformSSDto.getState() == 1) {
+                    testingService.start(platformSSDto.getCaseId(), platformSSDto.getState(), (String) platformSSDto.getContext().get("user"));
+                } else {
+                    testingService.end(platformSSDto.getCaseId(), platformSSDto.getState(), (String) platformSSDto.getContext().get("user"));
+                }
             } else {
-                testingService.end(platformSSDto.getCaseId(), platformSSDto.getState(), (String) platformSSDto.getContext().get("user"));
-            }
-        } else {
-            taskCaseCache(platformSSDto);
-            taskCaseService.caseStartEnd(platformSSDto.getTaskId(),
+                taskCaseCache(platformSSDto);
+                taskCaseService.caseStartEnd(platformSSDto.getTaskId(),
                     platformSSDto.getCaseId(), platformSSDto.getState(),
                     platformSSDto.isTaskEnd(), platformSSDto.getContext());
+            }
         }
         return null;
     }

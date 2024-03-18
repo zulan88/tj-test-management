@@ -317,10 +317,10 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
             .orElseThrow(() -> new BusinessException("用例主车配置信息异常"));
 
         control(0, caseId, avDetail.getCommandChannel(), username,
-            tjDeviceDetails, action);
+            tjDeviceDetails, action <=0 ? 0 : action);
 
         // 3.更新业务数据
-        tjInfinityTask.setStatus(1 == action ?
+        tjInfinityTask.setStatus(2 == action ?
             Constants.TaskStatusEnum.RUNNING.getCode() :
             Constants.TaskStatusEnum.FINISHED.getCode());
         this.updateById(tjInfinityTask);
@@ -377,7 +377,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
             deviceInfo.setDeviceStatus(DeviceStatus.NOT_ARRIVED);
             infinityTaskPreparedVo.setCanStart(false);
             infinityTaskPreparedVo.setMessage(
-                String.format("设备[%d]未到达！", dataConfig.getDeviceId()));
+                String.format("设备[%s]未到达！", dataConfig.getParticipatorName()));
         }
     }
 
