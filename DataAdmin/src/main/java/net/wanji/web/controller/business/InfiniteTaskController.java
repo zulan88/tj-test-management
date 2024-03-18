@@ -219,26 +219,34 @@ public class InfiniteTaskController {
     @ApiOperation("2、准备（状态检查）")
     @PostMapping("/prepare")
     public AjaxResult prepare(Integer taskId) {
-      try {
-        tjInfinityTaskService.prepare(taskId);
-      } catch (BusinessException e) {
-
-      }
-      // 1、状态检查
+        try {
+            return AjaxResult.success(tjInfinityTaskService.prepare(taskId));
+        } catch (BusinessException e) {
+            InfinityTaskPreparedVo infinityTaskPreparedVo = new InfinityTaskPreparedVo();
+            infinityTaskPreparedVo.setCanStart(false);
+            return AjaxResult.error("准备状态异常！", infinityTaskPreparedVo);
+        }
+        // 1、状态检查
             //	1、设备在线状态 #平台定时获取，存在redis
             //	2、获取设备准备状态 #发送至主控
             //	3、获取任务运行状态 #平台自己管理
         // 2、状态校验
             // 1、可测试，发送重置状态
             // 2、返回不可开始状态
-        return AjaxResult.success(new InfinityTaskPreparedVo());
     }
 
     @ApiOperation("3、任务控制-预开始")
     @PostMapping("/preStart")
     public  AjaxResult preStart(Integer taskId) {
         //	1、发送任务轨迹/规则到主控
-      return AjaxResult.success(tjInfinityTaskService.preStart(taskId));
+        try{
+            return AjaxResult.success(tjInfinityTaskService.preStart(taskId));
+        }catch (Exception e){
+            if(log.isErrorEnabled()){
+                log.error("preStart error!", e);
+            }
+        }
+        return AjaxResult.error("无限里程开始异常！");
     }
 
     //4、主控接管任务

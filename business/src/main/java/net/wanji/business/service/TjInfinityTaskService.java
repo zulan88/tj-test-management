@@ -57,7 +57,7 @@ public interface TjInfinityTaskService extends IService<TjInfinityTask> {
      */
     String getTestReportOuterChain(HttpServletRequest request);
 
-    int saveTask(Map<String, Object> task);
+    int saveTask(Map<String, Object> task) throws BusinessException;
 
 
     void saveCustomScenarioWeight(SaveCustomScenarioWeightBo saveCustomScenarioWeightBo);

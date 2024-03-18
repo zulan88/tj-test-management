@@ -19,7 +19,7 @@ public class TessParam {
 
     /**
      * 请求类型
-     * 2：仿真验证；3：实车试验；4：路径规划；5：多场景试验; 6: 无限里程仿真运行
+     * 2：仿真验证；3：实车试验；4：路径规划；5：多场景试验; 6: 无限里程仿真运行; 7: 无限里程测试任务
      */
     private Integer simulateType;
 
@@ -125,11 +125,13 @@ public class TessParam {
      * @param evaluateChannel 评估通道，用于接收测试评估结果。
      * @param statusChannel 状态通道，用于接收测试过程中的状态信息。
      * @param mapList 地图id列表，包含测试中使用的地图信息。
+     * @param simulateType 请求类型
+     * @param params 自定义参数
      * @return 返回配置好的TessParam对象，可用于后续链式调用。
      */
     public TessParam buildRealTestParam(Integer roadNum, String dataChannel, String commandChannel, String evaluateChannel,
-                                   String statusChannel, List<String> mapList) {
-        this.simulateType = ChannelBuilder.REAL;
+                                   String statusChannel, List<String> mapList, Integer simulateType, Object params) {
+        this.simulateType = simulateType;
         this.roadNum = roadNum;
         this.dataChannel = dataChannel;
         this.commandChannel = commandChannel;
@@ -137,7 +139,7 @@ public class TessParam {
         this.statusChannel = statusChannel;
 
         this.routingChannel = "1";
-        this.params = JSONObject.parseObject("{\"params\":{\"params\": []}}");
+        this.params = params;
         this.mapList = mapList;
         return this;
     }

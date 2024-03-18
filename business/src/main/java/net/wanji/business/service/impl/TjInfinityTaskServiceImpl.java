@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import net.wanji.business.common.Constants;
 import net.wanji.business.common.DeviceStatus;
+import net.wanji.business.domain.InfiniteTessParm;
 import net.wanji.business.domain.InfinteMileScenceExo;
 import net.wanji.business.domain.SiteSlice;
 import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
@@ -140,7 +141,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
     }
 
     @Override
-    public int saveTask(Map<String, Object> task) {
+    public int saveTask(Map<String, Object> task) throws BusinessException {
         String caseId = task.get("caseId").toString();
         tjInfinityMapper.saveTask(task);
         int id = Integer.parseInt(task.get("id").toString());
@@ -157,10 +158,28 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
             newAvConfig.setCaseId(Integer.parseInt(caseId));
             tjTaskDataConfigService.save(newAvConfig);
         }
+        // 默认添加仿真车（tessng）
+        addDefaultTessng(id, 0);
 
         return id;
     }
 
+    private void addDefaultTessng(Integer taskId, Integer caseId)
+        throws BusinessException {
+        QueryWrapper<TjDeviceDetail> tdqw = new QueryWrapper<>();
+        tdqw.eq("support_roles", Constants.PartRole.MV_SIMULATION);
+        List<TjDeviceDetail> deviceDetails = tjDeviceDetailService.list(tdqw);
+        if (null != deviceDetails && !deviceDetails.isEmpty()) {
+            TjDeviceDetail deviceDetail = deviceDetails.get(0);
+            TjTaskDataConfig dataConfig = new TjTaskDataConfig();
+            dataConfig.setType(Constants.PartRole.MV_SIMULATION);
+            dataConfig.setDeviceId(deviceDetail.getDeviceId());
+            dataConfig.setTaskId(taskId);
+            dataConfig.setCaseId(caseId);
+        } else {
+            throw new BusinessException("无限里程-仿真车添加失败！");
+        }
+    }
 
     @Override
     public void saveCustomScenarioWeight(SaveCustomScenarioWeightBo saveCustomScenarioWeightBo) {
@@ -211,7 +230,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
                 .findFirst()
                 .orElseThrow(() -> new BusinessException("未找到仿真设备"));
             // 重置
-            devicesReset(taskId, 0, infinteMileScenceExo.getMapId(),
+            devicesReset(0, taskId, infinteMileScenceExo,
                 simulationConfig, exceptSVDevices, byId.getCreatedBy());
         }
 
@@ -237,8 +256,8 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         List<SiteSlice> siteSlices = infinteMileScenceExo.getSiteSlices();
 
         CaseTrajectoryParam caseTrajectoryParam = new CaseTrajectoryParam();
-        caseTrajectoryParam.setTaskId(taskId);
-        caseTrajectoryParam.setCaseId(0);
+        caseTrajectoryParam.setTaskId(0);
+        caseTrajectoryParam.setCaseId(taskId);
         caseTrajectoryParam.setTestMode(Constants.TestMode.INFINITY_TEST);
         List<TjTaskDataConfig> tjTaskDataConfigs = taskDevices(taskId);
         caseTrajectoryParam.setVehicleIdTypeMap(tjTaskDataConfigs.stream()
@@ -338,23 +357,14 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         throws BusinessException {
         DeviceReadyStateParam stateParam = new DeviceReadyStateParam(
             deviceInfo.getId(),
-            RedisChannelUtils.getCommandChannelByRole(taskId, 0,
+            RedisChannelUtils.getCommandChannelByRole(0, taskId,
                 dataConfig.getType(), deviceInfo.getCommandChannel()));
         if (Constants.PartRole.AV.equals(deviceInfo.getType())) {
             stateParam.setParams(
                 new ParamsDto("1", routeService.mainTrajectory(routeFile)));
         }
         if (Constants.PartRole.MV_SIMULATION.equals(deviceInfo.getType())) {
-            InfinteMileScenceExo infinteMileScenceExo = infinteMileScenceService.selectInfinteMileScenceById(
-                dataConfig.getCaseId());
-            InfinityReadyDto infinityReadyDto = new InfinityReadyDto();
-            infinityReadyDto.setTrafficFlows(
-                infinteMileScenceExo.getTrafficFlows());
-            infinityReadyDto.setSiteSlices(
-                infinteMileScenceExo.getSiteSlices());
-            infinityReadyDto.setTrafficFlowConfigs(
-                infinteMileScenceExo.getTrafficFlowConfigs());
-            stateParam.setParams(infinityReadyDto);
+           // 无限里程不发送其它自定参数
         }
         Integer i = tjDeviceDetailService.selectDeviceReadyState(
             deviceInfo.getId(), RedisChannelUtils.getReadyStatusChannelByRole(
@@ -375,7 +385,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         TjTaskDataConfig dataConfig, DeviceInfo deviceInfo) {
         Integer i = tjDeviceDetailService.selectDeviceState(
             dataConfig.getDeviceId(),
-            RedisChannelUtils.getCommandChannelByRole(taskId, 0,
+            RedisChannelUtils.getCommandChannelByRole(0, taskId,
                 dataConfig.getType(), deviceInfo.getCommandChannel()), false);
         if (1 == i) {
             deviceInfo.setDeviceStatus(DeviceStatus.ONLINE);
@@ -383,7 +393,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
             deviceInfo.setDeviceStatus(DeviceStatus.OFFLINE);
             infinityTaskPreparedVo.setCanStart(false);
             infinityTaskPreparedVo.setMessage(
-                String.format("设备[%d]离线！", dataConfig.getDeviceId()));
+                String.format("设备[%s]离线！", dataConfig.getParticipatorName()));
         }
     }
 
@@ -414,7 +424,8 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         return deviceInfo;
     }
 
-    private void devicesReset(Integer taskId, Integer caseId, Integer mapId,
+    private void devicesReset(Integer taskId, Integer caseId,
+        InfinteMileScenceExo infinteMileScenceExo,
         TjTaskDataConfig simulationConfig,
         List<TjTaskDataConfig> exceptSVDevicesConf, String createBy)
         throws BusinessException {
@@ -430,18 +441,20 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         // 先停止
         List<TjDeviceDetail> tjDeviceDetails = new ArrayList<>(exceptSVDevices);
         tjDeviceDetails.add(svDetail);
-        control(taskId, caseId, avDeviceDetail.getCommandChannel(), createBy, tjDeviceDetails, 0);
+        control(taskId, caseId, avDeviceDetail.getCommandChannel(), createBy,
+            tjDeviceDetails, 0);
         List<String> mapList = new ArrayList<>();
-        if (ObjectUtils.isEmpty(mapId)) {
+        if (ObjectUtils.isEmpty(infinteMileScenceExo.getMapId())) {
             mapList.add("10");
         } else {
-            mapList.add(String.valueOf(mapId));
+            mapList.add(String.valueOf(infinteMileScenceExo.getMapId()));
         }
         // 4.唤醒仿真服务
         if (!restService.startServer(svDetail.getIp(),
             Integer.valueOf(svDetail.getServiceAddress()),
-            TessngUtils.buildTessServerParam(7, SecurityUtils.getUsername(),
-                taskId, mapList))) {
+            TessngUtils.buildInfinityTaskRunParam(caseId,
+                SecurityUtils.getUsername(), mapList,
+                verifiedInfiniteTessParm(infinteMileScenceExo)))) {
             throw new BusinessException("唤起仿真服务失败");
         }
         if (!redisLock.tryLock("case_" + taskId, SecurityUtils.getUsername())) {
@@ -454,6 +467,15 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
                     deviceDetail.getDeviceName() + "设备正在使用中，请稍后再试");
             }
         }
+    }
+
+    private static InfiniteTessParm verifiedInfiniteTessParm(
+        InfinteMileScenceExo infinteMileScenceExo) {
+        InfiniteTessParm infiniteTessParm = new InfiniteTessParm();
+        infiniteTessParm.setSiteSlices(infinteMileScenceExo.getSiteSlices());
+        infiniteTessParm.setTrafficFlowConfigs(infinteMileScenceExo.getTrafficFlowConfigs());
+        infiniteTessParm.setTrafficFlows(infinteMileScenceExo.getTrafficFlows());
+        return infiniteTessParm;
     }
 
     public void control(Integer taskId, Integer caseId, String avCommandChannel,

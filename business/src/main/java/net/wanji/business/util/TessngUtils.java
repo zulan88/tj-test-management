@@ -1,6 +1,8 @@
 package net.wanji.business.util;
 
+import com.alibaba.fastjson.JSONObject;
 import net.wanji.business.common.Constants;
+import net.wanji.business.domain.InfiniteTessParm;
 import net.wanji.business.domain.param.TessParam;
 import net.wanji.common.utils.SecurityUtils;
 
@@ -52,6 +54,18 @@ public class TessngUtils {
         Constants.ChannelBuilder.buildTestingControlChannel(username, caseId),
         Constants.ChannelBuilder.buildTestingEvaluateChannel(username, caseId),
         Constants.ChannelBuilder.buildTestingStatusChannel(username, caseId),
-        mapList);
+        mapList, Constants.ChannelBuilder.REAL,
+        JSONObject.parseObject("{\"params\":{\"params\": []}}"));
+  }
+
+  public static TessParam buildInfinityTaskRunParam(Integer taskId,
+      String userName, List<String> mapList, InfiniteTessParm infiniteTessParm) {
+
+    return new TessParam().buildRealTestParam(0,
+        Constants.ChannelBuilder.buildTestingDataChannel(userName, taskId),
+        Constants.ChannelBuilder.buildTestingControlChannel(userName, taskId),
+        Constants.ChannelBuilder.buildTestingEvaluateChannel(userName, taskId),
+        Constants.ChannelBuilder.buildTestingStatusChannel(userName, taskId),
+        mapList, Constants.ChannelBuilder.REAL, infiniteTessParm);
   }
 }
