@@ -15,6 +15,8 @@ import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.business.domain.dto.SceneDebugDto;
 import net.wanji.business.domain.vo.ParticipantTrajectoryVo;
+import net.wanji.business.entity.InfinteMileScence;
+import net.wanji.business.service.InfinteMileScenceService;
 import net.wanji.business.service.RouteService;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.common.common.SimulationMessage;
@@ -73,6 +75,9 @@ public class RedisTrajectory2Consumer {
 
     @Autowired
     private RedisCache redisCache;
+
+    @Autowired
+    private InfinteMileScenceService infinteMileScenceService;
 
     @PostConstruct
     public void validChannel() {
@@ -348,9 +353,15 @@ public class RedisTrajectory2Consumer {
                         redisCache.deleteObject(repeatKey);
 
                         log.info(StringUtils.format("{}结束：{}", methodLog, JSONObject.toJSONString(simulationMessage)));
+
+                        InfinteMileScence infinteMileScence = new InfinteMileScence();
+                        infinteMileScence.setRouteFile(infinteMileScenceExo.getRouteFile());
+                        infinteMileScence.setId(infinteMileScenceExo.getId());
+                        infinteMileScenceService.updateById(infinteMileScence);
+
                         // send ws
-                        WebsocketMessage msg = new WebsocketMessage(RedisMessageType.END, null, infinteMileScenceExo);
-                        WebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));
+//                        WebsocketMessage msg = new WebsocketMessage(RedisMessageType.END, null, infinteMileScenceExo);
+//                        WebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));
                         break;
                     default:
                         break;

@@ -113,7 +113,7 @@
             `route_file`, `main_plan_file`, `created_by`, `created_date`,
             `updated_by`, `updated_date`
         ) VALUES (
-                     #{order_number}, #{planDate}, #{planTestTime}, #{testStartTime}, #{testEndTime},
+                     #{orderNumber}, #{planDate}, #{planTestTime}, #{testStartTime}, #{testEndTime},
                      #{caseId}, #{caseName}, #{testedType}, #{testedName}, #{entrustOrg},
                      #{entruster}, #{entrusterContact}, #{entrustContent}, #{status},
                      #{routeFile}, #{mainPlanFile}, #{createdBy}, #{createdDate},

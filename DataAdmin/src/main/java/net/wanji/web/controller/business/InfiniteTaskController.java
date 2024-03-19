@@ -212,6 +212,7 @@ public class InfiniteTaskController {
         } catch (BusinessException be) {
             return AjaxResult.error(be.getMessage());
         } catch (Exception e) {
+            e.printStackTrace();
             return AjaxResult.error("查询任务配置信息异常！");
         }
     }
