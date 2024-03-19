@@ -66,6 +66,6 @@ public class TessngUtils {
         Constants.ChannelBuilder.buildTestingControlChannel(userName, taskId),
         Constants.ChannelBuilder.buildTestingEvaluateChannel(userName, taskId),
         Constants.ChannelBuilder.buildTestingStatusChannel(userName, taskId),
-        mapList, Constants.ChannelBuilder.REAL, infiniteTessParm);
+        mapList, 7, infiniteTessParm);
   }
 }
