@@ -44,11 +44,9 @@ import org.springframework.util.ObjectUtils;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.awt.geom.Point2D;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author hcy
@@ -176,6 +174,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
             TjTaskDataConfig dataConfig = new TjTaskDataConfig();
             dataConfig.setType(Constants.PartRole.MV_SIMULATION);
             dataConfig.setDeviceId(deviceDetail.getDeviceId());
+            dataConfig.setParticipatorName(deviceDetail.getDeviceName());
             dataConfig.setTaskId(taskId);
             dataConfig.setCaseId(caseId);
         } else {
@@ -337,6 +336,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         List<DeviceInfo> deviceInfos = new ArrayList<>();
         for (TjInfinityTaskDataConfig dataConfig : configList) {
             DeviceInfo deviceInfo = initDeviceBaseInfo(dataConfig);
+            deviceInfos.add(deviceInfo);
             checkDeviceBusyStatus(infinityTaskPreparedVo, dataConfig,
                 deviceInfo);
             if(!infinityTaskPreparedVo.isCanStart()){
@@ -347,11 +347,10 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
                 continue;
             }
             checkDevicePosition(infinityTaskPreparedVo, taskId, dataConfig, deviceInfo, mainPlanFile);
-
-            deviceInfos.add(deviceInfo);
         }
-
-        infinityTaskPreparedVo.setDevicesInfo(deviceInfos);
+        infinityTaskPreparedVo.setDevicesInfo(deviceInfos.stream()
+            .sorted(Comparator.comparing(DeviceInfo::getType))
+            .collect(Collectors.toList()));
     }
 
     private void checkDevicePosition(
