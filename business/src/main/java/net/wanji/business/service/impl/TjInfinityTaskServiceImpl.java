@@ -234,11 +234,30 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
             // 重置
             devicesReset(0, taskId, infinteMileScenceExo,
                     simulationConfig, exceptSVDevices, byId.getCreatedBy());
+
+            // 发送二、1 设备状态查询指令
+            devicesReadyCommand(tjTaskDataConfigs, taskId);
         }
 
         infinityTaskInitVo.setShardingInfos(sis);
         infinityTaskInitVo.setRunning(running);
         return infinityTaskInitVo;
+    }
+
+    private void devicesReadyCommand(
+        List<TjInfinityTaskDataConfig> tjTaskDataConfigs, Integer taskId) {
+        List<TjDeviceDetail> tjDeviceDetails = tjDeviceDetailService.listByIds(
+            tjTaskDataConfigs.stream()
+                .map(TjInfinityTaskDataConfig::getDeviceId)
+                .collect(Collectors.toList()));
+        for (TjDeviceDetail tjDeviceDetail : tjDeviceDetails) {
+            tjDeviceDetailService.handDeviceState(tjDeviceDetail.getDeviceId(),
+                RedisChannelUtils.getCommandChannelByRole(0, taskId,
+                    tjDeviceDetail.getSupportRoles(),
+                    RedisChannelUtils.getCommandChannelByRole(0, taskId,
+                        tjDeviceDetail.getSupportRoles(),
+                        tjDeviceDetail.getCommandChannel())), false);
+        }
     }
 
     @Override
@@ -371,7 +390,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         }
         Integer i = tjDeviceDetailService.selectDeviceReadyState(
                 deviceInfo.getId(), RedisChannelUtils.getReadyStatusChannelByRole(
-                        dataConfig.getCaseId(), dataConfig.getType()), stateParam,
+                        taskId, dataConfig.getType()), stateParam,
                 false);
         if (1 == i) {
             deviceInfo.setDeviceStatus(DeviceStatus.ARRIVED);
@@ -386,12 +405,6 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
     private void checkDeviceOnlineStatus(
         InfinityTaskPreparedVo infinityTaskPreparedVo, Integer taskId,
         TjInfinityTaskDataConfig dataConfig, DeviceInfo deviceInfo) {
-        // 发送二、1 设备状态查询指令
-        tjDeviceDetailService.handDeviceState(dataConfig.getDeviceId(),
-            RedisChannelUtils.getCommandChannelByRole(0, taskId,
-                dataConfig.getType(),
-                RedisChannelUtils.getCommandChannelByRole(0, taskId,
-                    dataConfig.getType(), deviceInfo.getCommandChannel())), false);
 
         Integer i = tjDeviceDetailService.selectDeviceState(
             dataConfig.getDeviceId(),
