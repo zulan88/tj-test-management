@@ -391,7 +391,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
             RedisChannelUtils.getCommandChannelByRole(0, taskId,
                 dataConfig.getType(),
                 RedisChannelUtils.getCommandChannelByRole(0, taskId,
-                    dataConfig.getType(), null)), false);
+                    dataConfig.getType(), deviceInfo.getCommandChannel())), false);
 
         Integer i = tjDeviceDetailService.selectDeviceState(
             dataConfig.getDeviceId(),
