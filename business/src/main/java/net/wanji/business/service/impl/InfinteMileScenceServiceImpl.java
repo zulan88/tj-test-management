@@ -73,8 +73,6 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
     @Override
     public Integer saveInfinteMileScence(InfinteMileScenceExo infinteMileScence) {
         Gson gson = new Gson();
-        infinteMileScence.setViewId(StringUtils.format(Constants.ContentTemplate.INFINTE_NUMBER_TEMPLATE, DateUtils.getNowDayString(),
-                CounterUtil.getRandomChar()));
         if (infinteMileScence.getInElements()!= null && infinteMileScence.getInElements().size() > 0){
             infinteMileScence.setElement(gson.toJson(infinteMileScence.getInElements()));
         }
