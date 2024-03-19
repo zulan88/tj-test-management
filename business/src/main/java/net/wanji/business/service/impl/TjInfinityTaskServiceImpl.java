@@ -384,19 +384,26 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
     }
 
     private void checkDeviceOnlineStatus(
-            InfinityTaskPreparedVo infinityTaskPreparedVo, Integer taskId,
-            TjInfinityTaskDataConfig dataConfig, DeviceInfo deviceInfo) {
-        Integer i = tjDeviceDetailService.selectDeviceState(
-                dataConfig.getDeviceId(),
+        InfinityTaskPreparedVo infinityTaskPreparedVo, Integer taskId,
+        TjInfinityTaskDataConfig dataConfig, DeviceInfo deviceInfo) {
+        // 发送二、1 设备状态查询指令
+        tjDeviceDetailService.handDeviceState(dataConfig.getDeviceId(),
+            RedisChannelUtils.getCommandChannelByRole(0, taskId,
+                dataConfig.getType(),
                 RedisChannelUtils.getCommandChannelByRole(0, taskId,
-                        dataConfig.getType(), deviceInfo.getCommandChannel()), false);
+                    dataConfig.getType(), null)), false);
+
+        Integer i = tjDeviceDetailService.selectDeviceState(
+            dataConfig.getDeviceId(),
+            RedisChannelUtils.getCommandChannelByRole(0, taskId,
+                dataConfig.getType(), deviceInfo.getCommandChannel()), false);
         if (1 == i) {
             deviceInfo.setDeviceStatus(DeviceStatus.ONLINE);
         } else {
             deviceInfo.setDeviceStatus(DeviceStatus.OFFLINE);
             infinityTaskPreparedVo.setCanStart(false);
-            infinityTaskPreparedVo.setMessage(
-                    String.format("设备[%s]离线！", dataConfig.getParticipatorName()));
+            infinityTaskPreparedVo.setMessage(String.format("设备[%s]离线！",
+                dataConfig.getParticipatorName()));
         }
     }
 
