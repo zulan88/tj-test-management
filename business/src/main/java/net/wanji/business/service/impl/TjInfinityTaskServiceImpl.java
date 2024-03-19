@@ -480,7 +480,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         infiniteTessParm.setTrafficFlowConfigs(
                 infinteMileScenceExo.getTrafficFlowConfigs());
         infiniteTessParm.setTrafficFlows(
-                infinteMileScenceExo.getTrafficFlows());
+            infinteMileScenceExo.getTrafficFlows().stream().filter(i -> (i.getDeparturePoints()!=null && i.getDeparturePoints().size() > 0)).collect(Collectors.toList()));
         return infiniteTessParm;
     }
 
