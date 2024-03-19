@@ -52,7 +52,7 @@ public class TjInfinityTask extends Lifecycle implements Serializable {
    * 测试结束时间
    */
   @TableField(value = "test_end_time")
-  private Data testEndTime;
+  private Date testEndTime;
 
   /**
    * 测试场景名称
