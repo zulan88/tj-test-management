@@ -173,11 +173,12 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         List<TjDeviceDetail> deviceDetails = tjDeviceDetailService.list(tdqw);
         if (null != deviceDetails && !deviceDetails.isEmpty()) {
             TjDeviceDetail deviceDetail = deviceDetails.get(0);
-            TjTaskDataConfig dataConfig = new TjTaskDataConfig();
+            TjInfinityTaskDataConfig dataConfig = new TjInfinityTaskDataConfig();
             dataConfig.setType(Constants.PartRole.MV_SIMULATION);
             dataConfig.setDeviceId(deviceDetail.getDeviceId());
             dataConfig.setTaskId(taskId);
             dataConfig.setCaseId(caseId);
+            tjInfinityTaskDataConfigService.save(dataConfig);
         } else {
             throw new BusinessException("无限里程-仿真车添加失败！");
         }
