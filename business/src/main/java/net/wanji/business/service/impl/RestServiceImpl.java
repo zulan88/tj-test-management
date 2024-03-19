@@ -114,7 +114,7 @@ public class RestServiceImpl implements RestService {
     public boolean startServer(String ip, Integer port, TessParam tessParam) {
         try {
             String url = tessServerUrl;
-            if (tessParam.getSimulateType().equals(6)){
+            if (tessParam.getSimulateType().equals(6) || tessParam.getSimulateType().equals(7)){
                 url = infiniteServerUrl;
             }
             String resultUrl = ip + ":" + port + url;

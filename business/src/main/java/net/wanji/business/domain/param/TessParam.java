@@ -134,6 +134,7 @@ public class TessParam {
         this.simulateType = simulateType;
         this.roadNum = roadNum;
         this.dataChannel = dataChannel;
+        this.infiniteId = dataChannel;
         this.commandChannel = commandChannel;
         this.evaluateChannel = evaluateChannel;
         this.statusChannel = statusChannel;
