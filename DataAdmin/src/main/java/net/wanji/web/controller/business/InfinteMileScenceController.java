@@ -105,4 +105,9 @@ public class InfinteMileScenceController extends BaseController {
         return toAjax(infinteMileScenceService.stopInfinteSimulation(id));
     }
 
+    @GetMapping("/getsliceimg")
+    public AjaxResult simustart(@RequestParam("id") Integer id) throws BusinessException {
+        return AjaxResult.success(infinteMileScenceService.getSiteSlice(id));
+    }
+
 }

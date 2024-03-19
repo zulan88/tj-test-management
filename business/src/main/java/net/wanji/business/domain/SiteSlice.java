@@ -12,4 +12,6 @@ public class SiteSlice {
 
     List<SitePoint> route;
 
+    String imgData;
+
 }

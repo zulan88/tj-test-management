@@ -104,6 +104,12 @@ public class InfinteMileScence implements Serializable {
     private String imgUrl;
 
     /**
+     * 场景切片截图
+     */
+    @TableField(value = "slice_img", select = false)
+    private String sliceImg;
+
+    /**
      * 场景状态
      */
     @TableField("status")

@@ -34,6 +34,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -80,7 +82,20 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
             infinteMileScence.setTrafficFlow(gson.toJson(infinteMileScence.getTrafficFlows()));
         }
         if (infinteMileScence.getSiteSlices()!= null && infinteMileScence.getSiteSlices().size() > 0){
-            infinteMileScence.setSiteSlice(gson.toJson(infinteMileScence.getSiteSlices()));
+            List<SiteSlice> siteSlices = new ArrayList<>();
+            for (SiteSlice slice : infinteMileScence.getSiteSlices()) {
+                SiteSlice exo = new SiteSlice();
+                exo.setSliceId(slice.getSliceId());
+                exo.setRoute(slice.getRoute());
+                exo.setSliceName(slice.getSliceName());
+                siteSlices.add(exo);
+                if (slice.getImgData() != null) {
+                    String data = slice.getImgData().replace("/[\r\n]/g","");
+                    slice.setImgData(data);
+                }
+            }
+            infinteMileScence.setSiteSlice(gson.toJson(siteSlices));
+            infinteMileScence.setSliceImg(gson.toJson(infinteMileScence.getSiteSlices()));
         }
         if(infinteMileScence.getTrafficFlowConfigs()!= null && infinteMileScence.getTrafficFlowConfigs().size() > 0){
             infinteMileScence.setTrafficFlowConfig(gson.toJson(infinteMileScence.getTrafficFlowConfigs()));
@@ -89,6 +104,17 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
             infinteMileScence.setCreateDate(LocalDateTime.now());
             this.save(infinteMileScence);
         }else{
+            Map<Integer, SiteSlice> sliceMap = this.getSiteSlice(infinteMileScence.getId()).stream().collect(Collectors.toMap(SiteSlice::getSliceId, siteSlice -> siteSlice));
+            List<SiteSlice> siteSlices = Arrays.asList(gson.fromJson(infinteMileScence.getSliceImg(), SiteSlice[].class));
+            for (SiteSlice slice : siteSlices) {
+                if (sliceMap.containsKey(slice.getSliceId())) {
+                    if (slice.getImgData() == null) {
+                        String data = sliceMap.get(slice.getSliceId()).getImgData();
+                        slice.setImgData(data);
+                    }
+                }
+            }
+            infinteMileScence.setSliceImg(gson.toJson(siteSlices));
             infinteMileScence.setUpdateDate(LocalDateTime.now());
             this.updateById(infinteMileScence);
         }
@@ -212,6 +238,13 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
         DeviceDetailVo detailVo = deviceDetailVos.get(0);
         List<TrafficFlow> list =  restService.getTrafficFlow(detailVo.getIp(), detailVo.getServiceAddress(),maoid);
         return list;
+    }
+
+    @Override
+    public List<SiteSlice> getSiteSlice(Integer id) {
+        Gson gson = new Gson();
+        List<SiteSlice> siteSlices = Arrays.asList(gson.fromJson(baseMapper.getSliceImage(id), SiteSlice[].class));
+        return siteSlices;
     }
 
 }
