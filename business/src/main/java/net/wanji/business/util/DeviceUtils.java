@@ -3,6 +3,7 @@ package net.wanji.business.util;
 import net.wanji.business.common.Constants;
 import net.wanji.business.domain.bo.CaseConfigBo;
 import net.wanji.business.domain.bo.CaseInfoBo;
+import net.wanji.business.domain.dto.TessngEvaluateDto;
 import net.wanji.business.domain.param.DeviceConnInfo;
 import net.wanji.business.domain.param.DeviceConnRule;
 import net.wanji.business.entity.TjDeviceDetail;
@@ -59,7 +60,8 @@ public class DeviceUtils {
 
   public static List<DeviceConnRule> generateDeviceConnRules(
       List<TjDeviceDetail> deviceDetails, String commandChannel,
-      String dataChannel) {
+      String dataChannel,
+      Map<Integer, List<TessngEvaluateDto>> tessngEvaluateAVs) {
     List<DeviceConnRule> rules = new ArrayList<>();
     for (int i = 0; i < deviceDetails.size(); i++) {
       TjDeviceDetail deviceDetail = deviceDetails.get(i);
@@ -75,6 +77,12 @@ public class DeviceUtils {
         DeviceConnRule rule = new DeviceConnRule();
         rule.setSource(createConnInfo(deviceDetail, commandChannel, dataChannel,
             sourceParams));
+        if (null != tessngEvaluateAVs
+            && tessngEvaluateAVs.get(targetDevice.getDeviceId()) != null) {
+          targetParams.put("evaluationInfos",
+              tessngEvaluateAVs.get(targetDevice.getDeviceId()));
+        }
+
         rule.setTarget(createConnInfo(targetDevice, commandChannel, dataChannel,
             targetParams));
         rules.add(rule);

@@ -11,6 +11,7 @@ import net.wanji.business.domain.SiteSlice;
 import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.dto.TaskDto;
+import net.wanji.business.domain.dto.TessngEvaluateDto;
 import net.wanji.business.domain.dto.TjDeviceDetailDto;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.ParamsDto;
@@ -347,9 +348,11 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
                 .filter(e -> Constants.PartRole.AV.equals(e.getSupportRoles()))
                 .findFirst()
                 .orElseThrow(() -> new BusinessException("用例主车配置信息异常"));
+        Map<Integer, List<TessngEvaluateDto>> tessngEvaluateAVs = createTessngEvaluateAVs(
+            tjTaskDataConfigs);
 
         control(0, caseId, avDetail.getCommandChannel(), username,
-                tjDeviceDetails, action <= 0 ? 0 : action, taskEnd);
+                tjDeviceDetails, action <= 0 ? 0 : action, taskEnd, tessngEvaluateAVs);
 
         // 3.更新业务数据
         tjInfinityTask.setStatus(2 == action ?
@@ -357,6 +360,15 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
                 Constants.TaskStatusEnum.FINISHED.getCode());
         this.updateById(tjInfinityTask);
         return true;
+    }
+
+    private static Map<Integer, List<TessngEvaluateDto>> createTessngEvaluateAVs(
+        List<TjInfinityTaskDataConfig> tjTaskDataConfigs) {
+        return tjTaskDataConfigs.stream()
+            .filter(e -> Constants.PartRole.AV.equals(e.getType())).map(
+                e -> new TessngEvaluateDto(e.getParticipatorId(),
+                    e.getParticipatorName(), 1, e.getDeviceId()))
+            .collect(Collectors.groupingBy(TessngEvaluateDto::getDeviceId));
     }
 
     private void checkDevicesStatus(Integer taskId,
@@ -476,7 +488,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         List<TjDeviceDetail> tjDeviceDetails = new ArrayList<>(exceptSVDevices);
         tjDeviceDetails.add(svDetail);
         control(taskId, caseId, avDeviceDetail.getCommandChannel(), createBy,
-                tjDeviceDetails, 0, true);
+                tjDeviceDetails, 0, true, null);
         List<String> mapList = new ArrayList<>();
         if (ObjectUtils.isEmpty(infinteMileScenceExo.getMapId())) {
             mapList.add("10");
@@ -517,15 +529,16 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
 
     public void control(Integer taskId, Integer caseId, String avCommandChannel,
         String createBy, List<TjDeviceDetail> deviceDetails, int taskType,
-        Boolean taskEnd) throws BusinessException {
+        Boolean taskEnd, Map<Integer, List<TessngEvaluateDto>> tessngEvaluateAVs)
+        throws BusinessException {
 
         TessParam tessParam = TessngUtils.buildTessServerParam(1, createBy,
-                caseId, null);
+            caseId, null);
         if (!restService.sendRuleUrl(
             new CaseRuleControl(System.currentTimeMillis(), taskId, caseId,
                 taskType, DeviceUtils.generateDeviceConnRules(deviceDetails,
-                tessParam.getCommandChannel(), tessParam.getDataChannel()),
-                avCommandChannel, taskEnd))) {
+                tessParam.getCommandChannel(), tessParam.getDataChannel(),
+                tessngEvaluateAVs), avCommandChannel, taskEnd))) {
             throw new BusinessException("主控响应异常");
         }
     }
