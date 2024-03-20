@@ -68,6 +68,8 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
     private final RestService restService;
     private final RedisLock redisLock;
     private final KafkaCollector kafkaCollector;
+
+
     @Resource
     private TjInfinityMapper tjInfinityMapper;
 
@@ -108,6 +110,10 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
             String id = task.get("id").toString();
             List<TjInfinityTaskDataConfig> list = tjInfinityTaskDataConfigService.list(new QueryWrapper<TjInfinityTaskDataConfig>().eq("task_id", id).eq("type", "av"));
             task.put("avDeviceIds", list);
+
+            Integer caseId = Integer.parseInt(task.get("case_id").toString());
+            InfinteMileScenceExo infinteMileScenceExo = infinteMileScenceService.selectInfinteMileScenceById(caseId);
+            task.put("infinteMileScence", infinteMileScenceExo);
 
             // TODO 任务历史记录
             List<Map<String, Object>> historyRecords = new ArrayList<>();
