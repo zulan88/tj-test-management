@@ -515,7 +515,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
             throws BusinessException {
 
         TessParam tessParam = TessngUtils.buildTessServerParam(1, createBy,
-                taskId, null);
+            caseId, null);
         if (!restService.sendRuleUrl(
                 new CaseRuleControl(System.currentTimeMillis(), taskId, caseId, taskType,
                         DeviceUtils.generateDeviceConnRules(deviceDetails,
