@@ -16,7 +16,7 @@ import java.io.Serializable;
  * @date 2024/3/12 18:16
  **/
 
-@TableName(value = "tj_task")
+@TableName(value = "tj_sharding_change_record")
 @Data
 public class TjShardingChangeRecord implements Serializable {
   private static final long serialVersionUID = -216298400435835539L;
