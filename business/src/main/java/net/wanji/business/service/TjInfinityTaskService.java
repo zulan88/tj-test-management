@@ -94,6 +94,6 @@ public interface TjInfinityTaskService extends IService<TjInfinityTask> {
      * @param username
      * @return
      */
-    boolean startStop(Integer taskId, Integer caseId, Integer action, String username)
-        throws BusinessException;
+    boolean startStop(Integer taskId, Integer caseId, Integer action,
+        String username, Boolean taskEnd) throws BusinessException;
 }

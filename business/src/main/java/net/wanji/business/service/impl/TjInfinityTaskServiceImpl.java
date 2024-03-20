@@ -329,7 +329,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
     }
 
     @Override
-    public boolean startStop(Integer taskId, Integer caseId, Integer action, String username)
+    public boolean startStop(Integer taskId, Integer caseId, Integer action, String username, Boolean taskEnd)
             throws BusinessException {
         // 1.用例详情
         TjInfinityTask tjInfinityTask = this.getById(caseId);
@@ -344,7 +344,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
                 .orElseThrow(() -> new BusinessException("用例主车配置信息异常"));
 
         control(0, caseId, avDetail.getCommandChannel(), username,
-                tjDeviceDetails, action <= 0 ? 0 : action);
+                tjDeviceDetails, action <= 0 ? 0 : action, taskEnd);
 
         // 3.更新业务数据
         tjInfinityTask.setStatus(2 == action ?
@@ -471,7 +471,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         List<TjDeviceDetail> tjDeviceDetails = new ArrayList<>(exceptSVDevices);
         tjDeviceDetails.add(svDetail);
         control(taskId, caseId, avDeviceDetail.getCommandChannel(), createBy,
-                tjDeviceDetails, 0);
+                tjDeviceDetails, 0, true);
         List<String> mapList = new ArrayList<>();
         if (ObjectUtils.isEmpty(infinteMileScenceExo.getMapId())) {
             mapList.add("10");
@@ -511,16 +511,16 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
     }
 
     public void control(Integer taskId, Integer caseId, String avCommandChannel,
-                        String createBy, List<TjDeviceDetail> deviceDetails, int taskType)
-            throws BusinessException {
+        String createBy, List<TjDeviceDetail> deviceDetails, int taskType,
+        Boolean taskEnd) throws BusinessException {
 
         TessParam tessParam = TessngUtils.buildTessServerParam(1, createBy,
             caseId, null);
         if (!restService.sendRuleUrl(
-                new CaseRuleControl(System.currentTimeMillis(), taskId, caseId, taskType,
-                        DeviceUtils.generateDeviceConnRules(deviceDetails,
-                                tessParam.getCommandChannel(), tessParam.getDataChannel()),
-                        avCommandChannel, true))) {
+            new CaseRuleControl(System.currentTimeMillis(), taskId, caseId,
+                taskType, DeviceUtils.generateDeviceConnRules(deviceDetails,
+                tessParam.getCommandChannel(), tessParam.getDataChannel()),
+                avCommandChannel, taskEnd))) {
             throw new BusinessException("主控响应异常");
         }
     }
