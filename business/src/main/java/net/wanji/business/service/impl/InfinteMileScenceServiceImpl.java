@@ -104,17 +104,19 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
             infinteMileScence.setCreateDate(LocalDateTime.now());
             this.save(infinteMileScence);
         }else{
-            Map<Integer, SiteSlice> sliceMap = this.getSiteSlice(infinteMileScence.getId()).stream().collect(Collectors.toMap(SiteSlice::getSliceId, siteSlice -> siteSlice));
-            List<SiteSlice> siteSlices = Arrays.asList(gson.fromJson(infinteMileScence.getSliceImg(), SiteSlice[].class));
-            for (SiteSlice slice : siteSlices) {
-                if (sliceMap.containsKey(slice.getSliceId())) {
-                    if (slice.getImgData() == null) {
-                        String data = sliceMap.get(slice.getSliceId()).getImgData();
-                        slice.setImgData(data);
+            if(infinteMileScence.getSliceImg()!= null) {
+                Map<Integer, SiteSlice> sliceMap = this.getSiteSlice(infinteMileScence.getId()).stream().collect(Collectors.toMap(SiteSlice::getSliceId, siteSlice -> siteSlice));
+                List<SiteSlice> siteSlices = Arrays.asList(gson.fromJson(infinteMileScence.getSliceImg(), SiteSlice[].class));
+                for (SiteSlice slice : siteSlices) {
+                    if (sliceMap.containsKey(slice.getSliceId())) {
+                        if (slice.getImgData() == null) {
+                            String data = sliceMap.get(slice.getSliceId()).getImgData();
+                            slice.setImgData(data);
+                        }
                     }
                 }
+                infinteMileScence.setSliceImg(gson.toJson(siteSlices));
             }
-            infinteMileScence.setSliceImg(gson.toJson(siteSlices));
             infinteMileScence.setUpdateDate(LocalDateTime.now());
             this.updateById(infinteMileScence);
         }
