@@ -253,7 +253,11 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
     @Override
     public List<SiteSlice> getSiteSlice(Integer id) {
         Gson gson = new Gson();
-        List<SiteSlice> siteSlices = Arrays.asList(gson.fromJson(baseMapper.getSliceImage(id), SiteSlice[].class));
+        String data = baseMapper.getSliceImage(id);
+        if (data == null || data.length() == 0) {
+            return new ArrayList<>();
+        }
+        List<SiteSlice> siteSlices = Arrays.asList(gson.fromJson(data, SiteSlice[].class));
         return siteSlices;
     }
 
