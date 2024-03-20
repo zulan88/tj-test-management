@@ -321,9 +321,8 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         caseTrajectoryParam.setCaseTrajectorySSVoList(trajectorySS);
         caseTrajectoryParam.setTaskDuration(byId.getPlanTestTime());
         caseTrajectoryParam.setControlChannel(
-                tjDeviceDetailService.getById(simulationConfig.getDeviceId())
-                        .getCommandChannel());
-
+            RedisChannelUtils.getCommandChannelByRole(0, taskId,
+                simulationConfig.getType(), null));
         String key = Constants.ChannelBuilder.buildTestingDataChannel(SecurityUtils.getUsername(), taskId);
         kafkaCollector.remove(key, taskId);
 
