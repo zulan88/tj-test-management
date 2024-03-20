@@ -1,8 +1,11 @@
 package net.wanji.business.domain.vo.task.infinity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
@@ -15,6 +18,8 @@ import java.io.Serializable;
  **/
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ShardingInOutVo implements Serializable {
   private static final long serialVersionUID = 4090979817563659549L;
 

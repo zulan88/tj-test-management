@@ -334,10 +334,11 @@ public class TaskController extends BaseController {
             log.error("用例异常结束原因：{}", platformSSDto.getMessage());
         }
         Integer testMode = platformSSDto.getTestMode();
-        if(null != testMode && testMode.equals(3)){
+        if (null != testMode && testMode.equals(3)) {
             tjInfinityTaskService.startStop(platformSSDto.getTaskId(),
                 platformSSDto.getCaseId(), platformSSDto.getState(),
-                (String) platformSSDto.getContext().get("user"));
+                (String) platformSSDto.getContext().get("user"),
+                platformSSDto.isTaskEnd());
         }else {
             if (platformSSDto.getTaskId() == 0) {
                 if (platformSSDto.getState() == 1) {
