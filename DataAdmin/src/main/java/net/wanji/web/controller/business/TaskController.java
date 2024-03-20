@@ -347,12 +347,12 @@ public class TaskController extends BaseController {
                     testingService.end(platformSSDto.getCaseId(), platformSSDto.getState(), (String) platformSSDto.getContext().get("user"));
                 }
             } else {
-                taskCaseCache(platformSSDto);
                 taskCaseService.caseStartEnd(platformSSDto.getTaskId(),
                     platformSSDto.getCaseId(), platformSSDto.getState(),
                     platformSSDto.isTaskEnd(), platformSSDto.getContext());
             }
         }
+        taskCaseCache(platformSSDto);
         return null;
     }
 
@@ -556,7 +556,7 @@ public class TaskController extends BaseController {
         String key = CacheConstants.USER_OF_CONTINUOUS_TASK_PREFIX + platformSSDto.getTaskId();
         String caseId = String.valueOf(platformSSDto.getCaseId());
         if (!platformSSDto.isTaskEnd()) {
-            if(1 == platformSSDto.getState()){
+            if(platformSSDto.getState() > 0){
                 hashOperations.put(key, caseId, platformSSDto.getContext().get("user"));
             }else if(-1 == platformSSDto.getState()){
                 redisCache.redisTemplate.delete(key);
