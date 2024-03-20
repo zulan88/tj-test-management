@@ -60,6 +60,7 @@ public class TessngUtils {
 
   public static TessParam buildInfinityTaskRunParam(Integer taskId,
       String userName, List<String> mapList, InfiniteTessParm infiniteTessParm) {
+    infiniteTessParm.setTaskId(taskId);
 
     return new TessParam().buildRealTestParam(0,
         Constants.ChannelBuilder.buildTestingDataChannel(userName, taskId),

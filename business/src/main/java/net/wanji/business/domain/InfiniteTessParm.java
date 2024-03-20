@@ -15,4 +15,6 @@ public class InfiniteTessParm {
 
     List<TrafficFlowConfig> trafficFlowConfigs;
 
+    int taskId;
+
 }
