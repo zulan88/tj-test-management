@@ -11,6 +11,7 @@ import net.wanji.business.domain.SiteSlice;
 import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.dto.TaskDto;
+import net.wanji.business.domain.dto.TjDeviceDetailDto;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.ParamsDto;
 import net.wanji.business.domain.param.CaseRuleControl;
@@ -24,7 +25,6 @@ import net.wanji.business.domain.vo.task.infinity.InfinityTaskPreparedVo;
 import net.wanji.business.domain.vo.task.infinity.ShardingInfoVo;
 import net.wanji.business.entity.TjDeviceDetail;
 import net.wanji.business.entity.TjInfinityTaskDataConfig;
-import net.wanji.business.entity.TjTaskDataConfig;
 import net.wanji.business.entity.infity.TjInfinityTask;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.listener.KafkaCollector;
@@ -37,6 +37,7 @@ import net.wanji.business.util.TessngUtils;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
 import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
@@ -46,7 +47,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.awt.geom.Point2D;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author hcy
@@ -109,10 +109,15 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         for (Map<String, Object> task : pageList) {
             String id = task.get("id").toString();
             List<TjInfinityTaskDataConfig> list = tjInfinityTaskDataConfigService.list(new QueryWrapper<TjInfinityTaskDataConfig>().eq("task_id", id).eq("type", "av"));
+            for (TjInfinityTaskDataConfig tjInfinityTaskDataConfig : list) {
+                Integer deviceId = tjInfinityTaskDataConfig.getDeviceId();
+                TjDeviceDetail deviceDetail = tjDeviceDetailService.getById(deviceId);
+                tjInfinityTaskDataConfig.setTjDeviceDetail(deviceDetail);
+            }
             task.put("avDeviceIds", list);
 
             Integer caseId = Integer.parseInt(task.get("case_id").toString());
-            InfinteMileScenceExo infinteMileScenceExo = infinteMileScenceService.selectInfinteMileScenceById(caseId);
+            InfinteMileScenceExo infinteMileScenceExo = infinteMileScenceService.selectInfinteMileScenceById2(caseId);
             task.put("infinteMileScence", infinteMileScenceExo);
 
             // TODO 任务历史记录
@@ -251,18 +256,18 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
     }
 
     private void devicesReadyCommand(
-        List<TjInfinityTaskDataConfig> tjTaskDataConfigs, Integer taskId) {
+            List<TjInfinityTaskDataConfig> tjTaskDataConfigs, Integer taskId) {
         List<TjDeviceDetail> tjDeviceDetails = tjDeviceDetailService.listByIds(
-            tjTaskDataConfigs.stream()
-                .map(TjInfinityTaskDataConfig::getDeviceId)
-                .collect(Collectors.toList()));
+                tjTaskDataConfigs.stream()
+                        .map(TjInfinityTaskDataConfig::getDeviceId)
+                        .collect(Collectors.toList()));
         for (TjDeviceDetail tjDeviceDetail : tjDeviceDetails) {
             tjDeviceDetailService.handDeviceState(tjDeviceDetail.getDeviceId(),
-                RedisChannelUtils.getCommandChannelByRole(0, taskId,
-                    tjDeviceDetail.getSupportRoles(),
                     RedisChannelUtils.getCommandChannelByRole(0, taskId,
-                        tjDeviceDetail.getSupportRoles(),
-                        tjDeviceDetail.getCommandChannel())), false);
+                            tjDeviceDetail.getSupportRoles(),
+                            RedisChannelUtils.getCommandChannelByRole(0, taskId,
+                                    tjDeviceDetail.getSupportRoles(),
+                                    tjDeviceDetail.getCommandChannel())), false);
         }
     }
 
@@ -375,8 +380,8 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
             checkDevicePosition(infinityTaskPreparedVo, taskId, dataConfig, deviceInfo, mainPlanFile);
         }
         infinityTaskPreparedVo.setDevicesInfo(deviceInfos.stream()
-            .sorted(Comparator.comparing(DeviceInfo::getType))
-            .collect(Collectors.toList()));
+                .sorted(Comparator.comparing(DeviceInfo::getType))
+                .collect(Collectors.toList()));
     }
 
     private void checkDevicePosition(
@@ -409,20 +414,20 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
     }
 
     private void checkDeviceOnlineStatus(
-        InfinityTaskPreparedVo infinityTaskPreparedVo, Integer taskId,
-        TjInfinityTaskDataConfig dataConfig, DeviceInfo deviceInfo) {
+            InfinityTaskPreparedVo infinityTaskPreparedVo, Integer taskId,
+            TjInfinityTaskDataConfig dataConfig, DeviceInfo deviceInfo) {
 
         Integer i = tjDeviceDetailService.selectDeviceState(
-            dataConfig.getDeviceId(),
-            RedisChannelUtils.getCommandChannelByRole(0, taskId,
-                dataConfig.getType(), deviceInfo.getCommandChannel()), false);
+                dataConfig.getDeviceId(),
+                RedisChannelUtils.getCommandChannelByRole(0, taskId,
+                        dataConfig.getType(), deviceInfo.getCommandChannel()), false);
         if (1 == i) {
             deviceInfo.setDeviceStatus(DeviceStatus.ONLINE);
         } else {
             deviceInfo.setDeviceStatus(DeviceStatus.OFFLINE);
             infinityTaskPreparedVo.setCanStart(false);
             infinityTaskPreparedVo.setMessage(String.format("设备[%s]离线！",
-                dataConfig.getParticipatorName()));
+                    dataConfig.getParticipatorName()));
         }
     }
 
@@ -506,7 +511,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         infiniteTessParm.setTrafficFlowConfigs(
                 infinteMileScenceExo.getTrafficFlowConfigs());
         infiniteTessParm.setTrafficFlows(
-            infinteMileScenceExo.getTrafficFlows().stream().filter(i -> (i.getDeparturePoints()!=null && i.getDeparturePoints().size() > 0)).collect(Collectors.toList()));
+                infinteMileScenceExo.getTrafficFlows().stream().filter(i -> (i.getDeparturePoints() != null && i.getDeparturePoints().size() > 0)).collect(Collectors.toList()));
         return infiniteTessParm;
     }
 
@@ -515,7 +520,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
             throws BusinessException {
 
         TessParam tessParam = TessngUtils.buildTessServerParam(1, createBy,
-            caseId, null);
+                caseId, null);
         if (!restService.sendRuleUrl(
                 new CaseRuleControl(System.currentTimeMillis(), taskId, caseId, taskType,
                         DeviceUtils.generateDeviceConnRules(deviceDetails,

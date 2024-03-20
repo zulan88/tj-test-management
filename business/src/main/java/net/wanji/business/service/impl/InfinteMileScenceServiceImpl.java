@@ -185,6 +185,16 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
         return infinteMileScenceExo;
     }
 
+    @Override
+    public InfinteMileScenceExo selectInfinteMileScenceById2(Integer id) {
+        InfinteMileScence infinteMileScence = this.getById(id);
+        InfinteMileScenceExo infinteMileScenceExo = new InfinteMileScenceExo();
+        infinteMileScenceExo.setRouteFile(infinteMileScence.getRouteFile());
+        infinteMileScenceExo.setMapFile(infinteMileScence.getMapFile());
+        infinteMileScenceExo.setMapId(infinteMileScence.getMapId());
+        return infinteMileScenceExo;
+    }
+
     private void validDebugParam(InfinteMileScenceExo infinteMileScenceExo) throws BusinessException{
         if (infinteMileScenceExo.getInElements()== null || infinteMileScenceExo.getInElements().size() == 0){
             throw new BusinessException("参与者轨迹不能为空");

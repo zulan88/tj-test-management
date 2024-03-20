@@ -34,6 +34,8 @@ public interface InfinteMileScenceService extends IService<InfinteMileScence> {
      */
     InfinteMileScenceExo selectInfinteMileScenceById(Integer id);
 
+    InfinteMileScenceExo selectInfinteMileScenceById2(Integer id);
+
     /**
      * 处理实体格式
      * @param infinteMileScenceExo

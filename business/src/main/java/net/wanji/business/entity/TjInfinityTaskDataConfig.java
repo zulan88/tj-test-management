@@ -8,7 +8,7 @@ import lombok.Data;
 
 import java.io.Serializable;
 
-@TableName(value ="tj_infinity_task_data_config")
+@TableName(value = "tj_infinity_task_data_config")
 @Data
 public class TjInfinityTaskDataConfig implements Serializable {
 
@@ -58,4 +58,6 @@ public class TjInfinityTaskDataConfig implements Serializable {
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 
+    @TableField(exist = false)
+    private TjDeviceDetail tjDeviceDetail = null;
 }
