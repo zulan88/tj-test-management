@@ -113,7 +113,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
             for (TjInfinityTaskDataConfig tjInfinityTaskDataConfig : list) {
                 Integer deviceId = tjInfinityTaskDataConfig.getDeviceId();
                 TjDeviceDetail deviceDetail = tjDeviceDetailService.getById(deviceId);
-                tjInfinityTaskDataConfig.setTjDeviceDetail(deviceDetail);
+                tjInfinityTaskDataConfig.setDeviceName(deviceDetail.getDeviceName());
             }
             task.put("avDeviceIds", list);
 
