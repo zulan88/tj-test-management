@@ -59,5 +59,5 @@ public class TjInfinityTaskDataConfig implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @TableField(exist = false)
-    private TjDeviceDetail tjDeviceDetail = null;
+    private String deviceName;
 }
