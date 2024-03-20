@@ -20,7 +20,7 @@ public class TessngEvaluateDto {
   /**
    * 参与者ID
    */
-  private String id;
+  private Integer id;
   /**
    * 参与者名称
    */

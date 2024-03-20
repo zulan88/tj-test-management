@@ -366,7 +366,8 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         List<TjInfinityTaskDataConfig> tjTaskDataConfigs) {
         return tjTaskDataConfigs.stream()
             .filter(e -> Constants.PartRole.AV.equals(e.getType())).map(
-                e -> new TessngEvaluateDto(e.getParticipatorId(),
+                e -> new TessngEvaluateDto(
+                    Integer.valueOf(e.getParticipatorId()),
                     e.getParticipatorName(), 1, e.getDeviceId()))
             .collect(Collectors.groupingBy(TessngEvaluateDto::getDeviceId));
     }
