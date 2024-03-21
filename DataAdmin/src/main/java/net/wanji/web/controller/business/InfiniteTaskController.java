@@ -3,10 +3,7 @@ package net.wanji.web.controller.business;
 import com.alibaba.fastjson.JSONObject;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiOperationSort;
+import io.swagger.annotations.*;
 import lombok.extern.slf4j.Slf4j;
 import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
@@ -255,4 +252,16 @@ public class InfiniteTaskController {
     //4、主控接管任务
         //	1、开始任务
         //	2、结束任务
+
+    @ApiOperationSort(28)
+    @ApiOperation(value = "测试评分结果")
+    @GetMapping("/getEvaluationResult")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "taskId", value = "任务ID", dataType = "Integer", paramType = "query", example = "499"),
+            @ApiImplicitParam(name = "id", value = "任务用例ID", dataType = "Integer", paramType = "query", example = "499")
+    })
+    public AjaxResult getEvaluationResult(Integer taskId, Integer id) throws BusinessException {
+        return AjaxResult.success(null);
+    }
+
 }
