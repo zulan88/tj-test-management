@@ -13,7 +13,6 @@ import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.dto.TaskDto;
 import net.wanji.business.domain.dto.TessngEvaluateDto;
-import net.wanji.business.domain.dto.TjDeviceDetailDto;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.ParamsDto;
 import net.wanji.business.domain.param.CaseRuleControl;
@@ -42,7 +41,6 @@ import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
 import org.apache.commons.collections4.CollectionUtils;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
@@ -363,20 +361,26 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
                 Constants.TaskStatusEnum.FINISHED.getCode());
         this.updateById(tjInfinityTask);
 
-        String key = Constants.ChannelBuilder.buildTestingDataChannel(
-            tjInfinityTask.getCreatedBy(), caseId);
-        List<List<ClientSimulationTrajectoryDto>> trajectories = kafkaCollector.take(
-            key, caseId);
-        kafkaCollector.remove(key, caseId);
-        String duration = DateUtils.secondsToDuration((int) Math.floor(
-            (double) (CollectionUtils.isEmpty(trajectories) ?
-                0 :
-                trajectories.size()) / 10));
-        RealWebsocketMessage endMsg = new RealWebsocketMessage(
-            Constants.RedisMessageType.END, null, null, duration);
-        WebSocketManage.sendInfo(key, JSON.toJSONString(endMsg));
-
+        websocketEndMsg(caseId, taskEnd, tjInfinityTask);
         return true;
+    }
+
+    private void websocketEndMsg(Integer caseId, Boolean taskEnd,
+        TjInfinityTask tjInfinityTask) {
+        if(taskEnd){
+            String key = Constants.ChannelBuilder.buildTestingDataChannel(
+                tjInfinityTask.getCreatedBy(), caseId);
+            List<List<ClientSimulationTrajectoryDto>> trajectories = kafkaCollector.take(
+                key, caseId);
+            kafkaCollector.remove(key, caseId);
+            String duration = DateUtils.secondsToDuration((int) Math.floor(
+                (double) (CollectionUtils.isEmpty(trajectories) ?
+                    0 :
+                    trajectories.size()) / 10));
+            RealWebsocketMessage endMsg = new RealWebsocketMessage(
+                Constants.RedisMessageType.END, null, null, duration);
+            WebSocketManage.sendInfo(key, JSON.toJSONString(endMsg));
+        }
     }
 
     private static Map<Integer, List<TessngEvaluateDto>> createTessngEvaluateAVs(
