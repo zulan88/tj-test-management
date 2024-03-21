@@ -7,6 +7,7 @@ import net.wanji.business.common.Constants;
 import net.wanji.business.common.DeviceStatus;
 import net.wanji.business.domain.InfiniteTessParm;
 import net.wanji.business.domain.InfinteMileScenceExo;
+import net.wanji.business.domain.RealWebsocketMessage;
 import net.wanji.business.domain.SiteSlice;
 import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
@@ -31,10 +32,13 @@ import net.wanji.business.exception.BusinessException;
 import net.wanji.business.listener.KafkaCollector;
 import net.wanji.business.mapper.TjInfinityMapper;
 import net.wanji.business.service.*;
+import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.util.DeviceUtils;
 import net.wanji.business.util.RedisChannelUtils;
 import net.wanji.business.util.RedisLock;
 import net.wanji.business.util.TessngUtils;
+import net.wanji.common.common.ClientSimulationTrajectoryDto;
+import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
 import org.apache.commons.collections4.CollectionUtils;
@@ -358,6 +362,20 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
                 Constants.TaskStatusEnum.RUNNING.getCode() :
                 Constants.TaskStatusEnum.FINISHED.getCode());
         this.updateById(tjInfinityTask);
+
+        String key = Constants.ChannelBuilder.buildTestingDataChannel(
+            tjInfinityTask.getCreatedBy(), caseId);
+        List<List<ClientSimulationTrajectoryDto>> trajectories = kafkaCollector.take(
+            key, caseId);
+        kafkaCollector.remove(key, caseId);
+        String duration = DateUtils.secondsToDuration((int) Math.floor(
+            (double) (CollectionUtils.isEmpty(trajectories) ?
+                0 :
+                trajectories.size()) / 10));
+        RealWebsocketMessage endMsg = new RealWebsocketMessage(
+            Constants.RedisMessageType.END, null, null, duration);
+        WebSocketManage.sendInfo(key, JSON.toJSONString(endMsg));
+
         return true;
     }
 
