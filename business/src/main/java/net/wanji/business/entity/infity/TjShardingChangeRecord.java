@@ -1,4 +1,4 @@
-package net.wanji.business.entity;
+package net.wanji.business.entity.infity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -69,4 +69,7 @@ public class TjShardingChangeRecord implements Serializable {
    */
   @TableField("record_id")
   private String recordId;
+
+  @TableField("evaluation_score")
+  private Integer evaluationScore;
 }

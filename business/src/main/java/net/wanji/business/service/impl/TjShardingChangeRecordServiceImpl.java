@@ -1,12 +1,23 @@
 package net.wanji.business.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import net.wanji.business.entity.TjShardingChangeRecord;
+import net.wanji.business.domain.InfinteMileScenceExo;
+import net.wanji.business.domain.vo.task.infinity.ShardingResultVo;
+import net.wanji.business.entity.infity.TjInfinityTask;
+import net.wanji.business.entity.infity.TjShardingChangeRecord;
+import net.wanji.business.entity.infity.TjShardingResult;
+import net.wanji.business.mapper.TjInfinityMapper;
 import net.wanji.business.mapper.TjShardingChangeRecordMapper;
+import net.wanji.business.service.InfinteMileScenceService;
 import net.wanji.business.service.TjShardingChangeRecordService;
 import net.wanji.common.core.redis.RedisCache;
 import net.wanji.common.utils.uuid.UUID;
 import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
+import java.util.HashMap;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author hcy
@@ -21,9 +32,16 @@ public class TjShardingChangeRecordServiceImpl
     implements TjShardingChangeRecordService {
 
   private final RedisCache redisCache;
+  private final InfinteMileScenceService infinteMileScenceService;
+  @Resource
+  private TjShardingChangeRecordMapper shardingChangeRecordMapper;
+  @Resource
+  private TjInfinityMapper tjInfinityMapper;
 
-  public TjShardingChangeRecordServiceImpl(RedisCache redisCache) {
+  public TjShardingChangeRecordServiceImpl(RedisCache redisCache,
+      InfinteMileScenceService infinteMileScenceService) {
     this.redisCache = redisCache;
+    this.infinteMileScenceService = infinteMileScenceService;
   }
 
   @Override
@@ -53,6 +71,25 @@ public class TjShardingChangeRecordServiceImpl
     } else {
       this.stop(taskId, caseId);
     }
+  }
+
+  @Override
+  public List<ShardingResultVo> shardingResult(Integer taskId, Integer caseId) {
+    List<TjShardingResult> tjShardingResults = shardingChangeRecordMapper.shardingResult(
+        taskId, caseId);
+    TjInfinityTask tjInfinityTask = tjInfinityMapper.selectById(caseId);
+    InfinteMileScenceExo infinteMileScenceExo = infinteMileScenceService.selectInfinteMileScenceById(
+        tjInfinityTask.getCaseId());
+    HashMap<Integer, String> sliceIdNameMap = infinteMileScenceExo.getSiteSlices()
+        .stream().collect(HashMap::new,
+            (m, v) -> m.put(v.getSliceId(), v.getSliceName()), HashMap::putAll);
+    return tjShardingResults.stream().map(e -> {
+      ShardingResultVo shardingResultVo = new ShardingResultVo();
+      shardingResultVo.setTime(e.getTime());
+      shardingResultVo.setEvaluationScore(e.getEvaluationScore());
+      shardingResultVo.setShardingName(sliceIdNameMap.get(e.getShardingId()));
+      return shardingResultVo;
+    }).collect(Collectors.toList());
   }
 
   private String createRecordCacheId(Integer taskId, Integer caseId) {

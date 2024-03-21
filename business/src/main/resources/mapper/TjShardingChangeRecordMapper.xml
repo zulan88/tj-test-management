@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="net.wanji.business.mapper.TjShardingChangeRecordMapper">
+
+    <select id="shardingResult"
+            resultType="net.wanji.business.entity.infity.TjShardingResult">
+        select s.sharding_id as shardingId,
+               s.record_id   as recordId,
+               floor(count(s.sharding_id) / 2) as 'time', round(avg(s.evaluation_score)) as evaluationScore
+        from tj_sharding_change_record s
+        where s.task_id = #{taskId}
+          and s.case_id = #{caseId}
+        group by s.record_id,
+                 s.sharding_id
+        order by s.id
+    </select>
+</mapper>

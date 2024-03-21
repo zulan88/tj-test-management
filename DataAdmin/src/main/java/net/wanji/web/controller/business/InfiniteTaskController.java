@@ -12,7 +12,8 @@ import net.wanji.business.domain.dto.TaskDto;
 import net.wanji.business.domain.vo.task.infinity.InfinityTaskInitVo;
 import net.wanji.business.domain.vo.task.infinity.InfinityTaskPreparedVo;
 import net.wanji.business.domain.vo.task.infinity.ShardingInOutVo;
-import net.wanji.business.entity.TjShardingChangeRecord;
+import net.wanji.business.domain.vo.task.infinity.ShardingResultVo;
+import net.wanji.business.entity.infity.TjShardingChangeRecord;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.RestService;
 import net.wanji.business.service.TjInfinityTaskService;
@@ -59,11 +60,6 @@ public class InfiniteTaskController {
         this.tjShardingChangeRecordService = tjShardingChangeRecordService;
     }
 
-    // 任务删除
-
-    // 任务更新
-
-    // 任务查询
     @ApiOperationSort(5)
     @ApiOperation(value = "5.列表")
     @PostMapping("/pageList")
@@ -255,13 +251,27 @@ public class InfiniteTaskController {
 
     @ApiOperationSort(28)
     @ApiOperation(value = "测试评分结果")
-    @GetMapping("/getEvaluationResult")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "taskId", value = "任务ID", dataType = "Integer", paramType = "query", example = "499"),
-            @ApiImplicitParam(name = "id", value = "任务用例ID", dataType = "Integer", paramType = "query", example = "499")
+    @GetMapping("/evaluationResult")
+    @ApiImplicitParams({ @ApiImplicitParam(name = "taskId",
+        value = "任务ID",
+        dataType = "Integer",
+        paramType = "query",
+        example = "499"), @ApiImplicitParam(name = "caseId",
+        value = "任务用例ID",
+        dataType = "Integer",
+        paramType = "query",
+        example = "499")
     })
-    public AjaxResult getEvaluationResult(Integer taskId, Integer id) throws BusinessException {
-        return AjaxResult.success(null);
+    public AjaxResult getEvaluationResult(Integer taskId, Integer caseId) {
+        try {
+            return AjaxResult.success(
+                tjShardingChangeRecordService.shardingResult(0, taskId));
+        } catch (Exception e) {
+            if (log.isErrorEnabled()) {
+                log.error("分片进出结果查询异常!", e);
+            }
+            return AjaxResult.error("分片进出结果查询异常！");
+        }
     }
 
 }

@@ -1,7 +1,10 @@
 package net.wanji.business.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import net.wanji.business.entity.TjShardingChangeRecord;
+import net.wanji.business.domain.vo.task.infinity.ShardingResultVo;
+import net.wanji.business.entity.infity.TjShardingChangeRecord;
+
+import java.util.List;
 
 /**
  * @author hcy
@@ -45,4 +48,13 @@ public interface TjShardingChangeRecordService
    * @param state
    */
   void stateControl(Integer taskId, Integer caseId, Integer state);
+
+  /**
+   * 分片进出统计结果
+   *
+   * @param taskId
+   * @param caseId
+   * @return
+   */
+  List<ShardingResultVo> shardingResult(Integer taskId, Integer caseId);
 }

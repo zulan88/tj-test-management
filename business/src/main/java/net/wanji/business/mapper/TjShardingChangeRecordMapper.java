@@ -1,7 +1,11 @@
 package net.wanji.business.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import net.wanji.business.entity.TjShardingChangeRecord;
+import net.wanji.business.entity.infity.TjShardingChangeRecord;
+import net.wanji.business.entity.infity.TjShardingResult;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
 
 /**
  * @author hcy
@@ -12,5 +16,6 @@ import net.wanji.business.entity.TjShardingChangeRecord;
  **/
 public interface TjShardingChangeRecordMapper
     extends BaseMapper<TjShardingChangeRecord> {
-
+  List<TjShardingResult> shardingResult(@Param("taskId") Integer taskId,
+      @Param("caseId") Integer caseId);
 }
