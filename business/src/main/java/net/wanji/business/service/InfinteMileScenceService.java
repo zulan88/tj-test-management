@@ -23,7 +23,7 @@ public interface InfinteMileScenceService extends IService<InfinteMileScence> {
 
     String buildSceneNumber();
 
-    Integer saveInfinteMileScence(InfinteMileScenceExo infinteMileScence);
+    Integer saveInfinteMileScence(InfinteMileScenceExo infinteMileScence) throws BusinessException;
 
     void debugging(InfinteMileScenceExo infinteMileScence) throws BusinessException;
 

@@ -58,7 +58,7 @@ public class InfinteMileScenceController extends BaseController {
     }
 
     @PostMapping("/save")
-    public AjaxResult save(@RequestBody InfinteMileScenceExo infinteMileScence) {
+    public AjaxResult save(@RequestBody InfinteMileScenceExo infinteMileScence) throws BusinessException {
         Integer id = infinteMileScenceService.saveInfinteMileScence(infinteMileScence);
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("id", id);
