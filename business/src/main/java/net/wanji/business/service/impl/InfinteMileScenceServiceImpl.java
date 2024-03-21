@@ -95,7 +95,7 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
                 exo.setRoute(slice.getRoute());
                 exo.setSliceName(slice.getSliceName());
                 siteSlices.add(exo);
-                if (slice.getImgData() != null) {
+                if (slice.getImgData() != null && slice.getImgData().length() > 0) {
                     String data = slice.getImgData().replace("/[\r\n]/g","");
                     slice.setImgData(data);
                 }else {
