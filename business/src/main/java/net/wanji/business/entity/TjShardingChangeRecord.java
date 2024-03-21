@@ -6,7 +6,9 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import javax.persistence.Table;
 import java.io.Serializable;
+import java.util.Date;
 
 /**
  * @author hcy
@@ -59,4 +61,7 @@ public class TjShardingChangeRecord implements Serializable {
    */
   @TableField("state")
   private int state;
+
+  @TableField("create_time")
+  private Date createTime;
 }

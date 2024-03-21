@@ -31,6 +31,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -190,6 +191,7 @@ public class InfiniteTaskController {
         @RequestBody ShardingInOutVo shardingInOutVo) {
         TjShardingChangeRecord tjShardingChangeRecord = new TjShardingChangeRecord();
         BeanUtils.copyProperties(shardingInOutVo, tjShardingChangeRecord);
+        tjShardingChangeRecord.setCreateTime(new Date());
         tjShardingChangeRecordService.save(tjShardingChangeRecord);
         return AjaxResult.success();
     }
