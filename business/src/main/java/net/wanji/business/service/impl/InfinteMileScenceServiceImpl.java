@@ -72,6 +72,7 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
     @Override
     public Integer saveInfinteMileScence(InfinteMileScenceExo infinteMileScence) throws BusinessException {
         Gson gson = new Gson();
+        boolean flag = false;
         if (infinteMileScence.getInElements()!= null && infinteMileScence.getInElements().size() > 0){
             infinteMileScence.setElement(gson.toJson(infinteMileScence.getInElements()));
         }
@@ -97,6 +98,8 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
                 if (slice.getImgData() != null) {
                     String data = slice.getImgData().replace("/[\r\n]/g","");
                     slice.setImgData(data);
+                }else {
+                    flag = true;
                 }
             }
             infinteMileScence.setSiteSlice(gson.toJson(siteSlices));
@@ -109,6 +112,19 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
             infinteMileScence.setCreateDate(LocalDateTime.now());
             this.save(infinteMileScence);
         }else{
+            if(flag) {
+                Map<Integer, SiteSlice> sliceMap = this.getSiteSlice(infinteMileScence.getId()).stream().collect(Collectors.toMap(SiteSlice::getSliceId, siteSlice -> siteSlice));
+                List<SiteSlice> siteSlices = infinteMileScence.getSiteSlices();
+                for (SiteSlice slice : siteSlices) {
+                    if (sliceMap.containsKey(slice.getSliceId())) {
+                        if (slice.getImgData() == null) {
+                            String data = sliceMap.getOrDefault(slice.getSliceId(),new SiteSlice()).getImgData();
+                            slice.setImgData(data);
+                        }
+                    }
+                }
+                infinteMileScence.setSliceImg(gson.toJson(siteSlices));
+            }
             infinteMileScence.setUpdateDate(LocalDateTime.now());
             this.updateById(infinteMileScence);
         }
