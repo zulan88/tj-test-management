@@ -31,10 +31,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -73,7 +70,7 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
     }
 
     @Override
-    public Integer saveInfinteMileScence(InfinteMileScenceExo infinteMileScence) {
+    public Integer saveInfinteMileScence(InfinteMileScenceExo infinteMileScence) throws BusinessException {
         Gson gson = new Gson();
         if (infinteMileScence.getInElements()!= null && infinteMileScence.getInElements().size() > 0){
             infinteMileScence.setElement(gson.toJson(infinteMileScence.getInElements()));
@@ -82,8 +79,16 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
             infinteMileScence.setTrafficFlow(gson.toJson(infinteMileScence.getTrafficFlows()));
         }
         if (infinteMileScence.getSiteSlices()!= null && infinteMileScence.getSiteSlices().size() > 0){
+            Set<Integer> buttom = new HashSet<>();
             List<SiteSlice> siteSlices = new ArrayList<>();
             for (SiteSlice slice : infinteMileScence.getSiteSlices()) {
+                if (slice.getSliceId() == null){
+                    throw new BusinessException("切片ID不能为空");
+                }
+                if (buttom.contains(slice.getSliceId())){
+                    throw new BusinessException("切片ID重复");
+                }
+                buttom.add(slice.getSliceId());
                 SiteSlice exo = new SiteSlice();
                 exo.setSliceId(slice.getSliceId());
                 exo.setRoute(slice.getRoute());
@@ -104,19 +109,6 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
             infinteMileScence.setCreateDate(LocalDateTime.now());
             this.save(infinteMileScence);
         }else{
-            if(infinteMileScence.getSliceImg()!= null) {
-                Map<Integer, SiteSlice> sliceMap = this.getSiteSlice(infinteMileScence.getId()).stream().collect(Collectors.toMap(SiteSlice::getSliceId, siteSlice -> siteSlice));
-                List<SiteSlice> siteSlices = Arrays.asList(gson.fromJson(infinteMileScence.getSliceImg(), SiteSlice[].class));
-                for (SiteSlice slice : siteSlices) {
-                    if (sliceMap.containsKey(slice.getSliceId())) {
-                        if (slice.getImgData() == null) {
-                            String data = sliceMap.get(slice.getSliceId()).getImgData();
-                            slice.setImgData(data);
-                        }
-                    }
-                }
-                infinteMileScence.setSliceImg(gson.toJson(siteSlices));
-            }
             infinteMileScence.setUpdateDate(LocalDateTime.now());
             this.updateById(infinteMileScence);
         }
