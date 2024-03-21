@@ -69,6 +69,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
     private final TjDeviceDetailService tjDeviceDetailService;
     private final RouteService routeService;
     private final RestService restService;
+    private final TjShardingChangeRecordService tjShardingChangeRecordService;
     private final RedisLock redisLock;
     private final KafkaCollector kafkaCollector;
 
@@ -80,16 +81,18 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
     private String testReportOuterChain;
 
     public TjInfinityTaskServiceImpl(
-            TjInfinityTaskDataConfigService tjInfinityTaskDataConfigService,
-            InfinteMileScenceService infinteMileScenceService,
-            TjDeviceDetailService tjDeviceDetailService, RouteService routeService,
-            RestService restService, RedisLock redisLock,
-            KafkaCollector kafkaCollector) {
+        TjInfinityTaskDataConfigService tjInfinityTaskDataConfigService,
+        InfinteMileScenceService infinteMileScenceService,
+        TjDeviceDetailService tjDeviceDetailService, RouteService routeService,
+        RestService restService,
+        TjShardingChangeRecordService tjShardingChangeRecordService,
+        RedisLock redisLock, KafkaCollector kafkaCollector) {
         this.tjInfinityTaskDataConfigService = tjInfinityTaskDataConfigService;
         this.infinteMileScenceService = infinteMileScenceService;
         this.tjDeviceDetailService = tjDeviceDetailService;
         this.routeService = routeService;
         this.restService = restService;
+        this.tjShardingChangeRecordService = tjShardingChangeRecordService;
         this.redisLock = redisLock;
         this.kafkaCollector = kafkaCollector;
     }
@@ -551,7 +554,8 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
 
     public void control(Integer taskId, Integer caseId, String avCommandChannel,
         String createBy, List<TjDeviceDetail> deviceDetails, int taskType,
-        Boolean taskEnd, Map<Integer, List<TessngEvaluateDto>> tessngEvaluateAVs)
+        Boolean taskEnd,
+        Map<Integer, List<TessngEvaluateDto>> tessngEvaluateAVs)
         throws BusinessException {
 
         TessParam tessParam = TessngUtils.buildTessServerParam(1, createBy,
@@ -563,6 +567,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
                 tessngEvaluateAVs), avCommandChannel, taskEnd))) {
             throw new BusinessException("主控响应异常");
         }
+        tjShardingChangeRecordService.stateControl(taskId, caseId, taskType);
     }
 
     private List<TjInfinityTaskDataConfig> taskDevices(Integer taskId) {

@@ -12,4 +12,37 @@ import net.wanji.business.entity.TjShardingChangeRecord;
  **/
 public interface TjShardingChangeRecordService
     extends IService<TjShardingChangeRecord> {
+
+  /**
+   * 开始，创建记录ID
+   *
+   * @param taskId
+   * @param caseId
+   */
+  void start(Integer taskId, Integer caseId);
+
+  /**
+   * 进出分片信息保存时自动获取记录id
+   *
+   * @param record
+   * @return
+   */
+  boolean saveShardingInOut(TjShardingChangeRecord record);
+
+  /**
+   * 结束，删除记录ID
+   *
+   * @param taskId
+   * @param caseId
+   */
+  void stop(Integer taskId, Integer caseId);
+
+  /**
+   * 开始结束
+   *
+   * @param taskId
+   * @param caseId
+   * @param state
+   */
+  void stateControl(Integer taskId, Integer caseId, Integer state);
 }

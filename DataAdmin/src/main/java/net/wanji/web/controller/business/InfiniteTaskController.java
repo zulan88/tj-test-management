@@ -189,7 +189,7 @@ public class InfiniteTaskController {
         TjShardingChangeRecord tjShardingChangeRecord = new TjShardingChangeRecord();
         BeanUtils.copyProperties(shardingInOutVo, tjShardingChangeRecord);
         tjShardingChangeRecord.setCreateTime(new Date());
-        tjShardingChangeRecordService.save(tjShardingChangeRecord);
+        tjShardingChangeRecordService.saveShardingInOut(tjShardingChangeRecord);
         return AjaxResult.success();
     }
 
