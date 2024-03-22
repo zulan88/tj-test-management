@@ -309,6 +309,8 @@ public class RedisTrajectory2Consumer {
                             if (CollectionUtils.isNotEmpty(save)) {
                                 simulationTrajectory.setValue(save);
                                 receiveData(channel, simulationTrajectory);
+                            }else {
+                                channelListener.refresh();
                             }
 
                             // send ws
@@ -366,7 +368,7 @@ public class RedisTrajectory2Consumer {
                     default:
                         break;
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 log.error("解析消息失败：{}", e);
                 removeListener(channel);
             }
@@ -485,6 +487,10 @@ public class RedisTrajectory2Consumer {
 
         public void refreshData(T data) {
             this.data.add(data);
+            this.timestamp = System.currentTimeMillis();
+        }
+
+        public void refresh() {
             this.timestamp = System.currentTimeMillis();
         }
 
