@@ -17,5 +17,5 @@ import java.util.List;
 public interface TjShardingChangeRecordMapper
     extends BaseMapper<TjShardingChangeRecord> {
   List<TjShardingResult> shardingResult(@Param("taskId") Integer taskId,
-      @Param("caseId") Integer caseId);
+      @Param("caseId") Integer caseId, @Param("recordId") String recordId);
 }
