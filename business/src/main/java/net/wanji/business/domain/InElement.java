@@ -7,7 +7,7 @@ import java.util.List;
 @Data
 public class InElement {
 
-    Integer id;
+    Long id;
 
     String name;
 

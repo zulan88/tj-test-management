@@ -7,6 +7,8 @@ import java.util.List;
 @Data
 public class DeparturePoint {
 
+    Long id;
+
     String name;
 
     Float weight;

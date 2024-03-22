@@ -33,6 +33,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.listener.ChannelTopic;
@@ -75,6 +76,9 @@ public class RedisTrajectory2Consumer {
 
     @Autowired
     private RedisCache redisCache;
+
+    @Value("${domain.controll:30}")
+    Integer domainControll;
 
     @Autowired
     private InfinteMileScenceService infinteMileScenceService;
@@ -254,6 +258,7 @@ public class RedisTrajectory2Consumer {
         infinteMileScenceExo.getInElements().stream().filter(p -> Integer.valueOf(0).equals(p.getType())).findFirst().ifPresent(p -> {
             mainId.put(p.getId().toString(),true);
         });
+        Map<String, Integer> mainCounting = mainId.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, p -> 30));
         AtomicInteger count = new AtomicInteger(60);
         return (message, pattern) -> {
             try {
@@ -297,10 +302,15 @@ public class RedisTrajectory2Consumer {
 
                             List<TrajectoryValueDto> save = new ArrayList<>();
 
+
+
                             // 保存轨迹(本地)
                             for (TrajectoryValueDto value : data) {
-                                if (mainId.containsKey(value.getId())) {
-                                    if(mainId.get(value.getId())) {
+                                if (mainCounting.containsKey(value.getId())) {
+                                    if (!mainId.get(value.getId()) && mainCounting.get(value.getId()) > 0){
+                                        mainCounting.put(value.getId(),mainCounting.get(value.getId()) - 1);
+                                    }
+                                    if(mainCounting.get(value.getId()) > 0) {
                                         value.setTimestamp(value.getTimestamp() + nowtime);
                                         save.add(value);
                                     }
@@ -320,8 +330,8 @@ public class RedisTrajectory2Consumer {
                                     data);
 
                             AtomicBoolean canStop = new AtomicBoolean(true);
-                            mainId.forEach((k,v)->{
-                                if(v){
+                            mainCounting.forEach((k,v)->{
+                                if(v > 0){
                                     canStop.set(false);
                                 }
                             });
