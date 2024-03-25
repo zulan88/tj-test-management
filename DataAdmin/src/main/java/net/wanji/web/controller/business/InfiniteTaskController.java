@@ -218,9 +218,12 @@ public class InfiniteTaskController {
         try {
             return AjaxResult.success(tjInfinityTaskService.prepare(taskId));
         } catch (BusinessException e) {
+            if (log.isErrorEnabled()) {
+                log.error("prepare error!", e);
+            }
             InfinityTaskPreparedVo infinityTaskPreparedVo = new InfinityTaskPreparedVo();
             infinityTaskPreparedVo.setCanStart(false);
-            log.error("prepare error!", e);
+            infinityTaskPreparedVo.setMessage(e.getMessage());
             return AjaxResult.error("准备状态异常！", infinityTaskPreparedVo);
         }
         // 1、状态检查
