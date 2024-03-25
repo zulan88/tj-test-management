@@ -2,7 +2,9 @@ package net.wanji.business.schedule;
 
 import net.wanji.business.entity.TjDeviceDetail;
 import net.wanji.business.entity.TjTask;
+import net.wanji.business.entity.infity.TjInfinityTask;
 import net.wanji.business.service.TjDeviceDetailService;
+import net.wanji.business.service.TjInfinityTaskService;
 import net.wanji.business.service.TjTaskService;
 import net.wanji.common.redis.RedisUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +17,9 @@ import java.util.List;
 
 @Component
 public class DeviceStatusReflash {
+
+    @Autowired
+    private TjInfinityTaskService tjInfinityTaskService;
 
     @Autowired
     TjDeviceDetailService tjDeviceDetailService;
@@ -58,6 +63,15 @@ public class DeviceStatusReflash {
                 if(!redisUtil.exists("tw_"+tjTask.getId())){
                     tjTask.setStatus(tjTask.getLastStatus());
                     tjTaskService.updateById(tjTask);
+                }
+            }
+        }
+        List<TjInfinityTask> list1 = tjInfinityTaskService.list();
+        for (TjInfinityTask tjInfinityTask : list1) {
+            if(tjInfinityTask.getStatus().equals("prepping")){
+                if(!redisUtil.exists("twin_"+tjInfinityTask.getId())){
+                    tjInfinityTask.setStatus(tjInfinityTask.getLastStatus());
+                    tjInfinityTaskService.updateById(tjInfinityTask);
                 }
             }
         }

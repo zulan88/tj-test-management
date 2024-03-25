@@ -114,4 +114,8 @@ public class TjInfinityTask extends Lifecycle implements Serializable {
    */
   @TableField(value = "route_file")
   private String routeFile;
+
+  @TableField(value = "last_status")
+  private String lastStatus;
+
 }

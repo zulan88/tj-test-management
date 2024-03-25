@@ -13,11 +13,13 @@ import net.wanji.business.domain.vo.task.infinity.InfinityTaskInitVo;
 import net.wanji.business.domain.vo.task.infinity.InfinityTaskPreparedVo;
 import net.wanji.business.domain.vo.task.infinity.ShardingInOutVo;
 import net.wanji.business.domain.vo.task.infinity.ShardingResultVo;
+import net.wanji.business.entity.infity.TjInfinityTask;
 import net.wanji.business.entity.infity.TjShardingChangeRecord;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.RestService;
 import net.wanji.business.service.TjInfinityTaskService;
 import net.wanji.business.service.TjShardingChangeRecordService;
+import net.wanji.business.util.RedisLock;
 import net.wanji.common.constant.HttpStatus;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
@@ -25,6 +27,7 @@ import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -48,6 +51,9 @@ import java.util.Map;
 public class InfiniteTaskController {
 
     private final RestService restService;
+
+    @Autowired
+    private RedisLock redisLock;
 
     private final TjInfinityTaskService tjInfinityTaskService;
     private final TjShardingChangeRecordService tjShardingChangeRecordService;
@@ -203,6 +209,13 @@ public class InfiniteTaskController {
                 infinityTaskInitVo.getShardingInfos())) {
                 throw new BusinessException("分片信息未设置");
             }
+            TjInfinityTask tjInfinityTask = tjInfinityTaskService.getById(taskId);
+            if (!tjInfinityTask.getStatus().equals("prepping")){
+                tjInfinityTask.setLastStatus(tjInfinityTask.getStatus());
+                tjInfinityTask.setStatus("prepping");
+                tjInfinityTaskService.updateById(tjInfinityTask);
+            }
+            redisLock.setUser("twin_" + taskId, "flag");
             return AjaxResult.success(infinityTaskInitVo);
         } catch (BusinessException be) {
             return AjaxResult.error(be.getMessage());
