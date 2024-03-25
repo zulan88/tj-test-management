@@ -77,7 +77,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
     @Resource
     private TjInfinityMapper tjInfinityMapper;
 
-    @Value("${tess.testReportOuterChain}")
+    @Value("${tess.infiniteReportOuterChain}")
     private String testReportOuterChain;
 
     public TjInfinityTaskServiceImpl(
