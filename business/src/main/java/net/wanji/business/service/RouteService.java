@@ -462,6 +462,7 @@ public class RouteService {
                     .collect(Collectors.toList())))
                 .collect(Collectors.toList());
         } catch (IOException e) {
+            log.error("mainTrajectory!", e);
             throw new BusinessException("查询主车轨迹失败");
         }
         if (CollectionUtils.isEmpty(participantTrajectories)) {

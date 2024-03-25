@@ -220,6 +220,7 @@ public class InfiniteTaskController {
         } catch (BusinessException e) {
             InfinityTaskPreparedVo infinityTaskPreparedVo = new InfinityTaskPreparedVo();
             infinityTaskPreparedVo.setCanStart(false);
+            log.error("prepare error!", e);
             return AjaxResult.error("准备状态异常！", infinityTaskPreparedVo);
         }
         // 1、状态检查
