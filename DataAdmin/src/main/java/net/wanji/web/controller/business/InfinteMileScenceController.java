@@ -75,6 +75,8 @@ public class InfinteMileScenceController extends BaseController {
         String repeatKey = "DEBUGGING_INSCENE_" + infinteMileScence.getViewId();
         if (redisCache.hasKey(repeatKey) && !redisCache.getCacheObject(repeatKey).equals(SecurityUtils.getUsername())) {
             return AjaxResult.error("有其他用户正在调试该场景，请稍后再试");
+        } else if (redisCache.hasKey(repeatKey)) {
+            infinteMileScenceService.stopInfinteSimulation(infinteMileScence.getId());
         }
         redisCache.setCacheObject(repeatKey, SecurityUtils.getUsername(), 3, TimeUnit.MINUTES);
         String key = "DEBUGGING_SUBMIT_" + infinteMileScence.getViewId();

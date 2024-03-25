@@ -28,6 +28,7 @@ import net.wanji.common.core.redis.RedisCache;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
+import net.wanji.common.utils.bean.BeanUtils;
 import net.wanji.common.utils.file.FileUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
@@ -285,6 +286,8 @@ public class RedisTrajectory2Consumer {
                         if (!channelListener.started) {
                             break;
                         }
+                        // 获取时间
+//                        long start = System.currentTimeMillis();
                         SimulationTrajectoryDto simulationTrajectory = objectMapper.readValue(String.valueOf(simulationMessage.getValue()),
                                 SimulationTrajectoryDto.class);
                         if (CollectionUtils.isNotEmpty(simulationTrajectory.getValue())) {
@@ -303,8 +306,6 @@ public class RedisTrajectory2Consumer {
                             }
 
                             List<TrajectoryValueDto> save = new ArrayList<>();
-
-
 
                             // 保存轨迹(本地)
                             for (TrajectoryValueDto value : data) {
@@ -341,6 +342,8 @@ public class RedisTrajectory2Consumer {
 
                             WebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));
                         }
+//                        long end = System.currentTimeMillis();
+//                        log.info(StringUtils.format("{}处理轨迹消息耗时：{}", methodLog, end - start));
                         break;
                     case RedisMessageType.OPTIMIZE:
                         log.info("{}接收到轨迹优化消息：{}", methodLog, String.valueOf(simulationMessage.getValue()));
@@ -414,6 +417,32 @@ public class RedisTrajectory2Consumer {
             return;
         }
         ChannelListener<SimulationTrajectoryDto> channelListener = this.runningChannel.get(key);
+        if (lastTrajectory.containsKey(key)){
+            SimulationTrajectoryDto lastData = lastTrajectory.get(key);
+            SimulationTrajectoryDto sup = new SimulationTrajectoryDto();
+            sup.setTimestamp(data.getTimestamp());
+            sup.setTimestampType(data.getTimestampType());
+            sup.setValue(new ArrayList<>());
+            boolean flag = false;
+            int index = 0;
+            for (TrajectoryValueDto frame : data.getValue()) {
+                if (Math.abs(frame.getCourseAngle()-lastData.getValue().get(index).getCourseAngle())> 2){
+                    TrajectoryValueDto newFrame = new TrajectoryValueDto();
+                    BeanUtils.copyProperties(frame, newFrame);
+                    newFrame.setCourseAngle(Math.round(100*(frame.getCourseAngle()+lastData.getValue().get(index).getCourseAngle())/2) / 100.0);
+                    newFrame.setLatitude(Math.round(10000000*(frame.getLatitude()+lastData.getValue().get(index).getLatitude())/2) / 10000000.0);
+                    newFrame.setLongitude(Math.round(10000000*(frame.getLongitude()+lastData.getValue().get(index).getLongitude())/2) / 10000000.0);
+                    newFrame.setFrameId(-1);
+                    sup.getValue().add(newFrame);
+                    flag = true;
+                }
+                index++;
+            }
+            if (flag){
+                channelListener.refreshData(sup);
+            }
+        }
+        lastTrajectory.put(key, data);
         channelListener.refreshData(data);
     }
 
