@@ -145,6 +145,11 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
             throw new BusinessException("当前无可用仿真程序");
         }
         BeanUtils.copyBeanProp(infinteMileScence, scenes);
+        infinteMileScence.getInElements().forEach(element -> {
+            if (element.getType().equals(0)){
+                element.setId(1L);
+            }
+        });
 
         redisTrajectoryConsumer.addRunningChannelInfinite(infinteMileScence);
 
@@ -167,9 +172,6 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
         testStartParam.setTrafficFlows(trafficFlows);
         testStartParam.setTrafficFlowConfigs(infinteMileScence.getTrafficFlowConfigs());
         for(InElement element : testStartParam.getInElements()){
-            if (element.getType().equals(0)){
-                element.setId(1L);
-            }
             SitePoint firstpoint = element.getRoute().get(0);
             SitePoint point = new SitePoint();
             point.setLatitude(firstpoint.getLatitude());

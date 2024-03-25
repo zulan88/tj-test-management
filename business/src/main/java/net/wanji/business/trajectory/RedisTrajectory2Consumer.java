@@ -65,6 +65,8 @@ public class RedisTrajectory2Consumer {
 
     private final ConcurrentHashMap<String, ChannelListener<SimulationTrajectoryDto>> runningChannel = new ConcurrentHashMap<>();
 
+    private ConcurrentHashMap<String, SimulationTrajectoryDto> lastTrajectory = new ConcurrentHashMap<>();
+
     private final RedisMessageListenerContainer redisMessageListenerContainer;
 
     public RedisTrajectory2Consumer(RedisMessageListenerContainer redisMessageListenerContainer) {
@@ -398,6 +400,8 @@ public class RedisTrajectory2Consumer {
                 .collect(Collectors.groupingBy(SimulationOptimizeDto::getId));
         log.info("优化结果：{}", JSONObject.toJSONString(result));
     }
+
+
 
     /**
      * 接收数据
