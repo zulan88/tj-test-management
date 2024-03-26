@@ -22,10 +22,13 @@ public class RedisChannelUtils {
    * @return
    */
   public static String getCommandChannelByRole(Integer taskId, Integer caseId,
-      String supportRole, String commandChannel) {
+      String supportRole, String commandChannel, String userName) {
+    if (userName == null){
+      userName = SecurityUtils.getUsername();
+    }
     return Constants.PartRole.MV_SIMULATION.equals(supportRole) ?
         Constants.ChannelBuilder.buildTestingControlChannel(
-            SecurityUtils.getUsername(), caseId) :
+            userName, caseId) :
         commandChannel;
   }
 
@@ -37,10 +40,13 @@ public class RedisChannelUtils {
    * @return
    */
   public static String getReadyStatusChannelByRole(Integer caseId,
-      String supportRoles) {
+      String supportRoles, String userName) {
+    if (userName == null){
+      userName = SecurityUtils.getUsername();
+    }
     return Constants.PartRole.MV_SIMULATION.equals(supportRoles) ?
         Constants.ChannelBuilder.buildTestingStatusChannel(
-            SecurityUtils.getUsername(), caseId) :
+            userName, caseId) :
         Constants.ChannelBuilder.DEFAULT_STATUS_CHANNEL;
   }
 }

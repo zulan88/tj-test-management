@@ -904,20 +904,20 @@ public class TestingServiceImpl implements TestingService {
                     RedisChannelUtils.getCommandChannelByRole(0,
                         caseConfigBo.getCaseId(),
                         caseConfigBo.getSupportRoles(),
-                        caseConfigBo.getCommandChannel()), false) :
+                        caseConfigBo.getCommandChannel(),null), false) :
                 deviceDetailService.selectDeviceState(
                     caseConfigBo.getDeviceId(),
                     RedisChannelUtils.getCommandChannelByRole(0,
                         caseConfigBo.getCaseId(),
                         caseConfigBo.getSupportRoles(),
-                        caseConfigBo.getCommandChannel()), false);
+                        caseConfigBo.getCommandChannel(), null), false);
             caseConfigBo.setStatus(status);
             // 查询设备准备状态
             DeviceReadyStateParam stateParam = new DeviceReadyStateParam(
                 caseConfigBo.getDeviceId(),
                 RedisChannelUtils.getCommandChannelByRole(0,
                     caseConfigBo.getCaseId(), caseConfigBo.getSupportRoles(),
-                    caseConfigBo.getCommandChannel()));
+                    caseConfigBo.getCommandChannel(), null));
             if (PartRole.AV.equals(caseConfigBo.getParticipantRole())) {
                 stateParam.setParams(new ParamsDto("1", mainTrajectories));
             }

@@ -39,6 +39,7 @@ import net.wanji.business.util.RedisChannelUtils;
 import net.wanji.business.util.RedisLock;
 import net.wanji.business.util.TessngUtils;
 import net.wanji.common.common.ClientSimulationTrajectoryDto;
+import net.wanji.common.redis.RedisUtil;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
@@ -281,7 +282,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
                             tjDeviceDetail.getSupportRoles(),
                             RedisChannelUtils.getCommandChannelByRole(0, taskId,
                                     tjDeviceDetail.getSupportRoles(),
-                                    tjDeviceDetail.getCommandChannel())), false);
+                                    tjDeviceDetail.getCommandChannel(), null), null), false);
         }
     }
 
@@ -334,8 +335,8 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         caseTrajectoryParam.setCaseTrajectorySSVoList(trajectorySS);
         caseTrajectoryParam.setTaskDuration(byId.getPlanTestTime());
         caseTrajectoryParam.setControlChannel(
-            RedisChannelUtils.getCommandChannelByRole(0, taskId,
-                simulationConfig.getType(), null));
+                RedisChannelUtils.getCommandChannelByRole(0, taskId,
+                        simulationConfig.getType(), null, null));
         String key = Constants.ChannelBuilder.buildTestingDataChannel(SecurityUtils.getUsername(), taskId);
         kafkaCollector.remove(key, taskId);
 
@@ -365,7 +366,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
                 .findFirst()
                 .orElseThrow(() -> new BusinessException("用例主车配置信息异常"));
         Map<Integer, List<TessngEvaluateDto>> tessngEvaluateAVs = createTessngEvaluateAVs(
-            tjTaskDataConfigs);
+                tjTaskDataConfigs);
 
         control(0, caseId, avDetail.getCommandChannel(), username,
                 tjDeviceDetails, action <= 0 ? 0 : action, taskEnd, tessngEvaluateAVs);
@@ -384,31 +385,31 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
     }
 
     private void websocketEndMsg(Integer caseId, Boolean taskEnd,
-        TjInfinityTask tjInfinityTask) {
-        if(taskEnd){
+                                 TjInfinityTask tjInfinityTask) {
+        if (taskEnd) {
             String key = Constants.ChannelBuilder.buildTestingDataChannel(
-                tjInfinityTask.getCreatedBy(), caseId);
+                    tjInfinityTask.getCreatedBy(), caseId);
             List<List<ClientSimulationTrajectoryDto>> trajectories = kafkaCollector.take(
-                key, caseId);
+                    key, caseId);
             kafkaCollector.remove(key, caseId);
             String duration = DateUtils.secondsToDuration((int) Math.floor(
-                (double) (CollectionUtils.isEmpty(trajectories) ?
-                    0 :
-                    trajectories.size()) / 10));
+                    (double) (CollectionUtils.isEmpty(trajectories) ?
+                            0 :
+                            trajectories.size()) / 10));
             RealWebsocketMessage endMsg = new RealWebsocketMessage(
-                Constants.RedisMessageType.END, null, null, duration);
+                    Constants.RedisMessageType.END, null, null, duration);
             WebSocketManage.sendInfo(key, JSON.toJSONString(endMsg));
         }
     }
 
     private static Map<Integer, List<TessngEvaluateDto>> createTessngEvaluateAVs(
-        List<TjInfinityTaskDataConfig> tjTaskDataConfigs) {
+            List<TjInfinityTaskDataConfig> tjTaskDataConfigs) {
         return tjTaskDataConfigs.stream()
-            .filter(e -> Constants.PartRole.AV.equals(e.getType())).map(
-                e -> new TessngEvaluateDto(
-                    Integer.valueOf(e.getParticipatorId()),
-                    e.getParticipatorName(), 1, e.getDeviceId()))
-            .collect(Collectors.groupingBy(TessngEvaluateDto::getDeviceId));
+                .filter(e -> Constants.PartRole.AV.equals(e.getType())).map(
+                        e -> new TessngEvaluateDto(
+                                Integer.valueOf(e.getParticipatorId()),
+                                e.getParticipatorName(), 1, e.getDeviceId()))
+                .collect(Collectors.groupingBy(TessngEvaluateDto::getDeviceId));
     }
 
     private void checkDevicesStatus(Integer taskId,
@@ -440,10 +441,14 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
             InfinityTaskPreparedVo infinityTaskPreparedVo, Integer taskId,
             TjInfinityTaskDataConfig dataConfig, DeviceInfo deviceInfo, String mainPlanFile)
             throws BusinessException {
+        String username = null;
+        if (redisLock.exists("twin_" + dataConfig.getTaskId())) {
+            username = redisLock.getUser("twin_" + dataConfig.getTaskId());
+        }
         DeviceReadyStateParam stateParam = new DeviceReadyStateParam(
                 deviceInfo.getId(),
                 RedisChannelUtils.getCommandChannelByRole(0, taskId,
-                        dataConfig.getType(), deviceInfo.getCommandChannel()));
+                        dataConfig.getType(), deviceInfo.getCommandChannel(), username));
         if (Constants.PartRole.AV.equals(deviceInfo.getType())) {
             stateParam.setParams(new ParamsDto(dataConfig.getParticipatorId(),
                     routeService.mainTrajectory(mainPlanFile)));
@@ -453,7 +458,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         }
         Integer i = tjDeviceDetailService.selectDeviceReadyState(
                 deviceInfo.getId(), RedisChannelUtils.getReadyStatusChannelByRole(
-                        taskId, dataConfig.getType()), stateParam,
+                        taskId, dataConfig.getType(), username), stateParam,
                 false);
         if (1 == i) {
             deviceInfo.setDeviceStatus(DeviceStatus.ARRIVED);
@@ -468,11 +473,14 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
     private void checkDeviceOnlineStatus(
             InfinityTaskPreparedVo infinityTaskPreparedVo, Integer taskId,
             TjInfinityTaskDataConfig dataConfig, DeviceInfo deviceInfo) {
-
+        String username = null;
+        if (redisLock.exists("twin_" + dataConfig.getTaskId())) {
+            username = redisLock.getUser("twin_" + dataConfig.getTaskId());
+        }
         Integer i = tjDeviceDetailService.selectDeviceState(
                 dataConfig.getDeviceId(),
                 RedisChannelUtils.getCommandChannelByRole(0, taskId,
-                        dataConfig.getType(), deviceInfo.getCommandChannel()), false);
+                        dataConfig.getType(), deviceInfo.getCommandChannel(), username), false);
         if (1 == i) {
             deviceInfo.setDeviceStatus(DeviceStatus.ONLINE);
         } else {
@@ -486,9 +494,16 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
     private void checkDeviceBusyStatus(
             InfinityTaskPreparedVo infinityTaskPreparedVo,
             TjInfinityTaskDataConfig dataConfig, DeviceInfo deviceInfo) {
-        Integer running = tjDeviceDetailService.selectDeviceBusyStatus(
-                DeviceUtils.getVisualDeviceId(0, dataConfig.getDeviceId(),
-                        dataConfig.getType()));
+        Integer running = 1;
+        if (redisLock.exists("twin_" + dataConfig.getTaskId())) {
+            running = tjDeviceDetailService.selectDeviceBusyStatus(
+                    DeviceUtils.getVisualDeviceId(0, dataConfig.getDeviceId(),
+                            dataConfig.getType(), redisLock.getUser("twin_" + dataConfig.getTaskId())));
+        } else {
+            running = tjDeviceDetailService.selectDeviceBusyStatus(
+                    DeviceUtils.getVisualDeviceId(0, dataConfig.getDeviceId(),
+                            dataConfig.getType()));
+        }
         if (1 == running) {
             deviceInfo.setDeviceStatus(DeviceStatus.BUSY);
             infinityTaskPreparedVo.setCanStart(false);
@@ -568,18 +583,18 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
     }
 
     public void control(Integer taskId, Integer caseId, String avCommandChannel,
-        String createBy, List<TjDeviceDetail> deviceDetails, int taskType,
-        Boolean taskEnd,
-        Map<Integer, List<TessngEvaluateDto>> tessngEvaluateAVs)
-        throws BusinessException {
+                        String createBy, List<TjDeviceDetail> deviceDetails, int taskType,
+                        Boolean taskEnd,
+                        Map<Integer, List<TessngEvaluateDto>> tessngEvaluateAVs)
+            throws BusinessException {
 
         TessParam tessParam = TessngUtils.buildTessServerParam(1, createBy,
-            caseId, null);
+                caseId, null);
         if (!restService.sendRuleUrl(
-            new CaseRuleControl(System.currentTimeMillis(), taskId, caseId,
-                taskType, DeviceUtils.generateDeviceConnRules(deviceDetails,
-                tessParam.getCommandChannel(), tessParam.getDataChannel(),
-                tessngEvaluateAVs), avCommandChannel, taskEnd))) {
+                new CaseRuleControl(System.currentTimeMillis(), taskId, caseId,
+                        taskType, DeviceUtils.generateDeviceConnRules(deviceDetails,
+                        tessParam.getCommandChannel(), tessParam.getDataChannel(),
+                        tessngEvaluateAVs), avCommandChannel, taskEnd))) {
             throw new BusinessException("主控响应异常");
         }
         tjShardingChangeRecordService.stateControl(taskId, caseId, taskType);

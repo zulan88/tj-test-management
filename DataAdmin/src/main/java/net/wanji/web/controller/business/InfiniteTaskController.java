@@ -217,7 +217,7 @@ public class InfiniteTaskController {
                 tjInfinityTask.setStatus("prepping");
                 tjInfinityTaskService.updateById(tjInfinityTask);
             }
-            redisLock.setUser("twin_" + taskId, "flag");
+            redisLock.setUser("twin_" + taskId, SecurityUtils.getUsername());
             return AjaxResult.success(infinityTaskInitVo);
         } catch (BusinessException be) {
             return AjaxResult.error(be.getMessage());
