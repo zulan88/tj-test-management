@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import net.wanji.business.entity.common.Lifecycle;
 
@@ -46,12 +47,14 @@ public class TjInfinityTask extends Lifecycle implements Serializable {
    * 测试开始时间
    */
   @TableField(value = "test_start_time")
+  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
   private Date testStartTime;
 
   /**
    * 测试结束时间
    */
   @TableField(value = "test_end_time")
+  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
   private Date testEndTime;
 
   /**

@@ -1,6 +1,7 @@
 package net.wanji.web.controller.business;
 
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import io.swagger.annotations.*;
@@ -13,6 +14,7 @@ import net.wanji.business.domain.vo.task.infinity.InfinityTaskInitVo;
 import net.wanji.business.domain.vo.task.infinity.InfinityTaskPreparedVo;
 import net.wanji.business.domain.vo.task.infinity.ShardingInOutVo;
 import net.wanji.business.domain.vo.task.infinity.ShardingResultVo;
+import net.wanji.business.entity.TjTask;
 import net.wanji.business.entity.infity.TjInfinityTask;
 import net.wanji.business.entity.infity.TjShardingChangeRecord;
 import net.wanji.business.exception.BusinessException;
@@ -289,6 +291,39 @@ public class InfiniteTaskController {
             }
             return AjaxResult.error("分片进出结果查询异常！");
         }
+    }
+
+    /**
+     * 获取正在运行的任务列表(孿生)
+     *
+     * 该接口不接受任何参数，返回当前状态为"prepping"或"running"的任务列表。
+     * 对于状态为"prepping"的任务，会将其测试开始时间设为null。
+     *
+     * @return AjaxResult 包含任务列表的成功响应对象。
+     */
+    @GetMapping("/runningTaskTW")
+    public AjaxResult getRunningTask() {
+        QueryWrapper<TjInfinityTask> wrapper = new QueryWrapper<>();
+        wrapper.eq("status", "prepping");
+        wrapper.or().eq("status", "running");
+        List<TjInfinityTask> list = tjInfinityTaskService.list(wrapper);
+        for (TjInfinityTask task : list) {
+            if(task.getStatus().equals("prepping")){
+                task.setTestStartTime(null);
+            }
+        }
+        return AjaxResult.success(list);
+    }
+
+    /**
+     * 获取任务的状态(孿生)
+     *
+     * @param taskId 任务ID，用于查询任务的状态。
+     * @return 返回一个AjaxResult对象，其中包含了任务的状态信息。
+     */
+    @GetMapping("/getStatusTW")
+    public AjaxResult getStatus(Integer taskId) {
+        return prepare(taskId);
     }
 
 }

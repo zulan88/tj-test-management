@@ -336,6 +336,10 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         context.put("user", SecurityUtils.getUsername());
         caseTrajectoryParam.setContext(context);
         restService.sendCaseTrajectoryInfo(caseTrajectoryParam);
+        Date data = new Date();
+        data.setTime(data.getTime() + 3000);
+        byId.setTestStartTime(data);
+        this.updateById(byId);
         return false;
     }
 

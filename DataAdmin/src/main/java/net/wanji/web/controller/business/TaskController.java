@@ -525,19 +525,6 @@ public class TaskController extends BaseController {
                 task.setStartTime(null);
             }
         }
-//        for(TjTask task:list){
-//            if(task.getTestType().equals("virtualRealFusion")){
-//                task.setTestType("虚实融合测试");
-//            }else if(task.getTestType().equals("virtualRealContrast")){
-//                task.setTestType("虚实对比测试");
-//            }else if(task.getTestType().equals("mainInLoop")){
-//                task.setTestType("人在环路测试");
-//            }else if(task.getTestType().equals("parallelDeduction")){
-//                task.setTestType("平行推演测试");
-//            }else if(task.getTestType().equals("threeTermMapping")){
-//                task.setTestType("三项映射测试");
-//            }
-//        }
         return AjaxResult.success(list);
     }
 
