@@ -169,7 +169,8 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
             TjInfinityTaskDataConfig newAvConfig = new TjInfinityTaskDataConfig();
             newAvConfig.setDeviceId(Integer.parseInt(configMap.get("deviceId").toString()));
             newAvConfig.setType(configMap.get("type").toString());
-            newAvConfig.setParticipatorId(configMap.get("participatorId").toString());
+            // TODO 参与者id
+            newAvConfig.setParticipatorId("1");
             newAvConfig.setParticipatorName(configMap.get("participatorName").toString());
             newAvConfig.setTaskId(id);
             newAvConfig.setCaseId(Integer.parseInt(caseId));
