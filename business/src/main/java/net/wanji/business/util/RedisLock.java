@@ -35,7 +35,7 @@ public class RedisLock {
     }
 
     public void setUser(String lockKey, String name) {
-        stringRedisTemplate.opsForValue().set(lockKey, name, 15, TimeUnit.MINUTES);
+        stringRedisTemplate.opsForValue().set(lockKey, name, 30, TimeUnit.MINUTES);
     }
 
     public String getUser(String lockKey) {
@@ -47,6 +47,10 @@ public class RedisLock {
         if (value != null && value.equals(name)) {
             stringRedisTemplate.delete(lockKey);
         }
+    }
+
+    public boolean exists(final String key) {
+        return Boolean.TRUE.equals(stringRedisTemplate.hasKey(key));
     }
 
 }
