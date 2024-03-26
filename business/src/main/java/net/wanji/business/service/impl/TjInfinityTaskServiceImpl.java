@@ -27,6 +27,8 @@ import net.wanji.business.domain.vo.task.infinity.ShardingInfoVo;
 import net.wanji.business.entity.TjDeviceDetail;
 import net.wanji.business.entity.TjInfinityTaskDataConfig;
 import net.wanji.business.entity.infity.TjInfinityTask;
+import net.wanji.business.evaluation.EvalContext;
+import net.wanji.business.evaluation.EvaluationRedisData;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.listener.KafkaCollector;
 import net.wanji.business.mapper.TjInfinityMapper;
@@ -72,6 +74,8 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
     private final TjShardingChangeRecordService tjShardingChangeRecordService;
     private final RedisLock redisLock;
     private final KafkaCollector kafkaCollector;
+    private final EvaluationRedisData evaluationRedisData;
+    private final TjSceneScoreServiceImpl tjSceneScoreService;
 
 
     @Resource
@@ -86,7 +90,8 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         TjDeviceDetailService tjDeviceDetailService, RouteService routeService,
         RestService restService,
         TjShardingChangeRecordService tjShardingChangeRecordService,
-        RedisLock redisLock, KafkaCollector kafkaCollector) {
+        RedisLock redisLock, KafkaCollector kafkaCollector,
+        EvaluationRedisData evaluationRedisData, TjSceneScoreServiceImpl tjSceneScoreService) {
         this.tjInfinityTaskDataConfigService = tjInfinityTaskDataConfigService;
         this.infinteMileScenceService = infinteMileScenceService;
         this.tjDeviceDetailService = tjDeviceDetailService;
@@ -95,6 +100,8 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         this.tjShardingChangeRecordService = tjShardingChangeRecordService;
         this.redisLock = redisLock;
         this.kafkaCollector = kafkaCollector;
+        this.evaluationRedisData = evaluationRedisData;
+        this.tjSceneScoreService = tjSceneScoreService;
     }
 
     @Override
@@ -363,6 +370,9 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
         control(0, caseId, avDetail.getCommandChannel(), username,
                 tjDeviceDetails, action <= 0 ? 0 : action, taskEnd, tessngEvaluateAVs);
 
+        // 评价信息处理
+        evaluationProcess(taskId, caseId, action);
+
         // 3.更新业务数据
         tjInfinityTask.setStatus(2 == action ?
                 Constants.TaskStatusEnum.RUNNING.getCode() :
@@ -583,5 +593,28 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
 
     private boolean checkTaskStatus(String status) {
         return Constants.TaskStatusEnum.RUNNING.getCode().equals(status);
+    }
+
+    /**
+     * 评价数据处理
+     *
+     * @param taskId
+     * @param caseId
+     * @param state <= 0:停止，>0:开始
+     */
+    private void evaluationProcess(Integer taskId, Integer caseId,
+        Integer state) {
+        String evaluateChannel = Constants.ChannelBuilder.buildTestingEvaluateChannel(
+            SecurityUtils.getUsername(), taskId);
+        if (state > 0) {
+            EvalContext evalContext = new EvalContext();
+            evalContext.setTaskId(taskId);
+            evalContext.setCaseId(caseId);
+            // 监听
+            evaluationRedisData.subscribe(evaluateChannel, tjSceneScoreService,
+                evalContext);
+        } else {
+            evaluationRedisData.unsubscribe(evaluateChannel);
+        }
     }
 }

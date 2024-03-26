@@ -10,9 +10,9 @@ import net.wanji.business.mapper.TjInfinityMapper;
 import net.wanji.business.mapper.TjShardingChangeRecordMapper;
 import net.wanji.business.service.InfinteMileScenceService;
 import net.wanji.business.service.TjShardingChangeRecordService;
+import net.wanji.business.util.RedisCacheUtils;
 import net.wanji.common.core.redis.RedisCache;
 import net.wanji.common.utils.uuid.UUID;
-import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -48,7 +48,7 @@ public class TjShardingChangeRecordServiceImpl
 
   @Override
   public void start(Integer taskId, Integer caseId) {
-    String recordCacheId = createRecordCacheId(taskId, caseId);
+    String recordCacheId = RedisCacheUtils.createRecordCacheId(taskId, caseId);
     if (redisCache.hasKey(recordCacheId)) {
       redisCache.deleteObject(recordCacheId);
     }
@@ -58,13 +58,15 @@ public class TjShardingChangeRecordServiceImpl
   @Override
   public boolean saveShardingInOut(TjShardingChangeRecord record) {
     record.setRecordId(redisCache.getCacheObject(
-        createRecordCacheId(record.getTaskId(), record.getCaseId())));
+        RedisCacheUtils.createRecordCacheId(record.getTaskId(),
+            record.getCaseId())));
     return this.save(record);
   }
 
   @Override
   public void stop(Integer taskId, Integer caseId) {
-    redisCache.deleteObject(createRecordCacheId(taskId, caseId));
+    redisCache.deleteObject(
+        RedisCacheUtils.createRecordCacheId(taskId, caseId));
   }
 
   @Override
@@ -78,7 +80,7 @@ public class TjShardingChangeRecordServiceImpl
 
   @Override
   public List<ShardingResultVo> shardingResult(Integer taskId, Integer caseId) {
-    String recordCacheId = createRecordCacheId(taskId, caseId);
+    String recordCacheId = RedisCacheUtils.createRecordCacheId(taskId, caseId);
     if (redisCache.hasKey(recordCacheId)) {
       String recordId = redisCache.getCacheObject(recordCacheId);
       List<TjShardingResult> tjShardingResults = shardingChangeRecordMapper.shardingResult(
@@ -102,10 +104,6 @@ public class TjShardingChangeRecordServiceImpl
     }
     return new ArrayList<>();
 
-  }
-
-  private String createRecordCacheId(Integer taskId, Integer caseId) {
-    return "record_" + taskId + "_" + caseId;
   }
 
   private String createRecordId() {
