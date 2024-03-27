@@ -403,13 +403,12 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
     }
 
     private static Map<Integer, List<TessngEvaluateDto>> createTessngEvaluateAVs(
-            List<TjInfinityTaskDataConfig> tjTaskDataConfigs) {
+        List<TjInfinityTaskDataConfig> tjTaskDataConfigs) {
         return tjTaskDataConfigs.stream()
-                .filter(e -> Constants.PartRole.AV.equals(e.getType())).map(
-                        e -> new TessngEvaluateDto(
-                                Integer.valueOf(e.getParticipatorId()),
-                                e.getParticipatorName(), 1, e.getDeviceId()))
-                .collect(Collectors.groupingBy(TessngEvaluateDto::getDeviceId));
+            .filter(e -> Constants.PartRole.AV.equals(e.getType())).map(
+                e -> new TessngEvaluateDto(e.getDeviceId(),
+                    e.getParticipatorName(), 1, e.getDeviceId()))
+            .collect(Collectors.groupingBy(TessngEvaluateDto::getDeviceId));
     }
 
     private void checkDevicesStatus(Integer taskId,
@@ -450,7 +449,8 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
                 RedisChannelUtils.getCommandChannelByRole(0, taskId,
                         dataConfig.getType(), deviceInfo.getCommandChannel(), username));
         if (Constants.PartRole.AV.equals(deviceInfo.getType())) {
-            stateParam.setParams(new ParamsDto(dataConfig.getParticipatorId(),
+            stateParam.setParams(
+                new ParamsDto(String.valueOf(dataConfig.getDeviceId()),
                     routeService.mainTrajectory(mainPlanFile)));
         }
         if (Constants.PartRole.MV_SIMULATION.equals(deviceInfo.getType())) {
