@@ -136,4 +136,6 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
 
     TaskCaseVerificationPageVo getStatustw(TjTaskCase param) throws BusinessException;
 
+    void twStop(Integer taskId, String status);
+
 }

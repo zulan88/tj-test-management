@@ -1390,6 +1390,14 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         Map<Object, Boolean> map = new ConcurrentHashMap<>();
         return t -> map.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
     }
+
+    @Override
+    public void twStop(Integer taskId, String status){
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("taskId", taskId);
+        jsonObject.put("status", status);
+        kafkaProducer.sendMessage("tj_task_tw_status", jsonObject.toJSONString());
+    }
 }
 
 
