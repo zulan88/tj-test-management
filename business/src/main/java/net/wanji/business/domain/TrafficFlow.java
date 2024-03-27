@@ -22,8 +22,8 @@ public class TrafficFlow {
     //最小车流量
     Integer  minFlow;
 
-    //周期(min)
-    Integer  cycle;
+    //周期(h)
+    Double  cycle;
 
     //梯度
     Integer gradient;
