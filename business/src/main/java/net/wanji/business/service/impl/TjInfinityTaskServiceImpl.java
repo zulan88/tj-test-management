@@ -372,7 +372,7 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
                 tjDeviceDetails, action <= 0 ? 0 : action, taskEnd, tessngEvaluateAVs);
 
         // 评价信息处理
-        evaluationProcess(taskId, caseId, action);
+        evaluationProcess(taskId, caseId, action, username);
 
         // 3.更新业务数据
         tjInfinityTask.setStatus(2 == action ?
@@ -618,9 +618,9 @@ public class TjInfinityTaskServiceImpl extends ServiceImpl<TjInfinityMapper, TjI
      * @param state <= 0:停止，>0:开始
      */
     private void evaluationProcess(Integer taskId, Integer caseId,
-        Integer state) {
+        Integer state, String username) {
         String evaluateChannel = Constants.ChannelBuilder.buildTestingEvaluateChannel(
-            SecurityUtils.getUsername(), taskId);
+            username, taskId);
         if (state > 0) {
             EvalContext evalContext = new EvalContext();
             evalContext.setTaskId(taskId);
