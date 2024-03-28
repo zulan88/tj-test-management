@@ -12,13 +12,13 @@ import net.wanji.business.service.InfinteMileScenceService;
 import net.wanji.business.service.TjShardingChangeRecordService;
 import net.wanji.business.util.RedisCacheUtils;
 import net.wanji.common.core.redis.RedisCache;
-import net.wanji.common.utils.uuid.UUID;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 /**
@@ -52,6 +52,7 @@ public class TjShardingChangeRecordServiceImpl
     if (redisCache.hasKey(recordCacheId)) {
       redisCache.deleteObject(recordCacheId);
     }
+
     redisCache.setCacheObject(recordCacheId, createRecordId());
   }
 
@@ -82,7 +83,7 @@ public class TjShardingChangeRecordServiceImpl
   public List<ShardingResultVo> shardingResult(Integer taskId, Integer caseId) {
     String recordCacheId = RedisCacheUtils.createRecordCacheId(taskId, caseId);
     if (redisCache.hasKey(recordCacheId)) {
-      String recordId = redisCache.getCacheObject(recordCacheId);
+      Integer recordId = redisCache.getCacheObject(recordCacheId);
       List<TjShardingResult> tjShardingResults = shardingChangeRecordMapper.shardingResult(
           taskId, caseId, recordId);
 
@@ -106,7 +107,7 @@ public class TjShardingChangeRecordServiceImpl
 
   }
 
-  private String createRecordId() {
-    return UUID.fastUUID().toString().replaceAll("-", "");
+  private Integer createRecordId() {
+    return new Random(100).nextInt();
   }
 }

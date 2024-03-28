@@ -68,7 +68,7 @@ public class TjShardingChangeRecord implements Serializable {
    * 测试记录ID
    */
   @TableField("record_id")
-  private String recordId;
+  private Integer recordId;
 
   @TableField("evaluation_score")
   private Integer evaluationScore;

@@ -12,7 +12,7 @@ import lombok.Data;
 @Data
 public class TjShardingResult {
   private Integer shardingId;
-  private String recordId;
+  private Integer recordId;
   private Integer time;
   private Integer evaluationScore;
 }
