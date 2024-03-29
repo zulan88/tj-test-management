@@ -15,6 +15,6 @@
           and s.record_id = #{recordId}
         group by s.record_id,
                  s.sharding_id
-        order by max(s.id)
+        order by max(s.id) desc
     </select>
 </mapper>
