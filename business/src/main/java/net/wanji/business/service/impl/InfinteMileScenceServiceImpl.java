@@ -1,20 +1,15 @@
 package net.wanji.business.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.google.gson.Gson;
 import net.wanji.business.common.Constants;
 import net.wanji.business.domain.*;
-import net.wanji.business.domain.dto.SceneDebugDto;
 import net.wanji.business.domain.dto.TjDeviceDetailDto;
 import net.wanji.business.domain.param.TessParam;
-import net.wanji.business.domain.param.TestStartParam;
 import net.wanji.business.domain.vo.DeviceDetailVo;
 import net.wanji.business.entity.InfinteMileScence;
-import net.wanji.business.entity.TjFragmentedScenes;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.mapper.InfinteMileScenceMapper;
 import net.wanji.business.mapper.TjDeviceDetailMapper;
-import net.wanji.business.schedule.PlaybackSchedule;
 import net.wanji.business.service.InfinteMileScenceService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import net.wanji.business.service.RestService;
@@ -32,6 +27,7 @@ import org.springframework.util.ObjectUtils;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
@@ -71,6 +67,9 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
 
     @Override
     public Integer saveInfinteMileScence(InfinteMileScenceExo infinteMileScence) throws BusinessException {
+        if (infinteMileScence.getStatus()!= null && infinteMileScence.getStatus().equals(1)){
+            checkInfiniteSimulation(infinteMileScence);
+        }
         Gson gson = new Gson();
         boolean flag = false;
         if (infinteMileScence.getInElements()!= null && infinteMileScence.getInElements().size() > 0){
@@ -215,6 +214,17 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
             throw new BusinessException("参与者轨迹不能为空");
         }else if (infinteMileScenceExo.getTrafficFlows()== null || infinteMileScenceExo.getTrafficFlows().size() == 0){
             throw new BusinessException("车流量信息不能为空");
+        } else if (infinteMileScenceExo.getTrafficFlowConfigs()== null || infinteMileScenceExo.getTrafficFlowConfigs().size() == 0){
+            throw new BusinessException("车流量配置信息不能为空");
+        }
+        AtomicBoolean flag = new AtomicBoolean(false);
+        infinteMileScenceExo.getInElements().forEach(element -> {
+            if (element.getType() == 0){
+                flag.set(true);
+            }
+        });
+        if (!flag.get()){
+            throw new BusinessException("未配置AV参与者");
         }
     }
 
@@ -274,6 +284,13 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
         }
         List<SiteSlice> siteSlices = Arrays.asList(gson.fromJson(data, SiteSlice[].class));
         return siteSlices;
+    }
+
+    private void checkInfiniteSimulation(InfinteMileScenceExo infinteMileScence) throws BusinessException {
+        validDebugParam(infinteMileScence);
+        if (infinteMileScence.getSiteSlices()== null || infinteMileScence.getSiteSlices().size() == 0){
+            throw new BusinessException("场景切片不能为空");
+        }
     }
 
 }
