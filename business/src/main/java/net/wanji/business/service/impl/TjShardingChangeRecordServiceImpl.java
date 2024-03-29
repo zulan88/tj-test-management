@@ -108,6 +108,6 @@ public class TjShardingChangeRecordServiceImpl
   }
 
   private Integer createRecordId() {
-    return new Random(100).nextInt();
+    return Math.abs(new Random().nextInt());
   }
 }
