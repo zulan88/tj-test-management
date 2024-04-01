@@ -115,7 +115,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                         "/case/selectDetailTW", "/case/getCasesByTaskIdTW",
                         "/task/runningTaskTW", "/task/playbackTW",
                         "/taskInfinite/runningTaskTW","/taskInfinite/getStatusTW",
-                        "/task/getEvaluationResultTW").anonymous()
+                        "/task/getEvaluationResultTW", "/taskInfinite/evaluationResultTW").anonymous()
                 // 静态资源，可匿名访问
                 .antMatchers(HttpMethod.GET, "/", "/*.html", "/**/*.html", "/**/*.css", "/**/*.js", "/profile/**").permitAll()
                 .antMatchers("/swagger-ui.html", "/swagger-resources/**", "/webjars/**", "/*/api-docs", "/druid/**").permitAll()

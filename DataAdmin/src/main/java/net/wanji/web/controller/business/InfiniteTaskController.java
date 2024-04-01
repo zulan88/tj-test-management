@@ -293,6 +293,19 @@ public class InfiniteTaskController {
         }
     }
 
+    @GetMapping("/evaluationResultTW")
+    public AjaxResult getEvaluationResultTW(Integer taskId) {
+        try {
+            return AjaxResult.success(
+                    tjShardingChangeRecordService.shardingResult(0, taskId));
+        } catch (Exception e) {
+            if (log.isErrorEnabled()) {
+                log.error("分片进出结果查询异常!", e);
+            }
+            return AjaxResult.error("分片进出结果查询异常！");
+        }
+    }
+
     /**
      * 获取正在运行的任务列表(孿生)
      *
