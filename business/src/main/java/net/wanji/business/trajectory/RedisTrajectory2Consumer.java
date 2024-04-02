@@ -192,7 +192,7 @@ public class RedisTrajectory2Consumer {
                                     value.setTimestamp(value.getTimestamp() + nowtime);
                                 }
                             }
-                            receiveData(channel, simulationTrajectory);
+                            receiveDataOld(channel, simulationTrajectory);
                             // send ws
                             WebsocketMessage msg = new WebsocketMessage(
                                     RedisMessageType.TRAJECTORY,
@@ -446,6 +446,14 @@ public class RedisTrajectory2Consumer {
             }
         }
         lastTrajectory.put(key, data);
+        channelListener.refreshData(data);
+    }
+
+    public void receiveDataOld(String key, SimulationTrajectoryDto data) {
+        if (!this.runningChannel.containsKey(key)) {
+            return;
+        }
+        ChannelListener<SimulationTrajectoryDto> channelListener = this.runningChannel.get(key);
         channelListener.refreshData(data);
     }
 

@@ -120,23 +120,23 @@ public class TjFragmentedSceneDetail implements Serializable {
     private String weather;
 
     /**
-     * 视频数据
+     * 轨迹信息-计划时间
      */
-    @TableField("video_data_file_path")
-    private String videoDataFilePath;
+    @TableField("trajectory_info_time")
+    private String trajectoryInfoTime;
 
     /**
-     * 雷达数据
+     * 参考点
      */
-    @TableField("rada_data_file_path")
-    private String radaDataFilePath;
+    @TableField("reference_point")
+    private String referencePoint;
 
 
     /**
-     * 行驶数据
+     * 仿真类型（0-计划时间，1-计划速度）
      */
-    @TableField("driver_data_file_path")
-    private String driverDataFilePath;
+    @TableField("simu_type")
+    private String simuType;
 
 
     /**
@@ -159,7 +159,7 @@ public class TjFragmentedSceneDetail implements Serializable {
     private String label;
 
     /**
-     * 轨迹信息
+     * 轨迹信息-计划速度
      */
     @TableField("trajectory_info")
     private String trajectoryInfo;
