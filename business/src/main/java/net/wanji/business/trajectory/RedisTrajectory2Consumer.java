@@ -16,8 +16,10 @@ import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.business.domain.dto.SceneDebugDto;
 import net.wanji.business.domain.vo.ParticipantTrajectoryVo;
 import net.wanji.business.entity.InfinteMileScence;
+import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.service.InfinteMileScenceService;
 import net.wanji.business.service.RouteService;
+import net.wanji.business.service.TjFragmentedSceneDetailService;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.common.common.SimulationMessage;
 import net.wanji.common.common.SimulationOptimizeDto;
@@ -85,6 +87,9 @@ public class RedisTrajectory2Consumer {
 
     @Autowired
     private InfinteMileScenceService infinteMileScenceService;
+
+    @Autowired
+    private TjFragmentedSceneDetailService tjFragmentedSceneDetailService;
 
     @PostConstruct
     public void validChannel() {
@@ -227,19 +232,15 @@ public class RedisTrajectory2Consumer {
                         // 更新数据
                         Optional.ofNullable(end.getEvaluationVerify()).ifPresent(sceneDebugDto.getTrajectoryJson()::setEvaluationVerify);
                         sceneDebugDto.getTrajectoryJson().setDuration(duration);
-
-                        List<ParticipantTrajectoryBo> participantTrajectoryBos = sceneDebugDto.getTrajectoryJson()
-                                .getParticipantTrajectories().stream().peek(trajectory -> {
-                                    for(TrajectoryDetailBo trajectoryBo : trajectory.getTrajectory()){
-                                        if(trajectoryBo.getSpeed()==null&&trajectoryBo.getType().equals("pathway")){
-                                            trajectoryBo.setType("pathwayar");
-                                        }
-                                    }
-                                }).collect(Collectors.toList());
-                        sceneDebugDto.getTrajectoryJson().setParticipantTrajectories(participantTrajectoryBos);
                         // send ws
                         WebsocketMessage msg = new WebsocketMessage(RedisMessageType.END, null, sceneDebugDto);
                         WebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));
+                        if(sceneDebugDto.getId()!=null){
+                            TjFragmentedSceneDetail tjFragmentedSceneDetail = new TjFragmentedSceneDetail();
+                            tjFragmentedSceneDetail.setId(sceneDebugDto.getId());
+                            tjFragmentedSceneDetail.setRouteFile(sceneDebugDto.getRouteFile());
+                            tjFragmentedSceneDetailService.updateById(tjFragmentedSceneDetail);
+                        }
                         break;
                     default:
                         break;
@@ -249,6 +250,8 @@ public class RedisTrajectory2Consumer {
                 removeListener(channel);
             } catch (ParseException e) {
                 throw new RuntimeException(e);
+            } catch (Exception e) {
+                log.error("其他错误：{}", e);
             }
         };
     }

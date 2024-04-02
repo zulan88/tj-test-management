@@ -15,6 +15,8 @@ import javax.validation.constraints.NotNull;
 @Data
 public class SceneDebugDto {
 
+    Integer id;
+
     /**
      * 场景id
      */
