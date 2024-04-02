@@ -107,6 +107,10 @@ public class TjInfinityTask extends Lifecycle implements Serializable {
   @TableField(value = "status")
   private String status;
 
+  public void setStatus(String status) {
+    this.status = status;
+  }
+
   /**
    * 主车轨迹文件
    */

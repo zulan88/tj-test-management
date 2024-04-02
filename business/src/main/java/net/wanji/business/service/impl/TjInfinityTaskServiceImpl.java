@@ -358,8 +358,10 @@ public class TjInfinityTaskServiceImpl
     caseTrajectoryParam.setContext(context);
     restService.sendCaseTrajectoryInfo(caseTrajectoryParam);
     Date data = new Date();
+    TjInfinityTask tjInfinityTask = new TjInfinityTask();
+    tjInfinityTask.setId(taskId);
     data.setTime(data.getTime() + 3000);
-    byId.setTestStartTime(data);
+    tjInfinityTask.setTestStartTime(data);
     this.updateById(byId);
     return false;
   }
