@@ -1,7 +1,9 @@
 package net.wanji.business.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.wanji.business.domain.InfinteMileScenceExo;
+import net.wanji.business.domain.dto.TjTessngShardingChangeDto;
 import net.wanji.business.domain.vo.task.infinity.ShardingResultVo;
 import net.wanji.business.entity.infity.TjInfinityTask;
 import net.wanji.business.entity.infity.TjShardingChangeRecord;
@@ -12,6 +14,7 @@ import net.wanji.business.service.InfinteMileScenceService;
 import net.wanji.business.service.TjShardingChangeRecordService;
 import net.wanji.business.util.RedisCacheUtils;
 import net.wanji.common.core.redis.RedisCache;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -34,6 +37,7 @@ public class TjShardingChangeRecordServiceImpl
     implements TjShardingChangeRecordService {
 
   private final RedisCache redisCache;
+  private final RedisTemplate<String, Object> redisTemplate;
   private final InfinteMileScenceService infinteMileScenceService;
   @Resource
   private TjShardingChangeRecordMapper shardingChangeRecordMapper;
@@ -41,8 +45,10 @@ public class TjShardingChangeRecordServiceImpl
   private TjInfinityMapper tjInfinityMapper;
 
   public TjShardingChangeRecordServiceImpl(RedisCache redisCache,
+      RedisTemplate<String, Object> redisTemplate,
       InfinteMileScenceService infinteMileScenceService) {
     this.redisCache = redisCache;
+    this.redisTemplate = redisTemplate;
     this.infinteMileScenceService = infinteMileScenceService;
   }
 
@@ -62,6 +68,16 @@ public class TjShardingChangeRecordServiceImpl
         RedisCacheUtils.createRecordCacheId(record.getTaskId(),
             record.getCaseId())));
     return this.save(record);
+  }
+
+  @Override
+  public boolean tessngShardingInOutSend(
+      TjTessngShardingChangeDto tjTessngShardingChangeDto) throws Exception {
+    tjTessngShardingChangeDto.setShardingId(1);
+    String commandChannel = "";
+    redisTemplate.convertAndSend(commandChannel,
+        new ObjectMapper().writeValueAsString(tjTessngShardingChangeDto));
+    return false;
   }
 
   @Override

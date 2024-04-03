@@ -5,22 +5,26 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import io.swagger.annotations.*;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.wanji.business.common.Constants;
 import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.bo.SaveTaskSchemeBo;
 import net.wanji.business.domain.dto.TaskDto;
+import net.wanji.business.domain.dto.TjTessngShardingChangeDto;
 import net.wanji.business.domain.vo.task.infinity.InfinityTaskInitVo;
 import net.wanji.business.domain.vo.task.infinity.InfinityTaskPreparedVo;
 import net.wanji.business.domain.vo.task.infinity.ShardingInOutVo;
-import net.wanji.business.domain.vo.task.infinity.ShardingResultVo;
-import net.wanji.business.entity.TjTask;
 import net.wanji.business.entity.infity.TjInfinityTask;
+import net.wanji.business.entity.infity.TjInfinityTaskRecord;
 import net.wanji.business.entity.infity.TjShardingChangeRecord;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.RestService;
+import net.wanji.business.service.TjInfinityTaskRecordService;
 import net.wanji.business.service.TjInfinityTaskService;
 import net.wanji.business.service.TjShardingChangeRecordService;
+import net.wanji.business.service.record.DataFileService;
 import net.wanji.business.util.RedisLock;
 import net.wanji.common.constant.HttpStatus;
 import net.wanji.common.core.domain.AjaxResult;
@@ -48,25 +52,17 @@ import java.util.Map;
  **/
 @Api(tags = "特色测试服务-测试任务-无限里程")
 @Slf4j
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/taskInfinite")
 public class InfiniteTaskController {
 
+    private final RedisLock redisLock;
     private final RestService restService;
-
-    @Autowired
-    private RedisLock redisLock;
-
     private final TjInfinityTaskService tjInfinityTaskService;
     private final TjShardingChangeRecordService tjShardingChangeRecordService;
-
-    public InfiniteTaskController(RestService restService,
-        TjInfinityTaskService tjInfinityTaskService,
-        TjShardingChangeRecordService tjShardingChangeRecordService) {
-        this.restService = restService;
-        this.tjInfinityTaskService = tjInfinityTaskService;
-        this.tjShardingChangeRecordService = tjShardingChangeRecordService;
-    }
+    private final TjInfinityTaskRecordService tjInfinityTaskRecordService;
+    private final DataFileService dataFileService;
 
     @ApiOperationSort(5)
     @ApiOperation(value = "5.列表")
@@ -190,10 +186,37 @@ public class InfiniteTaskController {
     @PostMapping("/shardingInOut")
     public AjaxResult shardingRangeInOut(
         @RequestBody ShardingInOutVo shardingInOutVo) {
-        TjShardingChangeRecord tjShardingChangeRecord = new TjShardingChangeRecord();
-        BeanUtils.copyProperties(shardingInOutVo, tjShardingChangeRecord);
-        tjShardingChangeRecord.setCreateTime(new Date());
-        tjShardingChangeRecordService.saveShardingInOut(tjShardingChangeRecord);
+        try {
+            QueryWrapper<TjInfinityTaskRecord> taskRecordQW = new QueryWrapper<>();
+            taskRecordQW.eq("task_id", shardingInOutVo.getTaskId());
+            taskRecordQW.eq("case_id", shardingInOutVo.getCaseId());
+            taskRecordQW.eq("created_by", shardingInOutVo.getUsername());
+            TjInfinityTaskRecord taskRecord = tjInfinityTaskRecordService.getOne(
+                taskRecordQW);
+            Integer recordId = taskRecord.getId();
+
+            TjShardingChangeRecord tjShardingChangeRecord = new TjShardingChangeRecord();
+            BeanUtils.copyProperties(shardingInOutVo, tjShardingChangeRecord);
+            tjShardingChangeRecord.setCreateTime(
+                new Date(shardingInOutVo.getTimestamp()));
+            tjShardingChangeRecord.setRecordId(recordId);
+            tjShardingChangeRecordService.saveShardingInOut(
+                tjShardingChangeRecord);
+
+            TjTessngShardingChangeDto tjTessngShardingChangeDto = new TjTessngShardingChangeDto();
+            BeanUtils.copyProperties(tjShardingChangeRecord,
+                tjTessngShardingChangeDto);
+            tjTessngShardingChangeDto.setRecordId(recordId);
+            tjShardingChangeRecordService.tessngShardingInOutSend(
+                tjTessngShardingChangeDto);
+        } catch (Exception e) {
+            if (log.isErrorEnabled()) {
+                log.error("shardingInOut taskId:[{}], caseId:[{}]",
+                    shardingInOutVo.getTaskId(), shardingInOutVo.getCaseId());
+            }
+            return AjaxResult.error(e.getMessage());
+        }
+
         return AjaxResult.success();
     }
 
@@ -338,5 +361,73 @@ public class InfiniteTaskController {
     public AjaxResult getStatus(Integer taskId) {
         return prepare(taskId);
     }
+
+    @ApiOperation("回放")
+    @ApiImplicitParams({ @ApiImplicitParam(name = "recordId",
+        value = "记录ID",
+        dataType = "Long",
+        required = true), @ApiImplicitParam(name = "startTimestamp",
+        value = "回放开始时间",
+        dataType = "Long"), @ApiImplicitParam(name = "endTimestamp",
+        value = "回放结束时间",
+        dataType = "Long")
+    })
+    @GetMapping("/playback")
+    public AjaxResult playback(Integer recordId, Long startTimestamp,
+        Long endTimestamp) throws Exception {
+        // 暂时智能一处回放，多处回放需要修改websocket处理请求参数
+        // 文件id
+        TjInfinityTaskRecord record = tjInfinityTaskRecordService.getById(
+            recordId);
+        // 文件读取
+        Integer dataFileId = record.getDataFileId();
+        dataFileService.playback(
+            Constants.ChannelBuilder.buildWebSocketPlaybackChannel(
+                String.valueOf(recordId)), dataFileId, startTimestamp,
+            endTimestamp);
+        return null;
+    }
+
+    @GetMapping("/playbackStop")
+    @ApiImplicitParam(name = "recordId",
+        required = true,
+        value = "记录ID",
+        dataType = "Long")
+    public AjaxResult playbackStop(Integer recordId) {
+        try{
+            boolean result = dataFileService.playbackStop(
+                Constants.ChannelBuilder.buildWebSocketPlaybackChannel(
+                    String.valueOf(recordId)));
+            return AjaxResult.success(result);
+        }catch (Exception e){
+            if(log.isErrorEnabled()){
+                log.error("playbackStop error!", e);
+            }
+            return AjaxResult.error("playbackStop error!", e);
+        }
+    }
+
+    @GetMapping("/playbackPause")
+    @ApiImplicitParams({@ApiImplicitParam(name = "state",
+        value = "状态,true：暂停，false：开始",
+        dataType = "Long"), @ApiImplicitParam(name = "recordId",
+        value = "记录ID",
+        dataType = "Long",
+        required = true)
+    })
+    public AjaxResult playbackPause(Boolean state, Integer recordId) {
+        try{
+            boolean result = dataFileService.playbackPause(state,
+                Constants.ChannelBuilder.buildWebSocketPlaybackChannel(
+                    String.valueOf(recordId)));
+            return AjaxResult.success(result);
+        }catch (Exception e){
+            if(log.isErrorEnabled()){
+                log.error("playbackPause error!", e);
+            }
+            return AjaxResult.error(e.getMessage());
+        }
+    }
+
 
 }

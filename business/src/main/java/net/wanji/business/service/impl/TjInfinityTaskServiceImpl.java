@@ -3,6 +3,7 @@ package net.wanji.business.service.impl;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.RequiredArgsConstructor;
 import net.wanji.business.common.Constants;
 import net.wanji.business.common.DeviceStatus;
 import net.wanji.business.domain.InfiniteTessParm;
@@ -13,6 +14,7 @@ import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.dto.TaskDto;
 import net.wanji.business.domain.dto.TessngEvaluateDto;
+import net.wanji.business.domain.dto.ToLocalDto;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.ParamsDto;
 import net.wanji.business.domain.param.CaseRuleControl;
@@ -24,9 +26,11 @@ import net.wanji.business.domain.vo.task.infinity.DeviceInfo;
 import net.wanji.business.domain.vo.task.infinity.InfinityTaskInitVo;
 import net.wanji.business.domain.vo.task.infinity.InfinityTaskPreparedVo;
 import net.wanji.business.domain.vo.task.infinity.ShardingInfoVo;
+import net.wanji.business.entity.DataFile;
 import net.wanji.business.entity.TjDeviceDetail;
 import net.wanji.business.entity.TjInfinityTaskDataConfig;
 import net.wanji.business.entity.infity.TjInfinityTask;
+import net.wanji.business.entity.infity.TjInfinityTaskRecord;
 import net.wanji.business.evaluation.EvalContext;
 import net.wanji.business.evaluation.EvaluationRedisData;
 import net.wanji.business.exception.BusinessException;
@@ -34,7 +38,9 @@ import net.wanji.business.listener.KafkaCollector;
 import net.wanji.business.mapper.TjInfinityMapper;
 import net.wanji.business.service.*;
 import net.wanji.business.service.evaluation.TjCaseScoreService;
+import net.wanji.business.service.record.DataFileService;
 import net.wanji.business.socket.WebSocketManage;
+import net.wanji.business.trajectory.KafkaTrajectoryConsumer;
 import net.wanji.business.util.DeviceUtils;
 import net.wanji.business.util.RedisChannelUtils;
 import net.wanji.business.util.RedisLock;
@@ -51,6 +57,9 @@ import org.springframework.util.ObjectUtils;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.awt.geom.Point2D;
+import java.io.IOException;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -62,14 +71,12 @@ import java.util.stream.Collectors;
  * @date 2024/3/11 13:12
  **/
 @Service
+@RequiredArgsConstructor
 public class TjInfinityTaskServiceImpl
     extends ServiceImpl<TjInfinityMapper, TjInfinityTask>
     implements TjInfinityTaskService {
 
-  //    private final TjTaskDataConfigService tjTaskDataConfigService;
-
   private final TjInfinityTaskDataConfigService tjInfinityTaskDataConfigService;
-
   private final InfinteMileScenceService infinteMileScenceService;
   private final TjDeviceDetailService tjDeviceDetailService;
   private final RouteService routeService;
@@ -79,33 +86,15 @@ public class TjInfinityTaskServiceImpl
   private final KafkaCollector kafkaCollector;
   private final EvaluationRedisData evaluationRedisData;
   private final TjCaseScoreService tjSceneScoreService;
+  private final TjInfinityTaskRecordService tjInfinityTaskRecordService;
+  private final DataFileService dataFileService;
+  private final KafkaTrajectoryConsumer kafkaTrajectoryConsumer;
 
   @Resource
   private TjInfinityMapper tjInfinityMapper;
 
   @Value("${tess.infiniteReportOuterChain}")
   private String testReportOuterChain;
-
-  public TjInfinityTaskServiceImpl(
-      TjInfinityTaskDataConfigService tjInfinityTaskDataConfigService,
-      InfinteMileScenceService infinteMileScenceService,
-      TjDeviceDetailService tjDeviceDetailService, RouteService routeService,
-      RestService restService,
-      TjShardingChangeRecordService tjShardingChangeRecordService,
-      RedisLock redisLock, KafkaCollector kafkaCollector,
-      EvaluationRedisData evaluationRedisData,
-      TjCaseScoreService tjSceneScoreService) {
-    this.tjInfinityTaskDataConfigService = tjInfinityTaskDataConfigService;
-    this.infinteMileScenceService = infinteMileScenceService;
-    this.tjDeviceDetailService = tjDeviceDetailService;
-    this.routeService = routeService;
-    this.restService = restService;
-    this.tjShardingChangeRecordService = tjShardingChangeRecordService;
-    this.redisLock = redisLock;
-    this.kafkaCollector = kafkaCollector;
-    this.evaluationRedisData = evaluationRedisData;
-    this.tjSceneScoreService = tjSceneScoreService;
-  }
 
   @Override
   public Map<String, Long> selectCount(TaskDto taskDto) {
@@ -389,6 +378,9 @@ public class TjInfinityTaskServiceImpl
     // 评价信息处理
     evaluationProcess(taskId, caseId, action, username);
 
+    // 历史记录
+    recordProcess(taskId, caseId, action, username);
+
     // 3.更新业务数据
     tjInfinityTask.setStatus(2 == action ?
         Constants.TaskStatusEnum.RUNNING.getCode() :
@@ -650,4 +642,56 @@ public class TjInfinityTaskServiceImpl
             evaluationRedisData.unsubscribe(evaluateChannel);
         }
     }
+
+  /**
+   * 历史记录处理
+   *
+   * @param taskId
+   * @param caseId
+   * @param state  <= 0:停止，>0:开始
+   */
+  private void recordProcess(Integer taskId, Integer caseId, Integer state,
+      String username) {
+    try {
+      if (state > 0) {
+        // 创建文件记录
+        DataFile dataFile = new DataFile();
+        dataFile.setFileName(UUID.randomUUID().toString());
+        dataFileService.save(dataFile);
+        Integer dataFileId = dataFile.getId();
+
+        // 记录创建
+        TjInfinityTaskRecord tjInfinityTaskRecord = new TjInfinityTaskRecord();
+        tjInfinityTaskRecord.setTaskId(taskId);
+        tjInfinityTaskRecord.setCaseId(caseId);
+        tjInfinityTaskRecord.setCreatedDate(LocalDateTime.now());
+        tjInfinityTaskRecord.setCreatedBy(username);
+        tjInfinityTaskRecord.setDataFileId(dataFileId);
+        tjInfinityTaskRecordService.save(tjInfinityTaskRecord);
+        // 监听kafka、文件记录
+        kafkaTrajectoryConsumer.subscribe(
+            new ToLocalDto(taskId, caseId, dataFile.getFileName(),
+                dataFile.getId(), null));
+      } else {
+        // 更新持续时间
+        QueryWrapper<TjInfinityTaskRecord> record = new QueryWrapper<>();
+        record.eq("task_id", taskId);
+        record.eq("case_id", caseId);
+        record.eq("created_by", username);
+        TjInfinityTaskRecord one = tjInfinityTaskRecordService.getOne(record);
+        // 取消kafka数据订阅
+        kafkaTrajectoryConsumer.unSubscribe(
+            new ToLocalDto(taskId, caseId, null, one.getDataFileId(), null));
+
+        one.setDuration(
+            Duration.between(one.getCreatedDate(), LocalDateTime.now())
+                .toMillis() / 1000);
+        tjInfinityTaskRecordService.updateById(one);
+      }
+    } catch (Exception e) {
+      if (log.isDebugEnabled()) {
+        log.error("recordProcess error!", e);
+      }
+    }
+  }
 }

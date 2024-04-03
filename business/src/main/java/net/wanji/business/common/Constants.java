@@ -101,6 +101,7 @@ public interface Constants {
         public static final int TASK_PREVIEW = 6;
         public static final int TESTING_PREVIEW = 7;
         public static final int INFINITE_SIMULATION = 8;
+        public static final int WS_PLAYBACK = 9;
         public static final String STATUS_SUFFIX = "status";
         public static final String CONTROL_SUFFIX = "control";
         public static final String DATA_SUFFIX = "data";
@@ -173,6 +174,16 @@ public interface Constants {
          */
         public static String buildInfiniteSimulationChannel(String username, String sceneNumber) {
             return StringUtils.format(SIMULATION_CHANNEL_TEMPLATE, username, sceneNumber, INFINITE_SIMULATION);
+        }
+
+        /**
+         * 历史回放channel
+         * 会有冲突需要ws请求添加taskId,caseId
+         * @param id recordId
+         * @return
+         */
+        public static String buildWebSocketPlaybackChannel(String id){
+            return "WS_" + id;
         }
 
         /**

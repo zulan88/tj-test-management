@@ -1,6 +1,7 @@
 package net.wanji.business.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import net.wanji.business.domain.dto.TjTessngShardingChangeDto;
 import net.wanji.business.domain.vo.task.infinity.ShardingResultVo;
 import net.wanji.business.entity.infity.TjShardingChangeRecord;
 
@@ -31,6 +32,15 @@ public interface TjShardingChangeRecordService
    * @return
    */
   boolean saveShardingInOut(TjShardingChangeRecord record);
+
+  /**
+   * tessng分片信息交互
+   *
+   * @param tjTessngShardingChangeDto
+   * @return
+   */
+  boolean tessngShardingInOutSend(
+      TjTessngShardingChangeDto tjTessngShardingChangeDto) throws Exception;
 
   /**
    * 结束，删除记录ID

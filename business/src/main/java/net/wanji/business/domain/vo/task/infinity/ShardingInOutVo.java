@@ -1,6 +1,5 @@
 package net.wanji.business.domain.vo.task.infinity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
@@ -53,4 +52,18 @@ public class ShardingInOutVo implements Serializable {
       dataType = "Integer",
       position = 6)
   private int state;
+  /**
+   * 创建人名称
+   */
+  private String username;
+  @ApiModelProperty(value = "分片触发时间戳",
+      required = true,
+      dataType = "Long",
+      position = 7)
+  private Long timestamp;
+  @ApiModelProperty(value = "任务类型，分片：4",
+      required = true,
+      dataType = "Integer",
+      position = 8)
+  private Integer type;
 }
