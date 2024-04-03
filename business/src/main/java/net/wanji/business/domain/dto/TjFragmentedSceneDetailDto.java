@@ -1,5 +1,6 @@
 package net.wanji.business.domain.dto;
 
+import com.alibaba.fastjson2.JSONArray;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -101,25 +102,12 @@ public class TjFragmentedSceneDetailDto {
     @NotBlank(message = "请选择场景类型", groups = {InsertGroup.class, UpdateGroup.class})
     private String sceneType;
 
-    /**
-     * 视频数据
-     */
-    private String videoDataFilePath;
+    JSONArray referencePoints;
 
     /**
-     * 雷达数据
+     * 仿真类型（0-计划时间，1-计划速度）
      */
-    private String radaDataFilePath;
-
-    /**
-     * GPS数据
-     */
-    private String gpsDataFilePath;
-
-    /**
-     * 行驶数据
-     */
-    private String driverDataFilePath;
+    private Integer simuType;
 
     /**
      * 完成标志，区分提交和保存

@@ -545,10 +545,10 @@ public class TaskController extends BaseController {
         if (!platformSSDto.isTaskEnd()) {
             if(platformSSDto.getState() > 0){
                 hashOperations.put(key, caseId, platformSSDto.getContext().get("user"));
-                taskCaseService.twStop(platformSSDto.getTaskId(),"finish");
+                taskCaseService.twStop(platformSSDto.getTaskId(), platformSSDto.getCaseId(),"finish");
             }else if(-1 == platformSSDto.getState()){
                 redisCache.redisTemplate.delete(key);
-                taskCaseService.twStop(platformSSDto.getTaskId(),"break");
+                taskCaseService.twStop(platformSSDto.getTaskId(), platformSSDto.getCaseId(),"break");
             }
         }else {
             redisCache.redisTemplate.delete(key);

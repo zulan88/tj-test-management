@@ -809,6 +809,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                         kafkaCollector.remove(key, null);
                         JSONObject jsonObject = new JSONObject();
                         jsonObject.put("taskId", taskId);
+                        jsonObject.put("caseId", caseId);
                         jsonObject.put("status", "finish");
                         kafkaProducer.sendMessage("tj_task_tw_status", jsonObject.toJSONString());
                         log.info("更新任务{}状态 -> 已完成", taskId);
@@ -1093,6 +1094,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         }
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("taskId", taskId);
+        jsonObject.put("caseId", caseId);
         jsonObject.put("status", "break");
         kafkaProducer.sendMessage("tj_task_tw_status", jsonObject.toJSONString());
     }
@@ -1392,9 +1394,10 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
     }
 
     @Override
-    public void twStop(Integer taskId, String status){
+    public void twStop(Integer taskId, Integer caseId, String status){
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("taskId", taskId);
+        jsonObject.put("caseId", caseId);
         jsonObject.put("status", status);
         kafkaProducer.sendMessage("tj_task_tw_status", jsonObject.toJSONString());
     }

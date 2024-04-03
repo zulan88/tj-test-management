@@ -17,6 +17,7 @@ import net.wanji.business.domain.dto.SceneDebugDto;
 import net.wanji.business.domain.vo.ParticipantTrajectoryVo;
 import net.wanji.business.entity.InfinteMileScence;
 import net.wanji.business.entity.TjFragmentedSceneDetail;
+import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.InfinteMileScenceService;
 import net.wanji.business.service.RouteService;
 import net.wanji.business.service.TjFragmentedSceneDetailService;
@@ -42,6 +43,7 @@ import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ObjectUtils;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
@@ -236,6 +238,16 @@ public class RedisTrajectory2Consumer {
                         WebsocketMessage msg = new WebsocketMessage(RedisMessageType.END, null, sceneDebugDto);
                         WebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));
                         if(sceneDebugDto.getId()!=null){
+                            List<ParticipantTrajectoryBo> list = sceneDebugDto.getTrajectoryJson().getParticipantTrajectories().stream()
+                                    .filter(t -> PartType.MAIN.equals(t.getType()))
+                                    .filter(p -> ObjectUtils.isEmpty(p.getTrajectory().get(0).getPass())
+                                            || ObjectUtils.isEmpty(p.getTrajectory().get(p.getTrajectory().size() - 1).getPass())
+                                            || !p.getTrajectory().get(0).getPass()
+                                            || !p.getTrajectory().get(p.getTrajectory().size() - 1).getPass())
+                                    .collect(Collectors.toList());
+                            if (CollectionUtils.isNotEmpty(list)) {
+                                throw new BusinessException("主车起止点校验失败，请检查主车起止点或重新进行仿真验证！");
+                            }
                             TjFragmentedSceneDetail tjFragmentedSceneDetail = new TjFragmentedSceneDetail();
                             tjFragmentedSceneDetail.setId(sceneDebugDto.getId());
                             tjFragmentedSceneDetail.setRouteFile(sceneDebugDto.getRouteFile());
