@@ -218,18 +218,6 @@ public class TjFragmentedSceneDetailServiceImpl
     @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean saveSceneDetail(TjFragmentedSceneDetailDto sceneDetailDto) throws BusinessException {
-        if (StringUtils.isNotEmpty(sceneDetailDto.getRouteFile()) && !ObjectUtils.isEmpty(sceneDetailDto.getTrajectoryJson())) {
-            List<ParticipantTrajectoryBo> list = sceneDetailDto.getTrajectoryJson().getParticipantTrajectories().stream()
-                    .filter(t -> PartType.MAIN.equals(t.getType()))
-                    .filter(p -> ObjectUtils.isEmpty(p.getTrajectory().get(0).getPass())
-                            || ObjectUtils.isEmpty(p.getTrajectory().get(p.getTrajectory().size() - 1).getPass())
-                            || !p.getTrajectory().get(0).getPass()
-                            || !p.getTrajectory().get(p.getTrajectory().size() - 1).getPass())
-                    .collect(Collectors.toList());
-            if (CollectionUtils.isNotEmpty(list)) {
-                throw new BusinessException("主车起止点校验失败，请检查主车起止点或重新进行仿真验证！");
-            }
-        }
         TjFragmentedSceneDetail detail = new TjFragmentedSceneDetail();
         BeanUtils.copyBeanProp(detail, sceneDetailDto);
         if (ObjectUtils.isEmpty(sceneDetailDto.getId())) {
@@ -260,9 +248,15 @@ public class TjFragmentedSceneDetailServiceImpl
         detail.setAllStageLabel(CollectionUtils.isNotEmpty(labellist)
                 ? labellist.stream().distinct().collect(Collectors.joining(","))
                 : null);
-        detail.setTrajectoryInfo(!ObjectUtils.isEmpty(sceneDetailDto.getTrajectoryJson())
-                ? sceneDetailDto.getTrajectoryJson().buildId().toJsonString()
-                : null);
+        if (sceneDetailDto.getSimuType().equals(0)) {
+            detail.setTrajectoryInfoTime(!ObjectUtils.isEmpty(sceneDetailDto.getTrajectoryJson())
+                    ? sceneDetailDto.getTrajectoryJson().buildId().toJsonString()
+                    : null);
+        } else {
+            detail.setTrajectoryInfo(!ObjectUtils.isEmpty(sceneDetailDto.getTrajectoryJson())
+                    ? sceneDetailDto.getTrajectoryJson().buildId().toJsonString()
+                    : null);
+        }
         boolean flag = this.saveOrUpdate(detail);
         sceneDetailDto.setId(detail.getId());
         return flag;

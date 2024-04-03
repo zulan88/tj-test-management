@@ -351,7 +351,7 @@ public class TjInfinityTaskServiceImpl
     tjInfinityTask.setId(taskId);
     data.setTime(data.getTime() + 3000);
     tjInfinityTask.setTestStartTime(data);
-    this.updateById(byId);
+    this.updateById(tjInfinityTask);
     return false;
   }
 

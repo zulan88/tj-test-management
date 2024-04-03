@@ -86,7 +86,7 @@
     </delete>
 
     <sql id="selectTjFragmentedSceneDetailVo">
-        select id, fragmented_scene_id, number, lane_num, map_id, map_file, scene_source, img_url, scene_type, scene_complexity, traffic_flow_status, road_type, weather, road_condition, finished, collect_status, label, trajectory_info, route_file, road_way_type, hazard_index, video_data_file_path, rada_data_file_path, driver_data_file_path, test_scene_desc, created_by, created_date, updated_by, updated_date, scene_status from tj_fragmented_scene_detail
+        select id, fragmented_scene_id, number, lane_num, map_id, map_file, scene_source, img_url, scene_type, scene_complexity, traffic_flow_status, road_type, weather, road_condition, finished, collect_status, label, trajectory_info, route_file, road_way_type, hazard_index, trajectory_info_time, reference_point, simu_type, test_scene_desc, created_by, created_date, updated_by, updated_date, scene_status from tj_fragmented_scene_detail
     </sql>
 
     <select id="selectTjFragmentedSceneDetailList" parameterType="net.wanji.business.domain.vo.SceneDetailVo" resultType="net.wanji.business.domain.vo.SceneDetailVo">
@@ -112,9 +112,9 @@
         tfsd.route_file,
         tfsd.road_way_type,
         tfsd.hazard_index,
-        tfsd.video_data_file_path,
-        tfsd.rada_data_file_path,
-        tfsd.driver_data_file_path,
+        tfsd.trajectory_info_time,
+        tfsd.reference_point,
+        tfsd.simu_type,
         tfsd.test_scene_desc,
         tfsd.created_by,
         tfsd.created_date,
