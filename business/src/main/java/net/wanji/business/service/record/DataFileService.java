@@ -18,7 +18,7 @@ public interface DataFileService extends IService<DataFile> {
 
   FileWriteRunnable createToLocalThread(ToLocalDto toLocalDto);
 
-  boolean writeStop(ToLocalDto toLocalDto) throws IOException;
+  boolean writeStop(ToLocalDto toLocalDto) throws Exception;
 
   /**
    * 回放

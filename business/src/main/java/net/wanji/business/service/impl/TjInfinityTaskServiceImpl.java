@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.wanji.business.common.Constants;
 import net.wanji.business.common.DeviceStatus;
 import net.wanji.business.domain.InfiniteTessParm;
@@ -57,7 +58,7 @@ import org.springframework.util.ObjectUtils;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.awt.geom.Point2D;
-import java.io.IOException;
+import java.io.File;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -70,6 +71,7 @@ import java.util.stream.Collectors;
  * @description TODO
  * @date 2024/3/11 13:12
  **/
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TjInfinityTaskServiceImpl
@@ -620,28 +622,28 @@ public class TjInfinityTaskServiceImpl
     return Constants.TaskStatusEnum.RUNNING.getCode().equals(status);
   }
 
-    /**
-     * 评价数据处理
-     *
-     * @param taskId
-     * @param caseId
-     * @param state  <= 0:停止，>0:开始
-     */
-    private void evaluationProcess(Integer taskId, Integer caseId,
-        Integer state, String username) {
-        String evaluateChannel = Constants.ChannelBuilder.buildTestingEvaluateChannel(
-            username, taskId);
-        if (state > 0) {
-            EvalContext evalContext = new EvalContext();
-            evalContext.setTaskId(taskId);
-            evalContext.setCaseId(caseId);
-            // 监听
-            evaluationRedisData.subscribe(evaluateChannel, tjSceneScoreService,
-                evalContext);
-        } else {
-            evaluationRedisData.unsubscribe(evaluateChannel);
-        }
+  /**
+   * 评价数据处理
+   *
+   * @param taskId
+   * @param caseId
+   * @param state  <= 0:停止，>0:开始
+   */
+  private void evaluationProcess(Integer taskId, Integer caseId, Integer state,
+      String username) {
+    String evaluateChannel = Constants.ChannelBuilder.buildTestingEvaluateChannel(
+        username, taskId);
+    if (state > 0) {
+      EvalContext evalContext = new EvalContext();
+      evalContext.setTaskId(taskId);
+      evalContext.setCaseId(caseId);
+      // 监听
+      evaluationRedisData.subscribe(evaluateChannel, tjSceneScoreService,
+          evalContext);
+    } else {
+      evaluationRedisData.unsubscribe(evaluateChannel);
     }
+  }
 
   /**
    * 历史记录处理
@@ -656,7 +658,8 @@ public class TjInfinityTaskServiceImpl
       if (state > 0) {
         // 创建文件记录
         DataFile dataFile = new DataFile();
-        dataFile.setFileName(UUID.randomUUID().toString());
+        dataFile.setFileName(taskId + File.separator + caseId + File.separator
+            + UUID.randomUUID());
         dataFileService.save(dataFile);
         Integer dataFileId = dataFile.getId();
 
@@ -678,7 +681,9 @@ public class TjInfinityTaskServiceImpl
         record.eq("task_id", taskId);
         record.eq("case_id", caseId);
         record.eq("created_by", username);
-        TjInfinityTaskRecord one = tjInfinityTaskRecordService.getOne(record);
+        record.orderByDesc("created_date");
+        TjInfinityTaskRecord one = tjInfinityTaskRecordService.list(record)
+            .get(0);
         // 取消kafka数据订阅
         kafkaTrajectoryConsumer.unSubscribe(
             new ToLocalDto(taskId, caseId, null, one.getDataFileId(), null));
@@ -689,7 +694,7 @@ public class TjInfinityTaskServiceImpl
         tjInfinityTaskRecordService.updateById(one);
       }
     } catch (Exception e) {
-      if (log.isDebugEnabled()) {
+      if (log.isErrorEnabled()) {
         log.error("recordProcess error!", e);
       }
     }

@@ -5,14 +5,17 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.util.concurrent.RateLimiter;
 import lombok.extern.slf4j.Slf4j;
+import net.wanji.business.component.CountDown;
+import net.wanji.business.domain.dto.CountDownDto;
+import net.wanji.business.domain.dto.RecordSimulationTrajectoryDto;
 import net.wanji.business.domain.dto.ToLocalDto;
 import net.wanji.business.entity.DataFile;
 import net.wanji.business.mapper.DataFileMapper;
 import net.wanji.business.service.record.DataFileService;
-import net.wanji.common.common.ClientSimulationTrajectoryDto;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
@@ -20,10 +23,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * @author hcy
@@ -41,31 +41,35 @@ public class DataFileServiceImpl extends ServiceImpl<DataFileMapper, DataFile>
       r -> new Thread(r, "tj-test-m" + r.hashCode()));
   private static final Map<String, List<FileReadThread>> taskThreadMap = new ConcurrentHashMap<>();
 
-  @Value("${ruoyi.profile}")
+  @Value("${ruoyi.profile}/record")
   private String path;
 
   @Override
   public FileWriteRunnable createToLocalThread(ToLocalDto toLocalDto) {
-    FileWriteRunnable fileWriteRunnable = new FileWriteRunnable(path,
-        toLocalDto.getFileName());
+    pathCheckCreate(path, toLocalDto.getFileName());
+    FileWriteRunnable fileWriteRunnable = new FileWriteRunnable(
+        toLocalDto.getFileName(), path);
     executor.execute(fileWriteRunnable);
     return fileWriteRunnable;
   }
 
   @Override
-  public boolean writeStop(ToLocalDto toLocalDto) throws IOException {
-    toLocalDto.getToLocalThread().stop();
+  public boolean writeStop(ToLocalDto toLocalDto) throws Exception {
+    CountDownLatch countDownLatch = new CountDownLatch(1);
+    toLocalDto.getToLocalThread().stop(countDownLatch);
     // 更新记录
-    DataFile byId = this.getById(toLocalDto.getFileRecordId());
-    byId.setEncode("utf-8");
-    byId.setDataStopTime(LocalDateTime.now());
-    FileAnalysis.lineOffset(path, byId, (id, progress) -> {
-      DataFile dataFile = new DataFile();
-      dataFile.setId(toLocalDto.getFileRecordId());
-      dataFile.setProgress(progress);
-      updateById(dataFile);
+    DataFile dataFile = this.getById(toLocalDto.getFileId());
+    countDownLatch.await();
+    dataFile.setEncode("utf-8");
+    // ?????????????????? 要改
+    dataFile.setDataStopTime(LocalDateTime.now());
+    FileAnalysis.lineOffset(path, dataFile, (id, progress) -> {
+      DataFile dataFileQ = new DataFile();
+      dataFileQ.setId(toLocalDto.getFileId());
+      dataFileQ.setProgress(progress);
+      updateById(dataFileQ);
     });
-    return updateById(byId);
+    return updateById(dataFile);
   }
 
   @Override
@@ -190,11 +194,10 @@ public class DataFileServiceImpl extends ServiceImpl<DataFileMapper, DataFile>
       try {
         String line = randomReadFileLine(offsets, startOffset, filePath,
             encode);
-        List<ClientSimulationTrajectoryDto> clientSimulationTrajectoryDtos = objectMapper.readValue(
-            line, new TypeReference<List<ClientSimulationTrajectoryDto>>() {
+        List<RecordSimulationTrajectoryDto> recordss = objectMapper.readValue(
+            line, new TypeReference<List<RecordSimulationTrajectoryDto>>() {
             });
-        fileTimestamp = Long.parseLong(
-            clientSimulationTrajectoryDtos.get(0).getTimestamp());
+        fileTimestamp = recordss.get(0).getTimestamp();
       } catch (Exception e) {
         if (log.isErrorEnabled()) {
           log.error("getFileTimestamp error!", e);
@@ -221,6 +224,14 @@ public class DataFileServiceImpl extends ServiceImpl<DataFileMapper, DataFile>
             linenumber, points.size(), e);
       }
       return null;
+    }
+  }
+
+  private void pathCheckCreate(String path, String name) {
+    File file = new File(path, name);
+    File parentFile = file.getParentFile();
+    if (!parentFile.exists()) {
+      parentFile.mkdirs();
     }
   }
 }

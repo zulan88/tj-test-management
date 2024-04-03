@@ -5,8 +5,10 @@ import net.wanji.common.file.FileUtils;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author hcy
@@ -26,8 +28,9 @@ public class FileWriteRunnable implements Runnable {
   }
 
   private final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<>(
-      10000);
+      5000);
   private final AtomicBoolean stop = new AtomicBoolean(false);
+  private final AtomicReference<CountDownLatch> countDownLatchAtom = new AtomicReference<>();
   private boolean init = true;
 
   @Override
@@ -37,9 +40,8 @@ public class FileWriteRunnable implements Runnable {
         String poll = queue.take();
         if (!init) {
           writer.write("\n");
-          if (init) {
-            init = false;
-          }
+        } else {
+          init = false;
         }
         writer.write(poll);
       }
@@ -55,6 +57,8 @@ public class FileWriteRunnable implements Runnable {
           log.error("File [{}] [{}] delete error!", path, name, de);
         }
       }
+    }finally {
+      countDownLatchAtom.get().countDown();
     }
   }
 
@@ -70,7 +74,8 @@ public class FileWriteRunnable implements Runnable {
     }
   }
 
-  public boolean stop() {
+  public boolean stop(CountDownLatch countDownLatch) {
+    countDownLatchAtom.set(countDownLatch);
     stop.set(true);
     return true;
   }

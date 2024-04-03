@@ -32,7 +32,10 @@ import org.springframework.util.ObjectUtils;
 
 import javax.annotation.Resource;
 import java.io.IOException;
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -146,10 +149,22 @@ public class KafkaTrajectoryConsumer {
     return true;
   }
 
-  public boolean unSubscribe(ToLocalDto toLocalDto) throws IOException {
-    dataFileService.writeStop(toLocalDto);
-    toLocalSet.remove(toLocalDto);
-    return true;
+  public boolean unSubscribe(ToLocalDto toLocalDto) {
+    try {
+      Optional<ToLocalDto> localOp = toLocalSet.stream()
+          .filter(e -> e.equals(toLocalDto)).findFirst();
+      if (localOp.isPresent()) {
+        ToLocalDto oldToLocal = localOp.get();
+        dataFileService.writeStop(oldToLocal);
+        toLocalSet.remove(oldToLocal);
+      }
+      return true;
+    } catch (Exception e) {
+      if (log.isErrorEnabled()) {
+        log.error("unSubscribe [{}] error!", toLocalDto, e);
+      }
+      return false;
+    }
   }
 
   private void writeLocal(Integer taskId, Integer caseId,

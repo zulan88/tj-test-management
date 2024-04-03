@@ -3,6 +3,7 @@ package net.wanji.business.service.record.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.wanji.business.domain.dto.RecordSimulationTrajectoryDto;
 import net.wanji.business.entity.DataFile;
 import net.wanji.common.common.ClientSimulationTrajectoryDto;
 
@@ -74,9 +75,9 @@ public class FileAnalysis {
 
   private static Long getTimestamp(String readLine)
       throws JsonProcessingException {
-    List<ClientSimulationTrajectoryDto> clientSimulationTrajectoryDtos = new ObjectMapper().readValue(
-        readLine, new TypeReference<List<ClientSimulationTrajectoryDto>>() {
+    List<RecordSimulationTrajectoryDto> dataList = new ObjectMapper().readValue(
+        readLine, new TypeReference<List<RecordSimulationTrajectoryDto>>() {
         });
-    return Long.parseLong(clientSimulationTrajectoryDtos.get(0).getTimestamp());
+    return dataList.get(0).getTimestamp();
   }
 }
