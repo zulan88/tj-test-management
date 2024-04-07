@@ -52,6 +52,7 @@ import net.wanji.business.entity.TjTask;
 import net.wanji.business.entity.TjTaskCase;
 import net.wanji.business.entity.TjTaskCaseRecord;
 import net.wanji.business.entity.TjTaskDataConfig;
+import net.wanji.business.entity.infity.TjInfinityTask;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.listener.KafkaCollector;
 import net.wanji.business.mapper.TjTaskCaseMapper;
@@ -60,15 +61,7 @@ import net.wanji.business.mapper.TjTaskDataConfigMapper;
 import net.wanji.business.mapper.TjTaskMapper;
 import net.wanji.business.schedule.RealPlaybackSchedule;
 import net.wanji.business.schedule.TwinsPlayback;
-import net.wanji.business.service.ILabelsService;
-import net.wanji.business.service.KafkaProducer;
-import net.wanji.business.service.RestService;
-import net.wanji.business.service.RouteService;
-import net.wanji.business.service.TjCaseService;
-import net.wanji.business.service.TjCaseTreeService;
-import net.wanji.business.service.TjDeviceDetailService;
-import net.wanji.business.service.TjTaskCaseRecordService;
-import net.wanji.business.service.TjTaskCaseService;
+import net.wanji.business.service.*;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.trajectory.TaskChainFactory;
 import net.wanji.business.util.RedisLock;
@@ -159,6 +152,9 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
     @Autowired
     private RedisLock redisLock;
+
+    @Autowired
+    TjInfinityTaskService infinityTaskService;
 
     @Autowired
     ToBuildOpenX toBuildOpenX;
@@ -924,20 +920,24 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
     public Object getEvaluation(Integer taskId, Integer id) throws BusinessException {
         JSONObject jsonObject = restService.getCarTestResult(taskId);
         try {
-//            result.put("taskId", taskId);
-//            result.put("id", id);
-//            result.put("score", "90.00");
-//            result.put("time", 60);
-//            result.put("startTime", "2024-01-05 14:00:00");
-//            result.put("endTime", "2024-01-05 14:01:00");
-//            result.put("hazardRatio", "52");
-            TjTask task = taskMapper.selectById(taskId);
-            Duration duration = Duration.between(task.getStartTime().toInstant(), task.getEndTime().toInstant());
-            jsonObject.put("taskId", taskId);
-            jsonObject.put("id", id);
-            jsonObject.put("time", duration.toMillis()/1000);
-            jsonObject.put("startTime", DateUtils.dateToString(task.getStartTime(), "yyyy-MM-dd HH:mm:ss"));
-            jsonObject.put("endTime", DateUtils.dateToString(task.getEndTime(), "yyyy-MM-dd HH:mm:ss"));
+            if(id!=-1) {
+                TjTask task = taskMapper.selectById(taskId);
+                Duration duration = Duration.between(task.getStartTime().toInstant(), task.getEndTime().toInstant());
+                jsonObject.put("taskId", taskId);
+                jsonObject.put("id", id);
+                jsonObject.put("time", duration.toMillis() / 1000);
+                jsonObject.put("startTime", DateUtils.dateToString(task.getStartTime(), "yyyy-MM-dd HH:mm:ss"));
+                jsonObject.put("endTime", DateUtils.dateToString(task.getEndTime(), "yyyy-MM-dd HH:mm:ss"));
+            }else{
+                TjInfinityTask task = infinityTaskService.getById(taskId);
+                Date end = new Date();
+                Duration duration = Duration.between(task.getTestStartTime().toInstant(), end.toInstant());
+                jsonObject.put("taskId", taskId);
+                jsonObject.put("id", 0);
+                jsonObject.put("time", duration.toMillis() / 1000);
+                jsonObject.put("startTime", DateUtils.dateToString(task.getTestStartTime(), "yyyy-MM-dd HH:mm:ss"));
+                jsonObject.put("endTime", DateUtils.dateToString(end, "yyyy-MM-dd HH:mm:ss"));
+            }
         } catch (Exception e) {
             throw new BusinessException("获取评价信息失败");
         } finally {

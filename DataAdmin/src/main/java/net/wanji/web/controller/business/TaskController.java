@@ -478,10 +478,11 @@ public class TaskController extends BaseController {
 
     //孪生
     @GetMapping("/getEvaluationResultTW")
-    public AjaxResult getEvaluationResultTW(Integer taskId) throws BusinessException {
-//        Random random = new Random();
-        SecureRandom random = new SecureRandom();
-        Integer id = random.nextInt(101);
+    public AjaxResult getEvaluationResultTW(Integer taskId, Integer type) throws BusinessException {
+        int id = 0;
+        if (type!=null && type == 1) {
+            id = -1;
+        }
         return AjaxResult.success(taskCaseService.getEvaluation(taskId, id));
     }
 
