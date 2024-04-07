@@ -125,4 +125,6 @@ public class TjInfinityTask extends Lifecycle implements Serializable {
   @TableField(value = "last_status")
   private String lastStatus;
 
+  @TableField(value = "selected_record_id")
+  private Integer selectedRecordId;
 }
