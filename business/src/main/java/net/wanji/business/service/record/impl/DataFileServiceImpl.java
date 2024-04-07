@@ -5,8 +5,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.util.concurrent.RateLimiter;
 import lombok.extern.slf4j.Slf4j;
-import net.wanji.business.component.CountDown;
-import net.wanji.business.domain.dto.CountDownDto;
 import net.wanji.business.domain.dto.RecordSimulationTrajectoryDto;
 import net.wanji.business.domain.dto.ToLocalDto;
 import net.wanji.business.entity.DataFile;
@@ -76,20 +74,21 @@ public class DataFileServiceImpl extends ServiceImpl<DataFileMapper, DataFile>
   public void playback(String playbackId, Integer fileId, Long startTimestamp,
       Long endTimestamp) throws Exception {
     DataFile dataFile = this.getById(fileId);
+    File localFile = new File(path, dataFile.getFileName());
     List<Long> offsets = new ObjectMapper().readValue(
         new String(dataFile.getLineOffset(), StandardCharsets.UTF_8),
         new TypeReference<List<Long>>() {
         });
     long startOffset = getStartOffset(fileOffset(
             dataFile.getDataStartTime().atZone(ZoneId.systemDefault()).toInstant()
-                .toEpochMilli(), startTimestamp), offsets, path,
+                .toEpochMilli(), startTimestamp), offsets, localFile.getPath(),
         dataFile.getEncode(), startTimestamp);
-    long endOffset = getEndOffset(
-        startOffset + (endTimestamp - startTimestamp) / 100, offsets);
+    long endOffset = getEndOffset(startOffset, startTimestamp, endTimestamp,
+        offsets);
 
     ThreadUtils.execute(playbackId, taskThreadMap,
-        new FileReadThread(RateLimiter.create(10), dataFile, path, startOffset,
-            endOffset, offsets, playbackId));
+        new FileReadThread(RateLimiter.create(10), dataFile, localFile,
+            startOffset, endOffset, offsets, playbackId));
   }
 
   @Override
@@ -110,6 +109,9 @@ public class DataFileServiceImpl extends ServiceImpl<DataFileMapper, DataFile>
     if (tentativeStartOffset > offsets.size()) {
       startOffset = offsets.size() - 1;
     }
+    if (tentativeStartOffset == 0) {
+      return 0;
+    }
     return correctStartOffset(offsets, startOffset, filePath, encode,
         timestamp);
   }
@@ -123,7 +125,12 @@ public class DataFileServiceImpl extends ServiceImpl<DataFileMapper, DataFile>
     }
   }
 
-  private long getEndOffset(Long endOffset, List<Long> offsets) {
+  private long getEndOffset(Long startOffset, Long startTimestamp,
+      Long endTimestamp, List<Long> offsets) {
+    if (endTimestamp <= 0) {
+      return offsets.size() - 1;
+    }
+    long endOffset = startOffset + (endTimestamp - startTimestamp) / 100;
     if (endOffset > offsets.size()) {
       return offsets.size() - 1;
     }

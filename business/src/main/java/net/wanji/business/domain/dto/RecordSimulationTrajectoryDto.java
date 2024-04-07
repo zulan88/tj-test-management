@@ -16,4 +16,6 @@ public class RecordSimulationTrajectoryDto {
   private String role;
   private String source;
   private Long timestamp;
+  private String timestampType;
+  private Object value;
 }

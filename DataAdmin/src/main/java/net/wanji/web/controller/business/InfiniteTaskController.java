@@ -2,6 +2,7 @@ package net.wanji.web.controller.business;
 
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import io.swagger.annotations.*;
@@ -33,7 +34,6 @@ import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -362,6 +362,27 @@ public class InfiniteTaskController {
         return prepare(taskId);
     }
 
+    @ApiOperation("测试记录信息")
+    @GetMapping("/records")
+    @ApiImplicitParams({ @ApiImplicitParam(name = "taskId",
+        value = "任务ID",
+        dataType = "Long",
+        required = true), @ApiImplicitParam(name = "pageNumber",
+        value = "页码",
+        dataType = "Long"), @ApiImplicitParam(name = "pageSize",
+        value = "页大小",
+        dataType = "Long")
+    })
+    public AjaxResult records(int taskId, int pageNumber, int pageSize) {
+        QueryWrapper<TjInfinityTaskRecord> qw = new QueryWrapper<>();
+        qw.eq("task_id", taskId);
+        qw.orderByDesc("created_date");
+        Page<TjInfinityTaskRecord> recordPage = new Page<>(
+            pageNumber, pageSize);
+        return AjaxResult.success(tjInfinityTaskRecordService.page(
+            recordPage, qw));
+    }
+
     @ApiOperation("回放")
     @ApiImplicitParams({ @ApiImplicitParam(name = "recordId",
         value = "记录ID",
@@ -374,18 +395,28 @@ public class InfiniteTaskController {
     })
     @GetMapping("/playback")
     public AjaxResult playback(Integer recordId, Long startTimestamp,
-        Long endTimestamp) throws Exception {
-        // 暂时智能一处回放，多处回放需要修改websocket处理请求参数
-        // 文件id
-        TjInfinityTaskRecord record = tjInfinityTaskRecordService.getById(
-            recordId);
-        // 文件读取
-        Integer dataFileId = record.getDataFileId();
-        dataFileService.playback(
-            Constants.ChannelBuilder.buildWebSocketPlaybackChannel(
-                String.valueOf(recordId)), dataFileId, startTimestamp,
-            endTimestamp);
-        return null;
+        Long endTimestamp) {
+        try {
+            // 暂时智能一处回放，多处回放需要修改websocket处理请求参数
+            // 文件id
+            TjInfinityTaskRecord record = tjInfinityTaskRecordService.getById(
+                recordId);
+            // 文件读取
+            Integer dataFileId = record.getDataFileId();
+            if (null == startTimestamp) {
+                startTimestamp = 0L;
+            }
+            if (null == endTimestamp) {
+                endTimestamp = 0L;
+            }
+            dataFileService.playback(
+                Constants.ChannelBuilder.buildWebSocketPlaybackChannel(
+                    String.valueOf(recordId)), dataFileId, startTimestamp,
+                endTimestamp);
+            return AjaxResult.success();
+        } catch (Exception e) {
+            return AjaxResult.error(e.getMessage());
+        }
     }
 
     @GetMapping("/playbackStop")

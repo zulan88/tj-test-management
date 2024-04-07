@@ -1,6 +1,7 @@
 package net.wanji.business.service.record.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.RateLimiter;
@@ -9,9 +10,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.wanji.business.common.Constants;
 import net.wanji.business.domain.RealWebsocketMessage;
+import net.wanji.business.domain.dto.RecordSimulationTrajectoryDto;
 import net.wanji.business.entity.DataFile;
 import net.wanji.business.socket.WebSocketManage;
-import net.wanji.common.common.ClientSimulationTrajectoryDto;
 import net.wanji.common.utils.DateUtils;
 
 import java.io.File;
@@ -34,7 +35,7 @@ public class FileReadThread extends Thread {
   @Getter
   private final RateLimiter rateLimiter;
   private final DataFile dataFile;
-  private final String filePath;
+  private final File localFile;
   private final Long startOffset;
   private final Long endOffset;
   private final List<Long> offsets;
@@ -51,8 +52,7 @@ public class FileReadThread extends Thread {
       throw new IllegalArgumentException(
           String.format("lineNum must between %s and %s", 0, offsets.size()));
     }
-    try (RandomAccessFile raf = new RandomAccessFile(
-        new File(filePath, dataFile.getFileName()), "r")) {
+    try (RandomAccessFile raf = new RandomAccessFile(localFile, "r")) {
       String encode = dataFile.getEncode();
       if (null == encode) {
         encode = "GB2312";
@@ -66,17 +66,18 @@ public class FileReadThread extends Thread {
         }
         rateLimiter.acquire();
         byte[] bytes = raf.readLine().getBytes(StandardCharsets.ISO_8859_1);
-        ClientSimulationTrajectoryDto trajectoryDto;
+        List<RecordSimulationTrajectoryDto> trajectories;
         try {
-          trajectoryDto = new ObjectMapper().readValue(
-              new String(bytes, encode), ClientSimulationTrajectoryDto.class);
+          trajectories = new ObjectMapper().readValue(new String(bytes, encode),
+              new TypeReference<List<RecordSimulationTrajectoryDto>>() {
+              });
         } catch (Exception e) {
           if (log.isErrorEnabled()) {
             log.error("data parse error!", e);
           }
           continue;
         }
-        if (dataSend(trajectoryDto, count))
+        if (dataSend(trajectories, count))
           continue;
         count++;
       }
@@ -89,14 +90,13 @@ public class FileReadThread extends Thread {
     }
   }
 
-  private boolean dataSend(
-      ClientSimulationTrajectoryDto participantTrajectories, long count)
-      throws JsonProcessingException {
+  private boolean dataSend(List<RecordSimulationTrajectoryDto> trajectories,
+      long count) throws JsonProcessingException {
     String duration = DateUtils.secondsToDuration(
         (int) Math.floor((double) count / 10));
     RealWebsocketMessage msg = new RealWebsocketMessage(
-        Constants.RedisMessageType.TRAJECTORY, Maps.newHashMap(),
-        participantTrajectories, duration);
+        Constants.RedisMessageType.TRAJECTORY, Maps.newHashMap(), trajectories,
+        duration);
     WebSocketManage.sendInfo(wsClientKey,
         new ObjectMapper().writeValueAsString(msg));
     return false;
