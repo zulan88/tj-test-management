@@ -30,7 +30,7 @@ public interface TjFragmentedSceneDetailService extends IService<TjFragmentedSce
      * @param id
      * @return
      */
-    FragmentedScenesDetailVo getDetailVo(Integer id) throws BusinessException;
+    FragmentedScenesDetailVo getDetailVo(Integer id, Integer type) throws BusinessException;
 
     /**
      * 保存场景详情
@@ -88,5 +88,9 @@ public interface TjFragmentedSceneDetailService extends IService<TjFragmentedSce
 
     List<SceneDetailVo> selectTjSceneDetailListOr(List<Integer> labellist, Integer fragmentedSceneId);
     List<List<TrajectoryValueDto>> getroutelist(Integer id, String participantId, int action) throws BusinessException, IOException;
+
+    void saveSceneDebug(SceneDebugDto sceneDebugDto)throws BusinessException;
+
+    Integer sortCount(GeneralizeScene generalizeScene)throws BusinessException;
 
 }

@@ -1,6 +1,9 @@
 package net.wanji.business.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
+import net.wanji.business.domain.param.GeneralizeScene;
+import net.wanji.business.domain.vo.ConflictInfo;
 import net.wanji.business.domain.vo.TjGeneralizeSceneVo;
 import net.wanji.business.entity.TjGeneralizeScene;
 import net.wanji.business.mapper.TjGeneralizeSceneMapper;
@@ -28,10 +31,26 @@ public class TjGeneralizeSceneServiceImpl extends ServiceImpl<TjGeneralizeSceneM
         QueryWrapper<TjGeneralizeScene> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq(tjGeneralizeScene.getSceneId()!=null,"scene_id",tjGeneralizeScene.getSceneId());
         List<TjGeneralizeScene> tjGeneralizeSceneList = this.list(queryWrapper);
-        return tjGeneralizeSceneList.stream().map(tjGeneralizeScene1 -> {
+        List<TjGeneralizeSceneVo> res = tjGeneralizeSceneList.stream().map(tjGeneralizeScene1 -> {
             TjGeneralizeSceneVo tjGeneralizeSceneVo = new TjGeneralizeSceneVo();
             BeanUtils.copyBeanProp(tjGeneralizeSceneVo, tjGeneralizeScene1);
             return tjGeneralizeSceneVo;
         }).collect(Collectors.toList());
+        for (TjGeneralizeSceneVo tjGeneralizeSceneVo : res) {
+            for (ParticipantTrajectoryBo participantTrajectoryBo : tjGeneralizeSceneVo.getTrajectoryJson().getParticipantTrajectories()) {
+                ConflictInfo conflictInfo = new ConflictInfo();
+                conflictInfo.setId(participantTrajectoryBo.getId());
+                conflictInfo.setType(participantTrajectoryBo.getType());
+                conflictInfo.setName(participantTrajectoryBo.getName());
+                participantTrajectoryBo.getTrajectory().forEach(trajectoryBo -> {
+                    if (trajectoryBo.getType().equals("conflict")){
+                        conflictInfo.setConflictSpeed(trajectoryBo.getSpeed());
+                    }
+                });
+                tjGeneralizeSceneVo.getConflictInfos().add(conflictInfo);
+            }
+        }
+        return res;
     }
+
 }

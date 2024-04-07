@@ -236,23 +236,10 @@ public class RedisTrajectory2Consumer {
                         sceneDebugDto.getTrajectoryJson().setDuration(duration);
                         // send ws
                         WebsocketMessage msg = new WebsocketMessage(RedisMessageType.END, null, sceneDebugDto);
-                        WebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));
                         if(sceneDebugDto.getId()!=null){
-                            List<ParticipantTrajectoryBo> list = sceneDebugDto.getTrajectoryJson().getParticipantTrajectories().stream()
-                                    .filter(t -> PartType.MAIN.equals(t.getType()))
-                                    .filter(p -> ObjectUtils.isEmpty(p.getTrajectory().get(0).getPass())
-                                            || ObjectUtils.isEmpty(p.getTrajectory().get(p.getTrajectory().size() - 1).getPass())
-                                            || !p.getTrajectory().get(0).getPass()
-                                            || !p.getTrajectory().get(p.getTrajectory().size() - 1).getPass())
-                                    .collect(Collectors.toList());
-                            if (CollectionUtils.isNotEmpty(list)) {
-                                throw new BusinessException("主车起止点校验失败，请检查主车起止点或重新进行仿真验证！");
-                            }
-                            TjFragmentedSceneDetail tjFragmentedSceneDetail = new TjFragmentedSceneDetail();
-                            tjFragmentedSceneDetail.setId(sceneDebugDto.getId());
-                            tjFragmentedSceneDetail.setRouteFile(sceneDebugDto.getRouteFile());
-                            tjFragmentedSceneDetailService.updateById(tjFragmentedSceneDetail);
+                            tjFragmentedSceneDetailService.saveSceneDebug(sceneDebugDto);
                         }
+                        WebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));
                         break;
                     default:
                         break;

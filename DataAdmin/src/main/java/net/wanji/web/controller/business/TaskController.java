@@ -530,9 +530,8 @@ public class TaskController extends BaseController {
 
     @GetMapping("/playbackTW")
     public AjaxResult playbacktw(@RequestParam("taskId") Integer taskId, @RequestParam(value = "caseId", required = false) Integer caseId) throws BusinessException, IOException {
-        UUID uuid = UUID.randomUUID();
-        String uuidString = uuid.toString().replace("-", "");
-        String substring = uuidString.substring(0, 5);
+        Random random = new Random();
+        int substring = random.nextInt(10);
         String topic = "tj_playback_tw_"+substring;
         taskCaseService.playbackTW(taskId,caseId,topic);
         return AjaxResult.success(topic);
@@ -545,10 +544,8 @@ public class TaskController extends BaseController {
         if (!platformSSDto.isTaskEnd()) {
             if(platformSSDto.getState() > 0){
                 hashOperations.put(key, caseId, platformSSDto.getContext().get("user"));
-                taskCaseService.twStop(platformSSDto.getTaskId(), platformSSDto.getCaseId(),"finish");
             }else if(-1 == platformSSDto.getState()){
                 redisCache.redisTemplate.delete(key);
-                taskCaseService.twStop(platformSSDto.getTaskId(), platformSSDto.getCaseId(),"break");
             }
         }else {
             redisCache.redisTemplate.delete(key);

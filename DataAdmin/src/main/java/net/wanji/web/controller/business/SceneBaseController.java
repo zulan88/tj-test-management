@@ -154,8 +154,8 @@ public class SceneBaseController extends BaseController {
     @ApiOperation("查询场景详情")
     //@PreAuthorize("@ss.hasPermi('sceneBase:getDetailVo')")
     @GetMapping("/getDetailVo/{id}")
-    public AjaxResult getDetailVo(@PathVariable("id") Integer id) throws BusinessException {
-        FragmentedScenesDetailVo detailVo = tjFragmentedSceneDetailService.getDetailVo(id);
+    public AjaxResult getDetailVo(@PathVariable("id") Integer id, @RequestParam(value = "type", required = false) Integer type) throws BusinessException {
+        FragmentedScenesDetailVo detailVo = tjFragmentedSceneDetailService.getDetailVo(id, type);
         return AjaxResult.success(detailVo);
     }
 
@@ -224,16 +224,25 @@ public class SceneBaseController extends BaseController {
         if (!redisCache.lock(key, key, 10)) {
             return AjaxResult.error("正在连接仿真软件，请稍后再试");
         }
-        List<ParticipantTrajectoryBo> participantTrajectoryBos = sceneDebugDto.getTrajectoryJson()
-                .getParticipantTrajectories().stream().peek(trajectory -> {
-                    for(TrajectoryDetailBo trajectoryBo : trajectory.getTrajectory()){
-                        if(trajectoryBo.getType().equals("pathwayar")){
-                            trajectoryBo.setType("pathway");
+        if (sceneDebugDto.getSimuType() != null && sceneDebugDto.getSimuType() == 0){
+            List<ParticipantTrajectoryBo> participantTrajectoryBos = sceneDebugDto.getTrajectoryJson()
+                    .getParticipantTrajectories().stream().peek(trajectory -> {
+                        for(TrajectoryDetailBo trajectoryBo : trajectory.getTrajectory()){
+                            trajectoryBo.setTime("0");
                         }
-                    }
-                }).collect(Collectors.toList());
-        sceneDebugDto.getTrajectoryJson().setParticipantTrajectories(participantTrajectoryBos);
-        tjFragmentedSceneDetailService.debugging(sceneDebugDto);
+                    }).collect(Collectors.toList());
+            sceneDebugDto.getTrajectoryJson().setParticipantTrajectories(participantTrajectoryBos);
+            tjFragmentedSceneDetailService.debugging(sceneDebugDto);
+        }else {
+            List<ParticipantTrajectoryBo> participantTrajectoryBos = sceneDebugDto.getTrajectoryJson()
+                    .getParticipantTrajectories().stream().peek(trajectory -> {
+                        for(TrajectoryDetailBo trajectoryBo : trajectory.getTrajectory()){
+                            trajectoryBo.setTime("0");
+                        }
+                    }).collect(Collectors.toList());
+            sceneDebugDto.getTrajectoryJson().setParticipantTrajectories(participantTrajectoryBos);
+            tjFragmentedSceneDetailService.debugging(sceneDebugDto);
+        }
         redisCache.unlock2(key, key);
         return AjaxResult.success();
     }
@@ -277,8 +286,14 @@ public class SceneBaseController extends BaseController {
         return getDataTable(list);
     }
 
+    /**
+     * 根据标签关联查场景
+     *
+     * @param tagtoSceneVo 包含标签列表、场景分类ID和选择条件（0为OR，非0为AND）的对象
+     * @return TableDataInfo 包含查询结果的表格数据信息
+     */
     @PostMapping("/tagtoscene")
-    public TableDataInfo test(@RequestBody TagtoSceneVo tagtoSceneVo){
+    public TableDataInfo tagtoscene(@RequestBody TagtoSceneVo tagtoSceneVo){
         startPage();
         if(tagtoSceneVo.getChoice().equals(0)) {
             List<SceneDetailVo> res = tjFragmentedSceneDetailService.selectTjSceneDetailListOr(tagtoSceneVo.getLabellist(),tagtoSceneVo.getFragmentedSceneId());
@@ -343,15 +358,41 @@ public class SceneBaseController extends BaseController {
         return AjaxResult.success(debugDto);
     }
 
+    /**
+     * 对场景进行泛化处理。
+     *
+     * @param sceneDetailDto 场景详细信息数据传输对象，包含需要泛化的场景的详细信息。
+     * @return 返回一个成功结果的AjaxResponse对象。
+     * @throws BusinessException 如果处理过程中出现业务异常，则抛出。
+     */
     @PostMapping("/generalize")
     public AjaxResult generalize(@RequestBody GeneralizeScene sceneDetailDto) throws BusinessException {
         tjFragmentedSceneDetailService.generalizeScene(sceneDetailDto);
         return AjaxResult.success();
     }
 
+    /**
+     * 删除泛化场景
+     *
+     * @param id 泛化场景的ID，用于指定要删除的泛化场景。
+     * @return 返回一个AjaxResult对象，包含操作的结果信息。
+     * @throws BusinessException 如果删除过程中发生业务错误，则抛出此异常。
+     */
     @DeleteMapping("/generalize")
     public AjaxResult deleteGeneralize(Integer id) throws BusinessException {
         return toAjax(tjGeneralizeSceneService.removeById(id));
+    }
+
+    /**
+     * 计算泛化场景数量。
+     *
+     * @param sceneDetailDto 场景详细信息数据传输对象，包含需要泛化的场景的详细信息。
+     * @return 返回一个成功结果的AjaxResponse对象。
+     * @throws BusinessException 如果处理过程中出现业务异常，则抛出。
+     */
+    @PostMapping("/generalizecount")
+    public AjaxResult generalizecount(@RequestBody GeneralizeScene sceneDetailDto) throws BusinessException {
+        return AjaxResult.success(tjFragmentedSceneDetailService.sortCount(sceneDetailDto));
     }
 
 }

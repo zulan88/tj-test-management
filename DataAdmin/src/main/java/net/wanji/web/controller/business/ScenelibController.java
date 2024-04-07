@@ -93,7 +93,7 @@ public class ScenelibController extends BaseController {
     public AjaxResult add(@RequestBody TjScenelib tjScenelib) throws BusinessException{
         int res = scenelibService.insertTjScenelib(tjScenelib);
         if(tjScenelib.getIsGen()==null || tjScenelib.getIsGen().equals(0)) {
-            FragmentedScenesDetailVo detailVo = tjFragmentedSceneDetailService.getDetailVo(tjScenelib.getSceneDetailId());
+            FragmentedScenesDetailVo detailVo = tjFragmentedSceneDetailService.getDetailVo(tjScenelib.getSceneDetailId(), null);
             if (StringUtils.isEmpty(detailVo.getRouteFile())) {
                 throw new BusinessException("创建失败：场景未进行仿真验证");
             }
@@ -107,7 +107,7 @@ public class ScenelibController extends BaseController {
             if (StringUtils.isEmpty(generalizeScene.getRouteFile())) {
                 throw new BusinessException("创建失败：场景未进行仿真验证");
             }
-            FragmentedScenesDetailVo detailVo = tjFragmentedSceneDetailService.getDetailVo(generalizeScene.getSceneId());
+            FragmentedScenesDetailVo detailVo = tjFragmentedSceneDetailService.getDetailVo(generalizeScene.getSceneId(), null);
             detailVo.setId(generalizeScene.getId());
             toBuildOpenX.scenetoOpenX(detailVo, tjScenelib.getId(), tjScenelib.getIsGen());
         }

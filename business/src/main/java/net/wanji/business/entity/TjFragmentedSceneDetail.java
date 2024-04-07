@@ -136,7 +136,7 @@ public class TjFragmentedSceneDetail implements Serializable {
      * 仿真类型（0-计划时间，1-计划速度）
      */
     @TableField("simu_type")
-    private String simuType;
+    private Integer simuType;
 
 
     /**

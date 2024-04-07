@@ -44,4 +44,6 @@ public class SceneDebugDto {
 
     private Integer mapId;
 
+    private Integer simuType;
+
 }

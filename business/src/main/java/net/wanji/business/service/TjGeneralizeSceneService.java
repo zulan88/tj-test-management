@@ -1,5 +1,6 @@
 package net.wanji.business.service;
 
+import net.wanji.business.domain.param.GeneralizeScene;
 import net.wanji.business.domain.vo.TjGeneralizeSceneVo;
 import net.wanji.business.entity.TjGeneralizeScene;
 import com.baomidou.mybatisplus.extension.service.IService;

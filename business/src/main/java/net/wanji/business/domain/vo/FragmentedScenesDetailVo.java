@@ -1,5 +1,6 @@
 package net.wanji.business.domain.vo;
 
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -65,6 +66,19 @@ public class FragmentedScenesDetailVo extends TjFragmentedSceneDetail {
      * 场景复杂度名称
      */
     private String sceneComplexityName;
+
+    JSONArray referencePoints;
+
+    public void setReferencePoints(JSONArray referencePoints) {
+        this.referencePoints = referencePoints;
+    }
+
+    public JSONArray getReferencePoints() {
+        if (StringUtils.isNotBlank(this.getReferencePoint())) {
+            return JSONArray.parseArray(this.getReferencePoint());
+        }
+        return referencePoints;
+    }
 
     private String sceneTypeName;
 
@@ -169,13 +183,25 @@ public class FragmentedScenesDetailVo extends TjFragmentedSceneDetail {
     }
 
     public SceneTrajectoryBo getTrajectoryJson() {
-        try {
-            if (StringUtils.isNotEmpty(this.getTrajectoryInfo())) {
-                return JSONObject.parseObject(this.getTrajectoryInfo(), SceneTrajectoryBo.class);
+        if (this.getSimuType()!=null && this.getSimuType()==0){
+            try {
+                if (StringUtils.isNotEmpty(this.getTrajectoryInfoTime())) {
+                    return JSONObject.parseObject(this.getTrajectoryInfoTime(), SceneTrajectoryBo.class);
+                }
+            } catch (Exception e) {
+                if (log.isErrorEnabled()) {
+                    log.error("parse error!", e);
+                }
             }
-        } catch (Exception e) {
-            if (log.isErrorEnabled()) {
-                log.error("parse error!", e);
+        }else {
+            try {
+                if (StringUtils.isNotEmpty(this.getTrajectoryInfo())) {
+                    return JSONObject.parseObject(this.getTrajectoryInfo(), SceneTrajectoryBo.class);
+                }
+            } catch (Exception e) {
+                if (log.isErrorEnabled()) {
+                    log.error("parse error!", e);
+                }
             }
         }
         return trajectoryJson;

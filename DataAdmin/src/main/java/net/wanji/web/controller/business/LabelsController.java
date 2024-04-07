@@ -55,7 +55,7 @@ public class LabelsController extends BaseController {
         List<Label> roots = new ArrayList<>();
         Set<Long> set = new HashSet<>();
         if (id != null) {
-            FragmentedScenesDetailVo detailVo = tjFragmentedSceneDetailService.getDetailVo(id);
+            FragmentedScenesDetailVo detailVo = tjFragmentedSceneDetailService.getDetailVo(id,null);
             List<String> labels = detailVo.getLabelList();
             for (String str : labels) {
                 try {
@@ -142,7 +142,7 @@ public class LabelsController extends BaseController {
         Set<Long> set = new HashSet<>();
 
         if (id != null) {
-            FragmentedScenesDetailVo detailVo = tjFragmentedSceneDetailService.getDetailVo(id);
+            FragmentedScenesDetailVo detailVo = tjFragmentedSceneDetailService.getDetailVo(id,null);
             List<String> labels = detailVo.getLabelList();
             for (String str : labels) {
                 try {
@@ -259,7 +259,7 @@ public class LabelsController extends BaseController {
         }
         List<String> data = new ArrayList<>();
         if (id != null) {
-            FragmentedScenesDetailVo detailVo = tjFragmentedSceneDetailService.getDetailVo(id);
+            FragmentedScenesDetailVo detailVo = tjFragmentedSceneDetailService.getDetailVo(id,null);
             List<String> labels = detailVo.getLabelList();
             for (String str : labels) {
                 try {

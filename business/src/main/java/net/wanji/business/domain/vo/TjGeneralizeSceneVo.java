@@ -7,6 +7,7 @@ import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.entity.TjGeneralizeScene;
 import net.wanji.common.utils.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -18,6 +19,8 @@ public class TjGeneralizeSceneVo extends TjGeneralizeScene {
     private SceneTrajectoryBo trajectoryJson;
 
     private List<String> labelList;
+
+    private List<ConflictInfo> conflictInfos;
 
     public SceneTrajectoryBo getTrajectoryJson() {
         try {
@@ -39,5 +42,10 @@ public class TjGeneralizeSceneVo extends TjGeneralizeScene {
         return labelList;
     }
 
-
+    public List<ConflictInfo> getConflictInfos() {
+        if (conflictInfos == null){
+            conflictInfos = new ArrayList<>();
+        }
+        return conflictInfos;
+    }
 }

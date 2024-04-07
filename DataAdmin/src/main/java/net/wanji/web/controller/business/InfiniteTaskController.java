@@ -26,6 +26,7 @@ import net.wanji.business.service.RestService;
 import net.wanji.business.service.TjInfinityTaskRecordService;
 import net.wanji.business.service.TjInfinityTaskService;
 import net.wanji.business.service.TjShardingChangeRecordService;
+import net.wanji.business.service.TjTaskCaseService;
 import net.wanji.business.service.record.DataFileService;
 import net.wanji.business.util.RedisLock;
 import net.wanji.common.constant.HttpStatus;
@@ -35,6 +36,7 @@ import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -60,6 +62,9 @@ public class InfiniteTaskController {
 
     private final RedisLock redisLock;
     private final RestService restService;
+
+    private final TjTaskCaseService taskCaseService;
+
     private final TjInfinityTaskService tjInfinityTaskService;
     private final TjShardingChangeRecordService tjShardingChangeRecordService;
     private final TjInfinityTaskRecordService tjInfinityTaskRecordService;
@@ -323,6 +328,7 @@ public class InfiniteTaskController {
     })
     public AjaxResult getEvaluationResult(Integer taskId, Integer caseId) {
         try {
+            taskCaseService.twStop(0, caseId,"finish");
             return AjaxResult.success(
                 tjShardingChangeRecordService.shardingResult(0, taskId));
         } catch (Exception e) {

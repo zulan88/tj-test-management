@@ -106,7 +106,7 @@ public class TjFragmentedSceneDetailServiceImpl
     private ITjAtlasVenueService tjAtlasVenueService;
 
     @Override
-    public FragmentedScenesDetailVo getDetailVo(Integer id) throws BusinessException {
+    public FragmentedScenesDetailVo getDetailVo(Integer id, Integer type) throws BusinessException {
         QueryWrapper<TjFragmentedSceneDetail> queryWrapper = new QueryWrapper();
         queryWrapper.eq(ColumnName.SCENE_DETAIL_ID_COLUMN, id);
         TjFragmentedSceneDetail detail = this.getOne(queryWrapper);
@@ -119,8 +119,9 @@ public class TjFragmentedSceneDetailServiceImpl
             if (YN.N_INT == scenes.getIsFolder() && !ObjectUtils.isEmpty(detail)) {
                 BeanUtils.copyBeanProp(detailVo, detail);
                 detailVo.setTypeName(dictDataService.selectDictLabel(SysType.SCENE_TREE_TYPE, scenes.getType()));
-//                detailVo.setRoadWayName(dictDataService.selectDictLabel(SysType.ROAD_WAY_TYPE, detail.getRoadWayType()));
-//                detailVoTranslate(detailVo);
+                if(type != null){
+                    detailVo.setSimuType(type);
+                }
             }
         }
         return detailVo;
@@ -128,7 +129,7 @@ public class TjFragmentedSceneDetailServiceImpl
 
     @Override
     public void playback(Integer id, String participantId, int action) throws BusinessException, IOException {
-        FragmentedScenesDetailVo scenesDetailVo = this.getDetailVo(id);
+        FragmentedScenesDetailVo scenesDetailVo = this.getDetailVo(id, null);
         String key = ChannelBuilder.buildScenePreviewChannel(SecurityUtils.getUsername(), id);
         switch (action) {
             case PlaybackAction.START:
@@ -161,13 +162,128 @@ public class TjFragmentedSceneDetailServiceImpl
     @Override
     public List<List<TrajectoryValueDto>> getroutelist(Integer id, String participantId, int action) throws IOException, BusinessException {
         if (action == 0) {
-            FragmentedScenesDetailVo caseInfoBo = this.getDetailVo(id);
+            FragmentedScenesDetailVo caseInfoBo = this.getDetailVo(id, null);
             return routeService.readTrajectoryFromRouteFile(
                     caseInfoBo.getRouteFile(), participantId);
         }else {
             TjGeneralizeScene generalizeScene = generalizeSceneService.getById(id);
             return routeService.readTrajectoryFromRouteFile(
                     generalizeScene.getRouteFile(), participantId);
+        }
+    }
+
+    @Override
+    public void saveSceneDebug(SceneDebugDto sceneDebugDto) throws BusinessException{
+        List<ParticipantTrajectoryBo> list = sceneDebugDto.getTrajectoryJson().getParticipantTrajectories().stream()
+                .filter(t -> PartType.MAIN.equals(t.getType()))
+                .filter(p -> ObjectUtils.isEmpty(p.getTrajectory().get(0).getPass())
+                        || ObjectUtils.isEmpty(p.getTrajectory().get(p.getTrajectory().size() - 1).getPass())
+                        || !p.getTrajectory().get(0).getPass()
+                        || !p.getTrajectory().get(p.getTrajectory().size() - 1).getPass())
+                .collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(list)) {
+            throw new BusinessException("主车起止点校验失败，请检查主车起止点或重新进行仿真验证！");
+        }
+        TjFragmentedSceneDetail tjFragmentedSceneDetail = new TjFragmentedSceneDetail();
+        FragmentedScenesDetailVo fragmentedScenesDetailVo = this.getDetailVo(sceneDebugDto.getId(), null);
+        List<ParticipantTrajectoryBo> participantTrajectories = fragmentedScenesDetailVo.getTrajectoryJson().getParticipantTrajectories();
+        if(sceneDebugDto.getSimuType()!=null&&sceneDebugDto.getSimuType()==1){
+            for (int i = 0; i < participantTrajectories.size(); i++) {
+                ParticipantTrajectoryBo participantTrajectoryBo = participantTrajectories.get(i);
+                List<TrajectoryDetailBo> trajectories = participantTrajectoryBo.getTrajectory();
+                List<TrajectoryDetailBo> tesstraj = sceneDebugDto.getTrajectoryJson().getParticipantTrajectories().get(i).getTrajectory();
+                for (int j = 0; j < trajectories.size(); j++) {
+                    TrajectoryDetailBo data = trajectories.get(j);
+                    TrajectoryDetailBo tess = tesstraj.get(j);
+                    data.setTime(tess.getTime());
+                }
+            }
+            tjFragmentedSceneDetail.setTrajectoryInfo(!ObjectUtils.isEmpty(fragmentedScenesDetailVo.getTrajectoryJson())
+                    ? fragmentedScenesDetailVo.getTrajectoryJson().buildId().toJsonString()
+                    : null);
+        }else if(sceneDebugDto.getSimuType()!=null&&sceneDebugDto.getSimuType()==0){
+            for (int i = 0; i < participantTrajectories.size(); i++) {
+                ParticipantTrajectoryBo participantTrajectoryBo = participantTrajectories.get(i);
+                List<TrajectoryDetailBo> trajectories = participantTrajectoryBo.getTrajectory();
+                List<TrajectoryDetailBo> tesstraj = sceneDebugDto.getTrajectoryJson().getParticipantTrajectories().get(i).getTrajectory();
+                for (int j = 0; j < trajectories.size(); j++) {
+                    TrajectoryDetailBo data = trajectories.get(j);
+                    TrajectoryDetailBo tess = tesstraj.get(j);
+                    data.setSpeed(tess.getSpeed());
+                }
+            }
+            tjFragmentedSceneDetail.setTrajectoryInfoTime(!ObjectUtils.isEmpty(fragmentedScenesDetailVo.getTrajectoryJson())
+                    ? fragmentedScenesDetailVo.getTrajectoryJson().buildId().toJsonString()
+                    : null);
+        }
+        tjFragmentedSceneDetail.setId(sceneDebugDto.getId());
+        tjFragmentedSceneDetail.setRouteFile(sceneDebugDto.getRouteFile());
+        this.updateById(tjFragmentedSceneDetail);
+    }
+
+    @Override
+    public Integer sortCount(GeneralizeScene generalizeScene) throws BusinessException {
+        checkGereneralizeScene(generalizeScene);
+        FragmentedScenesDetailVo detailVo = getDetailVo(generalizeScene.getId(), null);
+        List<ParticipantTrajectoryBo> participantTrajectoryBos = detailVo.getTrajectoryJson().getParticipantTrajectories().stream()
+                .filter(t -> PartType.MAIN.equals(t.getType())).collect(Collectors.toList());
+        Optional.of(participantTrajectoryBos)
+                .filter(CollectionUtils::isNotEmpty)
+                .filter(list -> list.size() == 1)
+                .map(list -> list.get(0))
+                .map(ParticipantTrajectoryBo::getTrajectory)
+                .filter(trajectorys -> !trajectorys.isEmpty())
+                .filter(trajectorys -> {
+                    int count = 0;
+                    for (TrajectoryDetailBo trajectoryDetailBo : trajectorys){
+                        if (trajectoryDetailBo.getType().equals("conflict")){
+                            count++;
+                        }
+                    }
+                    return count == 1;
+                })
+                .orElseThrow(() -> new BusinessException("未找到有效的参与者轨迹信息 (需配置一辆主车并配置且仅配置一个冲突点)"));
+        List<TrajectoryDetailBo> trajectorys = participantTrajectoryBos.get(0).getTrajectory();
+        double conflictspeed = trajectorys.stream()
+                .filter(trajectoryDetailBo -> "conflict".equals(trajectoryDetailBo.getType()))
+                .map(TrajectoryDetailBo::getSpeed)
+                .findFirst().get();
+
+        double minSpeed = generalizeScene.getMinSpeed();
+        double maxSpeed = generalizeScene.getMaxSpeed();
+        int step = generalizeScene.getStep();
+        if (step > (conflictspeed - minSpeed) && step > (maxSpeed - conflictspeed)) {
+            throw new BusinessException("速度间隔过大，无法依据规则泛化");
+        }
+        if (conflictspeed > maxSpeed || conflictspeed < minSpeed) {
+            throw new BusinessException("冲突点速度超出速度区间");
+        }
+        int num = detailVo.getTrajectoryJson().getParticipantTrajectories().size();
+        List<Integer> numList = new ArrayList<>();
+        for (int i = 1; i <= num; i++) {
+            numList.add(i);
+        }
+        List<List<Integer>> combinations = findCombinations(numList, generalizeScene.getType());
+        for (List<Integer> combination : combinations) {
+            Collections.sort(combination);
+        }
+        Set<List<Integer>> combinationset = new HashSet<>(combinations);
+        int down = (int) ((conflictspeed - minSpeed) / step);
+        int up = (int) ((maxSpeed - conflictspeed) / step);
+        return (down+up)*combinationset.size();
+    }
+
+    void checkGereneralizeScene(GeneralizeScene sceneDetailDto) throws BusinessException {
+        Optional.ofNullable(sceneDetailDto.getId())
+                .orElseThrow(() -> new BusinessException("参数不完整"));
+        Optional.ofNullable(sceneDetailDto.getStep())
+                .orElseThrow(() -> new BusinessException("参数不完整"));
+        Optional.ofNullable(sceneDetailDto.getMaxSpeed())
+                .orElseThrow(() -> new BusinessException("参数不完整"));
+        Optional.ofNullable(sceneDetailDto.getMinSpeed())
+                .orElseThrow(() -> new BusinessException("参数不完整"));
+        if(sceneDetailDto.getMinSpeed()>=sceneDetailDto.getMaxSpeed()){
+            throw new BusinessException("最小速度不能大于等于最大速度");
         }
     }
 
@@ -248,7 +364,7 @@ public class TjFragmentedSceneDetailServiceImpl
         detail.setAllStageLabel(CollectionUtils.isNotEmpty(labellist)
                 ? labellist.stream().distinct().collect(Collectors.joining(","))
                 : null);
-        if (sceneDetailDto.getSimuType().equals(0)) {
+        if (sceneDetailDto.getSimuType()!=null&&sceneDetailDto.getSimuType().equals(0)) {
             detail.setTrajectoryInfoTime(!ObjectUtils.isEmpty(sceneDetailDto.getTrajectoryJson())
                     ? sceneDetailDto.getTrajectoryJson().buildId().toJsonString()
                     : null);
@@ -256,6 +372,9 @@ public class TjFragmentedSceneDetailServiceImpl
             detail.setTrajectoryInfo(!ObjectUtils.isEmpty(sceneDetailDto.getTrajectoryJson())
                     ? sceneDetailDto.getTrajectoryJson().buildId().toJsonString()
                     : null);
+        }
+        if (!ObjectUtils.isEmpty(sceneDetailDto.getReferencePoints())){
+            detail.setReferencePoint(sceneDetailDto.getReferencePoints().toJSONString());
         }
         boolean flag = this.saveOrUpdate(detail);
         sceneDetailDto.setId(detail.getId());
@@ -308,18 +427,8 @@ public class TjFragmentedSceneDetailServiceImpl
      */
     @Override
     public void generalizeScene(GeneralizeScene sceneDetailDto) throws BusinessException {
-        Optional.ofNullable(sceneDetailDto.getId())
-                .orElseThrow(() -> new BusinessException("参数不完整"));
-        Optional.ofNullable(sceneDetailDto.getStep())
-                .orElseThrow(() -> new BusinessException("参数不完整"));
-        Optional.ofNullable(sceneDetailDto.getMaxSpeed())
-                .orElseThrow(() -> new BusinessException("参数不完整"));
-        Optional.ofNullable(sceneDetailDto.getMinSpeed())
-                .orElseThrow(() -> new BusinessException("参数不完整"));
-        FragmentedScenesDetailVo detailVo = getDetailVo(sceneDetailDto.getId());
-        if(sceneDetailDto.getMinSpeed()>=sceneDetailDto.getMaxSpeed()){
-            throw new BusinessException("最小速度不能大于等于最大速度");
-        }
+        checkGereneralizeScene(sceneDetailDto);
+        FragmentedScenesDetailVo detailVo = getDetailVo(sceneDetailDto.getId(), null);
         List<ParticipantTrajectoryBo> participantTrajectoryBos = detailVo.getTrajectoryJson().getParticipantTrajectories().stream()
                 .filter(t -> PartType.MAIN.equals(t.getType())).collect(Collectors.toList());
         Optional.of(participantTrajectoryBos)
@@ -365,7 +474,7 @@ public class TjFragmentedSceneDetailServiceImpl
         for (int i = 1; i <= num; i++) {
             numList.add(i);
         }
-        List<List<Integer>> combinations = findCombinations(numList);
+        List<List<Integer>> combinations = findCombinations(numList, sceneDetailDto.getType());
         for (List<Integer> combination : combinations) {
             Collections.sort(combination);
         }
@@ -429,10 +538,15 @@ public class TjFragmentedSceneDetailServiceImpl
         }
     }
 
-    private static List<List<Integer>> findCombinations(List<Integer> nums) {
+    private static List<List<Integer>> findCombinations(List<Integer> nums, Integer type) {
         List<List<Integer>> result = new ArrayList<>();
-        backtracking(nums, new ArrayList<>(), result);
-        return result;
+        if (type == 0){
+            result.add(nums);
+            return result;
+        }else {
+            backtracking(nums, new ArrayList<>(), result);
+            return result;
+        }
     }
 
     private static void backtracking(List<Integer> nums, List<Integer> tempResult, List<List<Integer>> result) {
