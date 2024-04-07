@@ -328,7 +328,7 @@ public class InfiniteTaskController {
     })
     public AjaxResult getEvaluationResult(Integer taskId, Integer caseId) {
         try {
-            taskCaseService.twStop(0, caseId,"finish");
+            taskCaseService.twStop(0, taskId,"finish");
             return AjaxResult.success(
                 tjShardingChangeRecordService.shardingResult(0, taskId));
         } catch (Exception e) {
