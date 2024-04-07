@@ -549,6 +549,7 @@ public class TaskController extends BaseController {
             }
         }else {
             redisCache.redisTemplate.delete(key);
+            taskCaseService.twStop(platformSSDto.getTaskId(), platformSSDto.getCaseId(),"finish");
         }
     }
 }
