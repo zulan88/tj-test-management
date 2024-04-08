@@ -241,6 +241,12 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
     @Override
     public List<BusinessTreeSelect> buildSceneTreeSelect(List<TjFragmentedScenes> scenes, String name) {
         List<TjFragmentedScenes> sceneTrees = buildSceneTree(scenes);
+        String user = SecurityUtils.getUsername();
+        if (!user.equals("admin")) {
+            sceneTrees = sceneTrees.stream().filter(item -> {
+                return item.getCreatedBy().equals(user);
+            }).collect(Collectors.toList());
+        }
         return sceneTrees.stream().map(BusinessTreeSelect::new).map(tree -> BusinessTreeUtils.fuzzySearch(tree, name))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());

@@ -54,8 +54,8 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
     private RestService restService;
 
     @Override
-    public List<InfinteMileScenceExo> selectInfinteMileScenceList() {
-        List<InfinteMileScenceExo> list = baseMapper.selectInfinteMileScenceExo();
+    public List<InfinteMileScenceExo> selectInfinteMileScenceList(Integer status) {
+        List<InfinteMileScenceExo> list = baseMapper.selectInfinteMileScenceExo(status);
         return list;
     }
 

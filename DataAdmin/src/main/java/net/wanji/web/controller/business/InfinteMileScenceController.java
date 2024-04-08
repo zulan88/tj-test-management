@@ -38,9 +38,9 @@ public class InfinteMileScenceController extends BaseController {
     private RedisCache redisCache;
 
     @GetMapping("/list")
-    public TableDataInfo list() {
+    public TableDataInfo list(Integer status) {
         startPage();
-        List<InfinteMileScenceExo> list = infinteMileScenceService.selectInfinteMileScenceList();
+        List<InfinteMileScenceExo> list = infinteMileScenceService.selectInfinteMileScenceList(status);
         List<InfinteMileScenceExo> infinteMileScenceExoList = list.stream().peek(infinteMileScenceExo -> {
             infinteMileScenceService.dualInfiniteSimulation(infinteMileScenceExo);
             if (infinteMileScenceExo.getInElements()!= null) {
