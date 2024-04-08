@@ -520,7 +520,7 @@ public class TjFragmentedSceneDetailServiceImpl
                         participantTrajectoryBoList.getTrajectory().forEach(trajectoryDetailBo -> {
                             Double speed = trajectoryDetailBo.getSpeed();
                             if (speed != null) {
-                                trajectoryDetailBo.setSpeed(speed * (1 - finalI * proStep));
+                                trajectoryDetailBo.setSpeed(speed * (1 + finalI * proStep));
                             }
                         });
                     }
