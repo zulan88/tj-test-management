@@ -407,6 +407,9 @@ public class InfiniteTaskController {
         required = true), @ApiImplicitParam(name = "caseId",
         value = "场景ID",
         dataType = "Integer",
+        required = true), @ApiImplicitParam(name = "recordId",
+        value = "测试记录ID",
+        dataType = "Integer",
         required = true), @ApiImplicitParam(name = "startTimestamp",
         value = "回放开始时间",
         dataType = "Long"), @ApiImplicitParam(name = "endTimestamp",
@@ -414,10 +417,12 @@ public class InfiniteTaskController {
         dataType = "Long")
     })
     @GetMapping("/playback")
-    public AjaxResult playback(Integer taskId, Integer caseId,
+    public AjaxResult playback(Integer taskId, Integer caseId, Integer recordId,
         Long startTimestamp, Long endTimestamp) {
         try {
-            Integer recordId = getPlaybackRecordId(caseId);
+            if (null == recordId) {
+                recordId = getPlaybackRecordId(caseId);
+            }
             // 暂时智能一处回放，多处回放需要修改websocket处理请求参数
             // 文件id
             TjInfinityTaskRecord record = tjInfinityTaskRecordService.getById(
@@ -434,7 +439,7 @@ public class InfiniteTaskController {
                 Constants.ChannelBuilder.buildWebSocketPlaybackChannel(
                     String.valueOf(recordId)), dataFileId, startTimestamp,
                 endTimestamp);
-            return AjaxResult.success();
+            return AjaxResult.success(recordId);
         } catch (Exception e) {
             return AjaxResult.error(e.getMessage());
         }
