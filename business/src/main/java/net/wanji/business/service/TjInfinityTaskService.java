@@ -5,6 +5,7 @@ import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.dto.TaskDto;
 import net.wanji.business.domain.vo.CasePageVo;
+import net.wanji.business.domain.vo.PlatformSSDto;
 import net.wanji.business.domain.vo.task.infinity.InfinityTaskInitVo;
 import net.wanji.business.domain.vo.task.infinity.InfinityTaskPreparedVo;
 import net.wanji.business.entity.infity.TjInfinityTask;
@@ -88,12 +89,9 @@ public interface TjInfinityTaskService extends IService<TjInfinityTask> {
 
     /**
      *
-     * @param taskId 0
-     * @param caseId 代替taskId
-     * @param action
-     * @param username
+     * @param platformSSDto
      * @return
+     * @throws BusinessException
      */
-    boolean startStop(Integer taskId, Integer caseId, Integer action,
-        String username, Boolean taskEnd) throws BusinessException;
+    boolean startStop(PlatformSSDto platformSSDto) throws BusinessException;
 }

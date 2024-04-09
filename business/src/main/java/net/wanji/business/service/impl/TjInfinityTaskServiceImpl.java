@@ -23,6 +23,7 @@ import net.wanji.business.domain.param.CaseSSInfo;
 import net.wanji.business.domain.param.CaseTrajectoryParam;
 import net.wanji.business.domain.param.TessParam;
 import net.wanji.business.domain.vo.CasePageVo;
+import net.wanji.business.domain.vo.PlatformSSDto;
 import net.wanji.business.domain.vo.task.infinity.DeviceInfo;
 import net.wanji.business.domain.vo.task.infinity.InfinityTaskInitVo;
 import net.wanji.business.domain.vo.task.infinity.InfinityTaskPreparedVo;
@@ -358,8 +359,15 @@ public class TjInfinityTaskServiceImpl
   }
 
   @Override
-  public boolean startStop(Integer taskId, Integer caseId, Integer action,
-      String username, Boolean taskEnd) throws BusinessException {
+  public boolean startStop(PlatformSSDto platformSSDto)
+      throws BusinessException {
+    int taskId = platformSSDto.getTaskId();
+    int caseId = platformSSDto.getCaseId();
+    String username = String.valueOf(platformSSDto.getContext().get("user"));
+    int action = platformSSDto.getState();
+    boolean taskEnd = platformSSDto.isTaskEnd();
+    String benchmarkDataChannel = platformSSDto.getBenchmarkDataChannel();
+
     // 1.用例详情
     TjInfinityTask tjInfinityTask = this.getById(caseId);
     // 2.向主控发送规则
@@ -367,14 +375,10 @@ public class TjInfinityTaskServiceImpl
     List<TjDeviceDetail> tjDeviceDetails = tjDeviceDetailService.listByIds(
         tjTaskDataConfigs.stream().map(TjInfinityTaskDataConfig::getDeviceId)
             .collect(Collectors.toList()));
-    TjDeviceDetail avDetail = tjDeviceDetails.stream()
-        .filter(e -> Constants.PartRole.AV.equals(e.getSupportRoles()))
-        .findFirst()
-        .orElseThrow(() -> new BusinessException("用例主车配置信息异常"));
     Map<Integer, List<TessngEvaluateDto>> tessngEvaluateAVs = createTessngEvaluateAVs(
         tjTaskDataConfigs);
 
-    control(0, caseId, avDetail.getCommandChannel(), username, tjDeviceDetails,
+    control(0, caseId, benchmarkDataChannel, username, tjDeviceDetails,
         action <= 0 ? 0 : action, taskEnd, tessngEvaluateAVs);
 
     // 评价信息处理

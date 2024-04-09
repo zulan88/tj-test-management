@@ -204,13 +204,9 @@ public class InfiniteTaskController {
     public AjaxResult shardingRangeInOut(
         @RequestBody ShardingInOutVo shardingInOutVo) {
         try {
-            QueryWrapper<TjInfinityTaskRecord> taskRecordQW = new QueryWrapper<>();
-            taskRecordQW.eq("task_id", shardingInOutVo.getTaskId());
-            taskRecordQW.eq("case_id", shardingInOutVo.getCaseId());
-            taskRecordQW.eq("created_by", shardingInOutVo.getUsername());
-            TjInfinityTaskRecord taskRecord = tjInfinityTaskRecordService.getOne(
-                taskRecordQW);
-            Integer recordId = taskRecord.getId();
+            Integer recordId = getPlaybackRecordId(
+                shardingInOutVo.getTaskId(), shardingInOutVo.getCaseId(),
+                shardingInOutVo.getUsername());
 
             TjShardingChangeRecord tjShardingChangeRecord = new TjShardingChangeRecord();
             BeanUtils.copyProperties(shardingInOutVo, tjShardingChangeRecord);
@@ -421,7 +417,8 @@ public class InfiniteTaskController {
         Long startTimestamp, Long endTimestamp) {
         try {
             if (null == recordId) {
-                recordId = getPlaybackRecordId(caseId);
+                recordId = getPlaybackRecordId(null, caseId,
+                    SecurityUtils.getUsername());
             }
             // 暂时智能一处回放，多处回放需要修改websocket处理请求参数
             // 文件id
@@ -486,15 +483,19 @@ public class InfiniteTaskController {
         }
     }
 
-    private Integer getPlaybackRecordId(Integer caseId){
+    private Integer getPlaybackRecordId(Integer taskId, Integer caseId, String username){
         TjInfinityTask byId = tjInfinityTaskService.getById(caseId);
         Integer selectedRecordId = byId.getSelectedRecordId();
         if(null != selectedRecordId){
             return selectedRecordId;
         }else {
             QueryWrapper<TjInfinityTaskRecord> recordQW = new QueryWrapper<>();
+            if(null != taskId){
+                recordQW.eq("task_id", taskId);
+            }
             recordQW.eq("case_id", caseId);
             recordQW.orderByDesc("created_date");
+            recordQW.eq("created_by", username);
             Page<TjInfinityTaskRecord> recordPage = new Page<>(0,1);
             Page<TjInfinityTaskRecord> pageRecord = tjInfinityTaskRecordService.page(
                 recordPage, recordQW);

@@ -335,10 +335,7 @@ public class TaskController extends BaseController {
         }
         Integer testMode = platformSSDto.getTestMode();
         if (null != testMode && testMode.equals(3)) {
-            tjInfinityTaskService.startStop(platformSSDto.getTaskId(),
-                platformSSDto.getCaseId(), platformSSDto.getState(),
-                (String) platformSSDto.getContext().get("user"),
-                platformSSDto.isTaskEnd());
+            tjInfinityTaskService.startStop(platformSSDto);
         }else {
             if (platformSSDto.getTaskId() == 0) {
                 if (platformSSDto.getState() == 1) {

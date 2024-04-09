@@ -66,8 +66,14 @@ public class PlatformSSDto {
   private String message;
 
   @ApiModelProperty(value = "测试类型",
-      dataType = "Itring",
+      dataType = "String",
       example = "Constants.TestMode",
       position = 7)
   private Integer testMode;
+
+  @ApiModelProperty(value = "基准数据频道（主车之一）",
+      dataType = "String",
+      example = "result",
+      position = 7)
+  private String benchmarkDataChannel;
 }
