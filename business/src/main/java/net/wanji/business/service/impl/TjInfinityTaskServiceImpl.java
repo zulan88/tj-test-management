@@ -118,37 +118,36 @@ public class TjInfinityTaskServiceImpl
 
     List<Map<String, Object>> pageList = tjInfinityMapper.getPageList(in);
     for (Map<String, Object> task : pageList) {
-      String id = task.get("id").toString();
-      List<TjInfinityTaskDataConfig> list = tjInfinityTaskDataConfigService.list(
-          new QueryWrapper<TjInfinityTaskDataConfig>().eq("task_id", id)
-              .eq("type", "av"));
-      for (TjInfinityTaskDataConfig tjInfinityTaskDataConfig : list) {
-        Integer deviceId = tjInfinityTaskDataConfig.getDeviceId();
-        TjDeviceDetail deviceDetail = tjDeviceDetailService.getById(deviceId);
-        tjInfinityTaskDataConfig.setDeviceName(deviceDetail.getDeviceName());
-      }
-      task.put("avDeviceIds", list);
+        String id = task.get("id").toString();
+        List<TjInfinityTaskDataConfig> list = tjInfinityTaskDataConfigService.list(
+            new QueryWrapper<TjInfinityTaskDataConfig>().eq("task_id", id)
+                .eq("type", "av"));
+        for (TjInfinityTaskDataConfig tjInfinityTaskDataConfig : list) {
+          Integer deviceId = tjInfinityTaskDataConfig.getDeviceId();
+          TjDeviceDetail deviceDetail = tjDeviceDetailService.getById(deviceId);
+          tjInfinityTaskDataConfig.setDeviceName(deviceDetail.getDeviceName());
+        }
+        task.put("avDeviceIds", list);
 
-      Integer caseId = Integer.parseInt(task.get("case_id").toString());
-      InfinteMileScenceExo infinteMileScenceExo = infinteMileScenceService.selectInfinteMileScenceById2(
-          caseId);
-      task.put("infinteMileScence", infinteMileScenceExo);
+        Integer caseId = Integer.parseInt(task.get("case_id").toString());
+        InfinteMileScenceExo infinteMileScenceExo = infinteMileScenceService.selectInfinteMileScenceById2(
+            caseId);
+        task.put("infinteMileScence", infinteMileScenceExo);
 
-      // TODO 任务历史记录
-      List<Map<String, Object>> historyRecords = new ArrayList<>();
-      historyRecords.add(new HashMap<String, Object>() {{
-        put("taskStartTime", "2024-03-15 00:00:00");
-        put("taskRunningTime", "00:15:24");
-        put("record", "1");
-      }});
+        List<Map<String, Object>> historyRecords = new ArrayList<>();
+        QueryWrapper<TjInfinityTaskRecord> record = new QueryWrapper<>();
+        record.eq("case_id", id);
+        record.orderByDesc("created_date");
+        List<TjInfinityTaskRecord> taskRecords = tjInfinityTaskRecordService.list(record);
+        for (TjInfinityTaskRecord taskRecord : taskRecords) {
+          historyRecords.add(new HashMap<String, Object>() {{
+            put("taskStartTime", taskRecord.getCreatedDate());
+            put("taskRunningTime", taskRecord.getDuration());
+            put("record", taskRecord.getId());
+          }});
+        }
 
-      historyRecords.add(new HashMap<String, Object>() {{
-        put("taskStartTime", "2024-03-15 00:00:00");
-        put("taskRunningTime", "00:15:24");
-        put("record", "2");
-      }});
-
-      task.put("historyRecords", historyRecords);
+        task.put("historyRecords", historyRecords);
     }
 
     return pageList;
