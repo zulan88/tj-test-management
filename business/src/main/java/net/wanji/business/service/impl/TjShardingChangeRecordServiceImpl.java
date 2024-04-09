@@ -79,7 +79,7 @@ public class TjShardingChangeRecordServiceImpl
     String commandChannel = RedisChannelUtils.getCommandChannelByRole(
         tjTessngShardingChangeDto.getTaskId(),
         tjTessngShardingChangeDto.getCaseId(), Constants.PartRole.MV_SIMULATION,
-        null, null);
+        null, tjTessngShardingChangeDto.getUsername());
     redisTemplate.convertAndSend(commandChannel,
         new ObjectMapper().writeValueAsString(tjTessngShardingChangeDto));
     return false;

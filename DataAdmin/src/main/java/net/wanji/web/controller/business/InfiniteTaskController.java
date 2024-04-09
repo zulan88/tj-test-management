@@ -204,9 +204,8 @@ public class InfiniteTaskController {
     public AjaxResult shardingRangeInOut(
         @RequestBody ShardingInOutVo shardingInOutVo) {
         try {
-            Integer recordId = getPlaybackRecordId(
-                shardingInOutVo.getTaskId(), shardingInOutVo.getCaseId(),
-                shardingInOutVo.getUsername());
+            Integer recordId = getLastRecordId(shardingInOutVo.getTaskId(),
+                shardingInOutVo.getCaseId(), shardingInOutVo.getUsername());
 
             TjShardingChangeRecord tjShardingChangeRecord = new TjShardingChangeRecord();
             BeanUtils.copyProperties(shardingInOutVo, tjShardingChangeRecord);
@@ -220,12 +219,15 @@ public class InfiniteTaskController {
             BeanUtils.copyProperties(tjShardingChangeRecord,
                 tjTessngShardingChangeDto);
             tjTessngShardingChangeDto.setRecordId(recordId);
+            tjTessngShardingChangeDto.setUsername(
+                shardingInOutVo.getUsername());
             tjShardingChangeRecordService.tessngShardingInOutSend(
                 tjTessngShardingChangeDto);
         } catch (Exception e) {
             if (log.isErrorEnabled()) {
                 log.error("shardingInOut taskId:[{}], caseId:[{}]",
-                    shardingInOutVo.getTaskId(), shardingInOutVo.getCaseId(), e);
+                    shardingInOutVo.getTaskId(), shardingInOutVo.getCaseId(),
+                    e);
             }
             return AjaxResult.error(e.getMessage());
         }
@@ -489,21 +491,26 @@ public class InfiniteTaskController {
         if(null != selectedRecordId){
             return selectedRecordId;
         }else {
-            QueryWrapper<TjInfinityTaskRecord> recordQW = new QueryWrapper<>();
-            if(null != taskId){
-                recordQW.eq("task_id", taskId);
-            }
-            recordQW.eq("case_id", caseId);
-            recordQW.orderByDesc("created_date");
-            recordQW.eq("created_by", username);
-            Page<TjInfinityTaskRecord> recordPage = new Page<>(0,1);
-            Page<TjInfinityTaskRecord> pageRecord = tjInfinityTaskRecordService.page(
-                recordPage, recordQW);
-            if(CollectionUtils.isEmpty(pageRecord.getRecords())){
-                return null;
-            }else {
-                return pageRecord.getRecords().get(0).getId();
-            }
+            return getLastRecordId(taskId, caseId, username);
+        }
+    }
+
+    private Integer getLastRecordId(Integer taskId, Integer caseId,
+        String username) {
+        QueryWrapper<TjInfinityTaskRecord> recordQW = new QueryWrapper<>();
+        if(null != taskId){
+            recordQW.eq("task_id", taskId);
+        }
+        recordQW.eq("case_id", caseId);
+        recordQW.orderByDesc("created_date");
+        recordQW.eq("created_by", username);
+        Page<TjInfinityTaskRecord> recordPage = new Page<>(0,1);
+        Page<TjInfinityTaskRecord> pageRecord = tjInfinityTaskRecordService.page(
+            recordPage, recordQW);
+        if(CollectionUtils.isEmpty(pageRecord.getRecords())){
+            return null;
+        }else {
+            return pageRecord.getRecords().get(0).getId();
         }
     }
 

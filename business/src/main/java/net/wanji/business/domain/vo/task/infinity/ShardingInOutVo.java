@@ -52,18 +52,19 @@ public class ShardingInOutVo implements Serializable {
       dataType = "Integer",
       position = 6)
   private int state;
-  /**
-   * 创建人名称
-   */
+  @ApiModelProperty(value = "创建人名称",
+      required = true,
+      dataType = "String",
+      position = 7)
   private String username;
   @ApiModelProperty(value = "分片触发时间戳",
       required = true,
       dataType = "Long",
-      position = 7)
+      position = 8)
   private Long timestamp;
   @ApiModelProperty(value = "任务类型，分片：4",
       required = true,
       dataType = "Integer",
-      position = 8)
+      position = 9)
   private Integer type;
 }
