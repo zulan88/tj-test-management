@@ -2,6 +2,7 @@ package net.wanji.business.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.wanji.business.common.Constants;
 import net.wanji.business.domain.InfinteMileScenceExo;
 import net.wanji.business.domain.dto.TjTessngShardingChangeDto;
 import net.wanji.business.domain.vo.task.infinity.ShardingResultVo;
@@ -13,6 +14,7 @@ import net.wanji.business.mapper.TjShardingChangeRecordMapper;
 import net.wanji.business.service.InfinteMileScenceService;
 import net.wanji.business.service.TjShardingChangeRecordService;
 import net.wanji.business.util.RedisCacheUtils;
+import net.wanji.business.util.RedisChannelUtils;
 import net.wanji.common.core.redis.RedisCache;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -74,7 +76,10 @@ public class TjShardingChangeRecordServiceImpl
   public boolean tessngShardingInOutSend(
       TjTessngShardingChangeDto tjTessngShardingChangeDto) throws Exception {
     tjTessngShardingChangeDto.setShardingId(1);
-    String commandChannel = "";
+    String commandChannel = RedisChannelUtils.getCommandChannelByRole(
+        tjTessngShardingChangeDto.getTaskId(),
+        tjTessngShardingChangeDto.getCaseId(), Constants.PartRole.MV_SIMULATION,
+        null, null);
     redisTemplate.convertAndSend(commandChannel,
         new ObjectMapper().writeValueAsString(tjTessngShardingChangeDto));
     return false;

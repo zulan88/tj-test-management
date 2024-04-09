@@ -225,7 +225,7 @@ public class InfiniteTaskController {
         } catch (Exception e) {
             if (log.isErrorEnabled()) {
                 log.error("shardingInOut taskId:[{}], caseId:[{}]",
-                    shardingInOutVo.getTaskId(), shardingInOutVo.getCaseId());
+                    shardingInOutVo.getTaskId(), shardingInOutVo.getCaseId(), e);
             }
             return AjaxResult.error(e.getMessage());
         }
