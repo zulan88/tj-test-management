@@ -380,12 +380,6 @@ public class TjInfinityTaskServiceImpl
     control(0, caseId, benchmarkDataChannel, username, tjDeviceDetails,
         action <= 0 ? 0 : action, taskEnd, tessngEvaluateAVs);
 
-    // 评价信息处理
-    evaluationProcess(taskId, caseId, action, username);
-
-    // 历史记录
-    recordProcess(taskId, caseId, action, username);
-
     // 3.更新业务数据
     tjInfinityTask.setStatus(2 == action ?
         Constants.TaskStatusEnum.RUNNING.getCode() :
@@ -612,7 +606,12 @@ public class TjInfinityTaskServiceImpl
             tessngEvaluateAVs), avCommandChannel, taskEnd))) {
       throw new BusinessException("主控响应异常");
     }
-    tjShardingChangeRecordService.stateControl(taskId, caseId, taskType);
+    // 历史记录
+    recordProcess(taskId, caseId, taskType, createBy);
+    // 切片准备信息
+    tjShardingChangeRecordService.stateControl(taskId, caseId, taskType, createBy);
+    // 评价信息处理
+    evaluationProcess(taskId, caseId, taskType, createBy);
   }
 
   private List<TjInfinityTaskDataConfig> taskDevices(Integer taskId) {
