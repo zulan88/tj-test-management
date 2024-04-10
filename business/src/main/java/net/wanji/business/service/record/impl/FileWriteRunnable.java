@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -37,17 +38,18 @@ public class FileWriteRunnable implements Runnable {
   @Override
   public void run() {
     started = true;
-    try (FileWriter writer = new FileWriter(new File(path, name))) {
+    FileWriter writer = null;
+    try {
+      writer = new FileWriter(new File(path, name));
       while (!stop.get()) {
-        String poll = queue.take();
+        String data = queue.poll(5, TimeUnit.SECONDS);
         if (!init) {
           writer.write("\n");
         } else {
           init = false;
         }
-        writer.write(poll);
+        writer.write(data);
       }
-      writer.flush();
     } catch (Exception e) {
       if (log.isErrorEnabled()) {
         log.error("file [{}] [{}] write error!", path, name, e);
@@ -59,7 +61,15 @@ public class FileWriteRunnable implements Runnable {
           log.error("File [{}] [{}] delete error!", path, name, de);
         }
       }
-    }finally {
+    } finally {
+      try {
+        if (null != writer) {
+          writer.flush();
+          writer.close();
+        }
+      } catch (Exception e) {
+        log.error("File [{}] [{}] writer close error!", path, name, e);
+      }
       countDownLatchAtom.get().countDown();
     }
   }
@@ -78,7 +88,7 @@ public class FileWriteRunnable implements Runnable {
 
   public boolean stop(CountDownLatch countDownLatch) {
     // 防止进程未启动一直等待
-    if(!started){
+    if (!started) {
       countDownLatch.countDown();
     }
     countDownLatchAtom.set(countDownLatch);

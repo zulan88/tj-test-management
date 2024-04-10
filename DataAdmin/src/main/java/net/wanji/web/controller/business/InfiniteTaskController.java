@@ -435,6 +435,9 @@ public class InfiniteTaskController {
                 endTimestamp);
             return AjaxResult.success(recordId);
         } catch (Exception e) {
+            if(log.isErrorEnabled()){
+                log.error("playback [{}] error!", recordId, e);
+            }
             return AjaxResult.error(e.getMessage());
         }
     }
