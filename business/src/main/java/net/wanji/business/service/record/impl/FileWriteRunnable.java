@@ -32,9 +32,11 @@ public class FileWriteRunnable implements Runnable {
   private final AtomicBoolean stop = new AtomicBoolean(false);
   private final AtomicReference<CountDownLatch> countDownLatchAtom = new AtomicReference<>();
   private boolean init = true;
+  private boolean started = false;
 
   @Override
   public void run() {
+    started = true;
     try (FileWriter writer = new FileWriter(new File(path, name))) {
       while (!stop.get()) {
         String poll = queue.take();
@@ -75,6 +77,10 @@ public class FileWriteRunnable implements Runnable {
   }
 
   public boolean stop(CountDownLatch countDownLatch) {
+    // 防止进程未启动一直等待
+    if(!started){
+      countDownLatch.countDown();
+    }
     countDownLatchAtom.set(countDownLatch);
     stop.set(true);
     return true;
