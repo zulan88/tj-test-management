@@ -17,6 +17,7 @@ import net.wanji.business.domain.dto.TaskDto;
 import net.wanji.business.domain.dto.TjTessngShardingChangeDto;
 import net.wanji.business.domain.vo.task.infinity.InfinityTaskInitVo;
 import net.wanji.business.domain.vo.task.infinity.InfinityTaskPreparedVo;
+import net.wanji.business.domain.vo.task.infinity.SelectRecordIdVo;
 import net.wanji.business.domain.vo.task.infinity.ShardingInOutVo;
 import net.wanji.business.entity.infity.TjInfinityTask;
 import net.wanji.business.entity.infity.TjInfinityTaskRecord;
@@ -183,18 +184,12 @@ public class InfiniteTaskController {
     }
 
     @ApiOperation("设置回放测试记录ID")
-    @ApiImplicitParams({ @ApiImplicitParam(name = "taskId",
-        value = "任务ID",
-        dataType = "Long",
-        required = true), @ApiImplicitParam(name = "recordId",
-        value = "记录ID",
-        dataType = "Long")
-    })
     @PostMapping("/selectedRecordId")
-    public AjaxResult selectedRecordId(Integer taskId, Integer recordId) {
+    public AjaxResult selectedRecordId(
+        @RequestBody SelectRecordIdVo selectRecordIdVo) {
         UpdateWrapper<TjInfinityTask> uw = new UpdateWrapper<>();
-        uw.eq("id", taskId);
-        uw.set("selected_record_id", recordId);
+        uw.eq("id", selectRecordIdVo.getTaskId());
+        uw.set("selected_record_id", selectRecordIdVo.getRecordId());
         return AjaxResult.success(tjInfinityTaskService.update(uw));
     }
 
