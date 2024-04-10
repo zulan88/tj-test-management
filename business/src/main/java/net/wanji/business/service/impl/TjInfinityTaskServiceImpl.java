@@ -477,7 +477,7 @@ public class TjInfinityTaskServiceImpl
       deviceInfo.setDeviceStatus(DeviceStatus.NOT_ARRIVED);
       infinityTaskPreparedVo.setCanStart(false);
       infinityTaskPreparedVo.setMessage(
-          String.format("设备[%s]未到达！", dataConfig.getParticipatorName()));
+          String.format("等待设备[%s]到达！", dataConfig.getParticipatorName()));
     }
   }
 

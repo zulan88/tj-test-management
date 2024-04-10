@@ -22,7 +22,7 @@ public class DeviceInfo {
   private String type;
   @ApiModelProperty(value = "设备ID")
   private Integer id;
-  @ApiModelProperty(value = "设备状态-枚举，OFFLINE：离线，ONLINE：在线，ARRIVED：已到达，NOT_ARRIVED：未到达，BUSY：使用中，IDLE：空闲")
+  @ApiModelProperty(value = "设备状态-枚举，OFFLINE：离线，ONLINE：在线，ARRIVED：已到达，NOT_ARRIVED：等待到达，BUSY：使用中，IDLE：空闲")
   private DeviceStatus deviceStatus;
   @ApiModelProperty(value = "设备状态-名称")
   private String statusName;

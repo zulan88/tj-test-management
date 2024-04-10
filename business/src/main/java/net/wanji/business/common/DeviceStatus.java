@@ -11,7 +11,7 @@ public enum DeviceStatus {
   OFFLINE(0, "离线"),
   ONLINE(1, "在线"),
   ARRIVED(2, "已到达"),
-  NOT_ARRIVED(3, "未到达"),
+  NOT_ARRIVED(3, "等待到达"),
   BUSY(4, "使用中"),
   IDLE(5, "空闲");
 
