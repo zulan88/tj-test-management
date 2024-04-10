@@ -228,7 +228,7 @@ public class SceneBaseController extends BaseController {
             List<ParticipantTrajectoryBo> participantTrajectoryBos = sceneDebugDto.getTrajectoryJson()
                     .getParticipantTrajectories().stream().peek(trajectory -> {
                         for(TrajectoryDetailBo trajectoryBo : trajectory.getTrajectory()){
-                            trajectoryBo.setTime("0");
+                            trajectoryBo.setSpeed(0d);
                         }
                     }).collect(Collectors.toList());
             sceneDebugDto.getTrajectoryJson().setParticipantTrajectories(participantTrajectoryBos);
