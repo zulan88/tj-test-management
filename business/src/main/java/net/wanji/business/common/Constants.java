@@ -109,9 +109,14 @@ public interface Constants {
         public static final String DEFAULT_STATUS_CHANNEL = "STATUSResult";
 
         public static boolean validClientType(Integer clientType) {
-            return !ObjectUtils.isEmpty(clientType) && (clientType == SCENE_PREVIEW || clientType == SIMULATION
-                    || clientType == REAL || clientType == PLAN || clientType == TASK || clientType == TASK_PREVIEW
-                    || clientType == TESTING_PREVIEW|| clientType == INFINITE_SIMULATION);
+            return
+                !ObjectUtils.isEmpty(clientType) && (clientType == SCENE_PREVIEW
+                    || clientType == SIMULATION || clientType == REAL
+                    || clientType == PLAN || clientType == TASK
+                    || clientType == TASK_PREVIEW
+                    || clientType == TESTING_PREVIEW
+                    || clientType == INFINITE_SIMULATION)
+                    || clientType == WS_PLAYBACK;
         }
 
 

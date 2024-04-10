@@ -40,6 +40,7 @@ public class TjTessngShardingChangeDto implements Serializable {
 
   private Long timestamp = System.currentTimeMillis();
   private Integer type = 4;
+  private String username;
 
   public void setParticipantId(String participantId) {
     this.participantId = Integer.parseInt(participantId);

@@ -1,17 +1,22 @@
 package net.wanji.business.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import net.wanji.business.common.Constants;
 import net.wanji.business.domain.InfinteMileScenceExo;
 import net.wanji.business.domain.dto.TjTessngShardingChangeDto;
 import net.wanji.business.domain.vo.task.infinity.ShardingResultVo;
 import net.wanji.business.entity.infity.TjInfinityTask;
+import net.wanji.business.entity.infity.TjInfinityTaskRecord;
 import net.wanji.business.entity.infity.TjShardingChangeRecord;
 import net.wanji.business.entity.infity.TjShardingResult;
 import net.wanji.business.mapper.TjInfinityMapper;
 import net.wanji.business.mapper.TjShardingChangeRecordMapper;
 import net.wanji.business.service.InfinteMileScenceService;
+import net.wanji.business.service.TjInfinityTaskRecordService;
 import net.wanji.business.service.TjShardingChangeRecordService;
 import net.wanji.business.util.RedisCacheUtils;
 import net.wanji.business.util.RedisChannelUtils;
@@ -34,6 +39,7 @@ import java.util.stream.Collectors;
  * @date 2024/3/12 18:23
  **/
 @Service
+@RequiredArgsConstructor
 public class TjShardingChangeRecordServiceImpl
     extends ServiceImpl<TjShardingChangeRecordMapper, TjShardingChangeRecord>
     implements TjShardingChangeRecordService {
@@ -41,27 +47,21 @@ public class TjShardingChangeRecordServiceImpl
   private final RedisCache redisCache;
   private final RedisTemplate<String, Object> redisTemplate;
   private final InfinteMileScenceService infinteMileScenceService;
+  private final TjInfinityTaskRecordService tjInfinityTaskRecordService;
   @Resource
   private TjShardingChangeRecordMapper shardingChangeRecordMapper;
   @Resource
   private TjInfinityMapper tjInfinityMapper;
 
-  public TjShardingChangeRecordServiceImpl(RedisCache redisCache,
-      RedisTemplate<String, Object> redisTemplate,
-      InfinteMileScenceService infinteMileScenceService) {
-    this.redisCache = redisCache;
-    this.redisTemplate = redisTemplate;
-    this.infinteMileScenceService = infinteMileScenceService;
-  }
-
   @Override
-  public void start(Integer taskId, Integer caseId) {
+  public void start(Integer taskId, Integer caseId, String username) {
     String recordCacheId = RedisCacheUtils.createRecordCacheId(taskId, caseId);
     if (redisCache.hasKey(recordCacheId)) {
       redisCache.deleteObject(recordCacheId);
     }
 
-    redisCache.setCacheObject(recordCacheId, createRecordId());
+    redisCache.setCacheObject(recordCacheId,
+        createRecordId(taskId, caseId, username));
   }
 
   @Override
@@ -79,7 +79,7 @@ public class TjShardingChangeRecordServiceImpl
     String commandChannel = RedisChannelUtils.getCommandChannelByRole(
         tjTessngShardingChangeDto.getTaskId(),
         tjTessngShardingChangeDto.getCaseId(), Constants.PartRole.MV_SIMULATION,
-        null, null);
+        null, tjTessngShardingChangeDto.getUsername());
     redisTemplate.convertAndSend(commandChannel,
         new ObjectMapper().writeValueAsString(tjTessngShardingChangeDto));
     return false;
@@ -92,9 +92,10 @@ public class TjShardingChangeRecordServiceImpl
   }
 
   @Override
-  public void stateControl(Integer taskId, Integer caseId, Integer state) {
+  public void stateControl(Integer taskId, Integer caseId, Integer state,
+      String username) {
     if (state > 0) {
-      this.start(taskId, caseId);
+      this.start(taskId, caseId, username);
     } else {
       this.stop(taskId, caseId);
     }
@@ -128,7 +129,18 @@ public class TjShardingChangeRecordServiceImpl
 
   }
 
-  private Integer createRecordId() {
-    return Math.abs(new Random().nextInt());
+  private Integer createRecordId(Integer taskId, Integer caseId,
+      String username) {
+    QueryWrapper<TjInfinityTaskRecord> recordQW = new QueryWrapper<>();
+    if (null != taskId) {
+      recordQW.eq("task_id", taskId);
+    }
+    recordQW.eq("case_id", caseId);
+    recordQW.orderByDesc("created_date");
+    recordQW.eq("created_by", username);
+    Page<TjInfinityTaskRecord> recordPage = new Page<>(0, 1);
+    Page<TjInfinityTaskRecord> pageRecord = tjInfinityTaskRecordService.page(
+        recordPage, recordQW);
+    return pageRecord.getRecords().get(0).getId();
   }
 }

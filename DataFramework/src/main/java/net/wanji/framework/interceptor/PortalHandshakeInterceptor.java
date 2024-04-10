@@ -75,13 +75,15 @@ public class PortalHandshakeInterceptor implements HandshakeInterceptor {
             logger.info("userName = {}, token = {}", loginUser.getUsername(), authorization);
 
             //存入数据，方便在hander中获取，这里只是在方便在webSocket中存储了数据，并不是在正常的httpSession中存储，想要在平时使用的session中获得这里的数据，需要使用session 来存储一下
-            map.put("userName", loginUser.getUsername());
+            map.put("userName", nullToEmpty(loginUser.getUsername(), ""));
             map.put("createTime", System.currentTimeMillis());
-            map.put("token", authorization);
-            map.put("id", req.getParameter("id"));
-            map.put("clientType", req.getParameter("clientType"));
-            map.put("signId", req.getParameter("signId"));
-            map.put(HttpSessionHandshakeInterceptor.HTTP_SESSION_ID_ATTR_NAME, req.getSession().getId());
+            map.put("token", nullToEmpty(authorization, ""));
+            map.put("id", nullToEmpty(req.getParameter("id"), -1));
+            map.put("clientType",
+                nullToEmpty(req.getParameter("clientType"), ""));
+            map.put("signId", nullToEmpty(req.getParameter("signId"), ""));
+            map.put(HttpSessionHandshakeInterceptor.HTTP_SESSION_ID_ATTR_NAME,
+                req.getSession().getId());
             logger.info("【beforeHandshake】 WEBSOCKET_INFO_MAP: {}", map);
         }
         logger.info("HandshakeInterceptor beforeHandshake end...");
@@ -105,6 +107,13 @@ public class PortalHandshakeInterceptor implements HandshakeInterceptor {
             httpResponse.addHeader("Sec-WebSocket-Protocol", httpRequest.getHeader("Sec-WebSocket-Protocol"));
         }
         logger.info("HandshakeInterceptor afterHandshake end...");
+    }
+
+    private Object nullToEmpty(Object obj, Object defaultVal){
+        if(null == obj){
+            return defaultVal;
+        }
+        return obj;
     }
 
 }
