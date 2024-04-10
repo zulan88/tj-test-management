@@ -453,7 +453,7 @@ public class TjInfinityTaskServiceImpl
     if (Constants.PartRole.AV.equals(deviceInfo.getType())) {
       stateParam.setParams(
           new ParamsDto(String.valueOf(dataConfig.getDeviceId()),
-              routeService.mainTrajectory(mainPlanFile)));
+              routeService.mainTrajectory(mainPlanFile, "1")));
     }
     if (Constants.PartRole.MV_SIMULATION.equals(deviceInfo.getType())) {
       // 无限里程不发送其它自定参数

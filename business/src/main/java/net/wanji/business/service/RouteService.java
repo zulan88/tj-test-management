@@ -450,15 +450,15 @@ public class RouteService {
         return FileUtils.readOriTrajectory(routeFile);
     }
 
-    public List<SimulationTrajectoryDto> mainTrajectory(String fileName)
+    public List<SimulationTrajectoryDto> mainTrajectory(String fileName,String id)
         throws BusinessException {
         List<SimulationTrajectoryDto> participantTrajectories = null;
         try {
             participantTrajectories = this.readOriRouteFile(fileName);
             participantTrajectories = participantTrajectories.stream()
                 .filter(item -> !ObjectUtils.isEmpty(item.getValue())
-                    && item.getValue().stream().anyMatch(p -> "1".equals(p.getId())))
-                .peek(s -> s.setValue(s.getValue().stream().filter(p -> "1".equals(p.getId()))
+                    && item.getValue().stream().anyMatch(p -> id.equals(p.getId())))
+                .peek(s -> s.setValue(s.getValue().stream().filter(p -> id.equals(p.getId()))
                     .collect(Collectors.toList())))
                 .collect(Collectors.toList());
         } catch (IOException e) {

@@ -63,6 +63,7 @@ import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
 import net.wanji.system.service.ISysDictDataService;
 import org.apache.commons.collections4.CollectionUtils;
+import org.ehcache.impl.internal.concurrent.ConcurrentHashMap;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -151,8 +152,8 @@ public class TestingServiceImpl implements TestingService {
         List<CaseConfigBo> allCaseConfigs = new ArrayList<>();
         Map<String, String> caseBusinessIdAndRoleMap = new HashMap<>();
         Map<String, String> startMap = new HashMap<>();
-        List<SimulationTrajectoryDto> mainTrajectories = new ArrayList<>();
-        fillStatusParam(caseInfoBo, allCaseConfigs, caseBusinessIdAndRoleMap, startMap, mainTrajectories);
+        Map<String, List<SimulationTrajectoryDto>> trajectoryMap = new ConcurrentHashMap<>();
+        fillStatusParam(caseInfoBo, allCaseConfigs, caseBusinessIdAndRoleMap, startMap, trajectoryMap);
         // 3.设备过滤
         List<CaseConfigBo> distCaseConfigs = DeviceUtils.deWeightConfigsByDeviceId(allCaseConfigs);
         List<CaseConfigBo> filteredTaskCaseConfigs = distCaseConfigs.stream()
@@ -165,9 +166,11 @@ public class TestingServiceImpl implements TestingService {
             caseReset(caseId, caseInfoBo, simulationConfig,
                 filteredTaskCaseConfigs);
         }
+        List<String> id = new ArrayList<>();
+        filteredTaskCaseConfigs.forEach(t -> id.add(t.getBusinessId()));
         // 5.状态查询
-        getDevicesStatus(hand, distCaseConfigs, mainTrajectories, caseInfoBo,
-            caseBusinessIdAndRoleMap);
+        getDevicesStatus(hand, distCaseConfigs, trajectoryMap, caseInfoBo,
+            caseBusinessIdAndRoleMap,id);
         stopWatch.stop();
         // 6.返回结果集
         return buildPageVo(caseInfoBo, startMap, allCaseConfigs, distCaseConfigs, running);
@@ -238,14 +241,13 @@ public class TestingServiceImpl implements TestingService {
      * @param caseConfigs
      * @param caseBusinessIdAndRoleMap
      * @param startMap
-     * @param mainTrajectories
      * @throws BusinessException
      */
     private void fillStatusParam(CaseInfoBo caseInfoBo,
                                  List<CaseConfigBo> caseConfigs,
                                  Map<String, String> caseBusinessIdAndRoleMap,
                                  Map<String, String> startMap,
-                                 List<SimulationTrajectoryDto> mainTrajectories) throws BusinessException {
+                                 Map<String, List<SimulationTrajectoryDto>> trajectoryMap) throws BusinessException {
         // 1..参与者开始点位
         CaseTrajectoryDetailBo trajectoryDetail = JSONObject.parseObject(caseInfoBo.getDetailInfo(),
                 CaseTrajectoryDetailBo.class);
@@ -260,7 +262,18 @@ public class TestingServiceImpl implements TestingService {
             caseBusinessIdAndRoleMap.put(caseConfig.getBusinessId(), caseConfig.getParticipantRole());
         }
         // 3.主车轨迹 -- av车需要主车全部轨迹
-        mainTrajectories.addAll(routeService.mainTrajectory(caseInfoBo.getRouteFile()));
+        trajectoryMap.put("AV", routeService.mainTrajectory(caseInfoBo.getRouteFile(),"1"));
+        caseConfigs.forEach(
+                caseConfig -> {
+                    if (!PartRole.MV_SIMULATION.equals(caseConfig.getSupportRoles()) && !PartRole.AV.equals(caseConfig.getSupportRoles())) {
+                        try {
+                            trajectoryMap.put(caseConfig.getBusinessId(), routeService.mainTrajectory(caseInfoBo.getRouteFile(),caseConfig.getBusinessId()));
+                        } catch (BusinessException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }
+        );
     }
 
     /**
@@ -273,7 +286,7 @@ public class TestingServiceImpl implements TestingService {
      */
     private Map<String, Object> buildTessStateParam(CaseInfoBo caseInfoBo,
                                                     Map<String, String> caseBusinessIdAndRoleMap,
-                                                    Integer mainSize) {
+                                                    Integer mainSize, List<String> id) {
         Map<String, Object> tessParams = new HashMap<>();
         // gdj edit start 2023-11-17
         List<Map<String, Object>> param1 = new ArrayList<>();
@@ -302,6 +315,8 @@ public class TestingServiceImpl implements TestingService {
             if (PartType.MAIN.equals(participantTrajectory.getType())) {
                 tessParams.put("avId", participantTrajectory.getId());
                 tessParams.put("avName", participantTrajectory.getName());
+                continue;
+            }else if (id.contains(participantTrajectory.getId())) {
                 continue;
             }
             Map<String, Object> map = new HashMap<>();
@@ -888,8 +903,8 @@ public class TestingServiceImpl implements TestingService {
     }
 
     private void getDevicesStatus(boolean hand, List<CaseConfigBo> distCaseConfigs,
-        List<SimulationTrajectoryDto> mainTrajectories, CaseInfoBo caseInfoBo,
-        Map<String, String> caseBusinessIdAndRoleMap) {
+                                  Map<String, List<SimulationTrajectoryDto>> trajectoryMap, CaseInfoBo caseInfoBo,
+        Map<String, String> caseBusinessIdAndRoleMap,List<String> id ) {
         for (CaseConfigBo caseConfigBo : distCaseConfigs) {
             Integer running = deviceDetailService.selectDeviceBusyStatus(
                 DeviceUtils.getVisualDeviceId(caseConfigBo.getCaseId(),
@@ -920,13 +935,14 @@ public class TestingServiceImpl implements TestingService {
                     caseConfigBo.getCaseId(), caseConfigBo.getSupportRoles(),
                     caseConfigBo.getCommandChannel(), null));
             if (PartRole.AV.equals(caseConfigBo.getParticipantRole())) {
-                stateParam.setParams(new ParamsDto("1", mainTrajectories));
-            }
-            if (PartRole.MV_SIMULATION.equals(
+                stateParam.setParams(new ParamsDto("1", trajectoryMap.get("AV")));
+            }else if (PartRole.MV_SIMULATION.equals(
                 caseConfigBo.getParticipantRole())) {
                 stateParam.setParams(
                     buildTessStateParam(caseInfoBo, caseBusinessIdAndRoleMap,
-                        mainTrajectories.size()));
+                        1,id));
+            }else {
+                stateParam.setParams(new ParamsDto(caseConfigBo.getBusinessId(), trajectoryMap.get(caseConfigBo.getBusinessId())));
             }
             Integer positionStatus = hand ?
                 deviceDetailService.handDeviceReadyState(
