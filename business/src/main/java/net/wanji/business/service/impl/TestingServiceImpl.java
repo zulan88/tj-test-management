@@ -488,6 +488,7 @@ public class TestingServiceImpl implements TestingService {
 
         caseInfoBo.getCaseConfigs().stream().filter(t -> PartRole.AV.equals(t.getSupportRoles())).findFirst().ifPresent(t -> {
             caseTrajectoryParam.setDataChannel(t.getDataChannel());
+            caseTrajectoryParam.setControlChannel(t.getCommandChannel());
         });
         String key = ChannelBuilder.buildTestingDataChannel(SecurityUtils.getUsername(), caseId);
         kafkaCollector.remove(key, caseId);

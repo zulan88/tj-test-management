@@ -35,7 +35,7 @@ public class FileAnalysis {
     // 记录每一行开头的指针位置
     List<Long> offsets = new ArrayList<>();
     long startTimestamp = 0;
-    long endTimestamp = 0;
+    long endTimestamp;
     try (FileInputStream fis = new FileInputStream(file);
         InputStreamReader isr = new InputStreamReader(fis,
             StandardCharsets.ISO_8859_1);
@@ -62,12 +62,8 @@ public class FileAnalysis {
       endTimestamp = getTimestamp(judgeFL);
     }
     analyseProgress.progress(dataFile.getId(), "100");
-    dataFile.setDataStartTime(
-        LocalDateTime.ofInstant(Instant.ofEpochMilli(startTimestamp),
-            ZoneId.systemDefault()));
-    dataFile.setDataStopTime(
-        LocalDateTime.ofInstant(Instant.ofEpochMilli(endTimestamp),
-            ZoneId.systemDefault()));
+    dataFile.setDataStartTimestamp(startTimestamp);
+    dataFile.setDataStopTimestamp(endTimestamp);
     dataFile.setLineOffset(new ObjectMapper().writeValueAsString(offsets)
         .getBytes(StandardCharsets.UTF_8));
     return dataFile;

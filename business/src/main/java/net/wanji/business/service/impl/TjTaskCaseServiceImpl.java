@@ -656,6 +656,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             for (TaskCaseConfigBo caseConfig : taskCaseInfo.getDataConfigs()) {
                 if (caseConfig.getType().equals(PartRole.AV)) {
                     caseTrajectoryParam.setDataChannel(caseConfig.getDataChannel());
+                    caseTrajectoryParam.setControlChannel(caseConfig.getCommandChannel());
                     Map<String, String> vehicleTypeMap = new HashMap<>();
                     vehicleTypeMap.put(caseConfig.getType(), caseConfig.getParticipatorId());
                     caseTrajectoryParam.setVehicleIdTypeMap(vehicleTypeMap);
@@ -663,7 +664,8 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 }
             }
         }
-        if (ObjectUtils.isEmpty(caseTrajectoryParam.getDataChannel())) {
+        if (ObjectUtils.isEmpty(caseTrajectoryParam.getDataChannel())
+            || ObjectUtils.isEmpty(caseTrajectoryParam.getControlChannel())) {
             throw new BusinessException("任务数据配置异常");
         }
         caseTrajectoryParam.setTaskId(taskId);

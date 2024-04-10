@@ -36,13 +36,13 @@ public class DataFile extends Lifecycle {
   /**
    * 开始时间戳
    */
-  @TableField("data_start_time")
-  private LocalDateTime dataStartTime;
+  @TableField("data_start_timestamp")
+  private Long dataStartTimestamp;
   /**
    * 结束时间戳
    */
-  @TableField("data_end_time")
-  private LocalDateTime dataStopTime;
+  @TableField("data_end_timestamp")
+  private Long dataStopTimestamp;
 
   /**
    * 每行的开始offset

@@ -36,6 +36,10 @@ public class CaseTrajectoryParam {
      * 主车数据频道
      */
     private String dataChannel;
+    /**
+     * 主车控制频道
+     */
+    private String controlChannel;
 
     /**
      * 主车场景轨迹点位信息/切片位置信息
@@ -46,10 +50,6 @@ public class CaseTrajectoryParam {
      * 任务持续时间(S)
      */
     private Long taskDuration;
-    /**
-     * 控制频道（tessng专用）
-     */
-    private String controlChannel;
 
     public List<CaseSSInfo> getCaseTrajectorySSVoList() {
         if (caseTrajectorySSVoList == null) {

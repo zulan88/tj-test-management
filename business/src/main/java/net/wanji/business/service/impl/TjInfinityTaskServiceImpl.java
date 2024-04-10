@@ -318,11 +318,10 @@ public class TjInfinityTaskServiceImpl
     TjInfinityTaskDataConfig avConfig = tjTaskDataConfigs.stream()
         .filter(e -> Constants.PartRole.AV.equals(e.getType())).findFirst()
         .get();
-    TjInfinityTaskDataConfig simulationConfig = tjTaskDataConfigs.stream()
-        .filter(e -> Constants.PartRole.MV_SIMULATION.equals(e.getType()))
-        .findFirst().get();
-    caseTrajectoryParam.setDataChannel(
-        tjDeviceDetailService.getById(avConfig.getDeviceId()).getDataChannel());
+    TjDeviceDetail avDevice = tjDeviceDetailService.getById(
+        avConfig.getDeviceId());
+    caseTrajectoryParam.setDataChannel(avDevice.getDataChannel());
+    caseTrajectoryParam.setControlChannel(avDevice.getCommandChannel());
     List<CaseSSInfo> trajectorySS = siteSlices.stream().map(e -> {
       CaseSSInfo caseSSInfo = new CaseSSInfo();
       caseSSInfo.setCaseId(taskId);
@@ -337,9 +336,6 @@ public class TjInfinityTaskServiceImpl
     }).collect(Collectors.toList());
     caseTrajectoryParam.setCaseTrajectorySSVoList(trajectorySS);
     caseTrajectoryParam.setTaskDuration(byId.getPlanTestTime());
-    caseTrajectoryParam.setControlChannel(
-        RedisChannelUtils.getCommandChannelByRole(0, taskId,
-            simulationConfig.getType(), null, null));
     String key = Constants.ChannelBuilder.buildTestingDataChannel(
         SecurityUtils.getUsername(), taskId);
     kafkaCollector.remove(key, taskId);
@@ -684,16 +680,19 @@ public class TjInfinityTaskServiceImpl
         record.eq("case_id", caseId);
         record.eq("created_by", username);
         record.orderByDesc("created_date");
-        TjInfinityTaskRecord one = tjInfinityTaskRecordService.list(record)
-            .get(0);
-        // 取消kafka数据订阅
-        kafkaTrajectoryConsumer.unSubscribe(
-            new ToLocalDto(taskId, caseId, null, one.getDataFileId(), null));
+        List<TjInfinityTaskRecord> results = tjInfinityTaskRecordService.list(
+            record);
+        if(!CollectionUtils.isEmpty(results)){
+          TjInfinityTaskRecord one = results.get(0);
+          // 取消kafka数据订阅
+          kafkaTrajectoryConsumer.unSubscribe(
+              new ToLocalDto(taskId, caseId, null, one.getDataFileId(), null));
 
-        one.setDuration(
-            Duration.between(one.getCreatedDate(), LocalDateTime.now())
-                .toMillis() / 1000);
-        tjInfinityTaskRecordService.updateById(one);
+          one.setDuration(
+              Duration.between(one.getCreatedDate(), LocalDateTime.now())
+                  .toMillis() / 1000);
+          tjInfinityTaskRecordService.updateById(one);
+        }
       }
     } catch (Exception e) {
       if (log.isErrorEnabled()) {

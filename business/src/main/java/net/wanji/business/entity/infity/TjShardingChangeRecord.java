@@ -61,8 +61,8 @@ public class TjShardingChangeRecord implements Serializable {
   @TableField("state")
   private int state;
 
-  @TableField("create_time")
-  private Date createTime;
+  @TableField("create_timestamp")
+  private Long createTimestamp;
 
   /**
    * 测试记录ID

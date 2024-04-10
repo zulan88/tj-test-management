@@ -59,8 +59,6 @@ public class DataFileServiceImpl extends ServiceImpl<DataFileMapper, DataFile>
     DataFile dataFile = this.getById(toLocalDto.getFileId());
     countDownLatch.await();
     dataFile.setEncode("utf-8");
-    // ?????????????????? 要改
-    dataFile.setDataStopTime(LocalDateTime.now());
     FileAnalysis.lineOffset(path, dataFile, (id, progress) -> {
       DataFile dataFileQ = new DataFile();
       dataFileQ.setId(toLocalDto.getFileId());
@@ -79,10 +77,9 @@ public class DataFileServiceImpl extends ServiceImpl<DataFileMapper, DataFile>
         new String(dataFile.getLineOffset(), StandardCharsets.UTF_8),
         new TypeReference<List<Long>>() {
         });
-    long startOffset = getStartOffset(fileOffset(
-            dataFile.getDataStartTime().atZone(ZoneId.systemDefault()).toInstant()
-                .toEpochMilli(), startTimestamp), offsets, localFile.getPath(),
-        dataFile.getEncode(), startTimestamp);
+    long startOffset = getStartOffset(
+        fileOffset(dataFile.getDataStartTimestamp(), startTimestamp), offsets,
+        localFile.getPath(), dataFile.getEncode(), startTimestamp);
     long endOffset = getEndOffset(startOffset, startTimestamp, endTimestamp,
         offsets);
 
