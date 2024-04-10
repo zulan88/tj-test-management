@@ -71,6 +71,9 @@ public class RestServiceImpl implements RestService {
     @Value("${tess.server}")
     private String tessServerUrl;
 
+    @Value("${tess.stopserver}")
+    private String tessStopUrl;
+
     @Value("${tess.infiniteServer}")
     private String infiniteServerUrl;
 
@@ -201,8 +204,11 @@ public class RestServiceImpl implements RestService {
     }
 
     @Override
-    public boolean stopInfinite(String ip, String port, String dataChannel) {
+    public boolean stopTessNg(String ip, String port, String dataChannel, int type) {
         String resultUrl = ip + ":" + port + infiniteServerUrl + "/StopSimu";
+        if (type == 1){
+            resultUrl = ip + ":" + port + tessStopUrl;
+        }
         log.info("============================== tessServerUrl：{}", resultUrl);
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setContentType(MediaType.APPLICATION_JSON);

@@ -259,7 +259,7 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
             throw new BusinessException("当前无可用仿真程序");
         }
         DeviceDetailVo detailVo = deviceDetailVos.get(0);
-        return restService.stopInfinite(detailVo.getIp(), detailVo.getServiceAddress(),channel);
+        return restService.stopTessNg(detailVo.getIp(), detailVo.getServiceAddress(),channel,0);
     }
 
     @Override

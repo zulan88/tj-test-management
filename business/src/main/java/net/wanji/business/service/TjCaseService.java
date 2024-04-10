@@ -148,7 +148,7 @@ public interface TjCaseService extends IService<TjCase> {
     /**
      * 删除用例
      *
-     * @param tjCaseDto
+     * @param
      * @return
      */
     boolean batchDelete(List<Integer> caseIds) throws BusinessException;

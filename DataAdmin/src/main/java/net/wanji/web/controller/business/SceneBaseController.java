@@ -395,4 +395,9 @@ public class SceneBaseController extends BaseController {
         return AjaxResult.success(tjFragmentedSceneDetailService.sortCount(sceneDetailDto));
     }
 
+    @GetMapping("/simustop")
+    public AjaxResult simustop(@RequestParam("id") Integer id) throws BusinessException {
+        return toAjax(tjFragmentedSceneDetailService.stopSence(id));
+    }
+
 }

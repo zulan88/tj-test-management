@@ -64,7 +64,7 @@ public interface RestService {
      * @param port
      * @return
      */
-    boolean stopInfinite(String ip, String port, String dataChannel);
+    boolean stopTessNg(String ip, String port, String dataChannel, int type);
 
     /**
      * 查询设备准备状态
