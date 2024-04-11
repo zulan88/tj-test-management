@@ -2,12 +2,19 @@ package net.wanji.framework.web.service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
 
+import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson2.JSON;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import net.wanji.common.constant.CacheConstants;
 import net.wanji.common.constant.Constants;
@@ -22,6 +29,7 @@ import eu.bitwalker.useragentutils.UserAgent;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * token验证处理
@@ -31,6 +39,11 @@ import io.jsonwebtoken.SignatureAlgorithm;
 @Component
 public class TokenService
 {
+    private static final Logger log = LoggerFactory.getLogger("tokenService");
+
+    @Autowired
+    private RestTemplate restTemplate;
+
     // 令牌自定义标识
     @Value("${token.header}")
     private String header;
@@ -47,7 +60,7 @@ public class TokenService
 
     protected static final long MILLIS_MINUTE = 60 * MILLIS_SECOND;
 
-    private static final Long MILLIS_MINUTE_TEN = 20 * 60 * 1000L;
+    private static final Long MILLIS_MINUTE_TEN = 9 * 60 * 1000L;
 
     @Autowired
     private RedisCache redisCache;
@@ -162,13 +175,41 @@ public class TokenService
      * @param loginUser
      * @return 令牌
      */
-    public void verifyToken(LoginUser loginUser)
+    public void verifyToken(LoginUser loginUser, String url)
     {
         long expireTime = loginUser.getExpireTime();
         long currentTime = System.currentTimeMillis();
         if (expireTime - currentTime <= MILLIS_MINUTE_TEN)
         {
-            refreshToken(loginUser);
+            String userKey = loginUser.getToken();
+            Pattern pattern = Pattern.compile("http://(.*):(\\d+)");
+            Matcher matcher = pattern.matcher(url);
+
+            if (matcher.find()) {
+                String ipAddress = matcher.group(1);
+                String port = matcher.group(2);
+                refrenshToken(ipAddress,port,userKey);
+            }
+        }
+    }
+
+    public void refrenshToken(String ip, String port, String token) {
+        String url = "http://" + ip + ":" + port + "/prod-api/auth/refresh";
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("Authorization", "Bearer " + token);
+            HttpEntity<String> requestEntity = new HttpEntity<>(null, headers);
+            ResponseEntity<String> response =
+                    restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
+            if (response.getStatusCodeValue() == 200) {
+                JSONObject result = JSONObject.parseObject(response.getBody(), JSONObject.class);
+                if (Objects.isNull(result) || !"success".equals(result.get("msg"))) {
+                    log.error("远程服务调用失败:{}", result.get("msg"));
+                }
+            }
+        }catch (Exception e) {
+            log.error("其他错误:{}", e);
         }
     }
 

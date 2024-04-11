@@ -1,5 +1,7 @@
 package net.wanji.common.core.redis;
 
+import com.alibaba.fastjson2.JSON;
+import net.wanji.common.core.domain.model.LoginUser;
 import net.wanji.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.BoundSetOperations;
@@ -8,6 +10,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;

@@ -22,7 +22,6 @@ import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.bean.BeanUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
@@ -250,7 +249,6 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
     }
 
     @Override
-//    @Async
     public boolean stopInfinteSimulation(Integer id) throws BusinessException {
         InfinteMileScence infinteMileScence = this.getById(id);
         String channel = Constants.ChannelBuilder.buildInfiniteSimulationChannel(SecurityUtils.getUsername(), infinteMileScence.getViewId());
