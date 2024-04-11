@@ -1,12 +1,15 @@
 package net.wanji.business.socket;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.wanji.business.common.Constants;
 import net.wanji.business.common.Constants.ChannelBuilder;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjTask;
+import net.wanji.business.entity.infity.TjInfinityTask;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.TjCaseService;
+import net.wanji.business.service.TjInfinityTaskService;
 import net.wanji.business.service.TjTaskService;
 import net.wanji.common.utils.StringUtils;
 import org.springframework.stereotype.Component;
@@ -25,15 +28,11 @@ import java.time.LocalDateTime;
  */
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class MyWebSocketHandle extends TextWebSocketHandler {
     private final TjTaskService tjTaskService;
     private final TjCaseService tjCaseService;
-
-    public MyWebSocketHandle(TjTaskService tjTaskService,
-        TjCaseService tjCaseService) {
-        this.tjTaskService = tjTaskService;
-        this.tjCaseService = tjCaseService;
-    }
+    private final TjInfinityTaskService tjInfinityTaskService;
 
     /**
      * socket 建立成功事件 @OnOpen
@@ -121,7 +120,7 @@ public class MyWebSocketHandle extends TextWebSocketHandler {
         throw new BusinessException("无法创建ws连接：客户端类型异常");
     }
 
-    private Constants.TaskStatusEnum getRunningStatus(String id) {
+    private boolean getRunningStatus(String id) {
         try {
             if (id.contains("_")) {
                 String[] tags = id.split("_");
@@ -132,16 +131,21 @@ public class MyWebSocketHandle extends TextWebSocketHandler {
                     // 查询测试任务状态
                     if ("0".equals(taskId)) {
                         // 测试配置-实车实验
-                        TjCase byId = tjCaseService.getById(
+                        TjCase tjCase = tjCaseService.getById(
                             Integer.valueOf(caseId));
-                        return byId.getRunningStatus();
+                        TjInfinityTask tjInfinityTask = tjInfinityTaskService.getById(
+                            Integer.valueOf(caseId));
+                        return !(Constants.TaskStatusEnum.RUNNING.equals(
+                            tjCase.getRunningStatus())
+                            || Constants.TaskStatusEnum.RUNNING.getCode()
+                            .equals(tjInfinityTask.getStatus()));
                     } else {
                         // 测试任务
                         TjTask tjTask = tjTaskService.selectOneById(
                             Integer.valueOf(taskId));
-                        if ("running".equals(tjTask.getStatus())) {
-                            return Constants.TaskStatusEnum.RUNNING;
-                        }
+                        return !Constants.TaskStatusEnum.RUNNING.getCode()
+                            .equals(tjTask.getStatus());
+
                     }
                 }
             }
@@ -150,6 +154,6 @@ public class MyWebSocketHandle extends TextWebSocketHandler {
                 log.error("id [{}] parse error!", id, e);
             }
         }
-        return null;
+        return true;
     }
 }

@@ -10,6 +10,7 @@ import net.wanji.business.domain.dto.ToLocalDto;
 import net.wanji.business.entity.DataFile;
 import net.wanji.business.mapper.DataFileMapper;
 import net.wanji.business.service.record.DataFileService;
+import net.wanji.business.socket.WebSocketManage;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -89,6 +90,7 @@ public class DataFileServiceImpl extends ServiceImpl<DataFileMapper, DataFile>
   @Override
   public boolean playbackStop(String playbackId) {
     ThreadUtils.stop(taskThreadMap.get(playbackId));
+    WebSocketManage.remove(playbackId, true);
     return true;
   }
 

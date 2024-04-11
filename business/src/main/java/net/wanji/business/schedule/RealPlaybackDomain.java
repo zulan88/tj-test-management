@@ -154,7 +154,7 @@ public class RealPlaybackDomain {
         this.validFuture();
         this.running = false;
 //        this.future.cancel(false);
-        WebSocketManage.remove(this.key, null);
+        WebSocketManage.remove(this.key, true);
     }
 
     private void validFuture() throws BusinessException {

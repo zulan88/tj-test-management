@@ -44,12 +44,12 @@ public class WebSocketManage {
         log.info(StringUtils.format("客户端{}加入，当前在线数量：{}", key, getOnlineCount()));
     }
 
-    public static void remove(String key, Constants.TaskStatusEnum status) {
+    public static void remove(String key, boolean couldRemove) {
         if (!CLIENTS.containsKey(key)) {
 //            log.error(StringUtils.format("remove:客户端{}不存在", key));
             return;
         }
-        if(Constants.TaskStatusEnum.RUNNING.equals(status)){
+        if(!couldRemove){
             return;
         }
         CLIENTS.remove(key);

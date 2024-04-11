@@ -51,7 +51,7 @@ public class PlaybackSchedule {
         if (!futureMap.containsKey(key)) {
             return;
         }
-        WebSocketManage.remove(key, null);
+        WebSocketManage.remove(key, true);
         futureMap.get(key).stopSendingData();
         futureMap.remove(key);
         log.info("删除回放任务{}", key);
