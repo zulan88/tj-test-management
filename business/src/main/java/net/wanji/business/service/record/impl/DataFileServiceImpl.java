@@ -17,8 +17,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -104,7 +102,7 @@ public class DataFileServiceImpl extends ServiceImpl<DataFileMapper, DataFile>
       String filePath, String encode, Long timestamp) {
     long startOffset = tentativeStartOffset;
     if (tentativeStartOffset > offsets.size()) {
-      startOffset = offsets.size() - 1;
+      return offsets.size() - 1;
     }
     if (tentativeStartOffset == 0) {
       return 0;
