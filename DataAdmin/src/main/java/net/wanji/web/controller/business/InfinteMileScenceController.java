@@ -104,7 +104,8 @@ public class InfinteMileScenceController extends BaseController {
 
     @GetMapping("/simustop")
     public AjaxResult simustop(@RequestParam("id") Integer id) throws BusinessException {
-        return toAjax(infinteMileScenceService.stopInfinteSimulation(id));
+        infinteMileScenceService.stopInfinteSimulation(id);
+        return AjaxResult.success();
     }
 
     @GetMapping("/getsliceimg")

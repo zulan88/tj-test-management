@@ -397,7 +397,8 @@ public class SceneBaseController extends BaseController {
 
     @GetMapping("/simustop")
     public AjaxResult simustop(@RequestParam("id") Integer id) throws BusinessException {
-        return toAjax(tjFragmentedSceneDetailService.stopSence(id));
+        tjFragmentedSceneDetailService.stopSence(id);
+        return AjaxResult.success();
     }
 
 }

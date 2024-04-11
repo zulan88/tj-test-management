@@ -44,6 +44,7 @@ import net.wanji.common.utils.bean.BeanUtils;
 import net.wanji.system.service.ISysDictDataService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
@@ -275,6 +276,7 @@ public class TjFragmentedSceneDetailServiceImpl
     }
 
     @Override
+    @Async
     public boolean stopSence(Integer id) throws BusinessException {
         TjFragmentedSceneDetail fragmentedSceneDetail = this.getById(id);
         String channel = Constants.ChannelBuilder.buildSimulationChannel(SecurityUtils.getUsername(), fragmentedSceneDetail.getNumber());
