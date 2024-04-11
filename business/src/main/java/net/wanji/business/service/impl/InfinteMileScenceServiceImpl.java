@@ -250,7 +250,7 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
     }
 
     @Override
-    @Async
+//    @Async
     public boolean stopInfinteSimulation(Integer id) throws BusinessException {
         InfinteMileScence infinteMileScence = this.getById(id);
         String channel = Constants.ChannelBuilder.buildInfiniteSimulationChannel(SecurityUtils.getUsername(), infinteMileScence.getViewId());

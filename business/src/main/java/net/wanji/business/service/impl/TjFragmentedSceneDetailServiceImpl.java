@@ -276,7 +276,7 @@ public class TjFragmentedSceneDetailServiceImpl
     }
 
     @Override
-    @Async
+//    @Async
     public boolean stopSence(Integer id) throws BusinessException {
         TjFragmentedSceneDetail fragmentedSceneDetail = this.getById(id);
         String channel = Constants.ChannelBuilder.buildSimulationChannel(SecurityUtils.getUsername(), fragmentedSceneDetail.getNumber());
