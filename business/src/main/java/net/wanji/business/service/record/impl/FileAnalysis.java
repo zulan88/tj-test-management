@@ -52,8 +52,8 @@ public class FileAnalysis {
           startTimestamp = getTimestamp(readLine);
         }
         offsets.add(totalSize);
-        //每行有换行符 需要+2
-        totalSize += lineSize + 2;
+        //每行有换行符
+        totalSize += lineSize + 1;
 
         analyseProgressHandler.record(dataFile.getId(), analyseProgress,
             fileLength, totalSize);
