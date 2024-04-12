@@ -22,7 +22,6 @@ import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.bean.BeanUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
@@ -250,15 +249,14 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
     }
 
     @Override
-//    @Async
-    public boolean stopInfinteSimulation(Integer id) throws BusinessException {
+    public boolean stopInfinteSimulation(Integer id){
         InfinteMileScence infinteMileScence = this.getById(id);
         String channel = Constants.ChannelBuilder.buildInfiniteSimulationChannel(SecurityUtils.getUsername(), infinteMileScence.getViewId());
         TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
         deviceDetailDto.setSupportRoles(Constants.PartRole.MV_SIMULATION);
         List<DeviceDetailVo> deviceDetailVos = deviceDetailMapper.selectByCondition(deviceDetailDto);
         if (CollectionUtils.isEmpty(deviceDetailVos)) {
-            throw new BusinessException("当前无可用仿真程序");
+            return false;
         }
         DeviceDetailVo detailVo = deviceDetailVos.get(0);
         return restService.stopTessNg(detailVo.getIp(), detailVo.getServiceAddress(),channel,0);

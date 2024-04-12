@@ -1,6 +1,8 @@
 package net.wanji.framework.config;
 
 import java.nio.charset.Charset;
+
+import net.wanji.common.core.domain.model.LoginUser;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.SerializationException;
 import com.alibaba.fastjson2.JSON;
@@ -31,7 +33,8 @@ public class FastJson2JsonRedisSerializer<T> implements RedisSerializer<T>
         {
             return new byte[0];
         }
-        return JSON.toJSONString(t, JSONWriter.Feature.WriteClassName).getBytes(DEFAULT_CHARSET);
+        String str = JSON.toJSONString(t, JSONWriter.Feature.WriteClassName);
+        return str.getBytes(DEFAULT_CHARSET);
     }
 
     @Override

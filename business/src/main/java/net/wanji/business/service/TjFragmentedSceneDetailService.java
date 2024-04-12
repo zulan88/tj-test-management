@@ -93,6 +93,6 @@ public interface TjFragmentedSceneDetailService extends IService<TjFragmentedSce
 
     Integer sortCount(GeneralizeScene generalizeScene)throws BusinessException;
 
-    boolean stopSence(Integer id)throws BusinessException;
+    boolean stopSence(Integer id);
 
 }

@@ -44,7 +44,6 @@ import net.wanji.common.utils.bean.BeanUtils;
 import net.wanji.system.service.ISysDictDataService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
@@ -276,15 +275,14 @@ public class TjFragmentedSceneDetailServiceImpl
     }
 
     @Override
-//    @Async
-    public boolean stopSence(Integer id) throws BusinessException {
+    public boolean stopSence(Integer id) {
         TjFragmentedSceneDetail fragmentedSceneDetail = this.getById(id);
         String channel = Constants.ChannelBuilder.buildSimulationChannel(SecurityUtils.getUsername(), fragmentedSceneDetail.getNumber());
         TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
         deviceDetailDto.setSupportRoles(Constants.PartRole.MV_SIMULATION);
         List<DeviceDetailVo> deviceDetailVos = deviceDetailMapper.selectByCondition(deviceDetailDto);
         if (CollectionUtils.isEmpty(deviceDetailVos)) {
-            throw new BusinessException("当前无可用仿真程序");
+            return false;
         }
         DeviceDetailVo detailVo = deviceDetailVos.get(0);
         return restService.stopTessNg(detailVo.getIp(), detailVo.getServiceAddress(),channel,1);

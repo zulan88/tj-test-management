@@ -2,12 +2,19 @@ package net.wanji.framework.web.service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
 
+import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson2.JSON;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import net.wanji.common.constant.CacheConstants;
 import net.wanji.common.constant.Constants;
@@ -22,6 +29,7 @@ import eu.bitwalker.useragentutils.UserAgent;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * token验证处理
@@ -31,6 +39,11 @@ import io.jsonwebtoken.SignatureAlgorithm;
 @Component
 public class TokenService
 {
+    private static final Logger log = LoggerFactory.getLogger("tokenService");
+
+    @Autowired
+    private RestTemplate restTemplate;
+
     // 令牌自定义标识
     @Value("${token.header}")
     private String header;
@@ -47,7 +60,7 @@ public class TokenService
 
     protected static final long MILLIS_MINUTE = 60 * MILLIS_SECOND;
 
-    private static final Long MILLIS_MINUTE_TEN = 20 * 60 * 1000L;
+    private static final Long MILLIS_MINUTE_TEN = 9 * 60 * 1000L;
 
     @Autowired
     private RedisCache redisCache;
@@ -65,19 +78,10 @@ public class TokenService
         {
             try
             {
-//                Claims claims = parseToken(token);
-                // 解析对应的权限以及用户信息
-//                String uuid = (String) claims.get(Constants.LOGIN_USER_KEY);
                 String userKey = getTokenKey(token);
                 LoginUser user = redisCache.getCacheObject(userKey);
                 user.setUserId(user.getUser().getUserId());
                 user.setDeptId(user.getUser().getDeptId());
-//                String str = "{\"browser\":\"Unknown\",\"deptId\":110,\"expireTime\":1697788855641,\"ipaddr\":\"127.0.0.1\",\"loginLocation\":\"hjk内网IP\",\"loginTime\":1697787055641,\"os\":\"Unknown\",\"permissions\":[\"*:*:*\"],\"token\":\"d24d64f1-0671-4ae5-bb15-8dd057c82032\",\"user\":{\"admin\":true,\"avatar\":\"http://10.102.1.157:8080/profile/avatar/2023/01/12/blob_20230112134140A008.jpeg\",\"createBy\":\"admin\",\"createTime\":\"2021-12-29 10:59:38\",\"delFlag\":\"0\",\"dept\":{\"ancestors\":\"0,100\",\"children\":[],\"deptId\":110,\"deptName\":\"高速集团\",\"orderNum\":1,\"params\":{},\"parentId\":100,\"status\":\"0\"},\"deptId\":110,\"email\":\"admin@163.com\",\"loginDate\":\"2023-10-20 14:59:13\",\"loginIp\":\"10.100.16.92\",\"nickName\":\"管理员\",\"params\":{},\"password\":\"$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2\",\"phonenumber\":\"15888888888\",\"remark\":\"管理员\",\"roles\":[{\"admin\":true,\"dataScope\":\"1\",\"deptCheckStrictly\":false,\"flag\":false,\"menuCheckStrictly\":false,\"params\":{},\"roleId\":1,\"roleKey\":\"admin\",\"roleName\":\"超级管理员\",\"roleSort\":\"1\",\"status\":\"0\"}],\"sex\":\"0\",\"status\":\"0\",\"userId\":1,\"userName\":\"admin\"},\"userId\":1,\"username\":\"admin\"}";
-//                LoginUser user = JSON.parseObject(str,LoginUser.class);
-//                user.setExpireTime(System.currentTimeMillis()+1000*60);
-//                System.out.println(JSON.toJSON(user));
-//                LoginUser user1 = new LoginUser();
-//                String str = redisCache.getCacheObject(userKey);
                 return user;
             }
             catch (Exception e)
@@ -162,13 +166,38 @@ public class TokenService
      * @param loginUser
      * @return 令牌
      */
-    public void verifyToken(LoginUser loginUser)
+    public void verifyToken(LoginUser loginUser, String url)
     {
         long expireTime = loginUser.getExpireTime();
         long currentTime = System.currentTimeMillis();
         if (expireTime - currentTime <= MILLIS_MINUTE_TEN)
         {
-            refreshToken(loginUser);
+            String userKey = loginUser.getToken();
+            Pattern pattern = Pattern.compile("http://(.*):(\\d+)");
+            Matcher matcher = pattern.matcher(url);
+
+            if (matcher.find()) {
+                String ipAddress = matcher.group(1);
+                String port = matcher.group(2);
+                refrenshToken(ipAddress,port,userKey);
+            }
+        }
+    }
+
+    public void refrenshToken(String ip, String port, String token) {
+        String url = "http://" + ip + ":" + port + "/prod-api/auth/refresh";
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("Authorization", "Bearer " + token);
+            HttpEntity<String> requestEntity = new HttpEntity<>(null, headers);
+            ResponseEntity<String> response =
+                    restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
+            if (response.getStatusCodeValue() == 200) {
+                log.error("token已刷新");
+            }
+        }catch (Exception e) {
+            log.error("其他错误:{}", e);
         }
     }
 
