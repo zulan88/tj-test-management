@@ -236,9 +236,9 @@ public class RedisTrajectory2Consumer {
                         sceneDebugDto.getTrajectoryJson().setDuration(duration);
                         // send ws
                         WebsocketMessage msg = new WebsocketMessage(RedisMessageType.END, null, sceneDebugDto);
-                        if(sceneDebugDto.getId()!=null){
-                            tjFragmentedSceneDetailService.saveSceneDebug(sceneDebugDto);
-                        }
+//                        if(sceneDebugDto.getId()!=null){
+//                            tjFragmentedSceneDetailService.saveSceneDebug(sceneDebugDto);
+//                        }
                         WebSocketManage.sendInfo(channel, JSONObject.toJSONString(msg));
                         break;
                     default:

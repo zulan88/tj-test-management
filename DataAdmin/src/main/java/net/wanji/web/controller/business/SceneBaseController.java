@@ -215,6 +215,9 @@ public class SceneBaseController extends BaseController {
     @PostMapping("/debugging")
     public AjaxResult debugging(@Validated(value = OtherGroup.class) @RequestBody SceneDebugDto sceneDebugDto)
             throws BusinessException, IOException {
+        if(sceneDebugDto.getId() == null){
+            return AjaxResult.error("请先保存场景");
+        }
         String repeatKey = "DEBUGGING_SCENE_" + sceneDebugDto.getNumber();
         if (redisCache.hasKey(repeatKey) && !redisCache.getCacheObject(repeatKey).equals(SecurityUtils.getUsername())) {
             return AjaxResult.error("有其他用户正在调试该场景，请稍后再试");
