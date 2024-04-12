@@ -156,9 +156,9 @@ public class KafkaTrajectoryConsumer {
       if (localOp.isPresent()) {
         ToLocalDto oldToLocal = localOp.get();
         dataFileService.writeStop(oldToLocal);
-        toLocalSet.remove(oldToLocal);
+        return toLocalSet.remove(oldToLocal);
       }
-      return true;
+      return false;
     } catch (Exception e) {
       if (log.isErrorEnabled()) {
         log.error("unSubscribe [{}] error!", toLocalDto, e);
@@ -170,8 +170,8 @@ public class KafkaTrajectoryConsumer {
   private void writeLocal(Integer taskId, Integer caseId,
       JSONArray participantTrajectories) {
     for (ToLocalDto toLocalDto : toLocalSet) {
-      if (toLocalDto.getTaskId().equals(taskId) && toLocalDto.getCaseId()
-          .equals(caseId)) {
+      if (new ToLocalDto(taskId, caseId).equals(
+          toLocalDto)) {
         toLocalDto.getToLocalThread()
             .write(participantTrajectories.toJSONString());
       }

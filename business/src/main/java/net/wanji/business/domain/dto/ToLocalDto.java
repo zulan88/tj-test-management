@@ -15,7 +15,6 @@ import java.util.Objects;
  * @date 2024/4/2 11:03
  **/
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
 public class ToLocalDto {
   private Integer taskId;
@@ -23,6 +22,25 @@ public class ToLocalDto {
   private String fileName;
   private Integer fileId;
   private FileWriteRunnable toLocalThread;
+
+  public ToLocalDto(Integer taskId, Integer caseId) {
+    this.taskId = taskId;
+    this.caseId = caseId;
+  }
+
+  public ToLocalDto(Integer taskId, Integer caseId, Integer fileId) {
+    this.taskId = taskId;
+    this.caseId = caseId;
+    this.fileId = fileId;
+  }
+
+  public ToLocalDto(Integer taskId, Integer caseId, String fileName,
+      Integer fileId) {
+    this.taskId = taskId;
+    this.caseId = caseId;
+    this.fileName = fileName;
+    this.fileId = fileId;
+  }
 
   @Override
   public boolean equals(Object o) {

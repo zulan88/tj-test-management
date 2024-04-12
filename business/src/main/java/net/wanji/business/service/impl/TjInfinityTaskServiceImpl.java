@@ -672,7 +672,7 @@ public class TjInfinityTaskServiceImpl
         // 监听kafka、文件记录
         kafkaTrajectoryConsumer.subscribe(
             new ToLocalDto(taskId, caseId, dataFile.getFileName(),
-                dataFile.getId(), null));
+                dataFile.getId()));
       } else {
         // 更新持续时间
         QueryWrapper<TjInfinityTaskRecord> record = new QueryWrapper<>();
@@ -682,16 +682,17 @@ public class TjInfinityTaskServiceImpl
         record.orderByDesc("created_date");
         List<TjInfinityTaskRecord> results = tjInfinityTaskRecordService.list(
             record);
-        if(!CollectionUtils.isEmpty(results)){
+        if (!CollectionUtils.isEmpty(results)) {
           TjInfinityTaskRecord one = results.get(0);
           // 取消kafka数据订阅
-          kafkaTrajectoryConsumer.unSubscribe(
-              new ToLocalDto(taskId, caseId, null, one.getDataFileId(), null));
+          if (kafkaTrajectoryConsumer.unSubscribe(
+              new ToLocalDto(taskId, caseId, one.getDataFileId()))) {
 
-          one.setDuration(
-              Duration.between(one.getCreatedDate(), LocalDateTime.now())
-                  .toMillis() / 1000);
-          tjInfinityTaskRecordService.updateById(one);
+            one.setDuration(
+                Duration.between(one.getCreatedDate(), LocalDateTime.now())
+                    .toMillis() / 1000);
+            tjInfinityTaskRecordService.updateById(one);
+          }
         }
       }
     } catch (Exception e) {
