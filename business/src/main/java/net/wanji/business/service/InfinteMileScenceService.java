@@ -48,7 +48,7 @@ public interface InfinteMileScenceService extends IService<InfinteMileScence> {
      * @return
      * @throws BusinessException
      */
-    boolean stopInfinteSimulation(Integer id) throws BusinessException;
+    boolean stopInfinteSimulation(Integer id);
 
     List<TrafficFlow> getTrafficFlow(Integer mapid) throws BusinessException;
 

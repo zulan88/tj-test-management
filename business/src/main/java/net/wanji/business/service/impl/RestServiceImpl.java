@@ -282,7 +282,7 @@ public class RestServiceImpl implements RestService {
                 return true;
             }
         } catch (Exception e) {
-            log.error("远程服务调用失败:{}", e);
+            log.error("其他失败:{}", e);
         }
         return false;
     }

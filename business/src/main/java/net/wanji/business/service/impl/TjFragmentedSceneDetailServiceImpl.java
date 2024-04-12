@@ -275,14 +275,14 @@ public class TjFragmentedSceneDetailServiceImpl
     }
 
     @Override
-    public boolean stopSence(Integer id) throws BusinessException {
+    public boolean stopSence(Integer id) {
         TjFragmentedSceneDetail fragmentedSceneDetail = this.getById(id);
         String channel = Constants.ChannelBuilder.buildSimulationChannel(SecurityUtils.getUsername(), fragmentedSceneDetail.getNumber());
         TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
         deviceDetailDto.setSupportRoles(Constants.PartRole.MV_SIMULATION);
         List<DeviceDetailVo> deviceDetailVos = deviceDetailMapper.selectByCondition(deviceDetailDto);
         if (CollectionUtils.isEmpty(deviceDetailVos)) {
-            throw new BusinessException("当前无可用仿真程序");
+            return false;
         }
         DeviceDetailVo detailVo = deviceDetailVos.get(0);
         return restService.stopTessNg(detailVo.getIp(), detailVo.getServiceAddress(),channel,1);

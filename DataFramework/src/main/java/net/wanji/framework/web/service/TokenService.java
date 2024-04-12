@@ -78,19 +78,10 @@ public class TokenService
         {
             try
             {
-//                Claims claims = parseToken(token);
-                // 解析对应的权限以及用户信息
-//                String uuid = (String) claims.get(Constants.LOGIN_USER_KEY);
                 String userKey = getTokenKey(token);
                 LoginUser user = redisCache.getCacheObject(userKey);
                 user.setUserId(user.getUser().getUserId());
                 user.setDeptId(user.getUser().getDeptId());
-//                String str = "{\"browser\":\"Unknown\",\"deptId\":110,\"expireTime\":1697788855641,\"ipaddr\":\"127.0.0.1\",\"loginLocation\":\"hjk内网IP\",\"loginTime\":1697787055641,\"os\":\"Unknown\",\"permissions\":[\"*:*:*\"],\"token\":\"d24d64f1-0671-4ae5-bb15-8dd057c82032\",\"user\":{\"admin\":true,\"avatar\":\"http://10.102.1.157:8080/profile/avatar/2023/01/12/blob_20230112134140A008.jpeg\",\"createBy\":\"admin\",\"createTime\":\"2021-12-29 10:59:38\",\"delFlag\":\"0\",\"dept\":{\"ancestors\":\"0,100\",\"children\":[],\"deptId\":110,\"deptName\":\"高速集团\",\"orderNum\":1,\"params\":{},\"parentId\":100,\"status\":\"0\"},\"deptId\":110,\"email\":\"admin@163.com\",\"loginDate\":\"2023-10-20 14:59:13\",\"loginIp\":\"10.100.16.92\",\"nickName\":\"管理员\",\"params\":{},\"password\":\"$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2\",\"phonenumber\":\"15888888888\",\"remark\":\"管理员\",\"roles\":[{\"admin\":true,\"dataScope\":\"1\",\"deptCheckStrictly\":false,\"flag\":false,\"menuCheckStrictly\":false,\"params\":{},\"roleId\":1,\"roleKey\":\"admin\",\"roleName\":\"超级管理员\",\"roleSort\":\"1\",\"status\":\"0\"}],\"sex\":\"0\",\"status\":\"0\",\"userId\":1,\"userName\":\"admin\"},\"userId\":1,\"username\":\"admin\"}";
-//                LoginUser user = JSON.parseObject(str,LoginUser.class);
-//                user.setExpireTime(System.currentTimeMillis()+1000*60);
-//                System.out.println(JSON.toJSON(user));
-//                LoginUser user1 = new LoginUser();
-//                String str = redisCache.getCacheObject(userKey);
                 return user;
             }
             catch (Exception e)
@@ -203,10 +194,7 @@ public class TokenService
             ResponseEntity<String> response =
                     restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
             if (response.getStatusCodeValue() == 200) {
-                JSONObject result = JSONObject.parseObject(response.getBody(), JSONObject.class);
-                if (Objects.isNull(result) || !"success".equals(result.get("msg"))) {
-                    log.error("远程服务调用失败:{}", result.get("msg"));
-                }
+                log.error("token已刷新");
             }
         }catch (Exception e) {
             log.error("其他错误:{}", e);

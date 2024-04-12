@@ -249,14 +249,14 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
     }
 
     @Override
-    public boolean stopInfinteSimulation(Integer id) throws BusinessException {
+    public boolean stopInfinteSimulation(Integer id){
         InfinteMileScence infinteMileScence = this.getById(id);
         String channel = Constants.ChannelBuilder.buildInfiniteSimulationChannel(SecurityUtils.getUsername(), infinteMileScence.getViewId());
         TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
         deviceDetailDto.setSupportRoles(Constants.PartRole.MV_SIMULATION);
         List<DeviceDetailVo> deviceDetailVos = deviceDetailMapper.selectByCondition(deviceDetailDto);
         if (CollectionUtils.isEmpty(deviceDetailVos)) {
-            throw new BusinessException("当前无可用仿真程序");
+            return false;
         }
         DeviceDetailVo detailVo = deviceDetailVos.get(0);
         return restService.stopTessNg(detailVo.getIp(), detailVo.getServiceAddress(),channel,0);
