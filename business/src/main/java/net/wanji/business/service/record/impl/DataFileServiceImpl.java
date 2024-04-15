@@ -56,7 +56,7 @@ public class DataFileServiceImpl extends ServiceImpl<DataFileMapper, DataFile>
     toLocalDto.getToLocalThread().stop(countDownLatch);
     // 更新记录
     DataFile dataFile = this.getById(toLocalDto.getFileId());
-    countDownLatch.await();
+    countDownLatch.await(5, TimeUnit.SECONDS);
     dataFile.setEncode("utf-8");
     FileAnalysis.lineOffset(path, dataFile, (id, progress) -> {
       DataFile dataFileQ = new DataFile();
