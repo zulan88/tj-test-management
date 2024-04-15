@@ -170,8 +170,8 @@ public class KafkaTrajectoryConsumer {
   private void writeLocal(Integer taskId, Integer caseId,
       JSONArray participantTrajectories) {
     for (ToLocalDto toLocalDto : toLocalSet) {
-      if (new ToLocalDto(taskId, caseId).equals(
-          toLocalDto)) {
+      if (toLocalDto.getTaskId().equals(taskId) && toLocalDto.getCaseId()
+          .equals(caseId)) {
         toLocalDto.getToLocalThread()
             .write(participantTrajectories.toJSONString());
       }

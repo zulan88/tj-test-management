@@ -25,6 +25,9 @@ public class AnalyseProgressHandler {
       analyseProgress.progress(id,
           String.format("%2.0f", currentSize / fileD * 100));
       changeTag.set(changeTag.get() + 1);
+      if (currentSize / fileD == 1) {
+        changeTag.set(0L);
+      }
     }
   }
 

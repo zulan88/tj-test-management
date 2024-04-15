@@ -12,13 +12,16 @@ import net.wanji.business.common.Constants;
 import net.wanji.business.domain.RealWebsocketMessage;
 import net.wanji.business.domain.dto.RecordSimulationTrajectoryDto;
 import net.wanji.business.entity.DataFile;
+import net.wanji.business.service.record.DataCopyService;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.common.utils.DateUtils;
+import net.wanji.common.utils.StringUtils;
 
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -40,6 +43,12 @@ public class FileReadThread extends Thread {
   private final Long endOffset;
   private final List<Long> offsets;
   private final String wsClientKey;
+  private final DataCopyService dataCopyService;
+  private final Map<String, List<FileReadThread>> taskThreadMap;
+  private int progressChange = 0;
+  private long totalRecords = 0;
+  private ObjectMapper objectMapper = new ObjectMapper();
+  private Exception exception;
 
   private final AtomicBoolean pause = new AtomicBoolean(false);
   private final AtomicBoolean stop = new AtomicBoolean(false);
@@ -52,6 +61,7 @@ public class FileReadThread extends Thread {
       throw new IllegalArgumentException(
           String.format("lineNum must between %s and %s", 0, offsets.size()));
     }
+    totalRecords = endOffset - startOffset;
     try (RandomAccessFile raf = new RandomAccessFile(localFile, "r")) {
       String encode = dataFile.getEncode();
       if (null == encode) {
@@ -59,16 +69,18 @@ public class FileReadThread extends Thread {
       }
       raf.seek(offsets.get(startOffset.intValue()));
       while (count <= endOffset && !stop.get()) {
-        if (pause.get()) {
-          synchronized (rateLimiter) {
-            rateLimiter.wait();
+        if (null != rateLimiter) {
+          if (pause.get()) {
+            synchronized (rateLimiter) {
+              rateLimiter.wait();
+            }
           }
+          rateLimiter.acquire();
         }
-        rateLimiter.acquire();
         byte[] bytes = raf.readLine().getBytes(StandardCharsets.ISO_8859_1);
         List<RecordSimulationTrajectoryDto> trajectories;
         try {
-          trajectories = new ObjectMapper().readValue(new String(bytes, encode),
+          trajectories = objectMapper.readValue(new String(bytes, encode),
               new TypeReference<List<RecordSimulationTrajectoryDto>>() {
               });
         } catch (Exception e) {
@@ -82,24 +94,56 @@ public class FileReadThread extends Thread {
         count++;
       }
     } catch (Exception e) {
+      exception = e;
       if (log.isErrorEnabled()) {
         log.error("History file read error!", e);
       }
     } finally {
+      removeThreadRecord();
       dataSendEnd(count);
+    }
+  }
+
+  private void removeThreadRecord() {
+    if (StringUtils.isNotEmpty(wsClientKey)) {
+      List<FileReadThread> fileReadThreads = taskThreadMap.get(wsClientKey);
+      if (null != fileReadThreads) {
+        fileReadThreads.remove(this);
+      } else {
+        taskThreadMap.remove(wsClientKey);
+      }
     }
   }
 
   private boolean dataSend(List<RecordSimulationTrajectoryDto> trajectories,
       long count) throws JsonProcessingException {
-    String duration = DateUtils.secondsToDuration(
-        (int) Math.floor((double) count / 10));
+    // 数据拷贝
+    if (dataCopyService != null) {
+      dataCopy(trajectories, count);
+    }
+    if (StringUtils.isNotEmpty(wsClientKey)) {
+      wsMessageSend(trajectories, (double) count);
+    }
+    return false;
+  }
+
+  private void dataCopy(List<RecordSimulationTrajectoryDto> trajectories,
+      double count) throws JsonProcessingException {
+    dataCopyService.data(objectMapper.writeValueAsString(trajectories));
+    if (progressChange != count / totalRecords / 100) {
+      dataCopyService.progress((int) (count / totalRecords));
+      progressChange++;
+    }
+  }
+
+  private void wsMessageSend(List<RecordSimulationTrajectoryDto> trajectories,
+      double count) throws JsonProcessingException {
+    String duration = DateUtils.secondsToDuration((int) Math.floor(count / 10));
     RealWebsocketMessage msg = new RealWebsocketMessage(
         Constants.RedisMessageType.TRAJECTORY, Maps.newHashMap(), trajectories,
         duration);
     WebSocketManage.sendInfo(wsClientKey,
         new ObjectMapper().writeValueAsString(msg));
-    return false;
   }
 
   public void setPauseState(boolean state) {
@@ -111,8 +155,17 @@ public class FileReadThread extends Thread {
   }
 
   private void dataSendEnd(long count) {
-    String duration = DateUtils.secondsToDuration(
-        (int) Math.floor((double) count / 10));
+    if (null != dataCopyService) {
+      dataCopyService.progress(100);
+      dataCopyService.stop(exception);
+    }
+    if (StringUtils.isNotEmpty(wsClientKey)) {
+      wsMessageSendStop((double) count);
+    }
+  }
+
+  private void wsMessageSendStop(double count) {
+    String duration = DateUtils.secondsToDuration((int) Math.floor(count / 10));
     RealWebsocketMessage endMsg = new RealWebsocketMessage(
         Constants.RedisMessageType.END, null, null, duration);
     try {

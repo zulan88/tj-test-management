@@ -1,15 +1,18 @@
 package net.wanji.business.service.record.impl;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.wanji.business.domain.dto.ToLocalDto;
+import net.wanji.business.entity.DataFile;
+import net.wanji.business.service.record.DataFileService;
 import net.wanji.common.file.FileUtils;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.util.concurrent.CountDownLatch;
+import java.io.IOException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author hcy
@@ -19,25 +22,20 @@ import java.util.concurrent.atomic.AtomicReference;
  * @date 2024/4/2 9:14
  **/
 @Slf4j
+@RequiredArgsConstructor
 public class FileWriteRunnable implements Runnable {
   private final String name;
   private final String path;
-
-  public FileWriteRunnable(String name, String path) {
-    this.name = name;
-    this.path = path;
-  }
+  private final ToLocalDto toLocalDto;
+  private final DataFileService dataFileService;
 
   private final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<>(
       5000);
   private final AtomicBoolean stop = new AtomicBoolean(false);
-  private final AtomicReference<CountDownLatch> countDownLatchAtom = new AtomicReference<>();
   private boolean init = true;
-  private boolean started = false;
 
   @Override
   public void run() {
-    started = true;
     FileWriter writer = null;
     try {
       writer = new FileWriter(new File(path, name));
@@ -48,7 +46,9 @@ public class FileWriteRunnable implements Runnable {
         } else {
           init = false;
         }
-        writer.write(data);
+        if (null != data) {
+          writer.write(data);
+        }
       }
     } catch (Exception e) {
       if (log.isErrorEnabled()) {
@@ -69,8 +69,23 @@ public class FileWriteRunnable implements Runnable {
         }
       } catch (Exception e) {
         log.error("File [{}] [{}] writer close error!", path, name, e);
+      } finally {
+        try {
+          DataFile dataFile = dataFileService.getById(toLocalDto.getFileId());
+          dataFile.setEncode("utf-8");
+          FileAnalysis.lineOffset(path, dataFile, (id, progress) -> {
+            DataFile dataFileQ = new DataFile();
+            dataFileQ.setId(toLocalDto.getFileId());
+            dataFileQ.setProgress(progress);
+            dataFileService.updateById(dataFileQ);
+          });
+          dataFileService.updateById(dataFile);
+        } catch (IOException e) {
+          if (log.isErrorEnabled()) {
+            log.error("fileAnalysis [{}] error!", toLocalDto.getFileId(), e);
+          }
+        }
       }
-      countDownLatchAtom.get().countDown();
     }
   }
 
@@ -86,12 +101,7 @@ public class FileWriteRunnable implements Runnable {
     }
   }
 
-  public boolean stop(CountDownLatch countDownLatch) {
-    // 防止进程未启动一直等待
-    if (!started) {
-      countDownLatch.countDown();
-    }
-    countDownLatchAtom.set(countDownLatch);
+  public boolean stop() {
     stop.set(true);
     return true;
   }

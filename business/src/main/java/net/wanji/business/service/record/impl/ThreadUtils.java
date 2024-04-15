@@ -3,6 +3,7 @@ package net.wanji.business.service.record.impl;
 import com.google.common.util.concurrent.RateLimiter;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -15,12 +16,15 @@ import java.util.Map;
  **/
 public class ThreadUtils {
 
-  public static void execute(String fileId,
+  public static void execute(String threadRecordId,
       Map<String, List<FileReadThread>> taskThreadMap,
       FileReadThread readThread) {
-    List<FileReadThread> threads = taskThreadMap.computeIfAbsent(fileId,
-        k -> new ArrayList<>());
-    threads.add(execute(readThread));
+    FileReadThread fileReadThread = execute(readThread);
+    if (null != threadRecordId) {
+      List<FileReadThread> threads = taskThreadMap.computeIfAbsent(
+          threadRecordId, k -> Collections.synchronizedList(new ArrayList<>()));
+      threads.add(fileReadThread);
+    }
   }
 
   public static FileReadThread execute(FileReadThread readThread) {

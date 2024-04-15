@@ -9,6 +9,7 @@ import net.wanji.business.domain.dto.RecordSimulationTrajectoryDto;
 import net.wanji.business.domain.dto.ToLocalDto;
 import net.wanji.business.entity.DataFile;
 import net.wanji.business.mapper.DataFileMapper;
+import net.wanji.business.service.record.DataCopyService;
 import net.wanji.business.service.record.DataFileService;
 import net.wanji.business.socket.WebSocketManage;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,31 +46,27 @@ public class DataFileServiceImpl extends ServiceImpl<DataFileMapper, DataFile>
   public FileWriteRunnable createToLocalThread(ToLocalDto toLocalDto) {
     pathCheckCreate(path, toLocalDto.getFileName());
     FileWriteRunnable fileWriteRunnable = new FileWriteRunnable(
-        toLocalDto.getFileName(), path);
+        toLocalDto.getFileName(), path, toLocalDto, this);
     executor.execute(fileWriteRunnable);
     return fileWriteRunnable;
   }
 
   @Override
   public boolean writeStop(ToLocalDto toLocalDto) throws Exception {
-    CountDownLatch countDownLatch = new CountDownLatch(1);
-    toLocalDto.getToLocalThread().stop(countDownLatch);
-    // 更新记录
-    DataFile dataFile = this.getById(toLocalDto.getFileId());
-    countDownLatch.await(5, TimeUnit.SECONDS);
-    dataFile.setEncode("utf-8");
-    FileAnalysis.lineOffset(path, dataFile, (id, progress) -> {
-      DataFile dataFileQ = new DataFile();
-      dataFileQ.setId(toLocalDto.getFileId());
-      dataFileQ.setProgress(progress);
-      updateById(dataFileQ);
-    });
-    return updateById(dataFile);
+    toLocalDto.getToLocalThread().stop();
+    return true;
   }
 
   @Override
   public void playback(String playbackId, Integer fileId, Long startTimestamp,
       Long endTimestamp) throws Exception {
+    this.playback(playbackId, fileId, startTimestamp, endTimestamp, 100, null);
+  }
+
+  @Override
+  public void playback(String playbackId, Integer fileId, Long startTimestamp,
+      Long endTimestamp, Integer playbackInterval,
+      DataCopyService dataCopyService) throws Exception {
     DataFile dataFile = this.getById(fileId);
     File localFile = new File(path, dataFile.getFileName());
     List<Long> offsets = new ObjectMapper().readValue(
@@ -81,16 +78,20 @@ public class DataFileServiceImpl extends ServiceImpl<DataFileMapper, DataFile>
         localFile.getPath(), dataFile.getEncode(), startTimestamp);
     long endOffset = getEndOffset(startOffset, startTimestamp, endTimestamp,
         offsets);
-
+    RateLimiter rateLimiter = null;
+    if (playbackInterval > 0) {
+      rateLimiter = RateLimiter.create(1000 / playbackInterval);
+    }
     ThreadUtils.execute(playbackId, taskThreadMap,
-        new FileReadThread(RateLimiter.create(10), dataFile, localFile,
-            startOffset, endOffset, offsets, playbackId));
+        new FileReadThread(rateLimiter, dataFile, localFile, startOffset,
+            endOffset, offsets, playbackId, dataCopyService, taskThreadMap));
   }
 
   @Override
-  public boolean playbackStop(String playbackId) {
+  public synchronized boolean playbackStop(String playbackId) {
     ThreadUtils.stop(taskThreadMap.get(playbackId));
     WebSocketManage.remove(playbackId, true);
+    taskThreadMap.remove(playbackId);
     return true;
   }
 
