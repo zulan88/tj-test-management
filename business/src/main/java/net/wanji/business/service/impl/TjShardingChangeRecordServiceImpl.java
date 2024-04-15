@@ -80,8 +80,7 @@ public class TjShardingChangeRecordServiceImpl
         tjTessngShardingChangeDto.getTaskId(),
         tjTessngShardingChangeDto.getCaseId(), Constants.PartRole.MV_SIMULATION,
         null, tjTessngShardingChangeDto.getUsername());
-    redisTemplate.convertAndSend(commandChannel,
-        new ObjectMapper().writeValueAsString(tjTessngShardingChangeDto));
+    redisTemplate.convertAndSend(commandChannel, tjTessngShardingChangeDto);
     return false;
   }
 
