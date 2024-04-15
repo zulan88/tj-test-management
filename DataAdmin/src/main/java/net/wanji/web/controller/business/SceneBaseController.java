@@ -180,6 +180,15 @@ public class SceneBaseController extends BaseController {
                 : AjaxResult.error("失败");
     }
 
+    @PostMapping("/saveSceneDebug")
+    public AjaxResult saveSceneDebug(@Validated(value = OtherGroup.class)
+                                          @RequestBody SceneDebugDto sceneDebugDto)
+            throws BusinessException {
+        return tjFragmentedSceneDetailService.saveSceneDebug(sceneDebugDto)
+                ? AjaxResult.success()
+                : AjaxResult.error("失败");
+    }
+
     @GetMapping("/generalizelist")
     public AjaxResult generalizelist(TjGeneralizeScene tjGeneralizeScene) throws BusinessException {
         return AjaxResult.success(tjGeneralizeSceneService.selectList(tjGeneralizeScene));

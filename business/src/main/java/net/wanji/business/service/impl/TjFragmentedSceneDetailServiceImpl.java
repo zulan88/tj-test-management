@@ -174,7 +174,7 @@ public class TjFragmentedSceneDetailServiceImpl
     }
 
     @Override
-    public void saveSceneDebug(SceneDebugDto sceneDebugDto) throws BusinessException{
+    public boolean saveSceneDebug(SceneDebugDto sceneDebugDto) throws BusinessException{
         List<ParticipantTrajectoryBo> list = sceneDebugDto.getTrajectoryJson().getParticipantTrajectories().stream()
                 .filter(t -> PartType.MAIN.equals(t.getType()))
                 .filter(p -> ObjectUtils.isEmpty(p.getTrajectory().get(0).getPass())
@@ -219,7 +219,7 @@ public class TjFragmentedSceneDetailServiceImpl
         }
         tjFragmentedSceneDetail.setId(sceneDebugDto.getId());
         tjFragmentedSceneDetail.setRouteFile(sceneDebugDto.getRouteFile());
-        this.updateById(tjFragmentedSceneDetail);
+        return this.updateById(tjFragmentedSceneDetail);
     }
 
     @Override
