@@ -2,15 +2,19 @@ package net.wanji.web.controller.business;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.google.gson.Gson;
 import io.swagger.models.auth.In;
 import net.wanji.business.common.Constants;
 import net.wanji.business.domain.*;
 import net.wanji.business.entity.InfinteMileScence;
 import net.wanji.business.entity.TjAtlasVenue;
+import net.wanji.business.entity.TjFragmentedSceneDetail;
+import net.wanji.business.entity.infity.TjInfinityTask;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.ITjAtlasVenueService;
 import net.wanji.business.service.InfinteMileScenceService;
+import net.wanji.business.service.TjInfinityTaskService;
 import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
@@ -33,6 +37,9 @@ public class InfinteMileScenceController extends BaseController {
 
     @Autowired
     private ITjAtlasVenueService tjAtlasVenueService;
+
+    @Autowired
+    TjInfinityTaskService tjInfinityTaskService;
 
     @Autowired
     private RedisCache redisCache;
@@ -67,6 +74,11 @@ public class InfinteMileScenceController extends BaseController {
 
     @DeleteMapping("/delete/{id}")
     public AjaxResult delete(@PathVariable("id") Long id) {
+        QueryWrapper<TjInfinityTask> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("case_id", id);
+        if (tjInfinityTaskService.count(queryWrapper) > 0) {
+            return AjaxResult.error("该场景下存在仿真任务，请先删除仿真任务");
+        }
         return toAjax(infinteMileScenceService.removeById(id));
     }
 
