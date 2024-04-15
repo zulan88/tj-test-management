@@ -36,7 +36,13 @@ public interface InfinteMileScenceService extends IService<InfinteMileScence> {
 
     InfinteMileScenceExo selectInfinteMileScenceById2(Integer id);
 
-    SiteSlice getSiteSlices(Integer caseId, Integer siteId);
+    /**
+     * 获取站点切片
+     * @param caseId
+     * @param siteId
+     * @return
+     */
+    SiteSlice getSiteSlice(Integer caseId, Integer siteId);
 
     /**
      * 处理实体格式

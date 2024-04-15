@@ -210,7 +210,7 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
     }
 
     @Override
-    public SiteSlice getSiteSlices(Integer caseId, Integer siteId) {
+    public SiteSlice getSiteSlice(Integer caseId, Integer siteId) {
         InfinteMileScence infinteMileScence = this.getById(caseId);
         InfinteMileScenceExo infinteMileScenceExo = new InfinteMileScenceExo();
         BeanUtils.copyBeanProp(infinteMileScenceExo, infinteMileScence);
