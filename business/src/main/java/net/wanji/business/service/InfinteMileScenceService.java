@@ -36,6 +36,8 @@ public interface InfinteMileScenceService extends IService<InfinteMileScence> {
 
     InfinteMileScenceExo selectInfinteMileScenceById2(Integer id);
 
+    SiteSlice getSiteSlices(Integer caseId, Integer siteId);
+
     /**
      * 处理实体格式
      * @param infinteMileScenceExo
@@ -52,6 +54,6 @@ public interface InfinteMileScenceService extends IService<InfinteMileScence> {
 
     List<TrafficFlow> getTrafficFlow(Integer mapid) throws BusinessException;
 
-    List<SiteSlice> getSiteSlice(Integer id);
+    List<SiteSlice> getSiteSlices(Integer id);
 
 }

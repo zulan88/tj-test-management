@@ -112,7 +112,7 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
             this.save(infinteMileScence);
         }else{
             if(flag) {
-                Map<Integer, SiteSlice> sliceMap = this.getSiteSlice(infinteMileScence.getId()).stream().collect(Collectors.toMap(SiteSlice::getSliceId, siteSlice -> siteSlice));
+                Map<Integer, SiteSlice> sliceMap = this.getSiteSlices(infinteMileScence.getId()).stream().collect(Collectors.toMap(SiteSlice::getSliceId, siteSlice -> siteSlice));
                 List<SiteSlice> siteSlices = infinteMileScence.getSiteSlices();
                 for (SiteSlice slice : siteSlices) {
                     if (sliceMap.containsKey(slice.getSliceId())) {
@@ -209,6 +209,22 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
         return infinteMileScenceExo;
     }
 
+    @Override
+    public SiteSlice getSiteSlices(Integer caseId, Integer siteId) {
+        InfinteMileScence infinteMileScence = this.getById(caseId);
+        InfinteMileScenceExo infinteMileScenceExo = new InfinteMileScenceExo();
+        BeanUtils.copyBeanProp(infinteMileScenceExo, infinteMileScence);
+        dualInfiniteSimulation(infinteMileScenceExo);
+        if (infinteMileScenceExo.getSiteSlices() != null && infinteMileScenceExo.getSiteSlices().size() > 0){
+            for (SiteSlice siteSlice : infinteMileScenceExo.getSiteSlices()){
+                if (Objects.equals(siteSlice.getSliceId(), siteId)){
+                    return siteSlice;
+                }
+            }
+        }
+        return null;
+    }
+
     private void validDebugParam(InfinteMileScenceExo infinteMileScenceExo) throws BusinessException{
         if (infinteMileScenceExo.getInElements()== null || infinteMileScenceExo.getInElements().size() == 0){
             throw new BusinessException("参与者轨迹不能为空");
@@ -276,7 +292,7 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
     }
 
     @Override
-    public List<SiteSlice> getSiteSlice(Integer id) {
+    public List<SiteSlice> getSiteSlices(Integer id) {
         Gson gson = new Gson();
         String data = baseMapper.getSliceImage(id);
         if (data == null || data.length() == 0) {

@@ -1,15 +1,8 @@
 package net.wanji.web.controller.business;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.google.gson.Gson;
-import io.swagger.models.auth.In;
-import net.wanji.business.common.Constants;
 import net.wanji.business.domain.*;
-import net.wanji.business.entity.InfinteMileScence;
-import net.wanji.business.entity.TjAtlasVenue;
-import net.wanji.business.entity.TjFragmentedSceneDetail;
 import net.wanji.business.entity.infity.TjInfinityTask;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.ITjAtlasVenueService;
@@ -23,7 +16,6 @@ import net.wanji.common.utils.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -122,7 +114,7 @@ public class InfinteMileScenceController extends BaseController {
 
     @GetMapping("/getsliceimg")
     public AjaxResult simustart(@RequestParam("id") Integer id) throws BusinessException {
-        return AjaxResult.success(infinteMileScenceService.getSiteSlice(id));
+        return AjaxResult.success(infinteMileScenceService.getSiteSlices(id));
     }
 
 }
