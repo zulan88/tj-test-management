@@ -1,6 +1,7 @@
 package net.wanji.web.controller.business;
 
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import net.wanji.business.domain.*;
 import net.wanji.business.entity.infity.TjInfinityTask;
@@ -8,6 +9,9 @@ import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.ITjAtlasVenueService;
 import net.wanji.business.service.InfinteMileScenceService;
 import net.wanji.business.service.TjInfinityTaskService;
+import net.wanji.business.service.record.DataCopyService;
+import net.wanji.business.service.record.DataFileService;
+import net.wanji.common.common.ClientSimulationTrajectoryDto;
 import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
@@ -16,9 +20,13 @@ import net.wanji.common.utils.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import static net.wanji.framework.datasource.DynamicDataSourceContextHolder.log;
 
 @RestController
 @RequestMapping("/infintemile")
@@ -31,7 +39,10 @@ public class InfinteMileScenceController extends BaseController {
     private ITjAtlasVenueService tjAtlasVenueService;
 
     @Autowired
-    TjInfinityTaskService tjInfinityTaskService;
+    private TjInfinityTaskService tjInfinityTaskService;
+
+    @Autowired
+    private DataFileService dataFileService;
 
     @Autowired
     private RedisCache redisCache;
@@ -115,6 +126,32 @@ public class InfinteMileScenceController extends BaseController {
     @GetMapping("/getsliceimg")
     public AjaxResult simustart(@RequestParam("id") Integer id) throws BusinessException {
         return AjaxResult.success(infinteMileScenceService.getSiteSlices(id));
+    }
+
+    @GetMapping("/testToOpenX")
+    public AjaxResult testPlaybackByTime(Integer fileId, Long startTime,
+                                         Long endTime, Integer caseId, Integer shardingId) throws Exception {
+        dataFileService.playback(fileId, startTime, endTime, caseId, shardingId,
+                new DataCopyService() {
+
+                    Map<String, List<ClientSimulationTrajectoryDto>> map = new HashMap<>();
+
+                    @Override
+                    public void data(String data) {
+                        List<ClientSimulationTrajectoryDto> list = JSON.parseArray(data, ClientSimulationTrajectoryDto.class);
+                    }
+
+                    @Override
+                    public void progress(int progress) {
+                        log.info("progress=[{}]", progress);
+                    }
+
+                    @Override
+                    public void stop(Exception e) {
+
+                    }
+                });
+        return AjaxResult.success();
     }
 
 }

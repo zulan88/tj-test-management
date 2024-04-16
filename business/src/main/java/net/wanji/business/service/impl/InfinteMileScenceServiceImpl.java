@@ -7,9 +7,11 @@ import net.wanji.business.domain.dto.TjDeviceDetailDto;
 import net.wanji.business.domain.param.TessParam;
 import net.wanji.business.domain.vo.DeviceDetailVo;
 import net.wanji.business.entity.InfinteMileScence;
+import net.wanji.business.entity.TjAtlasVenue;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.mapper.InfinteMileScenceMapper;
 import net.wanji.business.mapper.TjDeviceDetailMapper;
+import net.wanji.business.service.ITjAtlasVenueService;
 import net.wanji.business.service.InfinteMileScenceService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import net.wanji.business.service.RestService;
@@ -52,6 +54,9 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
 
     @Autowired
     private RestService restService;
+
+    @Autowired
+    private ITjAtlasVenueService tjAtlasVenueService;
 
     @Override
     public List<InfinteMileScenceExo> selectInfinteMileScenceList(Integer status) {
@@ -196,6 +201,8 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
         InfinteMileScenceExo infinteMileScenceExo = new InfinteMileScenceExo();
         BeanUtils.copyBeanProp(infinteMileScenceExo, infinteMileScence);
         dualInfiniteSimulation(infinteMileScenceExo);
+        TjAtlasVenue atlasVenue = tjAtlasVenueService.getById(id);
+        infinteMileScenceExo.setMapName(atlasVenue.getName());
         return infinteMileScenceExo;
     }
 

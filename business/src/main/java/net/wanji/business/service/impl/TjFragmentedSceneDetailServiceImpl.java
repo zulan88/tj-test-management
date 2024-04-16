@@ -125,6 +125,8 @@ public class TjFragmentedSceneDetailServiceImpl
                 }
             }
         }
+        TjAtlasVenue atlasVenue = tjAtlasVenueService.getById(id);
+        detailVo.setResourcesName(atlasVenue.getName());
         return detailVo;
     }
 
