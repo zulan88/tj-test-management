@@ -201,7 +201,7 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
         InfinteMileScenceExo infinteMileScenceExo = new InfinteMileScenceExo();
         BeanUtils.copyBeanProp(infinteMileScenceExo, infinteMileScence);
         dualInfiniteSimulation(infinteMileScenceExo);
-        TjAtlasVenue atlasVenue = tjAtlasVenueService.getById(id);
+        TjAtlasVenue atlasVenue = tjAtlasVenueService.getById(infinteMileScence.getMapId());
         infinteMileScenceExo.setMapName(atlasVenue.getName());
         return infinteMileScenceExo;
     }
