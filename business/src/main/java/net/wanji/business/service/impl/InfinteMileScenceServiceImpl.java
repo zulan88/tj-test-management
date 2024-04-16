@@ -58,6 +58,7 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
     @Autowired
     private ITjAtlasVenueService tjAtlasVenueService;
 
+
     @Override
     public List<InfinteMileScenceExo> selectInfinteMileScenceList(Integer status) {
         List<InfinteMileScenceExo> list = baseMapper.selectInfinteMileScenceExo(status);

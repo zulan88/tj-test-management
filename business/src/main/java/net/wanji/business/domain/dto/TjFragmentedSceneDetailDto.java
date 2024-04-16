@@ -145,4 +145,6 @@ public class TjFragmentedSceneDetailDto {
      */
     private boolean collectStatus;
 
+    private String cameraInfo;
+
 }

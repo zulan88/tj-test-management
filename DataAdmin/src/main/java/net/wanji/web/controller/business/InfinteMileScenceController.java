@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import net.wanji.business.domain.*;
+import net.wanji.business.entity.TjScenelib;
 import net.wanji.business.entity.infity.TjInfinityTask;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.ITjAtlasVenueService;
@@ -11,7 +12,9 @@ import net.wanji.business.service.InfinteMileScenceService;
 import net.wanji.business.service.TjInfinityTaskService;
 import net.wanji.business.service.record.DataCopyService;
 import net.wanji.business.service.record.DataFileService;
+import net.wanji.business.util.ToBuildOpenX;
 import net.wanji.common.common.ClientSimulationTrajectoryDto;
+import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
@@ -20,10 +23,15 @@ import net.wanji.common.utils.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.xml.bind.JAXBException;
+import javax.xml.transform.TransformerException;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static net.wanji.framework.datasource.DynamicDataSourceContextHolder.log;
@@ -46,6 +54,9 @@ public class InfinteMileScenceController extends BaseController {
 
     @Autowired
     private RedisCache redisCache;
+
+    @Autowired
+    ToBuildOpenX toBuildOpenX;
 
     @GetMapping("/list")
     public TableDataInfo list(Integer status) {
@@ -131,14 +142,39 @@ public class InfinteMileScenceController extends BaseController {
     @GetMapping("/testToOpenX")
     public AjaxResult testPlaybackByTime(Integer fileId, Long startTime,
                                          Long endTime, Integer caseId, Integer shardingId) throws Exception {
-        dataFileService.playback(fileId, startTime, endTime, caseId, shardingId,
+        final TjScenelib[] tjScenelib = {new TjScenelib()};
+        TjInfinityTask tjInfinityTask = tjInfinityTaskService.getById(caseId);
+        Integer scenceId = tjInfinityTask.getCaseId();
+        dataFileService.playback(fileId, startTime, endTime, scenceId, shardingId,
                 new DataCopyService() {
 
                     Map<String, List<ClientSimulationTrajectoryDto>> map = new HashMap<>();
 
+                    InfinteMileScenceExo scenceExo = infinteMileScenceService.selectInfinteMileScenceById(scenceId);
+
                     @Override
                     public void data(String data) {
                         List<ClientSimulationTrajectoryDto> list = JSON.parseArray(data, ClientSimulationTrajectoryDto.class);
+                        AtomicBoolean flag = new AtomicBoolean(true);
+                        list.forEach(clientSimulationTrajectoryDto -> {
+                            if (clientSimulationTrajectoryDto.getRole().equals("av") && flag.get()){
+                                List<ClientSimulationTrajectoryDto> res = map.getOrDefault("av", new ArrayList<>());
+                                res.add(clientSimulationTrajectoryDto);
+                                map.put("av", res);
+                                flag.set(false);
+                            }else {
+                                for (TrajectoryValueDto trajectoryValueDto : clientSimulationTrajectoryDto.getValue()){
+                                    ClientSimulationTrajectoryDto client = new ClientSimulationTrajectoryDto();
+                                    client.setRole(clientSimulationTrajectoryDto.getRole());
+                                    List<TrajectoryValueDto> trajectoryValueDtos = new ArrayList<>();
+                                    trajectoryValueDtos.add(trajectoryValueDto);
+                                    client.setValue(trajectoryValueDtos);
+                                    List<ClientSimulationTrajectoryDto> res = map.getOrDefault(trajectoryValueDto.getId(), new ArrayList<>());
+                                    res.add(client);
+                                    map.put(trajectoryValueDto.getId(), res);
+                                }
+                            }
+                        });
                     }
 
                     @Override
@@ -148,10 +184,15 @@ public class InfinteMileScenceController extends BaseController {
 
                     @Override
                     public void stop(Exception e) {
-
+                        try {
+                            log.info("stop:", e);
+                            tjScenelib[0] = toBuildOpenX.sclicetoOpenX(scenceExo, map);
+                        } catch (BusinessException | IOException | JAXBException | TransformerException ex) {
+                            throw new RuntimeException(ex);
+                        }
                     }
                 });
-        return AjaxResult.success();
+        return AjaxResult.success(tjScenelib[0]);
     }
 
 }
