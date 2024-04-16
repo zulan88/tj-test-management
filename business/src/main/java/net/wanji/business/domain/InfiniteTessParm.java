@@ -17,4 +17,6 @@ public class InfiniteTessParm {
 
     int taskId;
 
+    Long planTestTime;
+
 }

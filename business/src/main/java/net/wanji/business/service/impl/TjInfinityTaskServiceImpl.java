@@ -264,7 +264,7 @@ public class TjInfinityTaskServiceImpl
           .orElseThrow(() -> new BusinessException("未找到仿真设备"));
       // 重置
       devicesReset(0, taskId, infinteMileScenceExo, simulationConfig,
-          exceptSVDevices, byId.getCreatedBy());
+          exceptSVDevices, byId.getCreatedBy(), byId.getPlanTestTime());
 
       // 发送二、1 设备状态查询指令
       devicesReadyCommand(tjTaskDataConfigs, taskId);
@@ -531,7 +531,7 @@ public class TjInfinityTaskServiceImpl
   private void devicesReset(Integer taskId, Integer caseId,
       InfinteMileScenceExo infinteMileScenceExo,
       TjInfinityTaskDataConfig simulationConfig,
-      List<TjInfinityTaskDataConfig> exceptSVDevicesConf, String createBy)
+      List<TjInfinityTaskDataConfig> exceptSVDevicesConf, String createBy, Long planTestTime)
       throws BusinessException {
     TjDeviceDetail svDetail = tjDeviceDetailService.getById(
         simulationConfig.getDeviceId());
@@ -558,7 +558,7 @@ public class TjInfinityTaskServiceImpl
         Integer.valueOf(svDetail.getServiceAddress()),
         TessngUtils.buildInfinityTaskRunParam(caseId,
             SecurityUtils.getUsername(), mapList,
-            verifiedInfiniteTessParm(infinteMileScenceExo)))) {
+            verifiedInfiniteTessParm(infinteMileScenceExo, planTestTime)))) {
       throw new BusinessException("唤起仿真服务失败");
     }
     if (!redisLock.tryLock("case_" + taskId, SecurityUtils.getUsername())) {
@@ -574,7 +574,7 @@ public class TjInfinityTaskServiceImpl
   }
 
   private static InfiniteTessParm verifiedInfiniteTessParm(
-      InfinteMileScenceExo infinteMileScenceExo) {
+      InfinteMileScenceExo infinteMileScenceExo, Long planTestTime) {
     InfiniteTessParm infiniteTessParm = new InfiniteTessParm();
     infiniteTessParm.setInElements(infinteMileScenceExo.getInElements());
     infiniteTessParm.setSiteSlices(infinteMileScenceExo.getSiteSlices());
@@ -585,6 +585,7 @@ public class TjInfinityTaskServiceImpl
                 i -> (i.getDeparturePoints() != null
                     && i.getDeparturePoints().size() > 0))
             .collect(Collectors.toList()));
+    infiniteTessParm.setPlanTestTime(planTestTime);
     return infiniteTessParm;
   }
 
