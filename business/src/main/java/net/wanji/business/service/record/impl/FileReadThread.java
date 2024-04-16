@@ -154,7 +154,7 @@ public class FileReadThread extends Thread {
     if (trajectories.size() > 0) {
       dataCopyService.data(objectMapper.writeValueAsString(trajectories));
       if (progressChange != (int) count / 100) {
-        dataCopyService.progress((int) (count / totalRecords));
+        dataCopyService.progress((int) (count / totalRecords * 100));
         progressChange++;
       }
     }

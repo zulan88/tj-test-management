@@ -484,29 +484,6 @@ public class InfiniteTaskController {
         }
     }
 
-    @GetMapping("/testPlaybackByTime")
-    public AjaxResult testPlaybackByTime(Integer fileId, Long startTime,
-        Long endTime, Integer caseId, Integer shardingId) throws Exception {
-        dataFileService.playback(fileId, startTime, endTime, caseId, shardingId,
-            new DataCopyService() {
-                @Override
-                public void data(String data) {
-                    log.info("data=[{}]", data);
-                }
-
-                @Override
-                public void progress(int progress) {
-                    log.info("progress=[{}]", progress);
-                }
-
-                @Override
-                public void stop(Exception e) {
-                    log.info("stop!", e);
-                }
-            });
-        return AjaxResult.success();
-    }
-
     private Integer getPlaybackRecordId(Integer taskId, Integer caseId, String username){
         TjInfinityTask byId = tjInfinityTaskService.getById(caseId);
         Integer selectedRecordId = byId.getSelectedRecordId();
