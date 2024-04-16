@@ -5,6 +5,9 @@ import net.wanji.business.domain.dto.ToLocalDto;
 import net.wanji.business.entity.DataFile;
 import net.wanji.business.service.record.impl.FileWriteRunnable;
 
+import java.awt.geom.Point2D;
+import java.util.List;
+
 /**
  * @author hcy
  * @version 1.0
@@ -30,6 +33,21 @@ public interface DataFileService extends IService<DataFile> {
       Long endTimestamp) throws Exception;
 
   /**
+   * 回放数据拷贝
+   *
+   * @param fileId
+   * @param startTimestamp
+   * @param endTimestamp
+   * @param caseId          场景Id
+   * @param shardingId      分片Id
+   * @param dataCopyService
+   * @throws Exception
+   */
+  void playback(Integer fileId, Long startTimestamp, Long endTimestamp,
+      Integer caseId, Integer shardingId, DataCopyService dataCopyService)
+      throws Exception;
+
+  /**
    * 回放
    *
    * @param playbackId       回放ID，记录回放线程，可为null，为null时不会发送数据至ws
@@ -37,11 +55,12 @@ public interface DataFileService extends IService<DataFile> {
    * @param startTimestamp   开始回放时间戳
    * @param endTimestamp     结束回放时间戳
    * @param playbackInterval 回放时间间隔（ms），转存可以设置为0
+   * @param pts              取车范围
    * @param dataCopyService  数据拷贝，可为null
    * @throws Exception
    */
   void playback(String playbackId, Integer fileId, Long startTimestamp,
-      Long endTimestamp, Integer playbackInterval,
+      Long endTimestamp, Integer playbackInterval, List<Point2D.Double> pts,
       DataCopyService dataCopyService) throws Exception;
 
   boolean playbackStop(String playbackId);

@@ -14,9 +14,11 @@ import net.wanji.business.domain.dto.RecordSimulationTrajectoryDto;
 import net.wanji.business.entity.DataFile;
 import net.wanji.business.service.record.DataCopyService;
 import net.wanji.business.socket.WebSocketManage;
+import net.wanji.business.util.LongitudeLatitudeUtils;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.StringUtils;
 
+import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
@@ -45,6 +47,8 @@ public class FileReadThread extends Thread {
   private final String wsClientKey;
   private final DataCopyService dataCopyService;
   private final Map<String, List<FileReadThread>> taskThreadMap;
+  private final List<Point2D.Double> pts;
+
   private int progressChange = 0;
   private long totalRecords = 0;
   private ObjectMapper objectMapper = new ObjectMapper();
@@ -129,10 +133,30 @@ public class FileReadThread extends Thread {
 
   private void dataCopy(List<RecordSimulationTrajectoryDto> trajectories,
       double count) throws JsonProcessingException {
-    dataCopyService.data(objectMapper.writeValueAsString(trajectories));
-    if (progressChange != count / totalRecords / 100) {
-      dataCopyService.progress((int) (count / totalRecords));
-      progressChange++;
+    // 过滤信息
+    if (null != pts) {
+      for (int i = trajectories.size() - 1; i >= 0; i--) {
+        List<Map<String, Object>> values = (List<Map<String, Object>>) trajectories.get(
+            i).getValue();
+        for (int j = values.size() - 1; j >= 0; j--) {
+          Map<String, Object> tt = values.get(j);
+          if (!LongitudeLatitudeUtils.isInPolygon(new Point2D.Double(
+              Double.parseDouble(tt.get("longitude").toString()),
+              Double.parseDouble(tt.get("latitude").toString())), pts)) {
+            values.remove(tt);
+          }
+        }
+        if (values.size() == 0) {
+          trajectories.remove(trajectories.get(i));
+        }
+      }
+    }
+    if (trajectories.size() > 0) {
+      dataCopyService.data(objectMapper.writeValueAsString(trajectories));
+      if (progressChange != (int) count / 100) {
+        dataCopyService.progress((int) (count / totalRecords));
+        progressChange++;
+      }
     }
   }
 

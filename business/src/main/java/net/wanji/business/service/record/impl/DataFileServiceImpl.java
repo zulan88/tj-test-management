@@ -4,24 +4,32 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.util.concurrent.RateLimiter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.wanji.business.domain.SiteSlice;
 import net.wanji.business.domain.dto.RecordSimulationTrajectoryDto;
 import net.wanji.business.domain.dto.ToLocalDto;
 import net.wanji.business.entity.DataFile;
 import net.wanji.business.mapper.DataFileMapper;
+import net.wanji.business.service.InfinteMileScenceService;
 import net.wanji.business.service.record.DataCopyService;
 import net.wanji.business.service.record.DataFileService;
 import net.wanji.business.socket.WebSocketManage;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * @author hcy
@@ -32,12 +40,15 @@ import java.util.concurrent.*;
  **/
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class DataFileServiceImpl extends ServiceImpl<DataFileMapper, DataFile>
     implements DataFileService {
   private static final ThreadPoolExecutor executor = new ThreadPoolExecutor(10,
       20, 5, TimeUnit.MINUTES, new ArrayBlockingQueue<>(20),
       r -> new Thread(r, "tj-test-m" + r.hashCode()));
   private static final Map<String, List<FileReadThread>> taskThreadMap = new ConcurrentHashMap<>();
+
+  private final InfinteMileScenceService infinteMileScenceService;
 
   @Value("${ruoyi.profile}/record")
   private String path;
@@ -60,12 +71,29 @@ public class DataFileServiceImpl extends ServiceImpl<DataFileMapper, DataFile>
   @Override
   public void playback(String playbackId, Integer fileId, Long startTimestamp,
       Long endTimestamp) throws Exception {
-    this.playback(playbackId, fileId, startTimestamp, endTimestamp, 100, null);
+    this.playback(playbackId, fileId, startTimestamp, endTimestamp, 100, null,
+        null);
+  }
+
+  @Override
+  public void playback(Integer fileId, Long startTimestamp, Long endTimestamp,
+      Integer caseId, Integer shardingId, DataCopyService dataCopyService)
+      throws Exception {
+    // 构建过滤范围
+    SiteSlice siteSlice = infinteMileScenceService.getSiteSlice(caseId,
+        shardingId);
+    List<Point2D.Double> pts = siteSlice.getRoute().stream().map(
+        e -> new Point2D.Double(Double.parseDouble(e.getLongitude()),
+            Double.parseDouble(e.getLatitude()))).collect(Collectors.toList());
+
+    // 回放数据
+    this.playback(null, fileId, startTimestamp, endTimestamp, null, pts,
+        dataCopyService);
   }
 
   @Override
   public void playback(String playbackId, Integer fileId, Long startTimestamp,
-      Long endTimestamp, Integer playbackInterval,
+      Long endTimestamp, Integer playbackInterval, List<Point2D.Double> pts,
       DataCopyService dataCopyService) throws Exception {
     DataFile dataFile = this.getById(fileId);
     File localFile = new File(path, dataFile.getFileName());
@@ -79,12 +107,13 @@ public class DataFileServiceImpl extends ServiceImpl<DataFileMapper, DataFile>
     long endOffset = getEndOffset(startOffset, startTimestamp, endTimestamp,
         offsets);
     RateLimiter rateLimiter = null;
-    if (playbackInterval > 0) {
+    if (null != playbackInterval && playbackInterval > 0) {
       rateLimiter = RateLimiter.create(1000 / playbackInterval);
     }
     ThreadUtils.execute(playbackId, taskThreadMap,
         new FileReadThread(rateLimiter, dataFile, localFile, startOffset,
-            endOffset, offsets, playbackId, dataCopyService, taskThreadMap));
+            endOffset, offsets, playbackId, dataCopyService, taskThreadMap,
+            pts));
   }
 
   @Override
