@@ -184,7 +184,11 @@ public class SceneBaseController extends BaseController {
     public AjaxResult saveSceneDebug(@Validated(value = OtherGroup.class)
                                           @RequestBody SceneDebugDto sceneDebugDto)
             throws BusinessException {
-        return tjFragmentedSceneDetailService.saveSceneDebug(sceneDebugDto)
+        Boolean flag = tjFragmentedSceneDetailService.saveSceneDebug(sceneDebugDto);
+        if(flag==null){
+            return AjaxResult.error(510,"主车起止点校验失败，请检查主车起止点或重新进行仿真验证！");
+        }
+        return flag
                 ? AjaxResult.success()
                 : AjaxResult.error("失败");
     }

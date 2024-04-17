@@ -294,7 +294,7 @@ public class RouteService {
                         trajectoryDetailBo.setPass(true);
                         trajectoryDetailBo.setReason("已校验完成");
                         trajectoryDetailBo.setDate(trajectory.getTimestamp());
-//                        trajectoryDetailBo.setSpeed(Double.valueOf(trajectory.getSpeed()));
+                        trajectoryDetailBo.setSpeed(Double.valueOf(trajectory.getSpeed()));
                     } else {
                         trajectoryDetailBo.setPass(false);
                         trajectoryDetailBo.setReason("未经过该点位3米范围区域");
