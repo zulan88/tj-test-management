@@ -72,7 +72,7 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
 
-    private final static String DEVICE_BUSY_STATUS =  "device_busy_status_%s";
+    private final static String DEVICE_BUSY_STATUS = "device_busy_status_%s";
     private final static String DEVICE_BUSY_STATUS_KET = "device_busy_status_key_%d_%d";
 
     @PostConstruct
@@ -126,6 +126,7 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
         deviceDetail.setServiceAddress(deviceDetailDto.getServiceAddress());
         deviceDetail.setDataChannel(deviceDetailDto.getDataChannel());
         deviceDetail.setCommandChannel(deviceDetailDto.getCommandChannel());
+        deviceDetail.setIsInner(0);
         if (!ObjectUtils.isEmpty(deviceDetailDto.getAttribute2())) {
             deviceDetail.setUpdatedBy(deviceDetailDto.getAttribute2());
         }
@@ -223,9 +224,9 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
         int status = 0;
         if (redisCache.hasKey(redisKey)) {
             Map<String, Integer> cacheMap = redisCache.getCacheMap(redisKey);
-            if(!cacheMap.isEmpty()){
+            if (!cacheMap.isEmpty()) {
                 for (Integer value : cacheMap.values()) {
-                    if(1 == value){
+                    if (1 == value) {
                         status = 1;
                         break;
                     }
@@ -250,7 +251,7 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
 
     @Override
     public synchronized Boolean setDeviceBusyStatus(String deviceId, Integer taskId,
-        Integer caseId, Integer busyStatus, boolean occupy) {
+                                                    Integer caseId, Integer busyStatus, boolean occupy) {
         String redisKey = String.format(DEVICE_BUSY_STATUS, deviceId);
         String valueKey = String.format(DEVICE_BUSY_STATUS_KET, taskId, caseId);
         Object valueResult = redisTemplate.opsForHash().get(redisKey, valueKey);
@@ -266,7 +267,7 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
             Integer status = this.selectDeviceBusyStatus(deviceId);
             if (0 == status) {
                 Boolean result = redisTemplate.opsForHash()
-                    .putIfAbsent(redisKey, valueKey, busyStatus);
+                        .putIfAbsent(redisKey, valueKey, busyStatus);
                 return Boolean.TRUE.equals(result);
             }
         }

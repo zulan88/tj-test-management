@@ -101,6 +101,7 @@ public class DeviceController extends BaseController {
     }
 
     //@PreAuthorize("@ss.hasPermi('devices:deleteDeviceTree')")
+    //@PreAuthorize("@ss.hasPermi('devices:deleteDeviceTree')")
     @GetMapping("/deleteDeviceTree/{id}")
     public AjaxResult deleteDeviceTree(@PathVariable("id") Integer id) throws BusinessException {
         return deviceService.deleteDeviceTree(id)

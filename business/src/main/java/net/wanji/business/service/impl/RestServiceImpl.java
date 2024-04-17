@@ -115,13 +115,13 @@ public class RestServiceImpl implements RestService {
 
     @Override
     public boolean startServer(String ip, Integer port, TessParam tessParam) {
+        String url = tessServerUrl;
+        if (tessParam.getSimulateType().equals(6) || tessParam.getSimulateType().equals(7)){
+            url = infiniteServerUrl;
+        }
+        String resultUrl = ip + ":" + port + url;
+        log.info("============================== tessServerUrl：{}", resultUrl);
         try {
-            String url = tessServerUrl;
-            if (tessParam.getSimulateType().equals(6) || tessParam.getSimulateType().equals(7)){
-                url = infiniteServerUrl;
-            }
-            String resultUrl = ip + ":" + port + url;
-            log.info("============================== tessServerUrl：{}", resultUrl);
             HttpHeaders httpHeaders = new HttpHeaders();
             httpHeaders.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<TessParam> resultHttpEntity = new HttpEntity<>(tessParam, httpHeaders);
@@ -140,6 +140,7 @@ public class RestServiceImpl implements RestService {
                 return true;
             }
         } catch (Exception e) {
+            sendTessNgRequestService.saveTessNgRequest("失败", resultUrl, tessParam);
             log.error("远程服务调用失败:{}", e);
         }
         return false;
