@@ -22,8 +22,10 @@ import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -49,6 +51,7 @@ public class FileReadThread extends Thread {
   private final Map<String, List<FileReadThread>> taskThreadMap;
   private final List<Point2D.Double> pts;
 
+  private Map<String, List<? extends ExtendedDataWrapper>> extendedDataMap;
   private int progressChange = 0;
   private long totalRecords = 0;
   private ObjectMapper objectMapper = new ObjectMapper();
@@ -106,6 +109,14 @@ public class FileReadThread extends Thread {
       removeThreadRecord();
       dataSendEnd(count);
     }
+  }
+
+  public void extendedDataPut(
+      Map<String, List<? extends ExtendedDataWrapper>> extendedDataWrappers) {
+    if (null == extendedDataMap) {
+      extendedDataMap = new HashMap<>();
+    }
+    extendedDataMap.putAll(extendedDataWrappers);
   }
 
   private void removeThreadRecord() {
@@ -168,6 +179,16 @@ public class FileReadThread extends Thread {
         duration);
     WebSocketManage.sendInfo(wsClientKey,
         new ObjectMapper().writeValueAsString(msg));
+    // 非轨迹数据发送
+    extendDataChose(getDataCurrentTimpstamp(trajectories));
+  }
+
+  private static Long getDataCurrentTimpstamp(
+      List<RecordSimulationTrajectoryDto> trajectories) {
+    if (null != trajectories && !trajectories.isEmpty()) {
+      return trajectories.get(0).getTimestamp();
+    }
+    return 0L;
   }
 
   public void setPauseState(boolean state) {
@@ -198,6 +219,28 @@ public class FileReadThread extends Thread {
     } catch (JsonProcessingException e) {
       if (log.isErrorEnabled()) {
         log.error("History file read end send error!", e);
+      }
+    }
+  }
+
+  private void extendDataChose(Long currentTimestamp)
+      throws JsonProcessingException {
+    if (null != extendedDataMap) {
+      Set<Map.Entry<String, List<? extends ExtendedDataWrapper>>> entries = extendedDataMap.entrySet();
+      for (Map.Entry<String, List<? extends ExtendedDataWrapper>> entry : entries) {
+        String type = entry.getKey();
+        List<? extends ExtendedDataWrapper> wrappers = entry.getValue();
+        if (null != wrappers && wrappers.size() > 0) {
+          ExtendedDataWrapper extendedDataWrapper = wrappers.get(0);
+          Long dataTimestamp = extendedDataWrapper.getTimestamp();
+          if (dataTimestamp <= currentTimestamp) {
+            ExtendedDataWrapper remove = wrappers.remove(0);
+            RealWebsocketMessage msg = new RealWebsocketMessage(type,
+                Maps.newHashMap(), remove.getData(), "");
+            WebSocketManage.sendInfo(wsClientKey,
+                new ObjectMapper().writeValueAsString(msg));
+          }
+        }
       }
     }
   }

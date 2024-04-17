@@ -176,7 +176,7 @@ public class TjFragmentedSceneDetailServiceImpl
     }
 
     @Override
-    public boolean saveSceneDebug(SceneDebugDto sceneDebugDto) throws BusinessException{
+    public Boolean saveSceneDebug(SceneDebugDto sceneDebugDto) throws BusinessException{
         List<ParticipantTrajectoryBo> list = sceneDebugDto.getTrajectoryJson().getParticipantTrajectories().stream()
                 .filter(t -> PartType.MAIN.equals(t.getType()))
                 .filter(p -> ObjectUtils.isEmpty(p.getTrajectory().get(0).getPass())
@@ -185,7 +185,7 @@ public class TjFragmentedSceneDetailServiceImpl
                         || !p.getTrajectory().get(p.getTrajectory().size() - 1).getPass())
                 .collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(list)) {
-            throw new BusinessException("主车起止点校验失败，请检查主车起止点或重新进行仿真验证！");
+            return null;
         }
         TjFragmentedSceneDetail tjFragmentedSceneDetail = new TjFragmentedSceneDetail();
         FragmentedScenesDetailVo fragmentedScenesDetailVo = this.getDetailVo(sceneDebugDto.getId(), null);
