@@ -233,7 +233,7 @@ public class FileReadThread extends Thread {
         if (null != wrappers && wrappers.size() > 0) {
           ExtendedDataWrapper extendedDataWrapper = wrappers.get(0);
           Long dataTimestamp = extendedDataWrapper.getTimestamp();
-          if (dataTimestamp > currentTimestamp) {
+          if (dataTimestamp <= currentTimestamp) {
             ExtendedDataWrapper remove = wrappers.remove(0);
             RealWebsocketMessage msg = new RealWebsocketMessage(type,
                 Maps.newHashMap(), remove.getData(), "");
