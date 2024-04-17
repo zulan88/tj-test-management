@@ -3,10 +3,12 @@ package net.wanji.business.service.record;
 import com.baomidou.mybatisplus.extension.service.IService;
 import net.wanji.business.domain.dto.ToLocalDto;
 import net.wanji.business.entity.DataFile;
+import net.wanji.business.service.record.impl.ExtendedDataWrapper;
 import net.wanji.business.service.record.impl.FileWriteRunnable;
 
 import java.awt.geom.Point2D;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author hcy
@@ -30,7 +32,9 @@ public interface DataFileService extends IService<DataFile> {
    * @param endTimestamp
    */
   void playback(String playbackId, Integer fileId, Long startTimestamp,
-      Long endTimestamp) throws Exception;
+      Long endTimestamp,
+      Map<String, List<? extends ExtendedDataWrapper>> extendedDataWrappers)
+      throws Exception;
 
   /**
    * 回放数据拷贝
@@ -50,18 +54,21 @@ public interface DataFileService extends IService<DataFile> {
   /**
    * 回放
    *
-   * @param playbackId       回放ID，记录回放线程，可为null，为null时不会发送数据至ws
-   * @param fileId           文件记录ID
-   * @param startTimestamp   开始回放时间戳
-   * @param endTimestamp     结束回放时间戳
-   * @param playbackInterval 回放时间间隔（ms），转存可以设置为0
-   * @param pts              取车范围
-   * @param dataCopyService  数据拷贝，可为null
+   * @param playbackId           回放ID，记录回放线程，可为null，为null时不会发送数据至ws
+   * @param fileId               文件记录ID
+   * @param startTimestamp       开始回放时间戳
+   * @param endTimestamp         结束回放时间戳
+   * @param playbackInterval     回放时间间隔（ms），转存可以设置为0
+   * @param pts                  取车范围
+   * @param dataCopyService      数据拷贝，可为null
+   * @param extendedDataWrappers 回放扩展数据
    * @throws Exception
    */
   void playback(String playbackId, Integer fileId, Long startTimestamp,
       Long endTimestamp, Integer playbackInterval, List<Point2D.Double> pts,
-      DataCopyService dataCopyService) throws Exception;
+      DataCopyService dataCopyService,
+      Map<String, List<? extends ExtendedDataWrapper>> extendedDataWrappers)
+      throws Exception;
 
   boolean playbackStop(String playbackId);
 

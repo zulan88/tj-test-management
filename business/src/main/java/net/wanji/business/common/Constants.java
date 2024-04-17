@@ -25,6 +25,7 @@ public interface Constants {
         public static final String OPTIMIZE = "optimize";
         public static final String TRAJECTORY = "trajectory";
         public static final String END = "end";
+        public static final String SHARDING = "sharding";
     }
 
     class MethodType {

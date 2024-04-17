@@ -1,5 +1,7 @@
 package net.wanji.business.domain.vo.task.infinity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
@@ -27,4 +29,16 @@ public class ShardingResultVo {
       dataType = "Integer",
       position = 3)
   private Integer evaluationScore;
+
+  /**
+   * 分片ID
+   */
+  @JsonIgnore
+  private Integer shardingId;
+
+  /**
+   * 分片交互状态，0：出，1：进
+   */
+  @JsonIgnore
+  private int state;
 }

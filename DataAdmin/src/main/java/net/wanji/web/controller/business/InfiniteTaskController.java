@@ -10,25 +10,20 @@ import io.swagger.annotations.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.wanji.business.common.Constants;
+import net.wanji.business.domain.InfinteMileScenceExo;
 import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
 import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
 import net.wanji.business.domain.bo.SaveTaskSchemeBo;
 import net.wanji.business.domain.dto.TaskDto;
 import net.wanji.business.domain.dto.TjTessngShardingChangeDto;
-import net.wanji.business.domain.vo.task.infinity.InfinityTaskInitVo;
-import net.wanji.business.domain.vo.task.infinity.InfinityTaskPreparedVo;
-import net.wanji.business.domain.vo.task.infinity.SelectRecordIdVo;
-import net.wanji.business.domain.vo.task.infinity.ShardingInOutVo;
+import net.wanji.business.domain.vo.task.infinity.*;
 import net.wanji.business.entity.infity.TjInfinityTask;
 import net.wanji.business.entity.infity.TjInfinityTaskRecord;
 import net.wanji.business.entity.infity.TjShardingChangeRecord;
 import net.wanji.business.exception.BusinessException;
-import net.wanji.business.service.RestService;
-import net.wanji.business.service.TjInfinityTaskRecordService;
-import net.wanji.business.service.TjInfinityTaskService;
-import net.wanji.business.service.TjShardingChangeRecordService;
-import net.wanji.business.service.record.DataCopyService;
+import net.wanji.business.service.*;
 import net.wanji.business.service.record.DataFileService;
+import net.wanji.business.service.record.impl.ExtendedDataWrapper;
 import net.wanji.business.util.RedisLock;
 import net.wanji.common.constant.HttpStatus;
 import net.wanji.common.core.domain.AjaxResult;
@@ -41,10 +36,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author hcy
@@ -66,6 +58,8 @@ public class InfiniteTaskController {
     private final TjShardingChangeRecordService tjShardingChangeRecordService;
     private final TjInfinityTaskRecordService tjInfinityTaskRecordService;
     private final DataFileService dataFileService;
+    private final TjShardingChangeRecordService shardingChangeRecordService;
+    private final InfinteMileScenceService infinteMileScenceService;
 
     @ApiOperationSort(5)
     @ApiOperation(value = "5.列表")
@@ -414,11 +408,14 @@ public class InfiniteTaskController {
     public AjaxResult playback(Integer taskId, Integer caseId, Integer recordId,
         Long startTimestamp, Long endTimestamp) {
         try {
+            TjInfinityTask infinityTask = tjInfinityTaskService.getById(caseId);
             if (null == recordId) {
-                recordId = getPlaybackRecordId(null, caseId,
-                    SecurityUtils.getUsername());
+                recordId = infinityTask.getSelectedRecordId();
+                if(null == recordId){
+                    recordId = getLastRecordId(taskId, caseId, SecurityUtils.getUsername());
+                }
             }
-            // 暂时智能一处回放，多处回放需要修改websocket处理请求参数
+            // 暂时只能一处回放，多处回放需要修改websocket处理请求参数
             // 文件id
             TjInfinityTaskRecord record = tjInfinityTaskRecordService.getById(
                 recordId);
@@ -430,17 +427,66 @@ public class InfiniteTaskController {
             if (null == endTimestamp) {
                 endTimestamp = 0L;
             }
+            HashMap<String, List<? extends ExtendedDataWrapper>> extendDataWrappers = new HashMap<>();
+            extendDataWrappers.put(Constants.RedisMessageType.SHARDING,
+                shardingChangeRecord(0, caseId, recordId, shardingInName(infinityTask.getCaseId())));
             dataFileService.playback(
                 Constants.ChannelBuilder.buildWebSocketPlaybackChannel(
                     String.valueOf(recordId)), dataFileId, startTimestamp,
-                endTimestamp);
+                endTimestamp, extendDataWrappers);
             return AjaxResult.success(recordId);
         } catch (Exception e) {
-            if(log.isErrorEnabled()){
+            if (log.isErrorEnabled()) {
                 log.error("playback [{}] error!", recordId, e);
             }
             return AjaxResult.error(e.getMessage());
         }
+    }
+
+    private List<? extends ExtendedDataWrapper> shardingChangeRecord(Integer taskId,
+        Integer caseId, Integer recordId, Map<Integer, String> shardingIdName) {
+      QueryWrapper<TjShardingChangeRecord> recordQueryWrapper = new QueryWrapper<>();
+      recordQueryWrapper.eq("task_id", taskId);
+      recordQueryWrapper.eq("case_id", caseId);
+      recordQueryWrapper.eq("record_id", recordId);
+      recordQueryWrapper.orderByAsc("create_timestamp");
+      List<TjShardingChangeRecord> resutlList = shardingChangeRecordService.list(
+          recordQueryWrapper);
+
+      List<ExtendedDataWrapper<List<ShardingResultVo>>> wrappers = new ArrayList<>();
+      for (TjShardingChangeRecord record : resutlList) {
+        if (!wrappers.isEmpty()) {
+          ExtendedDataWrapper<List<ShardingResultVo>> lastWrapper = wrappers.get(
+              wrappers.size() - 1);
+          List<ShardingResultVo> data = lastWrapper.getData();
+          ArrayList<ShardingResultVo> newSV = new ArrayList<>();
+          for (ShardingResultVo sv : data) {
+            if (sv.getShardingId() == record.getShardingId()) {
+              ShardingResultVo shardingResultVo = new ShardingResultVo();
+              shardingResultVo.setTime(sv.getTime() + 1);
+              shardingResultVo.setShardingName(sv.getShardingName());
+              shardingResultVo.setState(record.getState());
+              shardingResultVo.setEvaluationScore(record.getEvaluationScore());
+              shardingResultVo.setShardingId(sv.getShardingId());
+              newSV.add(shardingResultVo);
+            } else {
+              newSV.add(sv);
+            }
+          }
+          wrappers.add(
+              new ExtendedDataWrapper<>(record.getCreateTimestamp(), newSV));
+        } else {
+          ShardingResultVo shardingResultVo = new ShardingResultVo();
+          shardingResultVo.setShardingName(shardingIdName.get(record.getShardingId()));
+          shardingResultVo.setTime(0);
+          shardingResultVo.setEvaluationScore(record.getEvaluationScore());
+          shardingResultVo.setShardingId(record.getShardingId());
+          shardingResultVo.setState(record.getState());
+          wrappers.add(new ExtendedDataWrapper<>(record.getCreateTimestamp(),
+              Arrays.asList(shardingResultVo)));
+        }
+      }
+      return wrappers;
     }
 
     @GetMapping("/playbackStop")
@@ -484,16 +530,6 @@ public class InfiniteTaskController {
         }
     }
 
-    private Integer getPlaybackRecordId(Integer taskId, Integer caseId, String username){
-        TjInfinityTask byId = tjInfinityTaskService.getById(caseId);
-        Integer selectedRecordId = byId.getSelectedRecordId();
-        if(null != selectedRecordId){
-            return selectedRecordId;
-        }else {
-            return getLastRecordId(taskId, caseId, username);
-        }
-    }
-
     private Integer getLastRecordId(Integer taskId, Integer caseId,
         String username) {
         QueryWrapper<TjInfinityTaskRecord> recordQW = new QueryWrapper<>();
@@ -511,6 +547,15 @@ public class InfiniteTaskController {
         }else {
             return pageRecord.getRecords().get(0).getId();
         }
+    }
+
+    private Map<Integer, String> shardingInName(Integer caseId) {
+        InfinteMileScenceExo infinteMileScenceExo = infinteMileScenceService.selectInfinteMileScenceById(
+            caseId);
+        return infinteMileScenceExo.getSiteSlices().stream()
+            .collect(HashMap::new,
+                (m, v) -> m.put(v.getSliceId(), v.getSliceName()),
+                HashMap::putAll);
     }
 
 }

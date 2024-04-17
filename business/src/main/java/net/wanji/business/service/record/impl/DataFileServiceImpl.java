@@ -70,9 +70,9 @@ public class DataFileServiceImpl extends ServiceImpl<DataFileMapper, DataFile>
 
   @Override
   public void playback(String playbackId, Integer fileId, Long startTimestamp,
-      Long endTimestamp) throws Exception {
+      Long endTimestamp, Map<String, List<? extends ExtendedDataWrapper>> extendedDataWrappers) throws Exception {
     this.playback(playbackId, fileId, startTimestamp, endTimestamp, 100, null,
-        null);
+        null, extendedDataWrappers);
   }
 
   @Override
@@ -88,13 +88,15 @@ public class DataFileServiceImpl extends ServiceImpl<DataFileMapper, DataFile>
 
     // 回放数据
     this.playback(null, fileId, startTimestamp, endTimestamp, null, pts,
-        dataCopyService);
+        dataCopyService, null);
   }
 
   @Override
   public void playback(String playbackId, Integer fileId, Long startTimestamp,
       Long endTimestamp, Integer playbackInterval, List<Point2D.Double> pts,
-      DataCopyService dataCopyService) throws Exception {
+      DataCopyService dataCopyService,
+      Map<String, List<? extends ExtendedDataWrapper>> extendedDataWrappers)
+      throws Exception {
     DataFile dataFile = this.getById(fileId);
     File localFile = new File(path, dataFile.getFileName());
     List<Long> offsets = new ObjectMapper().readValue(
@@ -110,10 +112,11 @@ public class DataFileServiceImpl extends ServiceImpl<DataFileMapper, DataFile>
     if (null != playbackInterval && playbackInterval > 0) {
       rateLimiter = RateLimiter.create(1000 / playbackInterval);
     }
-    ThreadUtils.execute(playbackId, taskThreadMap,
-        new FileReadThread(rateLimiter, dataFile, localFile, startOffset,
-            endOffset, offsets, playbackId, dataCopyService, taskThreadMap,
-            pts));
+    FileReadThread readThread = new FileReadThread(rateLimiter, dataFile,
+        localFile, startOffset, endOffset, offsets, playbackId, dataCopyService,
+        taskThreadMap, pts);
+    readThread.extendedDataPut(extendedDataWrappers);
+    ThreadUtils.execute(playbackId, taskThreadMap, readThread);
   }
 
   @Override
