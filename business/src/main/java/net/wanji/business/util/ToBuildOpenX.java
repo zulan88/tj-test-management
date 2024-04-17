@@ -206,9 +206,9 @@ public class ToBuildOpenX {
                         }
                         Vertex vertex = new Vertex();
                         Double time = Double.valueOf(trajectoryValueDto.getGlobalTimeStamp());
-                        vertex.setTime(df.format(time - base));
+                        vertex.setTime(df.format((time - base)/1000D));
                         if ((time - base) > maxTime) {
-                            maxTime = (time - base);
+                            maxTime = (time - base)/1000D;
                         }
                         Position position = new Position();
                         position.setWorldPosition(totrans(trajectoryValueDto.getLongitude(), trajectoryValueDto.getLatitude(), proj, trajectoryValueDto.getCourseAngle()));
@@ -712,7 +712,7 @@ public class ToBuildOpenX {
                     TrajectoryValueDto trajectoryValueDto = clientSimulationTrajectoryDto.getValue().get(0);
                     Vertex vertex = new Vertex();
                     Long time = Long.valueOf(trajectoryValueDto.getGlobalTimeStamp());
-                    vertex.setTime(df.format((time - base)/1000));
+                    vertex.setTime(df.format((time - base)/1000D));
                     if ((time - base) > maxTime) {
                         maxTime = (time - base)/1000D;
                     }

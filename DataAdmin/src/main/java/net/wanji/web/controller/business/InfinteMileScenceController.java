@@ -142,7 +142,6 @@ public class InfinteMileScenceController extends BaseController {
     @GetMapping("/testToOpenX")
     public AjaxResult testPlaybackByTime(Integer fileId, Long startTime,
                                          Long endTime, Integer caseId, Integer shardingId) throws Exception {
-        final TjScenelib[] tjScenelib = {new TjScenelib()};
         TjInfinityTask tjInfinityTask = tjInfinityTaskService.getById(caseId);
         Integer scenceId = tjInfinityTask.getCaseId();
         dataFileService.playback(fileId, startTime, endTime, scenceId, shardingId,
@@ -186,13 +185,13 @@ public class InfinteMileScenceController extends BaseController {
                     public void stop(Exception e) {
                         try {
                             log.info("stop:", e);
-                            tjScenelib[0] = toBuildOpenX.sclicetoOpenX(scenceExo, map);
+                            toBuildOpenX.sclicetoOpenX(scenceExo, map);
                         } catch (BusinessException | IOException | JAXBException | TransformerException ex) {
                             throw new RuntimeException(ex);
                         }
                     }
                 });
-        return AjaxResult.success(tjScenelib[0]);
+        return AjaxResult.success();
     }
 
 }
