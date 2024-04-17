@@ -161,7 +161,7 @@ public class TestingServiceImpl implements TestingService {
         CaseConfigBo simulationConfig = distCaseConfigs.stream()
                 .filter(t -> PartRole.MV_SIMULATION.equals(t.getParticipantRole()))
                 .findFirst()
-                .orElseThrow(() -> new BusinessException("未找到仿真设备"));
+                .orElse(null);
         if (!running && hand && isDevicesIdle(filteredTaskCaseConfigs)) {
             caseReset(caseId, caseInfoBo, simulationConfig,
                 filteredTaskCaseConfigs);
@@ -887,11 +887,14 @@ public class TestingServiceImpl implements TestingService {
             mapList.add(String.valueOf(caseInfoBo.getMapId()));
         }
         // 4.唤醒仿真服务
-        if (!restService.startServer(
-            simulationConfig.getIp(), Integer.valueOf(simulationConfig.getServiceAddress()),
-            TessngUtils.buildTessServerParam(1, SecurityUtils.getUsername(), caseId, mapList))) {
-            throw new BusinessException("唤起仿真服务失败");
+        if(simulationConfig != null){
+            if (!restService.startServer(
+                    simulationConfig.getIp(), Integer.valueOf(simulationConfig.getServiceAddress()),
+                    TessngUtils.buildTessServerParam(1, SecurityUtils.getUsername(), caseId, mapList))) {
+                throw new BusinessException("唤起仿真服务失败");
+            }
         }
+
         if (!redisLock.tryLock("case_" + caseId, SecurityUtils.getUsername())) {
             throw new BusinessException("当前用例正在测试中，请稍后再试");
         }
