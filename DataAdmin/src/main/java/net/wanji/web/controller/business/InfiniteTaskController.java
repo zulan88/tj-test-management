@@ -443,50 +443,60 @@ public class InfiniteTaskController {
         }
     }
 
-    private List<? extends ExtendedDataWrapper> shardingChangeRecord(Integer taskId,
-        Integer caseId, Integer recordId, Map<Integer, String> shardingIdName) {
-      QueryWrapper<TjShardingChangeRecord> recordQueryWrapper = new QueryWrapper<>();
-      recordQueryWrapper.eq("task_id", taskId);
-      recordQueryWrapper.eq("case_id", caseId);
-      recordQueryWrapper.eq("record_id", recordId);
-      recordQueryWrapper.orderByAsc("create_timestamp");
-      List<TjShardingChangeRecord> resutlList = shardingChangeRecordService.list(
-          recordQueryWrapper);
+    private List<? extends ExtendedDataWrapper> shardingChangeRecord(
+        Integer taskId, Integer caseId, Integer recordId,
+        Map<Integer, String> shardingIdName) {
+        QueryWrapper<TjShardingChangeRecord> recordQueryWrapper = new QueryWrapper<>();
+        recordQueryWrapper.eq("task_id", taskId);
+        recordQueryWrapper.eq("case_id", caseId);
+        recordQueryWrapper.eq("record_id", recordId);
+        recordQueryWrapper.orderByAsc("create_timestamp");
+        List<TjShardingChangeRecord> resutlList = shardingChangeRecordService.list(
+            recordQueryWrapper);
 
-      List<ExtendedDataWrapper<List<ShardingResultVo>>> wrappers = new ArrayList<>();
-      for (TjShardingChangeRecord record : resutlList) {
-        if (!wrappers.isEmpty()) {
-          ExtendedDataWrapper<List<ShardingResultVo>> lastWrapper = wrappers.get(
-              wrappers.size() - 1);
-          List<ShardingResultVo> data = lastWrapper.getData();
-          ArrayList<ShardingResultVo> newSV = new ArrayList<>();
-          for (ShardingResultVo sv : data) {
-            if (sv.getShardingId() == record.getShardingId()) {
-              ShardingResultVo shardingResultVo = new ShardingResultVo();
-              shardingResultVo.setTime(sv.getTime() + 1);
-              shardingResultVo.setShardingName(sv.getShardingName());
-              shardingResultVo.setState(record.getState());
-              shardingResultVo.setEvaluationScore(record.getEvaluationScore());
-              shardingResultVo.setShardingId(sv.getShardingId());
-              newSV.add(shardingResultVo);
+        List<ExtendedDataWrapper<List<ShardingResultVo>>> wrappers = new ArrayList<>();
+        for (TjShardingChangeRecord record : resutlList) {
+            if (wrappers.isEmpty()) {
+                ShardingResultVo shardingResultVo = new ShardingResultVo();
+                shardingResultVo.setShardingName(
+                    shardingIdName.get(record.getShardingId()));
+                shardingResultVo.setTime(0);
+                shardingResultVo.setEvaluationScore(
+                    record.getEvaluationScore());
+                shardingResultVo.setShardingId(record.getShardingId());
+                shardingResultVo.setState(record.getState());
+                wrappers.add(
+                    new ExtendedDataWrapper<>(record.getCreateTimestamp(),
+                        Arrays.asList(shardingResultVo)));
             } else {
-              newSV.add(sv);
+                ExtendedDataWrapper<List<ShardingResultVo>> lastWrapper = wrappers.get(
+                    wrappers.size() - 1);
+                List<ShardingResultVo> data = lastWrapper.getData();
+                ArrayList<ShardingResultVo> newSV = new ArrayList<>();
+                for (ShardingResultVo sv : data) {
+                    if (sv.getShardingId() == record.getShardingId()) {
+                        ShardingResultVo shardingResultVo = new ShardingResultVo();
+                        if(sv.getState() != record.getState() && record.getState() == 0){
+                            shardingResultVo.setTime(sv.getTime() + 1);
+                        }else {
+                            shardingResultVo.setTime(sv.getTime());
+                        }
+                        shardingResultVo.setShardingName(sv.getShardingName());
+                        shardingResultVo.setState(record.getState());
+                        shardingResultVo.setEvaluationScore(
+                            record.getEvaluationScore());
+                        shardingResultVo.setShardingId(sv.getShardingId());
+                        newSV.add(shardingResultVo);
+                    } else {
+                        newSV.add(sv);
+                    }
+                }
+                wrappers.add(
+                    new ExtendedDataWrapper<>(record.getCreateTimestamp(),
+                        newSV));
             }
-          }
-          wrappers.add(
-              new ExtendedDataWrapper<>(record.getCreateTimestamp(), newSV));
-        } else {
-          ShardingResultVo shardingResultVo = new ShardingResultVo();
-          shardingResultVo.setShardingName(shardingIdName.get(record.getShardingId()));
-          shardingResultVo.setTime(0);
-          shardingResultVo.setEvaluationScore(record.getEvaluationScore());
-          shardingResultVo.setShardingId(record.getShardingId());
-          shardingResultVo.setState(record.getState());
-          wrappers.add(new ExtendedDataWrapper<>(record.getCreateTimestamp(),
-              Arrays.asList(shardingResultVo)));
         }
-      }
-      return wrappers;
+        return wrappers;
     }
 
     @GetMapping("/playbackStop")
