@@ -93,6 +93,9 @@ public class TjScenelib
     @TableField("scene_detail_id")
     private Integer sceneDetailId;
 
+    /** 生成源
+     * 0-原始场景，1-泛化场景
+     * */
     @TableField("is_gen")
     private Integer isGen;
 }

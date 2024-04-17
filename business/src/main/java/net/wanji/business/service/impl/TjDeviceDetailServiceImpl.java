@@ -194,7 +194,7 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
 
     @Override
     public Integer handDeviceReadyState(Integer deviceId, String statusChannel, DeviceReadyStateParam stateParam, boolean wait) {
-        String lock = "READY_STATE_" + statusChannel;
+        String lock = "READY_STATE_" + statusChannel + deviceId;
         if (redisCache.hasKey(lock)) {
             Integer readyState = deviceStateToRedis.query(deviceId, statusChannel, DeviceStateToRedis.DEVICE_READY_STATE_PREFIX);
             return ObjectUtils.isEmpty(readyState) ? 0 : readyState;
