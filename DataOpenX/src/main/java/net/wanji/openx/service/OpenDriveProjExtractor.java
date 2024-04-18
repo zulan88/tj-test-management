@@ -9,21 +9,36 @@ import javax.xml.bind.Unmarshaller;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class OpenDriveProjExtractor {
-    public static void main(String[] args) {
-        String address = "D:\\data\\uploadPath\\scenelib\\2023\\11\\15\\SC20231030181812ZDNU859.xosc";
-        String url = "https://example.com:30080/path/to/resource";
-        Pattern pattern = Pattern.compile(":(\\d{1,5})");
-        Matcher matcher = pattern.matcher(url);
-
-        while (matcher.find()) {
-            String port = matcher.group(1);
-            System.out.println("Port found: " + port);
+    public static void main(String[] args) throws IOException {
+        String address = "D:\\data\\uploadPath\\scenelib\\tjtest.xodr";
+        String online = "C:\\Users\\wanji\\Downloads\\tjtest.xodr";
+        File xodrfile = new java.io.File(online);
+        String c1 = StringUtils.substringAfterLast(online, java.io.File.separator);
+        BufferedReader reader = new BufferedReader(new FileReader(online));
+        StringBuilder fileContent = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            fileContent.append(line);
+        }
+        reader.close();
+        // 使用正则表达式提取proj参数值
+        String regex = "\\+proj=[^\\s]+.*?\\]";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(fileContent.toString());
+        if (matcher.find()) {
+            String projValue = matcher.group();
+            String proj = projValue.substring(0, projValue.length() - 1);
+            System.out.println("proj参数值：" + proj);
+        } else {
+            //异常处理
+            System.out.println("未提取到proj参数");
         }
     }
 

@@ -12,6 +12,7 @@ import net.wanji.business.service.InfinteMileScenceService;
 import net.wanji.business.service.TjInfinityTaskService;
 import net.wanji.business.service.record.DataCopyService;
 import net.wanji.business.service.record.DataFileService;
+import net.wanji.business.util.SceneLibMap;
 import net.wanji.business.util.ToBuildOpenX;
 import net.wanji.common.common.ClientSimulationTrajectoryDto;
 import net.wanji.common.common.TrajectoryValueDto;
@@ -64,7 +65,7 @@ public class InfinteMileScenceController extends BaseController {
         List<InfinteMileScenceExo> list = infinteMileScenceService.selectInfinteMileScenceList(status);
         List<InfinteMileScenceExo> infinteMileScenceExoList = list.stream().peek(infinteMileScenceExo -> {
             infinteMileScenceService.dualInfiniteSimulation(infinteMileScenceExo);
-            if (infinteMileScenceExo.getInElements()!= null) {
+            if (infinteMileScenceExo.getInElements() != null) {
                 long testNum = infinteMileScenceExo.getInElements().stream().filter(inElement -> inElement.getType().equals(0)).count();
                 infinteMileScenceExo.setTestNum(testNum);
                 infinteMileScenceExo.setOtherNum(infinteMileScenceExo.getInElements().size() - testNum);
@@ -156,13 +157,13 @@ public class InfinteMileScenceController extends BaseController {
                         List<ClientSimulationTrajectoryDto> list = JSON.parseArray(data, ClientSimulationTrajectoryDto.class);
                         AtomicBoolean flag = new AtomicBoolean(true);
                         list.forEach(clientSimulationTrajectoryDto -> {
-                            if (clientSimulationTrajectoryDto.getRole().equals("av") && flag.get()){
+                            if (clientSimulationTrajectoryDto.getRole().equals("av") && flag.get()) {
                                 List<ClientSimulationTrajectoryDto> res = map.getOrDefault("av", new ArrayList<>());
                                 res.add(clientSimulationTrajectoryDto);
                                 map.put("av", res);
                                 flag.set(false);
-                            }else {
-                                for (TrajectoryValueDto trajectoryValueDto : clientSimulationTrajectoryDto.getValue()){
+                            } else {
+                                for (TrajectoryValueDto trajectoryValueDto : clientSimulationTrajectoryDto.getValue()) {
                                     ClientSimulationTrajectoryDto client = new ClientSimulationTrajectoryDto();
                                     client.setRole(clientSimulationTrajectoryDto.getRole());
                                     List<TrajectoryValueDto> trajectoryValueDtos = new ArrayList<>();
@@ -185,13 +186,16 @@ public class InfinteMileScenceController extends BaseController {
                     public void stop(Exception e) {
                         try {
                             log.info("stop:", e);
-                            toBuildOpenX.sclicetoOpenX(scenceExo, map);
+                            SceneLibMap.put(startTime, toBuildOpenX.sclicetoOpenX(scenceExo, map));
                         } catch (BusinessException | IOException | JAXBException | TransformerException ex) {
                             throw new RuntimeException(ex);
                         }
                     }
                 });
-        return AjaxResult.success();
+        while (!SceneLibMap.isExist(startTime)){
+            Thread.sleep(500);
+        }
+        return AjaxResult.success(SceneLibMap.get(startTime));
     }
 
 }
