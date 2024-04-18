@@ -63,7 +63,7 @@ public class FileReadThread extends Thread {
   @Override
   public void run() {
 
-    long count = startOffset;
+    long startPoint = startOffset;
     if (startOffset < 0 || endOffset > offsets.size()) {
       throw new IllegalArgumentException(
           String.format("lineNum must between %s and %s", 0, offsets.size()));
@@ -75,7 +75,7 @@ public class FileReadThread extends Thread {
         encode = "GB2312";
       }
       raf.seek(offsets.get(startOffset.intValue()));
-      while (count <= endOffset && !stop.get()) {
+      while (startPoint <= endOffset && !stop.get()) {
         if (null != rateLimiter) {
           if (pause.get()) {
             synchronized (rateLimiter) {
@@ -96,9 +96,9 @@ public class FileReadThread extends Thread {
           }
           continue;
         }
-        if (dataSend(trajectories, count))
+        if (dataSend(trajectories, startPoint - startOffset))
           continue;
-        count++;
+        startPoint++;
       }
     } catch (Exception e) {
       exception = e;
@@ -107,13 +107,13 @@ public class FileReadThread extends Thread {
       }
     } finally {
       removeThreadRecord();
-      dataSendEnd(count);
+      dataSendEnd(startPoint - startOffset);
     }
   }
 
   public void extendedDataPut(
       Map<String, List<? extends ExtendedDataWrapper>> extendedDataWrappers) {
-    if(null != extendedDataWrappers){
+    if (null != extendedDataWrappers) {
       if (null == extendedDataMap) {
         extendedDataMap = new HashMap<>();
       }
@@ -166,7 +166,7 @@ public class FileReadThread extends Thread {
     }
     if (trajectories.size() > 0) {
       dataCopyService.data(objectMapper.writeValueAsString(trajectories));
-      if (progressChange != (int) count / 100) {
+      if (progressChange != (int) count / 500) {
         dataCopyService.progress((int) (count / totalRecords * 100));
         progressChange++;
       }
@@ -182,10 +182,10 @@ public class FileReadThread extends Thread {
     WebSocketManage.sendInfo(wsClientKey,
         new ObjectMapper().writeValueAsString(msg));
     // 非轨迹数据发送
-    extendDataChose(getDataCurrentTimpstamp(trajectories));
+    extendDataChose(getDataCurrentTimestamp(trajectories));
   }
 
-  private static Long getDataCurrentTimpstamp(
+  private static Long getDataCurrentTimestamp(
       List<RecordSimulationTrajectoryDto> trajectories) {
     if (null != trajectories && !trajectories.isEmpty()) {
       return trajectories.get(0).getTimestamp();
