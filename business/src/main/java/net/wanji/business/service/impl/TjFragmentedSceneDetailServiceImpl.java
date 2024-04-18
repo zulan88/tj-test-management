@@ -187,41 +187,53 @@ public class TjFragmentedSceneDetailServiceImpl
         if (CollectionUtils.isNotEmpty(list)) {
             return null;
         }
-        TjFragmentedSceneDetail tjFragmentedSceneDetail = new TjFragmentedSceneDetail();
-        FragmentedScenesDetailVo fragmentedScenesDetailVo = this.getDetailVo(sceneDebugDto.getId(), null);
-        List<ParticipantTrajectoryBo> participantTrajectories = fragmentedScenesDetailVo.getTrajectoryJson().getParticipantTrajectories();
-        if(sceneDebugDto.getSimuType()!=null&&sceneDebugDto.getSimuType()==1){
-            for (int i = 0; i < participantTrajectories.size(); i++) {
-                ParticipantTrajectoryBo participantTrajectoryBo = participantTrajectories.get(i);
-                List<TrajectoryDetailBo> trajectories = participantTrajectoryBo.getTrajectory();
-                List<TrajectoryDetailBo> tesstraj = sceneDebugDto.getTrajectoryJson().getParticipantTrajectories().get(i).getTrajectory();
-                for (int j = 0; j < trajectories.size(); j++) {
-                    TrajectoryDetailBo data = trajectories.get(j);
-                    TrajectoryDetailBo tess = tesstraj.get(j);
-                    data.setTime(tess.getTime());
+        if(sceneDebugDto.getIsGen()==null || sceneDebugDto.getIsGen().equals(0)) {
+            TjFragmentedSceneDetail tjFragmentedSceneDetail = new TjFragmentedSceneDetail();
+            FragmentedScenesDetailVo fragmentedScenesDetailVo = this.getDetailVo(sceneDebugDto.getId(), null);
+            List<ParticipantTrajectoryBo> participantTrajectories = fragmentedScenesDetailVo.getTrajectoryJson().getParticipantTrajectories();
+            if (sceneDebugDto.getSimuType() != null && sceneDebugDto.getSimuType() == 1) {
+                for (int i = 0; i < participantTrajectories.size(); i++) {
+                    ParticipantTrajectoryBo participantTrajectoryBo = participantTrajectories.get(i);
+                    List<TrajectoryDetailBo> trajectories = participantTrajectoryBo.getTrajectory();
+                    List<TrajectoryDetailBo> tesstraj = sceneDebugDto.getTrajectoryJson().getParticipantTrajectories().get(i).getTrajectory();
+                    for (int j = 0; j < trajectories.size(); j++) {
+                        TrajectoryDetailBo data = trajectories.get(j);
+                        TrajectoryDetailBo tess = tesstraj.get(j);
+                        data.setTime(tess.getTime());
+                    }
                 }
-            }
-            tjFragmentedSceneDetail.setTrajectoryInfo(!ObjectUtils.isEmpty(fragmentedScenesDetailVo.getTrajectoryJson())
-                    ? fragmentedScenesDetailVo.getTrajectoryJson().buildId().toJsonString()
-                    : null);
-        }else if(sceneDebugDto.getSimuType()!=null&&sceneDebugDto.getSimuType()==0){
-            for (int i = 0; i < participantTrajectories.size(); i++) {
-                ParticipantTrajectoryBo participantTrajectoryBo = participantTrajectories.get(i);
-                List<TrajectoryDetailBo> trajectories = participantTrajectoryBo.getTrajectory();
-                List<TrajectoryDetailBo> tesstraj = sceneDebugDto.getTrajectoryJson().getParticipantTrajectories().get(i).getTrajectory();
-                for (int j = 0; j < trajectories.size(); j++) {
-                    TrajectoryDetailBo data = trajectories.get(j);
-                    TrajectoryDetailBo tess = tesstraj.get(j);
-                    data.setSpeed(tess.getSpeed());
+                tjFragmentedSceneDetail.setTrajectoryInfo(!ObjectUtils.isEmpty(fragmentedScenesDetailVo.getTrajectoryJson())
+                        ? fragmentedScenesDetailVo.getTrajectoryJson().buildId().toJsonString()
+                        : null);
+            } else if (sceneDebugDto.getSimuType() != null && sceneDebugDto.getSimuType() == 0) {
+                for (int i = 0; i < participantTrajectories.size(); i++) {
+                    ParticipantTrajectoryBo participantTrajectoryBo = participantTrajectories.get(i);
+                    List<TrajectoryDetailBo> trajectories = participantTrajectoryBo.getTrajectory();
+                    List<TrajectoryDetailBo> tesstraj = sceneDebugDto.getTrajectoryJson().getParticipantTrajectories().get(i).getTrajectory();
+                    for (int j = 0; j < trajectories.size(); j++) {
+                        TrajectoryDetailBo data = trajectories.get(j);
+                        TrajectoryDetailBo tess = tesstraj.get(j);
+                        data.setSpeed(tess.getSpeed());
+                    }
                 }
+                tjFragmentedSceneDetail.setTrajectoryInfoTime(!ObjectUtils.isEmpty(fragmentedScenesDetailVo.getTrajectoryJson())
+                        ? fragmentedScenesDetailVo.getTrajectoryJson().buildId().toJsonString()
+                        : null);
             }
-            tjFragmentedSceneDetail.setTrajectoryInfoTime(!ObjectUtils.isEmpty(fragmentedScenesDetailVo.getTrajectoryJson())
-                    ? fragmentedScenesDetailVo.getTrajectoryJson().buildId().toJsonString()
+            tjFragmentedSceneDetail.setId(sceneDebugDto.getId());
+            tjFragmentedSceneDetail.setRouteFile(sceneDebugDto.getRouteFile());
+            return this.updateById(tjFragmentedSceneDetail);
+        }else {
+            TjGeneralizeScene detail = new TjGeneralizeScene();
+            detail.setId(sceneDebugDto.getId());
+
+            detail.setRouteFile(sceneDebugDto.getRouteFile());
+
+            detail.setTrajectoryInfo(!ObjectUtils.isEmpty(sceneDebugDto.getTrajectoryJson())
+                    ? sceneDebugDto.getTrajectoryJson().buildId().toJsonString()
                     : null);
+            return generalizeSceneService.updateById(detail);
         }
-        tjFragmentedSceneDetail.setId(sceneDebugDto.getId());
-        tjFragmentedSceneDetail.setRouteFile(sceneDebugDto.getRouteFile());
-        return this.updateById(tjFragmentedSceneDetail);
     }
 
     @Override
@@ -400,18 +412,6 @@ public class TjFragmentedSceneDetailServiceImpl
 
     @Override
     public boolean saveGeneralScene(TjFragmentedSceneDetailDto sceneDetailDto) throws BusinessException {
-        if (StringUtils.isNotEmpty(sceneDetailDto.getRouteFile()) && !ObjectUtils.isEmpty(sceneDetailDto.getTrajectoryJson())) {
-            List<ParticipantTrajectoryBo> list = sceneDetailDto.getTrajectoryJson().getParticipantTrajectories().stream()
-                    .filter(t -> PartType.MAIN.equals(t.getType()))
-                    .filter(p -> ObjectUtils.isEmpty(p.getTrajectory().get(0).getPass())
-                            || ObjectUtils.isEmpty(p.getTrajectory().get(p.getTrajectory().size() - 1).getPass())
-                            || !p.getTrajectory().get(0).getPass()
-                            || !p.getTrajectory().get(p.getTrajectory().size() - 1).getPass())
-                    .collect(Collectors.toList());
-            if (CollectionUtils.isNotEmpty(list)) {
-                throw new BusinessException("主车起止点校验失败，请检查主车起止点或重新进行仿真验证！");
-            }
-        }
         TjGeneralizeScene detail = new TjGeneralizeScene();
         detail.setId(sceneDetailDto.getId());
 
