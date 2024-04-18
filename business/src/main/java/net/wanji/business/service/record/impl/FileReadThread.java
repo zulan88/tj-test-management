@@ -113,10 +113,12 @@ public class FileReadThread extends Thread {
 
   public void extendedDataPut(
       Map<String, List<? extends ExtendedDataWrapper>> extendedDataWrappers) {
-    if (null == extendedDataMap) {
-      extendedDataMap = new HashMap<>();
+    if(null != extendedDataWrappers){
+      if (null == extendedDataMap) {
+        extendedDataMap = new HashMap<>();
+      }
+      extendedDataMap.putAll(extendedDataWrappers);
     }
-    extendedDataMap.putAll(extendedDataWrappers);
   }
 
   private void removeThreadRecord() {
