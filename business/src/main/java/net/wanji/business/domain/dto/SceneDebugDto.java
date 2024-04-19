@@ -46,4 +46,6 @@ public class SceneDebugDto {
 
     private Integer simuType;
 
+    private Integer isGen;
+
 }
