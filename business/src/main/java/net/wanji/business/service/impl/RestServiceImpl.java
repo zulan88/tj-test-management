@@ -123,7 +123,7 @@ public class RestServiceImpl implements RestService {
         log.info("============================== tessServerUrl：{}", resultUrl);
         try {
             HttpHeaders httpHeaders = new HttpHeaders();
-            httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+            httpHeaders.setContentType(MediaType.APPLICATION_JSON_UTF8);
             HttpEntity<TessParam> resultHttpEntity = new HttpEntity<>(tessParam, httpHeaders);
             log.info("============================== tessServerUrl：{}", JSONObject.toJSONString(tessParam));
             ResponseEntity<String> response =
