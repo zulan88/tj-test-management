@@ -75,7 +75,6 @@ public class TjShardingChangeRecordServiceImpl
   @Override
   public boolean tessngShardingInOutSend(
       TjTessngShardingChangeDto tjTessngShardingChangeDto) throws Exception {
-    tjTessngShardingChangeDto.setShardingId(1);
     String commandChannel = RedisChannelUtils.getCommandChannelByRole(
         tjTessngShardingChangeDto.getTaskId(),
         tjTessngShardingChangeDto.getCaseId(), Constants.PartRole.MV_SIMULATION,
