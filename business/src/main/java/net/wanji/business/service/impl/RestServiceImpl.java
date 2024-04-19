@@ -19,6 +19,7 @@ import net.wanji.business.domain.vo.SceneIndexSchemeVo;
 import net.wanji.business.domain.vo.SceneWeightDetailsVo;
 import net.wanji.business.service.RestService;
 import net.wanji.business.service.SendTessNgRequestService;
+import net.wanji.common.utils.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -345,6 +346,9 @@ public class RestServiceImpl implements RestService {
             param.put("taskId", taskId);
             param.put("caseId", caseId);
             param.put("testMode", testMode);
+            HashMap<String, Object> context = new HashMap<>();
+            context.put("user", SecurityUtils.getUsername());
+            param.put("context", context);
             HttpHeaders httpHeaders = new HttpHeaders();
             httpHeaders.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<Map<String, Object>> resultHttpEntity = new HttpEntity<>(param, httpHeaders);
