@@ -708,8 +708,8 @@ public class TestingServiceImpl implements TestingService {
     }
 
     @Override
-    public void manualTermination(Integer caseId) throws BusinessException {
-        if (!restService.sendManualTermination(0, caseId, TestMode.CASE_TEST)) {
+    public void manualTermination(Integer caseId, Integer testModel) throws BusinessException {
+        if (!restService.sendManualTermination(0, caseId, testModel)) {
             throw new BusinessException("任务终止失败");
         }
     }

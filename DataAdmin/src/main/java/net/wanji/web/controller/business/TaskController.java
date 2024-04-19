@@ -346,7 +346,8 @@ public class TaskController extends BaseController {
             } else {
                 taskCaseService.caseStartEnd(platformSSDto.getTaskId(),
                     platformSSDto.getCaseId(), platformSSDto.getState(),
-                    platformSSDto.isTaskEnd(), platformSSDto.getContext());
+                    platformSSDto.isTaskEnd(), platformSSDto.getContext(),
+                    platformSSDto.getTestMode());
             }
         }
         taskCaseCache(platformSSDto);
@@ -499,15 +500,27 @@ public class TaskController extends BaseController {
     @ApiOperationSort(30)
     @ApiOperation(value = "30.手动终止")
     @GetMapping("/manualTermination")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "taskId", value = "任务ID", dataType = "Integer", paramType = "query", example = "499"),
-            @ApiImplicitParam(name = "id", value = "用例ID/任务用例ID", dataType = "Integer", paramType = "query", example = "1")
+    @ApiImplicitParams({ @ApiImplicitParam(name = "taskId",
+        value = "任务ID",
+        dataType = "Integer",
+        paramType = "query",
+        example = "499"), @ApiImplicitParam(name = "caseId",
+        value = "用例ID",
+        dataType = "Integer",
+        paramType = "query",
+        example = "1"), @ApiImplicitParam(name = "testModel",
+        value = "测试类型：0：单用例测试（实车试验）；1：连续性场景测试（多场景任务一次启停）；2：批量测试（n场景任务n次启停",
+        dataType = "Integer",
+        paramType = "query",
+        example = "1")
     })
-    public AjaxResult manualTermination(@RequestParam("taskId") Integer taskId, @RequestParam(value = "id", required = false) Integer id) throws BusinessException {
+    public AjaxResult manualTermination(@RequestParam("taskId") Integer taskId,
+        @RequestParam(value = "caseId") Integer caseId,
+        @RequestParam("testModel") Integer testModel) throws BusinessException {
         if (taskId > 0) {
-            taskCaseService.manualTermination(taskId, 0);
+            taskCaseService.manualTermination(taskId, 0, testModel);
         } else {
-            testingService.manualTermination(id);
+            testingService.manualTermination(caseId, testModel);
         }
         return AjaxResult.success();
     }

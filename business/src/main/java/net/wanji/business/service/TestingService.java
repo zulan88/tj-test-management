@@ -88,5 +88,5 @@ public interface TestingService {
      * @param caseId
      * @throws BusinessException
      */
-    void manualTermination(Integer caseId) throws BusinessException;
+    void manualTermination(Integer caseId, Integer testModel) throws BusinessException;
 }

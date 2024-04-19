@@ -747,7 +747,9 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
 //    @Transactional(rollbackFor = Exception.class)
     @Override
-    public CaseRealTestVo caseStartEnd(Integer taskId, Integer caseId, Integer action, boolean taskEnd, Map<String, Object> context) throws BusinessException {
+    public CaseRealTestVo caseStartEnd(Integer taskId, Integer caseId,
+        Integer action, boolean taskEnd, Map<String, Object> context,
+        Integer testModel) throws BusinessException {
         log.info("任务ID:{} 用例ID:{} action:{}, 上下文：{}", taskId, caseId, action, JSONObject.toJSONString(context));
         TjTask tjTask = taskMapper.selectById(taskId);
         if (ObjectUtils.isEmpty(tjTask)) {
@@ -835,7 +837,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                             taskChainFactory.selectState(taskChainNumber);
                         } catch (Exception e) {
                             log.error("任务{}终止:{}", taskId, e);
-                            manualTermination(taskId, 0);
+                            manualTermination(taskId, 0, testModel);
                         }
 
                     }
@@ -1069,7 +1071,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
     }
 
     @Override
-    public void manualTermination(Integer taskId, Integer taskCaseId) throws BusinessException {
+    public void manualTermination(Integer taskId, Integer taskCaseId, Integer testModel) throws BusinessException {
         TjTask tjTask = taskMapper.selectById(taskId);
         if (ObjectUtils.isEmpty(tjTask)) {
             throw new BusinessException("未查询到任务信息");

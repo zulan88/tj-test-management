@@ -67,7 +67,7 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
      * @throws IOException
      */
     CaseRealTestVo caseStartEnd(Integer taskId, Integer caseId, Integer action,
-                                boolean taskEnd, Map<String, Object> context) throws BusinessException;
+                                boolean taskEnd, Map<String, Object> context, Integer testModel) throws BusinessException;
 
     /**
      * 回放
@@ -126,7 +126,7 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
      * @param taskCaseId
      * @throws BusinessException
      */
-    void manualTermination(Integer taskId, Integer taskCaseId) throws BusinessException;
+    void manualTermination(Integer taskId, Integer taskCaseId, Integer testModel) throws BusinessException;
 
     List<CaseTreeVo> selectTree(String type, Integer taskId);
 
