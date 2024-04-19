@@ -137,7 +137,9 @@ public class InfinteMileScenceController extends BaseController {
 
     @GetMapping("/getsliceimg")
     public AjaxResult simustart(@RequestParam("id") Integer id) throws BusinessException {
-        return AjaxResult.success(infinteMileScenceService.getSiteSlices(id));
+        TjInfinityTask tjInfinityTask = tjInfinityTaskService.getById(id);
+        Integer scenceId = tjInfinityTask.getCaseId();
+        return AjaxResult.success(infinteMileScenceService.getSiteSlices(scenceId));
     }
 
     @GetMapping("/testToOpenX")
