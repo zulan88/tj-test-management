@@ -509,7 +509,7 @@ public class TaskController extends BaseController {
         dataType = "Integer",
         paramType = "query",
         example = "1"), @ApiImplicitParam(name = "testModel",
-        value = "测试类型：0：单用例测试（实车试验）；1：连续性场景测试（多场景任务一次启停）；2：批量测试（n场景任务n次启停",
+        value = "测试类型：0：单用例测试（实车试验）；1：连续性场景测试（多场景任务一次启停）；2：批量测试（n场景任务n次启停）；3：无限里程",
         dataType = "Integer",
         paramType = "query",
         example = "1")
