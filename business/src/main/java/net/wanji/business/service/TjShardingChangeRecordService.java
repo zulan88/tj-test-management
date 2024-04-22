@@ -23,7 +23,7 @@ public interface TjShardingChangeRecordService
    * @param taskId
    * @param caseId
    */
-  void start(Integer taskId, Integer caseId, String username);
+  Integer start(Integer taskId, Integer caseId, String username);
 
   /**
    * 进出分片信息保存时自动获取记录id
@@ -48,7 +48,7 @@ public interface TjShardingChangeRecordService
    * @param taskId
    * @param caseId
    */
-  void stop(Integer taskId, Integer caseId);
+  Integer stop(Integer taskId, Integer caseId);
 
   /**
    * 开始结束
@@ -57,7 +57,8 @@ public interface TjShardingChangeRecordService
    * @param caseId
    * @param state
    */
-  void stateControl(Integer taskId, Integer caseId, Integer state, String username);
+  Integer stateControl(Integer taskId, Integer caseId, Integer state,
+      String username);
 
   /**
    * 分片进出统计结果

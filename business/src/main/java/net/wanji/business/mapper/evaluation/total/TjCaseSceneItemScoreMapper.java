@@ -1,7 +1,7 @@
-package net.wanji.business.mapper.evaluation;
+package net.wanji.business.mapper.evaluation.total;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import net.wanji.business.entity.evaluation.TjCaseSceneItemScore;
+import net.wanji.business.entity.evaluation.total.TjCaseSceneItemScore;
 
 /**
  * @author hcy

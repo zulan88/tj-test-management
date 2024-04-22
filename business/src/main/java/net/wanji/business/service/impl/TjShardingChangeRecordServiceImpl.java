@@ -3,7 +3,6 @@ package net.wanji.business.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import net.wanji.business.common.Constants;
 import net.wanji.business.domain.InfinteMileScenceExo;
@@ -28,7 +27,6 @@ import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Random;
 import java.util.stream.Collectors;
 
 /**
@@ -54,14 +52,15 @@ public class TjShardingChangeRecordServiceImpl
   private TjInfinityMapper tjInfinityMapper;
 
   @Override
-  public void start(Integer taskId, Integer caseId, String username) {
+  public Integer start(Integer taskId, Integer caseId, String username) {
     String recordCacheId = RedisCacheUtils.createRecordCacheId(taskId, caseId);
     if (redisCache.hasKey(recordCacheId)) {
       redisCache.deleteObject(recordCacheId);
     }
 
-    redisCache.setCacheObject(recordCacheId,
-        createRecordId(taskId, caseId, username));
+    Integer recordId = createRecordId(taskId, caseId, username);
+    redisCache.setCacheObject(recordCacheId, recordId);
+    return recordId;
   }
 
   @Override
@@ -84,18 +83,23 @@ public class TjShardingChangeRecordServiceImpl
   }
 
   @Override
-  public void stop(Integer taskId, Integer caseId) {
-    redisCache.deleteObject(
-        RedisCacheUtils.createRecordCacheId(taskId, caseId));
+  public Integer stop(Integer taskId, Integer caseId) {
+    String recordCacheId = RedisCacheUtils.createRecordCacheId(taskId, caseId);
+    Integer recordId = null;
+    if (redisCache.hasKey(recordCacheId)) {
+      recordId = redisCache.getCacheObject(recordCacheId);
+      redisCache.deleteObject(recordCacheId);
+    }
+    return recordId;
   }
 
   @Override
-  public void stateControl(Integer taskId, Integer caseId, Integer state,
+  public Integer stateControl(Integer taskId, Integer caseId, Integer state,
       String username) {
     if (state > 0) {
-      this.start(taskId, caseId, username);
+      return this.start(taskId, caseId, username);
     } else {
-      this.stop(taskId, caseId);
+      return this.stop(taskId, caseId);
     }
   }
 

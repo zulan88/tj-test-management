@@ -1,8 +1,8 @@
 package net.wanji.business.service.evaluation.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import net.wanji.business.entity.evaluation.TjCaseSceneItemScore;
-import net.wanji.business.mapper.evaluation.TjCaseSceneItemScoreMapper;
+import net.wanji.business.entity.evaluation.total.TjCaseSceneItemScore;
+import net.wanji.business.mapper.evaluation.total.TjCaseSceneItemScoreMapper;
 import net.wanji.business.service.evaluation.TjCaseSceneItemScoreService;
 import org.springframework.stereotype.Service;
 

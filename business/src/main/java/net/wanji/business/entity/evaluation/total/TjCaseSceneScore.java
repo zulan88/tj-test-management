@@ -1,4 +1,4 @@
-package net.wanji.business.entity.evaluation;
+package net.wanji.business.entity.evaluation.total;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -6,7 +6,6 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
-import net.wanji.business.mapper.evaluation.TjCaseSceneItemScoreMapper;
 
 import java.util.List;
 import java.util.Map;

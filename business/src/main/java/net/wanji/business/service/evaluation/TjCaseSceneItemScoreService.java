@@ -1,7 +1,7 @@
 package net.wanji.business.service.evaluation;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import net.wanji.business.entity.evaluation.TjCaseSceneItemScore;
+import net.wanji.business.entity.evaluation.total.TjCaseSceneItemScore;
 
 /**
  * @author hcy

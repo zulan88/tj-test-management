@@ -1,4 +1,4 @@
-package net.wanji.business.entity.evaluation;
+package net.wanji.business.entity.evaluation.total;
 
 /**
  * @author hcy
@@ -24,49 +24,55 @@ public class TjCaseScore {
   @TableId(value = "id", type = IdType.AUTO)
   private Integer id;
   /**
-   * '任务id'
+   * 任务ID
    */
-  @TableField()
+  @TableField("task_id")
   private int taskId;
   /**
-   * 业务唯一ID，taskId_caseId
+   * 场景ID
    */
-  @TableField()
-  private String businessId;
+  @TableField("case_id")
+  private int caseId;
+  /**
+   * 测试类型
+   */
+  @TableField("test_type")
+  private int testType;
   /**
    * 测试记录ID
    */
-  @TableField()
+  @TableField("record_id")
   private int recordId;
   /**
    * 测试开始时间戳
    */
-  @TableField()
+  @TableField("start_time")
   private int startTime;
   /**
    * 测试结束时间戳
    */
-  @TableField()
+  @TableField("end_time")
   private int endTime;
   /**
    * 测试总时长,单位秒
    */
-  @TableField()
+  @TableField("test_duration")
   private int testDuration;
   /**
    * 测试危险总时长占比 例子52%
    */
-  @TableField()
+  @TableField("danger_time_proportion")
   private float dangerTimeProportion;
   /**
    * 场景总得分
    */
-  @TableField()
+  @TableField("all_sense_score")
   private float allSenseScore;
 
   /**
    * 仅用于json转换
    * 详细得分
    */
+  @TableField(exist = false)
   private List<TjCaseSceneScore> testScene;
 }

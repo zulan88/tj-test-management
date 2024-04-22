@@ -5,16 +5,20 @@
 
     <select id="shardingResult"
             resultType="net.wanji.business.entity.infity.TjShardingResult">
-        select s.sharding_id                   as shardingId,
-               s.record_id                     as recordId,
-               floor(count(s.sharding_id) / 2) as 'time',
-               round(avg(s.evaluation_score))  as evaluationScore
-        from tj_sharding_change_record s
-        where s.task_id = #{taskId}
-          and s.case_id = #{caseId}
-          and s.record_id = #{recordId}
-        group by s.record_id,
+        SELECT s.sharding_id                   AS shardingId,
+               s.record_id                     AS recordId,
+               floor(count(s.sharding_id) / 2) AS 'time',
+               max(t.scene_score)              AS evaluationScore
+        FROM tj_sharding_change_record s
+                 LEFT JOIN tj_test_single_scene_score t ON s.task_id = t.task_id
+            AND s.case_id = t.case_id
+            AND s.record_id = t.record_id
+            AND t.test_type = 3
+        WHERE s.task_id = #{taskId}
+          AND s.case_id = #{caseId}
+          AND s.record_id = #{recordId}
+        GROUP BY s.record_id,
                  s.sharding_id
-        order by min(s.id)
+        ORDER BY min(s.id)
     </select>
 </mapper>

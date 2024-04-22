@@ -1,4 +1,4 @@
-package net.wanji.business.entity.evaluation;
+package net.wanji.business.entity.evaluation.total;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;

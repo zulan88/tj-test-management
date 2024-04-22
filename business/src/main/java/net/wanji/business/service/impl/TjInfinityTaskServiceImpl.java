@@ -40,6 +40,7 @@ import net.wanji.business.listener.KafkaCollector;
 import net.wanji.business.mapper.TjInfinityMapper;
 import net.wanji.business.service.*;
 import net.wanji.business.service.evaluation.TjCaseScoreService;
+import net.wanji.business.service.evaluation.TjTestSingleSceneScoreService;
 import net.wanji.business.service.record.DataFileService;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.trajectory.KafkaTrajectoryConsumer;
@@ -88,7 +89,7 @@ public class TjInfinityTaskServiceImpl
   private final RedisLock redisLock;
   private final KafkaCollector kafkaCollector;
   private final EvaluationRedisData evaluationRedisData;
-  private final TjCaseScoreService tjSceneScoreService;
+  private final TjTestSingleSceneScoreService tjTestSingleSceneScoreService;
   private final TjInfinityTaskRecordService tjInfinityTaskRecordService;
   private final DataFileService dataFileService;
   private final KafkaTrajectoryConsumer kafkaTrajectoryConsumer;
@@ -606,9 +607,10 @@ public class TjInfinityTaskServiceImpl
     // 历史记录
     recordProcess(taskId, caseId, taskType, createBy);
     // 切片准备信息
-    tjShardingChangeRecordService.stateControl(taskId, caseId, taskType, createBy);
+    Integer recordId = tjShardingChangeRecordService.stateControl(taskId, caseId,
+        taskType, createBy);
     // 评价信息处理
-    evaluationProcess(taskId, caseId, taskType, createBy);
+    evaluationProcess(taskId, caseId, taskType, createBy, recordId);
   }
 
   private List<TjInfinityTaskDataConfig> taskDevices(Integer taskId) {
@@ -629,16 +631,18 @@ public class TjInfinityTaskServiceImpl
    * @param state  <= 0:停止，>0:开始
    */
   private void evaluationProcess(Integer taskId, Integer caseId, Integer state,
-      String username) {
+      String username, Integer recordId) {
     String evaluateChannel = Constants.ChannelBuilder.buildTestingEvaluateChannel(
-        username, taskId);
+        username, caseId);
     if (state > 0) {
-      EvalContext evalContext = new EvalContext();
-      evalContext.setTaskId(taskId);
-      evalContext.setCaseId(caseId);
+      EvalContext evalContext = new EvalContext(taskId, caseId, 3, recordId);
+      String wsClientKey = taskId > 0 ?
+          Constants.ChannelBuilder.buildTaskDataChannel(username, taskId) :
+          Constants.ChannelBuilder.buildTestingDataChannel(username, caseId);
+      evalContext.setWsClientKey(wsClientKey);
       // 监听
-      evaluationRedisData.subscribe(evaluateChannel, tjSceneScoreService,
-          evalContext);
+      evaluationRedisData.subscribe(evaluateChannel,
+          tjTestSingleSceneScoreService, evalContext);
     } else {
       evaluationRedisData.unsubscribe(evaluateChannel);
     }
