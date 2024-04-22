@@ -17,6 +17,7 @@ import net.wanji.business.domain.bo.SaveTaskSchemeBo;
 import net.wanji.business.domain.dto.TaskDto;
 import net.wanji.business.domain.dto.TjTessngShardingChangeDto;
 import net.wanji.business.domain.vo.task.infinity.*;
+import net.wanji.business.entity.InfinteMileScence;
 import net.wanji.business.entity.infity.TjInfinityTask;
 import net.wanji.business.entity.infity.TjInfinityTaskRecord;
 import net.wanji.business.entity.infity.TjShardingChangeRecord;
@@ -566,6 +567,17 @@ public class InfiniteTaskController {
             .collect(HashMap::new,
                 (m, v) -> m.put(v.getSliceId(), v.getSliceName()),
                 HashMap::putAll);
+    }
+
+    @GetMapping("/getMapfile")
+    public AjaxResult getMapfile(Integer taskId) {
+        TjInfinityTask task = tjInfinityTaskService.getById(taskId);
+        InfinteMileScence infinteMileScence = infinteMileScenceService.getById(task.getCaseId());
+        JSONObject jsonObject = new JSONObject();
+        if(infinteMileScence.getMapFile() != null){
+            jsonObject.put("mapFile", infinteMileScence.getMapFile());
+        }
+        return AjaxResult.success(jsonObject);
     }
 
 }
