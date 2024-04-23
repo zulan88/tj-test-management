@@ -187,10 +187,16 @@ public class TjFragmentedSceneDetailServiceImpl
         if (CollectionUtils.isNotEmpty(list)) {
             return null;
         }
+
         if(sceneDebugDto.getIsGen()==null || sceneDebugDto.getIsGen().equals(0)) {
             TjFragmentedSceneDetail tjFragmentedSceneDetail = new TjFragmentedSceneDetail();
             tjFragmentedSceneDetail.setId(sceneDebugDto.getId());
             tjFragmentedSceneDetail.setRouteFile(sceneDebugDto.getRouteFile());
+            if (sceneDebugDto.getSimuType()!=null&&sceneDebugDto.getSimuType().equals(0)) {
+                tjFragmentedSceneDetail.setTrajectoryInfoTime(!ObjectUtils.isEmpty(sceneDebugDto.getTrajectoryJson())
+                        ? sceneDebugDto.getTrajectoryJson().buildId().toJsonString()
+                        : null);
+            }
             return this.updateById(tjFragmentedSceneDetail);
         }else {
             TjGeneralizeScene detail = new TjGeneralizeScene();
