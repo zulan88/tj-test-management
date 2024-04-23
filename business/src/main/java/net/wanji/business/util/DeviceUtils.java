@@ -77,14 +77,26 @@ public class DeviceUtils {
         DeviceConnRule rule = new DeviceConnRule();
         rule.setSource(createConnInfo(deviceDetail, commandChannel, dataChannel,
             sourceParams));
+
         if (null != tessngEvaluateAVs
             && tessngEvaluateAVs.get(targetDevice.getDeviceId()) != null) {
           targetParams.put("evaluationInfos",
               tessngEvaluateAVs.get(targetDevice.getDeviceId()));
+          // tessng额外上传主车相邻的背景车数据通道
+          if(Constants.PartRole.MV_SIMULATION.equals(deviceDetail.getSupportRoles())){
+            targetParams.put("nearbyDataChannel",
+                targetDevice.getDataChannel() + "_nearby");
+          }
         }
-
         rule.setTarget(createConnInfo(targetDevice, commandChannel, dataChannel,
             targetParams));
+        // 主车接收tessng过滤后数据通道
+        if (Constants.PartRole.AV.equals(deviceDetail.getSupportRoles())
+            && Constants.PartRole.MV_SIMULATION.equals(
+            targetDevice.getSupportRoles())) {
+          rule.getTarget()
+              .setChannel(deviceDetail.getDataChannel() + "_nearby");
+        }
         rules.add(rule);
       }
     }

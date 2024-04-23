@@ -768,8 +768,27 @@ public class TestingServiceImpl implements TestingService {
                 CaseConfigBo targetDevice = configs.get(j);
 
                 DeviceConnRule rule = new DeviceConnRule();
-                rule.setSource(createConnInfo(sourceDevice, commandChannel, dataChannel, sourceParams));
-                rule.setTarget(createConnInfo(targetDevice, commandChannel, dataChannel, targetParams));
+                rule.setSource(
+                    createConnInfo(sourceDevice, commandChannel, dataChannel,
+                        sourceParams));
+
+                if (PartRole.MV_SIMULATION.equals(
+                    sourceDevice.getSupportRoles()) && PartRole.AV.equals(
+                    targetDevice.getSupportRoles())) {
+                    // tessng额外上传主车相邻的背景车数据通道
+                    targetParams.put("nearbyDataChannel",
+                        targetDevice.getDataChannel() + "_nearby");
+                }
+                rule.setTarget(
+                    createConnInfo(targetDevice, commandChannel, dataChannel,
+                        targetParams));
+                // 主车接收tessng过滤后数据通道
+                if (PartRole.AV.equals(sourceDevice.getSupportRoles())
+                    && Constants.PartRole.MV_SIMULATION.equals(
+                    targetDevice.getSupportRoles())) {
+                    rule.getTarget()
+                        .setChannel(sourceDevice.getDataChannel() + "_nearby");
+                }
                 rules.add(rule);
             }
         }
