@@ -24,6 +24,7 @@ import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
 import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
 import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
+import net.wanji.business.domain.dto.TjDeviceDetailDto;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.ParamsDto;
 import net.wanji.business.domain.param.CaseRuleControl;
@@ -32,15 +33,12 @@ import net.wanji.business.domain.param.CaseTrajectoryParam;
 import net.wanji.business.domain.param.DeviceConnInfo;
 import net.wanji.business.domain.param.DeviceConnRule;
 import net.wanji.business.domain.param.TessParam;
-import net.wanji.business.domain.vo.CaseTestPrepareVo;
-import net.wanji.business.domain.vo.CaseTestStartVo;
-import net.wanji.business.domain.vo.CommunicationDelayVo;
-import net.wanji.business.domain.vo.RealTestResultVo;
-import net.wanji.business.domain.vo.RealVehicleVerificationPageVo;
+import net.wanji.business.domain.vo.*;
 import net.wanji.business.entity.*;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.listener.KafkaCollector;
 import net.wanji.business.mapper.TjCaseRealRecordMapper;
+import net.wanji.business.mapper.TjDeviceDetailMapper;
 import net.wanji.business.schedule.RealPlaybackSchedule;
 import net.wanji.business.schedule.SceneLabelMap;
 import net.wanji.business.service.ILabelsService;
@@ -100,6 +98,9 @@ public class TestingServiceImpl implements TestingService {
 
     @Autowired
     private RestService restService;
+
+    @Autowired
+    private TjDeviceDetailMapper deviceDetailMapper;
 
     @Autowired
     private RouteService routeService;
@@ -712,6 +713,18 @@ public class TestingServiceImpl implements TestingService {
         if (!restService.sendManualTermination(0, caseId, testModel)) {
             throw new BusinessException("任务终止失败");
         }
+        TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
+        deviceDetailDto.setSupportRoles(Constants.PartRole.MV_SIMULATION);
+        List<DeviceDetailVo> deviceDetailVos = deviceDetailMapper.selectByCondition(deviceDetailDto);
+        if (CollectionUtils.isEmpty(deviceDetailVos)) {
+            return ;
+        }
+        DeviceDetailVo detailVo = deviceDetailVos.get(0);
+        if(testModel==3){
+            restService.stopTessNg(detailVo.getIp(), detailVo.getServiceAddress(), ChannelBuilder.buildTestingDataChannel(SecurityUtils.getUsername(), caseId), 0);
+        }else {
+            restService.stopTessNg(detailVo.getIp(), detailVo.getServiceAddress(), ChannelBuilder.buildTestingDataChannel(SecurityUtils.getUsername(), caseId), 1);
+        }
     }
 
     private String validStatus(List<CaseConfigBo> configs) {
@@ -907,10 +920,13 @@ public class TestingServiceImpl implements TestingService {
         }
         // 4.唤醒仿真服务
         if(simulationConfig != null){
-            if (!restService.startServer(
+            int res = restService.startServer(
                     simulationConfig.getIp(), Integer.valueOf(simulationConfig.getServiceAddress()),
-                    TessngUtils.buildTessServerParam(1, SecurityUtils.getUsername(), caseId, mapList))) {
+                    TessngUtils.buildTessServerParam(1, SecurityUtils.getUsername(), caseId, mapList));
+            if (0==res) {
                 throw new BusinessException("唤起仿真服务失败");
+            }else if(2==res){
+                throw new BusinessException("仿真程序忙，请稍后再试");
             }
         }
 

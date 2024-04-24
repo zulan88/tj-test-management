@@ -825,14 +825,14 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         String channel = ChannelBuilder.buildRoutingPlanChannel(SecurityUtils.getUsername(), task.getId());
         Map<String, Object> params = buildRoutingPlanParam(task.getId(), routingPlanDto.getCases());
         routingPlanConsumer.subscribeAndSend(channel, task.getId(), task.getTaskCode());
-        boolean start = restService.startServer(svDeviceDetail.getIp(), Integer.valueOf(svDeviceDetail.getServiceAddress()),
+        int start = restService.startServer(svDeviceDetail.getIp(), Integer.valueOf(svDeviceDetail.getServiceAddress()),
                 new TessParam().buildRoutingPlanParam(1, channel, params));
-        if (!start) {
+        if (start != 1) {
             String repeatKey = "ROUTING_TASK_" + routingPlanDto.getTaskId();
             redisCache.deleteObject(repeatKey);
             throw new BusinessException("路径规划失败");
         }
-        return start;
+        return true;
     }
 
     private Map<String, Object> buildRoutingPlanParam(Integer taskId, List<CaseContinuousVo> caseContinuousInfo) throws BusinessException {

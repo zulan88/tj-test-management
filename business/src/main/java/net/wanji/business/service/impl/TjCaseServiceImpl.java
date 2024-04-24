@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import net.wanji.business.common.Constants;
 import net.wanji.business.common.Constants.CaseStatusEnum;
 import net.wanji.business.common.Constants.ChannelBuilder;
 import net.wanji.business.common.Constants.ColumnName;
@@ -625,7 +626,23 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
                     ? JSONObject.parseObject(tjCase.getDetailInfo(), CaseTrajectoryDetailBo.class)
                     : null;
             if(detailInfo != null){
-                //TODO:MV远程车速度不能超过20
+                tjCaseDto.getPartConfigSelects().get(0).getParts().forEach(part -> {
+                    if (part.getParticipantRole().equals(PartRole.MV_TRACKING)){
+                        detailInfo.getParticipantTrajectories().forEach(trajectory -> {
+                            if (trajectory.getId().equals(part.getBusinessId())){
+                                trajectory.getTrajectory().forEach(trajectoryPoint -> {
+                                    if(trajectoryPoint.getSpeed()>20){
+                                        try {
+                                            throw new BusinessException("云控寻迹车速度不能超过20km/h,请修改配置或重新选择场景");
+                                        } catch (BusinessException e) {
+                                            throw new RuntimeException(e);
+                                        }
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
             }
             if (businessIdAndDeviceMap.size() < 1) {
                 if (tjCase.getStatus().equals(CaseStatusEnum.WAIT_CONFIG.getCode())) {

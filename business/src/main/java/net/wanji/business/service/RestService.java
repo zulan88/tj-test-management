@@ -37,7 +37,7 @@ public interface RestService {
      * @param tessParam
      * @return
      */
-    boolean startServer(String ip, Integer port, TessParam tessParam);
+    int startServer(String ip, Integer port, TessParam tessParam);
 
 
     /**

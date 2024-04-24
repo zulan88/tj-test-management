@@ -555,12 +555,15 @@ public class TjInfinityTaskServiceImpl
       mapList.add(String.valueOf(infinteMileScenceExo.getMapId()));
     }
     // 4.唤醒仿真服务
-    if (!restService.startServer(svDetail.getIp(),
-        Integer.valueOf(svDetail.getServiceAddress()),
-        TessngUtils.buildInfinityTaskRunParam(caseId,
-            SecurityUtils.getUsername(), mapList,
-            verifiedInfiniteTessParm(infinteMileScenceExo, planTestTime)))) {
+    int res = restService.startServer(svDetail.getIp(),
+            Integer.valueOf(svDetail.getServiceAddress()),
+            TessngUtils.buildInfinityTaskRunParam(caseId,
+                    SecurityUtils.getUsername(), mapList,
+                    verifiedInfiniteTessParm(infinteMileScenceExo, planTestTime)));
+    if (res == 0) {
       throw new BusinessException("唤起仿真服务失败");
+    }else if (res == 2) {
+      throw new BusinessException("仿真程序忙，请稍后再试");
     }
     if (!redisLock.tryLock("case_" + taskId, SecurityUtils.getUsername())) {
       throw new BusinessException("当前用例正在测试中，请稍后再试");

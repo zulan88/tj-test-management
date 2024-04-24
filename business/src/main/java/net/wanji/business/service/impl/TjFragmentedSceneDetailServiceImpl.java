@@ -630,12 +630,16 @@ public class TjFragmentedSceneDetailServiceImpl
                 }
 
                 DeviceDetailVo detailVo = deviceDetailVos.get(0);
-                boolean start = restService.startServer(detailVo.getIp(), Integer.valueOf(detailVo.getServiceAddress()),
+                int start = restService.startServer(detailVo.getIp(), Integer.valueOf(detailVo.getServiceAddress()),
                         new TessParam().buildSimulationParam(1, testStartParam.getChannel(), testStartParam, mapList));
-                if (!start) {
+                if (0==start) {
                     String repeatKey = "DEBUGGING_SCENE_" + sceneDebugDto.getNumber();
                     redisCache.deleteObject(repeatKey);
                     throw new BusinessException("仿真程序连接失败");
+                }else if (2==start) {
+                    String repeatKey = "DEBUGGING_SCENE_" + sceneDebugDto.getNumber();
+                    redisCache.deleteObject(repeatKey);
+                    throw new BusinessException("仿真程序忙，请稍后再试");
                 }
                 break;
             case PlaybackAction.SUSPEND:

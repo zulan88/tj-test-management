@@ -115,7 +115,7 @@ public class RestServiceImpl implements RestService {
     private SendTessNgRequestService sendTessNgRequestService;
 
     @Override
-    public boolean startServer(String ip, Integer port, TessParam tessParam) {
+    public int startServer(String ip, Integer port, TessParam tessParam) {
         String url = tessServerUrl;
         if (tessParam.getSimulateType().equals(6) || tessParam.getSimulateType().equals(7)){
             url = infiniteServerUrl;
@@ -133,18 +133,22 @@ public class RestServiceImpl implements RestService {
                 JSONObject result = JSONObject.parseObject(response.getBody(), JSONObject.class);
                 log.info("============================== tess server start result:{}", JSONObject.toJSONString(result));
                 if (Objects.isNull(result) || !"success".equals(result.get("status"))) {
-                    log.error("远程服务调用失败:{}", result.get("msg"));
+                    String msg = result.get("msg").toString();
+                    log.error("远程服务调用失败:{}", msg);
+                    if (msg.contains("service is overloaded")) {
+                        return 2;
+                    }
                     sendTessNgRequestService.saveTessNgRequest("失败", resultUrl, tessParam);
-                    return false;
+                    return 0;
                 }
                 sendTessNgRequestService.saveTessNgRequest("成功", resultUrl, tessParam);
-                return true;
+                return 1;
             }
         } catch (Exception e) {
             sendTessNgRequestService.saveTessNgRequest("失败", resultUrl, tessParam);
             log.error("远程服务调用失败:{}", e);
         }
-        return false;
+        return 0;
     }
 
 
