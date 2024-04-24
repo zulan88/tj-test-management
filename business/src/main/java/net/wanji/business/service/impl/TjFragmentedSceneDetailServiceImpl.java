@@ -347,7 +347,11 @@ public class TjFragmentedSceneDetailServiceImpl
             TjAtlasVenue tjAtlasVenue = tjAtlasVenueService.getById(sceneDetailDto.getMapId());
             detail.setMapFile(tjAtlasVenue.getGeoJsonPath());
         }
-//        detail.setMapId(sceneDetailDto.getMapId());
+        if(sceneDetailDto.getTrajectoryJson()!=null) {
+            if (sceneDetailDto.getTrajectoryJson().getParticipantTrajectories().stream().filter(item -> item.getRole().equals(PartRole.AV)).count() > 1) {
+                throw new BusinessException("一个场景中只能有一个AV车");
+            }
+        }
         List<String> labellist = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(sceneDetailDto.getLabelList())) {
             for (String id : sceneDetailDto.getLabelList()) {
