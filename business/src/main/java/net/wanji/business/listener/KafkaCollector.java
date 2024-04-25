@@ -48,7 +48,9 @@ public class KafkaCollector {
         // 有key，有用例
         List<List<ClientSimulationTrajectoryDto>> trajectories = caseTrajectoryMap.get(caseId);
         trajectories.add(data);
-        log.info("{} - {} ： {}", key, caseId, trajectories.size());
+        if (System.currentTimeMillis() / 1000 % 20 == 0) {
+            log.info("{} - {} ： {}", key, caseId, trajectories.size());
+        }
         collectorMap.put(key, caseTrajectoryMap);
         return true;
     }
