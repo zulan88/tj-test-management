@@ -186,12 +186,16 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
 
         String channel = Constants.ChannelBuilder.buildInfiniteSimulationChannel(SecurityUtils.getUsername(), infinteMileScence.getViewId());
         DeviceDetailVo detailVo = deviceDetailVos.get(0);
-        boolean start = restService.startServer(detailVo.getIp(), Integer.valueOf(detailVo.getServiceAddress()),
+        int start = restService.startServer(detailVo.getIp(), Integer.valueOf(detailVo.getServiceAddress()),
                 new TessParam().buildnfiniteSimulationParam("1", channel, testStartParam, mapList));
-        if (!start) {
+        if (start==0) {
             String repeatKey = "DEBUGGING_INSCENE_" + infinteMileScence.getViewId();
             redisCache.deleteObject(repeatKey);
             throw new BusinessException("仿真程序连接失败");
+        }else if (start==2){
+            String repeatKey = "DEBUGGING_INSCENE_" + infinteMileScence.getViewId();
+            redisCache.deleteObject(repeatKey);
+            throw new BusinessException("仿真程序忙，请稍后再试");
         }
 
     }

@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import net.wanji.business.common.Constants;
 import net.wanji.business.common.Constants.CaseStatusEnum;
 import net.wanji.business.common.Constants.ChannelBuilder;
 import net.wanji.business.common.Constants.ColumnName;
@@ -559,7 +560,7 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
                 return createPartConfig(tjCase.getId(), trajectoryDetailBo);
             }else if(tjCaseDto.getIsGen().equals(1)){
                 TjGeneralizeScene sceneDetail = generalizeSceneService.getById(tjCaseDto.getSceneDetailId());
-                TjFragmentedSceneDetail oldsceneDetail = sceneDetailService.getById(tjCaseDto.getSceneDetailId());
+                TjFragmentedSceneDetail oldsceneDetail = sceneDetailService.getById(sceneDetail.getSceneId());
                 if (ObjectUtils.isEmpty(sceneDetail)) {
                     throw new BusinessException("创建失败：场景不存在");
                 }
@@ -568,7 +569,7 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
                 }
                 CaseTrajectoryDetailBo trajectoryDetailBo = JSONObject.parseObject(sceneDetail.getTrajectoryInfo(), CaseTrajectoryDetailBo.class);
                 tjCase.setDetailInfo(JSONObject.toJSONString(trajectoryDetailBo));
-
+                tjCase.setSceneDetailId(sceneDetail.getSceneId());
                 if (StringUtils.isEmpty(sceneDetail.getRouteFile())) {
                     throw new BusinessException("创建失败：场景未进行仿真验证");
                 }
@@ -621,6 +622,28 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
                 throw new BusinessException("请配置参与者角色");
             }
             tjCase = this.getById(tjCaseDto.getId());
+            CaseTrajectoryDetailBo detailInfo = StringUtils.isNotEmpty(tjCase.getDetailInfo())
+                    ? JSONObject.parseObject(tjCase.getDetailInfo(), CaseTrajectoryDetailBo.class)
+                    : null;
+            if(detailInfo != null){
+                tjCaseDto.getPartConfigSelects().get(0).getParts().forEach(part -> {
+                    if (part.getParticipantRole().equals(PartRole.MV_TRACKING)){
+                        detailInfo.getParticipantTrajectories().forEach(trajectory -> {
+                            if (trajectory.getId().equals(part.getBusinessId())){
+                                trajectory.getTrajectory().forEach(trajectoryPoint -> {
+                                    if(trajectoryPoint.getSpeed()>20){
+                                        try {
+                                            throw new BusinessException("云控寻迹车速度不能超过20km/h,请修改配置或重新选择场景");
+                                        } catch (BusinessException e) {
+                                            throw new RuntimeException(e);
+                                        }
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+            }
             if (businessIdAndDeviceMap.size() < 1) {
                 if (tjCase.getStatus().equals(CaseStatusEnum.WAIT_CONFIG.getCode())) {
                     tjCase.setStatus(CaseStatusEnum.WAIT_TEST.getCode());

@@ -32,6 +32,7 @@ import net.wanji.business.domain.bo.SceneTrajectoryBo;
 import net.wanji.business.domain.bo.TaskCaseConfigBo;
 import net.wanji.business.domain.bo.TaskCaseInfoBo;
 import net.wanji.business.domain.bo.TrajectoryDetailBo;
+import net.wanji.business.domain.dto.TjDeviceDetailDto;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.ParamsDto;
 import net.wanji.business.domain.param.CaseRuleControl;
@@ -40,13 +41,7 @@ import net.wanji.business.domain.param.CaseTrajectoryParam;
 import net.wanji.business.domain.param.DeviceConnInfo;
 import net.wanji.business.domain.param.DeviceConnRule;
 import net.wanji.business.domain.param.TessParam;
-import net.wanji.business.domain.vo.CaseRealTestVo;
-import net.wanji.business.domain.vo.CaseTreeVo;
-import net.wanji.business.domain.vo.CommunicationDelayVo;
-import net.wanji.business.domain.vo.RealTestResultVo;
-import net.wanji.business.domain.vo.TaskCaseVerificationPageVo;
-import net.wanji.business.domain.vo.TaskCaseVo;
-import net.wanji.business.domain.vo.TaskReportVo;
+import net.wanji.business.domain.vo.*;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjDeviceDetail;
 import net.wanji.business.entity.TjTask;
@@ -56,10 +51,7 @@ import net.wanji.business.entity.TjTaskDataConfig;
 import net.wanji.business.entity.infity.TjInfinityTask;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.listener.KafkaCollector;
-import net.wanji.business.mapper.TjTaskCaseMapper;
-import net.wanji.business.mapper.TjTaskCaseRecordMapper;
-import net.wanji.business.mapper.TjTaskDataConfigMapper;
-import net.wanji.business.mapper.TjTaskMapper;
+import net.wanji.business.mapper.*;
 import net.wanji.business.schedule.RealPlaybackSchedule;
 import net.wanji.business.schedule.TwinsPlayback;
 import net.wanji.business.service.*;
@@ -114,6 +106,9 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
     @Autowired
     private TjDeviceDetailService deviceDetailService;
+
+    @Autowired
+    private TjDeviceDetailMapper deviceDetailMapper;
 
     @Autowired
     private RestService restService;
@@ -280,9 +275,12 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         // 先停止
         stop(param.getTaskId(), param.getId(), user);
         // 4.唤醒仿真服务
-        if (!restService.startServer(simulationConfig.getIp(), Integer.valueOf(simulationConfig.getServiceAddress()),
-                buildTessServerParam(1, tjTask.getCreatedBy(), param.getTaskId(), mapList))) {
+        int res = restService.startServer(simulationConfig.getIp(), Integer.valueOf(simulationConfig.getServiceAddress()),
+                buildTessServerParam(1, tjTask.getCreatedBy(), param.getTaskId(), mapList));
+        if (res == 0) {
             throw new BusinessException("唤醒仿真服务失败");
+        }else if (res == 2) {
+            throw new BusinessException("仿真程序忙，请稍后再试");
         }
         for (TaskCaseConfigBo taskCaseConfigBo : filteredTaskCaseConfigs) {
             if (!redisLock.tryLock("task_" + taskCaseConfigBo.getDataChannel(), user)) {
@@ -1102,6 +1100,14 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         jsonObject.put("caseId", caseId);
         jsonObject.put("status", "break");
         kafkaProducer.sendMessage("tj_task_tw_status", jsonObject.toJSONString());
+        TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
+        deviceDetailDto.setSupportRoles(Constants.PartRole.MV_SIMULATION);
+        List<DeviceDetailVo> deviceDetailVos = deviceDetailMapper.selectByCondition(deviceDetailDto);
+        if (CollectionUtils.isEmpty(deviceDetailVos)) {
+            return ;
+        }
+        DeviceDetailVo detailVo = deviceDetailVos.get(0);
+        restService.stopTessNg(detailVo.getIp(), detailVo.getServiceAddress(),ChannelBuilder.buildTaskDataChannel(SecurityUtils.getUsername(), taskId),1);
     }
 
     @Override
