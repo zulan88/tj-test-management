@@ -76,6 +76,12 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
         if (infinteMileScence.getStatus()!= null && infinteMileScence.getStatus().equals(1)){
             checkInfiniteSimulation(infinteMileScence);
         }
+        if (infinteMileScence.getId() != null){
+            InfinteMileScence res = baseMapper.selectById(infinteMileScence.getId());
+            if (res.getStatus() != null && res.getStatus().equals(1)){
+                throw new BusinessException("场景已提交，无法修改");
+            }
+        }
         Gson gson = new Gson();
         boolean flag = false;
         if (infinteMileScence.getInElements()!= null && infinteMileScence.getInElements().size() > 0){
