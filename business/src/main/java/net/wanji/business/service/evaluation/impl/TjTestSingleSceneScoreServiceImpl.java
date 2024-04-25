@@ -10,14 +10,18 @@ import lombok.extern.slf4j.Slf4j;
 import net.wanji.business.common.Constants;
 import net.wanji.business.domain.RealWebsocketMessage;
 import net.wanji.business.entity.evaluation.single.TjTestSingleSceneScore;
+import net.wanji.business.entity.infity.TjShardingChangeRecord;
 import net.wanji.business.evaluation.EvalContext;
 import net.wanji.business.mapper.evaluation.single.TjTestSingleSceneScoreMapper;
+import net.wanji.business.service.TjShardingChangeRecordService;
 import net.wanji.business.service.evaluation.TjTestSingleSceneScoreService;
 import net.wanji.business.socket.WebSocketManage;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.util.List;
 
 /**
  * @author hcy
@@ -37,6 +41,8 @@ public class TjTestSingleSceneScoreServiceImpl
 
   @Resource
   private TjTestSingleSceneScoreMapper tjTestSingleSceneScoreMapper;
+
+  private final TjShardingChangeRecordService tjShardingChangeRecordService;
 
   @Override
   @Transactional
@@ -86,9 +92,21 @@ public class TjTestSingleSceneScoreServiceImpl
   }
 
   private void evaluationInfoSave(TjTestSingleSceneScore tjTestSingleSceneScore,
-      EvalContext contextDto) {
-    tjTestSingleSceneScore.setRecordId(contextDto.getRecordId());
-    tjTestSingleSceneScore.setTestType(contextDto.getTestType());
+      EvalContext evalContext) {
+    tjTestSingleSceneScore.setRecordId(evalContext.getRecordId());
+    tjTestSingleSceneScore.setTestType(evalContext.getTestType());
+    tjTestSingleSceneScore.setTaskId(evalContext.getTaskId());
+    tjTestSingleSceneScore.setCaseId(evalContext.getCaseId());
+    // 无限里程
+    if (3 == evalContext.getTestType()) {
+      Integer shardingRecordingId = shardingRecordingId(evalContext);
+      if (null != shardingRecordingId) {
+        tjTestSingleSceneScore.setEvaluativeId(shardingRecordingId);
+      } else {
+        return;
+      }
+    }
+    tjTestSingleSceneScore.setEvaluativeId(1);
     saveByUnique(tjTestSingleSceneScore);
   }
 
@@ -100,4 +118,24 @@ public class TjTestSingleSceneScoreServiceImpl
     WebSocketManage.sendInfo(wsClientKey,
         new ObjectMapper().writeValueAsString(msg));
   }
+
+  private Integer shardingRecordingId(EvalContext evalContext) {
+    QueryWrapper<TjShardingChangeRecord> recordQueryWrapper = new QueryWrapper<>();
+    recordQueryWrapper.eq("task_id", evalContext.getTaskId());
+    recordQueryWrapper.eq("case_id", evalContext.getCaseId());
+    recordQueryWrapper.eq("record_id", evalContext.getRecordId());
+    recordQueryWrapper.eq("status", 0);
+    recordQueryWrapper.orderByDesc("create_timestamp");
+    List<TjShardingChangeRecord> list = tjShardingChangeRecordService.list(
+        recordQueryWrapper);
+    if (CollectionUtils.isNotEmpty(list)) {
+      return list.get(0).getId();
+    } else {
+      if (log.isErrorEnabled()) {
+        log.error("[{}] has no tj_sharding_change_record!", evalContext);
+      }
+      return null;
+    }
+  }
+
 }

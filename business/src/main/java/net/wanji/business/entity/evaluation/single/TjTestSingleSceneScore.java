@@ -45,6 +45,12 @@ public class TjTestSingleSceneScore {
    */
   @TableField("record_id")
   private Integer recordId;
+
+  /**
+   * 对应分片/场景记录的评价分数
+   */
+  @TableField("evaluative_id")
+  private Integer evaluativeId;
   /**
    * 1:已完成 0:测试中
    */
