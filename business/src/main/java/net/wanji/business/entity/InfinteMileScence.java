@@ -123,5 +123,11 @@ public class InfinteMileScence implements Serializable {
     @JsonFormat(shape= JsonFormat.Shape.STRING, pattern="yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updateDate;
 
+    /**
+     * 创建人
+     */
+    @TableField("created_by")
+    private String createdBy;
+
 
 }

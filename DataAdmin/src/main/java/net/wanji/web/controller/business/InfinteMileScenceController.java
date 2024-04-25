@@ -63,6 +63,9 @@ public class InfinteMileScenceController extends BaseController {
     public TableDataInfo list(Integer status) {
         startPage();
         List<InfinteMileScenceExo> list = infinteMileScenceService.selectInfinteMileScenceList(status);
+        if(!SecurityUtils.getUsername().equals("admin")){
+            list = list.stream().filter(infinteMileScenceExo -> infinteMileScenceExo.getCreatedBy().equals(SecurityUtils.getUsername())).collect(Collectors.toList());
+        }
         List<InfinteMileScenceExo> infinteMileScenceExoList = list.stream().peek(infinteMileScenceExo -> {
             infinteMileScenceService.dualInfiniteSimulation(infinteMileScenceExo);
             if (infinteMileScenceExo.getInElements() != null) {
