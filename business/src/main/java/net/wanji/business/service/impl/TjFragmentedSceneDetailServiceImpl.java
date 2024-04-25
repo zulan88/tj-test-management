@@ -348,7 +348,7 @@ public class TjFragmentedSceneDetailServiceImpl
             detail.setMapFile(tjAtlasVenue.getGeoJsonPath());
         }
         if(sceneDetailDto.getTrajectoryJson()!=null) {
-            if (sceneDetailDto.getTrajectoryJson().getParticipantTrajectories().stream().filter(item -> item.getRole().equals(PartRole.AV)).count() > 1) {
+            if (sceneDetailDto.getTrajectoryJson().getParticipantTrajectories().stream().filter(item -> item.getType().equals(PartType.MAIN)).count() > 1) {
                 throw new BusinessException("一个场景中只能有一个AV车");
             }
         }
