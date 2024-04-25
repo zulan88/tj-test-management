@@ -19,6 +19,7 @@ import net.wanji.business.service.record.DataFileService;
 import net.wanji.business.socket.WebSocketManage;
 import net.wanji.business.util.RedisLock;
 import net.wanji.common.common.ClientSimulationTrajectoryDto;
+import net.wanji.common.common.TrajectoryValueDto;
 import net.wanji.common.constant.CacheConstants;
 import net.wanji.common.core.redis.RedisCache;
 import net.wanji.common.utils.DateUtils;
@@ -32,10 +33,7 @@ import org.springframework.util.ObjectUtils;
 
 import javax.annotation.Resource;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -91,10 +89,38 @@ public class KafkaTrajectoryConsumer {
     // 发送ws数据
     String duration = DateUtils.secondsToDuration(
         (int) Math.floor((double) (kafkaCollector.getSize(key)) / 10));
+
     RealWebsocketMessage msg = new RealWebsocketMessage(
-        RedisMessageType.TRAJECTORY, Maps.newHashMap(), participantTrajectories,
-        duration);
-    WebSocketManage.sendInfo(key, JSONObject.toJSONString(msg));
+            RedisMessageType.TRAJECTORY, Maps.newHashMap(), simplifyWebsocketMessage(data),
+            duration);
+      WebSocketManage.sendInfo(key, JSONObject.toJSONString(msg));
+  }
+
+  private Object simplifyWebsocketMessage(List<ClientSimulationTrajectoryDto> data){
+    List<Map<String, Object>> res = new ArrayList<>();
+    for (ClientSimulationTrajectoryDto datum : data) {
+      if(datum.getValue() == null || datum.getValue().isEmpty()) continue;
+      Map<String, Object> item = new HashMap<>();
+      item.put("role", datum.getRole());
+      item.put("source", datum.getSource());
+      item.put("timestamp", datum.getTimestamp());
+      List<Map<String, Object>> value = new ArrayList<>();
+      for (TrajectoryValueDto trajectoryValueDto : datum.getValue()) {
+        Map<String, Object> trajectoryValue = new HashMap<>();
+        trajectoryValue.put("latitude", trajectoryValueDto.getLatitude());
+        trajectoryValue.put("speed", trajectoryValueDto.getSpeed());
+        trajectoryValue.put("id", trajectoryValueDto.getId());
+        trajectoryValue.put("courseAngle", trajectoryValueDto.getCourseAngle());
+        trajectoryValue.put("driveType", trajectoryValueDto.getDriveType());
+        trajectoryValue.put("vehicleType", trajectoryValueDto.getVehicleType());
+        trajectoryValue.put("longitude", trajectoryValueDto.getLongitude());
+        trajectoryValue.put("name", trajectoryValueDto.getName());
+        value.add(trajectoryValue);
+      }
+      item.put("value", value);
+      res.add(item);
+    }
+    return res;
   }
 
   private String selectUserOfTask(Integer taskId, Integer caseId) {
