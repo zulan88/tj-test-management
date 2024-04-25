@@ -100,9 +100,6 @@ public class TestingServiceImpl implements TestingService {
     private RestService restService;
 
     @Autowired
-    private TjDeviceDetailMapper deviceDetailMapper;
-
-    @Autowired
     private RouteService routeService;
 
     @Autowired
@@ -712,18 +709,6 @@ public class TestingServiceImpl implements TestingService {
     public void manualTermination(Integer caseId, Integer testModel) throws BusinessException {
         if (!restService.sendManualTermination(0, caseId, testModel)) {
             throw new BusinessException("任务终止失败");
-        }
-        TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
-        deviceDetailDto.setSupportRoles(Constants.PartRole.MV_SIMULATION);
-        List<DeviceDetailVo> deviceDetailVos = deviceDetailMapper.selectByCondition(deviceDetailDto);
-        if (CollectionUtils.isEmpty(deviceDetailVos)) {
-            return ;
-        }
-        DeviceDetailVo detailVo = deviceDetailVos.get(0);
-        if(testModel==3){
-            restService.stopTessNg(detailVo.getIp(), detailVo.getServiceAddress(), ChannelBuilder.buildTestingDataChannel(SecurityUtils.getUsername(), caseId), 0);
-        }else {
-            restService.stopTessNg(detailVo.getIp(), detailVo.getServiceAddress(), ChannelBuilder.buildTestingDataChannel(SecurityUtils.getUsername(), caseId), 1);
         }
     }
 

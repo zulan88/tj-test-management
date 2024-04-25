@@ -4,14 +4,19 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.wanji.business.common.Constants;
 import net.wanji.business.common.Constants.ChannelBuilder;
+import net.wanji.business.domain.dto.TjDeviceDetailDto;
+import net.wanji.business.domain.vo.DeviceDetailVo;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjTask;
 import net.wanji.business.entity.infity.TjInfinityTask;
 import net.wanji.business.exception.BusinessException;
+import net.wanji.business.mapper.TjDeviceDetailMapper;
+import net.wanji.business.service.RestService;
 import net.wanji.business.service.TjCaseService;
 import net.wanji.business.service.TjInfinityTaskService;
 import net.wanji.business.service.TjTaskService;
 import net.wanji.common.utils.StringUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.socket.CloseStatus;
@@ -20,6 +25,7 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * @Auther: guanyuduo
@@ -33,6 +39,8 @@ public class MyWebSocketHandle extends TextWebSocketHandler {
     private final TjTaskService tjTaskService;
     private final TjCaseService tjCaseService;
     private final TjInfinityTaskService tjInfinityTaskService;
+    private final TjDeviceDetailMapper deviceDetailMapper;
+    private final RestService restService;
 
     /**
      * socket 建立成功事件 @OnOpen
@@ -85,7 +93,9 @@ public class MyWebSocketHandle extends TextWebSocketHandler {
         String id = (String) session.getAttributes().get("id");
         int clientType = Integer.parseInt((String) session.getAttributes().get("clientType")) ;
         String signId = (String) session.getAttributes().get("signId");
-        WebSocketManage.remove(buildKey(userName, id, clientType, signId), getRunningStatus(id));
+        String key = buildKey(userName, id, clientType, signId);
+        WebSocketManage.remove(key, getRunningStatus(id));
+        stopTessNg(key,clientType);
     }
 
     private String buildKey(String userName, String id, int clientType, String signId) throws BusinessException {
@@ -155,5 +165,23 @@ public class MyWebSocketHandle extends TextWebSocketHandler {
             }
         }
         return true;
+    }
+
+    private void stopTessNg(String key, int clientType){
+        TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
+        deviceDetailDto.setSupportRoles(Constants.PartRole.MV_SIMULATION);
+        List<DeviceDetailVo> deviceDetailVos = deviceDetailMapper.selectByCondition(deviceDetailDto);
+        if (CollectionUtils.isEmpty(deviceDetailVos)) {
+            return;
+        }
+        DeviceDetailVo detailVo = deviceDetailVos.get(0);
+        if (clientType == ChannelBuilder.REAL){
+            restService.stopTessNg(detailVo.getIp(), detailVo.getServiceAddress(), key,1);
+            restService.stopTessNg(detailVo.getIp(), detailVo.getServiceAddress(), key,0);
+        } else if (clientType == ChannelBuilder.SIMULATION || clientType == ChannelBuilder.TASK){
+            restService.stopTessNg(detailVo.getIp(), detailVo.getServiceAddress(), key,1);
+        } else if (clientType == ChannelBuilder.INFINITE_SIMULATION){
+            restService.stopTessNg(detailVo.getIp(), detailVo.getServiceAddress(), key,0);
+        }
     }
 }

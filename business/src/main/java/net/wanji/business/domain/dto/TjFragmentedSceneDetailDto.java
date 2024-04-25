@@ -118,7 +118,7 @@ public class TjFragmentedSceneDetailDto {
      * 标签
      */
     @ApiModelProperty(value = "标签")
-    @NotEmpty(message = "请选择标签", groups = {InsertGroup.class, UpdateGroup.class})
+    @NotEmpty(message = "请选择标签", groups = {InsertGroup.class, UpdateGroup.class, OtherGroup.class})
     private List<String> labelList;
 
     /**

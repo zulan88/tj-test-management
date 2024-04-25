@@ -108,9 +108,6 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
     private TjDeviceDetailService deviceDetailService;
 
     @Autowired
-    private TjDeviceDetailMapper deviceDetailMapper;
-
-    @Autowired
     private RestService restService;
 
     @Autowired
@@ -1100,14 +1097,6 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         jsonObject.put("caseId", caseId);
         jsonObject.put("status", "break");
         kafkaProducer.sendMessage("tj_task_tw_status", jsonObject.toJSONString());
-        TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
-        deviceDetailDto.setSupportRoles(Constants.PartRole.MV_SIMULATION);
-        List<DeviceDetailVo> deviceDetailVos = deviceDetailMapper.selectByCondition(deviceDetailDto);
-        if (CollectionUtils.isEmpty(deviceDetailVos)) {
-            return ;
-        }
-        DeviceDetailVo detailVo = deviceDetailVos.get(0);
-        restService.stopTessNg(detailVo.getIp(), detailVo.getServiceAddress(),ChannelBuilder.buildTaskDataChannel(SecurityUtils.getUsername(), taskId),1);
     }
 
     @Override

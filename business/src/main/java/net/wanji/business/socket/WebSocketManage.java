@@ -1,6 +1,5 @@
 package net.wanji.business.socket;
 
-import net.wanji.business.common.Constants;
 import net.wanji.business.common.Constants.ChannelBuilder;
 import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.common.utils.StringUtils;
