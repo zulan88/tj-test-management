@@ -295,9 +295,13 @@ public class CaseController extends BaseController {
     @ApiOperationSort(21)
     @ApiOperation(value = "21.查询")
     @GetMapping("/getCasesByTaskId")
-    public AjaxResult saveCaseDeviceNew(Integer taskId) {
+    public AjaxResult saveCaseDeviceNew(Integer taskId)
+        throws BusinessException {
         CaseOpVo caseOpVo = new CaseOpVo();
         List<TjCaseOp> list = caseService.selectCaseOp(taskId);
+        if(CollectionUtils.isEmpty(list)){
+            throw new BusinessException("地图库关联异常");
+        }
         caseOpVo.setCaseOpList(list);
         for (TjCaseOp tjCaseOp : list) {
             if (!tjCaseOp.getOpStatus().equals("finished")){
