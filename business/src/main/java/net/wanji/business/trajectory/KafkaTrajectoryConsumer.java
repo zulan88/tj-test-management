@@ -132,14 +132,19 @@ public class KafkaTrajectoryConsumer {
     return userName;
   }
 
+  int logCounter = 0;
   private void outLog(List<ClientSimulationTrajectoryDto> data) {
-    StringBuilder sb = new StringBuilder();
-    long now = System.currentTimeMillis();
-    for (ClientSimulationTrajectoryDto trajectoryDto : data) {
-      sb.append(StringUtils.format("{}：{}ms；", trajectoryDto.getSource(),
-          now - Long.parseLong(trajectoryDto.getTimestamp())));
+    if(logCounter == 300) {
+      long now = System.currentTimeMillis();
+      StringBuilder sb = new StringBuilder();
+      for (ClientSimulationTrajectoryDto trajectoryDto : data) {
+        sb.append(StringUtils.format("{}：{}ms；", trajectoryDto.getSource(),
+            now - Long.parseLong(trajectoryDto.getTimestamp())));
+      }
+      log.info(sb.toString());
+      logCounter = 0;
     }
-    log.info(sb.toString());
+    logCounter++;
   }
 
   public boolean subscribe(ToLocalDto toLocalDto) {

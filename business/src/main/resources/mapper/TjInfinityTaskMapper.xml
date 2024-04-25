@@ -70,7 +70,8 @@
         tt.case_id,
         tt.case_name,
         tt.status,
-        tt.main_plan_file
+        tt.main_plan_file,
+        tt.selected_record_id
         FROM tj_infinity_task tt
         <where>
             <if test="taskCode != null and taskCode != ''">

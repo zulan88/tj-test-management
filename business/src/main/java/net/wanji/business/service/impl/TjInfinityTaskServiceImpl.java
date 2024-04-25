@@ -145,6 +145,8 @@ public class TjInfinityTaskServiceImpl
             put("taskStartTime", taskRecord.getCreatedDate());
             put("taskRunningTime", taskRecord.getDuration());
             put("record", taskRecord.getId());
+            put("isSelected",
+                taskRecord.getId().equals(task.get("selected_record_id")));
           }});
         }
 

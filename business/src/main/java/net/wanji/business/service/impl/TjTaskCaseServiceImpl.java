@@ -1120,6 +1120,9 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
     @Override
     public boolean addTaskCase(@NotNull Integer taskId, @NotNull List<Integer> caseIds) throws BusinessException {
+        if(CollectionUtils.isEmpty(caseIds)){
+           return false;
+        }
         List<TjTaskCase> addedList = list(new QueryWrapper<TjTaskCase>().eq(ColumnName.TASK_ID, taskId)
                 .in(ColumnName.CASE_ID_COLUMN, caseIds));
         List<Integer> addedIdList = CollectionUtils.emptyIfNull(addedList).stream()
