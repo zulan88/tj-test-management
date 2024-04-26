@@ -10,10 +10,8 @@
                floor(count(s.sharding_id) / 2) AS 'time',
                max(t.scene_score)              AS evaluationScore
         FROM tj_sharding_change_record s
-                 LEFT JOIN tj_test_single_scene_score t ON s.task_id = t.task_id
-            AND s.case_id = t.case_id
-            AND s.record_id = t.record_id
-            AND t.test_type = 3
+                 LEFT JOIN tj_test_single_scene_score t
+                           ON s.id = t.evaluative_id
         WHERE s.task_id = #{taskId}
           AND s.case_id = #{caseId}
           AND s.record_id = #{recordId}

@@ -99,14 +99,13 @@ public class TjTestSingleSceneScoreServiceImpl
     tjTestSingleSceneScore.setCaseId(evalContext.getCaseId());
     // 无限里程
     if (3 == evalContext.getTestType()) {
-      Integer shardingRecordingId = shardingRecordingId(evalContext);
+      Integer shardingRecordingId = shardingRecordingId(evalContext, tjTestSingleSceneScore.getSliceId());
       if (null != shardingRecordingId) {
         tjTestSingleSceneScore.setEvaluativeId(shardingRecordingId);
       } else {
         return;
       }
     }
-    tjTestSingleSceneScore.setEvaluativeId(1);
     saveByUnique(tjTestSingleSceneScore);
   }
 
@@ -119,12 +118,14 @@ public class TjTestSingleSceneScoreServiceImpl
         new ObjectMapper().writeValueAsString(msg));
   }
 
-  private Integer shardingRecordingId(EvalContext evalContext) {
+  private Integer shardingRecordingId(EvalContext evalContext, Integer sliceId) {
     QueryWrapper<TjShardingChangeRecord> recordQueryWrapper = new QueryWrapper<>();
     recordQueryWrapper.eq("task_id", evalContext.getTaskId());
     recordQueryWrapper.eq("case_id", evalContext.getCaseId());
     recordQueryWrapper.eq("record_id", evalContext.getRecordId());
-    recordQueryWrapper.eq("status", 0);
+    recordQueryWrapper.eq("sharding_id", sliceId);
+    recordQueryWrapper.eq("state", 0);
+
     recordQueryWrapper.orderByDesc("create_timestamp");
     List<TjShardingChangeRecord> list = tjShardingChangeRecordService.list(
         recordQueryWrapper);
