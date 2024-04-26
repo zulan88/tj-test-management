@@ -109,11 +109,12 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
         if (ObjectUtils.isEmpty(deviceDetailDto.getDeviceId())) {
             // todo 设备状态刷新接口
             BeanUtils.copyProperties(deviceDetailDto, deviceDetail);
-            deviceDetail.setStatus(YN.Y_INT);
+            deviceDetail.setStatus(YN.N_INT);
             deviceDetail.setLastOnlineDate(LocalDateTime.now());
             deviceDetail.setCreatedBy(SecurityUtils.getUsername());
             deviceDetail.setAttribute2(SecurityUtils.getUsername());
             deviceDetail.setCreatedDate(LocalDateTime.now());
+            deviceDetail.setIsInner(0);
             if (!ObjectUtils.isEmpty(deviceDetailDto.getAttribute2())) {
                 deviceDetail.setUpdatedBy(deviceDetailDto.getAttribute2());
             }
@@ -126,7 +127,7 @@ public class TjDeviceDetailServiceImpl extends ServiceImpl<TjDeviceDetailMapper,
         deviceDetail.setServiceAddress(deviceDetailDto.getServiceAddress());
         deviceDetail.setDataChannel(deviceDetailDto.getDataChannel());
         deviceDetail.setCommandChannel(deviceDetailDto.getCommandChannel());
-        deviceDetail.setIsInner(0);
+
         if (!ObjectUtils.isEmpty(deviceDetailDto.getAttribute2())) {
             deviceDetail.setUpdatedBy(deviceDetailDto.getAttribute2());
         }

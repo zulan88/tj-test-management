@@ -40,10 +40,8 @@ public class TjDeviceDetailDto {
     @NotBlank(message = "请选择设备可支持的测试角色", groups = {InsertGroup.class, UpdateGroup.class})
     private String supportRoles;
 
-    @NotBlank(message = "请填写设备IP", groups = {InsertGroup.class, UpdateGroup.class})
     private String ip;
 
-    @NotBlank(message = "请填写数据服务器地址", groups = {InsertGroup.class, UpdateGroup.class})
     private String serviceAddress;
 
     @NotBlank(message = "请设置数据通道", groups = {InsertGroup.class, UpdateGroup.class})
