@@ -14,5 +14,5 @@ public class TjShardingResult {
   private Integer shardingId;
   private Integer recordId;
   private Integer time;
-  private Integer evaluationScore;
+  private String evaluationScore;
 }

@@ -71,5 +71,5 @@ public class TjShardingChangeRecord implements Serializable {
   private Integer recordId;
 
   @TableField("evaluation_score")
-  private Integer evaluationScore;
+  private String evaluationScore;
 }

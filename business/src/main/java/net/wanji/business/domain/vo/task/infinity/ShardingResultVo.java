@@ -24,11 +24,11 @@ public class ShardingResultVo {
       dataType = "String",
       position = 2)
   private String shardingName;
-  @ApiModelProperty(value = "得分",
+  @ApiModelProperty(value = "得分，50/100",
       required = true,
-      dataType = "Integer",
+      dataType = "String",
       position = 3)
-  private Integer evaluationScore;
+  private String evaluationScore;
 
   /**
    * 分片ID
