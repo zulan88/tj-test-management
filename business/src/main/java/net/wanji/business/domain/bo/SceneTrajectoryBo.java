@@ -21,10 +21,10 @@ public class SceneTrajectoryBo implements Serializable {
     private List<ParticipantTrajectoryBo> participantTrajectories;
 
     public SceneTrajectoryBo buildId() {
-        if (CollectionUtils.isNotEmpty(participantTrajectories)) {
-            IntStream.range(0, participantTrajectories.size()).forEachOrdered(i ->
-                    participantTrajectories.get(i).setId(String.valueOf(i + 1)));
-        }
+//        if (CollectionUtils.isNotEmpty(participantTrajectories)) {
+//            IntStream.range(0, participantTrajectories.size()).forEachOrdered(i ->
+//                    participantTrajectories.get(i).setId(String.valueOf(i + 1)));
+//        }
         return this;
     }
 
