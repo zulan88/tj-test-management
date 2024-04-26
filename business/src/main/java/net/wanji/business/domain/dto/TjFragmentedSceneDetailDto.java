@@ -43,6 +43,7 @@ public class TjFragmentedSceneDetailDto {
     private Integer laneNum;
 
     @ApiModelProperty(value = "地图id")
+    @NotNull(message = "请填写地图id", groups = {InsertGroup.class, UpdateGroup.class, OtherGroup.class})
     private Integer mapId;
 
     private String mapFile;
