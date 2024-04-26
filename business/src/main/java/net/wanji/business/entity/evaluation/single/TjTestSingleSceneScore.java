@@ -73,6 +73,7 @@ public class TjTestSingleSceneScore {
   /**
    * 安全性扣分项，没有扣分发送0
    */
+  @JsonProperty("TTC")
   @TableField("safe_minus_score")
   private Integer safeMinusScore;
   /**

@@ -68,8 +68,11 @@ public class TjTestSingleSceneScoreServiceImpl
     QueryWrapper<TjTestSingleSceneScore> queryWrapper = new QueryWrapper<>();
     queryWrapper.eq("task_id", entity.getTaskId());
     queryWrapper.eq("case_id", entity.getCaseId());
-    queryWrapper.eq("test_type", entity.getTestType());
     queryWrapper.eq("record_id", entity.getRecordId());
+    queryWrapper.eq("slice_id", entity.getSliceId());
+
+    queryWrapper.eq("test_type", entity.getTestType());
+    queryWrapper.eq("evaluative_id", entity.getEvaluativeId());
     TjTestSingleSceneScore sceneScore = this.getOne(queryWrapper);
     if (null == sceneScore) {
       return tjTestSingleSceneScoreMapper.insert(entity) > 0;
