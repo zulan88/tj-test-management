@@ -600,20 +600,21 @@ public class TjInfinityTaskServiceImpl
       Boolean taskEnd, Map<Integer, List<TessngEvaluateDto>> tessngEvaluateAVs)
       throws BusinessException {
 
+    // 历史记录
+    recordProcess(taskId, caseId, taskType, createBy);
+    // 切片准备信息 依赖历史记录
+    Integer recordId = tjShardingChangeRecordService.stateControl(taskId, caseId,
+        taskType, createBy);
+
     TessParam tessParam = TessngUtils.buildTessServerParam(1, createBy, caseId,
         null);
     if (!restService.sendRuleUrl(
         new CaseRuleControl(System.currentTimeMillis(), taskId, caseId,
             taskType, DeviceUtils.generateDeviceConnRules(deviceDetails,
             tessParam.getCommandChannel(), tessParam.getDataChannel(),
-            tessngEvaluateAVs), avCommandChannel, taskEnd))) {
+            tessngEvaluateAVs, recordId), avCommandChannel, taskEnd))) {
       throw new BusinessException("主控响应异常");
     }
-    // 历史记录
-    recordProcess(taskId, caseId, taskType, createBy);
-    // 切片准备信息
-    Integer recordId = tjShardingChangeRecordService.stateControl(taskId, caseId,
-        taskType, createBy);
     // 评价信息处理
     evaluationProcess(taskId, caseId, taskType, createBy, recordId);
   }

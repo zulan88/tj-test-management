@@ -61,7 +61,8 @@ public class DeviceUtils {
   public static List<DeviceConnRule> generateDeviceConnRules(
       List<TjDeviceDetail> deviceDetails, String commandChannel,
       String dataChannel,
-      Map<Integer, List<TessngEvaluateDto>> tessngEvaluateAVs) {
+      Map<Integer, List<TessngEvaluateDto>> tessngEvaluateAVs,
+      Integer recordId) {
     List<DeviceConnRule> rules = new ArrayList<>();
     for (int i = 0; i < deviceDetails.size(); i++) {
       TjDeviceDetail deviceDetail = deviceDetails.get(i);
@@ -77,30 +78,50 @@ public class DeviceUtils {
         DeviceConnRule rule = new DeviceConnRule();
         rule.setSource(createConnInfo(deviceDetail, commandChannel, dataChannel,
             sourceParams));
-
-        if (null != tessngEvaluateAVs
-            && tessngEvaluateAVs.get(targetDevice.getDeviceId()) != null) {
-          targetParams.put("evaluationInfos",
-              tessngEvaluateAVs.get(targetDevice.getDeviceId()));
-          // tessng额外上传主车相邻的背景车数据通道
-          if(Constants.PartRole.MV_SIMULATION.equals(deviceDetail.getSupportRoles())){
-            targetParams.put("nearbyDataChannel",
-                targetDevice.getDataChannel() + "_nearby");
-          }
-        }
+        extendParams(tessngEvaluateAVs, recordId, deviceDetail, sourceParams,
+            targetDevice, targetParams);
         rule.setTarget(createConnInfo(targetDevice, commandChannel, dataChannel,
             targetParams));
         // 主车接收tessng过滤后数据通道
-        if (Constants.PartRole.AV.equals(deviceDetail.getSupportRoles())
-            && Constants.PartRole.MV_SIMULATION.equals(
-            targetDevice.getSupportRoles())) {
-          rule.getTarget()
-              .setChannel(deviceDetail.getDataChannel() + "_nearby");
-        }
+        avDevcieDataChannelChange(deviceDetail, targetDevice, rule);
         rules.add(rule);
       }
     }
     return rules;
+  }
+
+  private static void avDevcieDataChannelChange(TjDeviceDetail deviceDetail,
+      TjDeviceDetail targetDevice, DeviceConnRule rule) {
+    if (Constants.PartRole.AV.equals(deviceDetail.getSupportRoles())
+        && Constants.PartRole.MV_SIMULATION.equals(
+        targetDevice.getSupportRoles())) {
+      rule.getTarget()
+          .setChannel(deviceDetail.getDataChannel() + "_nearby");
+    }
+  }
+
+  private static void extendParams(
+      Map<Integer, List<TessngEvaluateDto>> tessngEvaluateAVs, Integer recordId,
+      TjDeviceDetail deviceDetail, Map<String, Object> sourceParams,
+      TjDeviceDetail targetDevice, Map<String, Object> targetParams) {
+    // 发送数据设备参数
+    if (Constants.PartRole.MV_SIMULATION.equals(
+        deviceDetail.getSupportRoles())) {
+      sourceParams.put("recordId", recordId);
+    }
+
+    // 接收数据设备参数
+    if (null != tessngEvaluateAVs
+        && tessngEvaluateAVs.get(targetDevice.getDeviceId()) != null) {
+      targetParams.put("evaluationInfos",
+          tessngEvaluateAVs.get(targetDevice.getDeviceId()));
+      // tessng额外上传主车相邻的背景车数据通道
+      if (Constants.PartRole.MV_SIMULATION.equals(
+          deviceDetail.getSupportRoles())) {
+        targetParams.put("nearbyDataChannel",
+            targetDevice.getDataChannel() + "_nearby");
+      }
+    }
   }
 
   public static DeviceConnInfo createConnInfo(TjDeviceDetail deviceDetail,
