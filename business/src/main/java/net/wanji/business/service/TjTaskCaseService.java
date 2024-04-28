@@ -72,14 +72,16 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
     /**
      * 回放
      *
-     * @param taskId 任务ID
-     * @param caseId 任务用例ID
-     * @param action 1：开始回放 2：暂停；3：继续；4：结束回放
+     * @param taskId   任务ID
+     * @param caseId   任务用例ID
+     * @param action   1：开始回放 2：暂停；3：继续；4：结束回放
+     * @param recordId 测试记录ID
      * @return
      * @throws BusinessException
      * @throws IOException
      */
-    void playback(Integer taskId, Integer caseId, Integer action) throws BusinessException, IOException;
+    void playback(Integer taskId, Integer caseId, Integer recordId,
+        Integer action) throws BusinessException, IOException;
 
     void playbackTW(Integer taskId, Integer caseId, String topic) throws BusinessException, IOException;
 

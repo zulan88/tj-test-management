@@ -774,8 +774,10 @@ public class TestingServiceImpl implements TestingService {
                     sourceDevice.getSupportRoles()) && PartRole.AV.equals(
                     targetDevice.getSupportRoles())) {
                     // tessng额外上传主车相邻的背景车数据通道
-                    targetParams.put("nearbyDataChannel",
-                        targetDevice.getDataChannel() + "_nearby");
+                    targetParams.put(
+                        Constants.TessngInteraction.NEARBY_DATA_CHANNEL,
+                        targetDevice.getDataChannel()
+                            + Constants.TessngInteraction.NEARBY_DATA_CHANNEL_SUFFIX);
                 }
                 rule.setTarget(
                     createConnInfo(targetDevice, commandChannel, dataChannel,
@@ -784,8 +786,8 @@ public class TestingServiceImpl implements TestingService {
                 if (PartRole.AV.equals(sourceDevice.getSupportRoles())
                     && Constants.PartRole.MV_SIMULATION.equals(
                     targetDevice.getSupportRoles())) {
-                    rule.getTarget()
-                        .setChannel(sourceDevice.getDataChannel() + "_nearby");
+                    rule.getTarget().setChannel(sourceDevice.getDataChannel()
+                        + Constants.TessngInteraction.NEARBY_DATA_CHANNEL_SUFFIX);
                 }
                 rules.add(rule);
             }

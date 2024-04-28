@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import io.swagger.models.auth.In;
 import lombok.extern.slf4j.Slf4j;
@@ -49,6 +50,7 @@ import net.wanji.business.entity.TjTaskCase;
 import net.wanji.business.entity.TjTaskCaseRecord;
 import net.wanji.business.entity.TjTaskDataConfig;
 import net.wanji.business.entity.infity.TjInfinityTask;
+import net.wanji.business.entity.infity.TjInfinityTaskRecord;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.listener.KafkaCollector;
 import net.wanji.business.mapper.*;
@@ -544,6 +546,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         if (CollectionUtils.isEmpty(taskCaseInfos)) {
             throw new BusinessException("测试任务用例不存在");
         }
+        Integer recordId = getRecordId(taskCaseInfos);
         // 非连续任务，执行任务链当前用例
         if (!tjTask.isContinuous()) {
             String taskChainNumber = ChannelBuilder.buildTaskDataChannel(user, tjTask.getId());
@@ -600,7 +603,20 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         // 9.删除空记录
         Optional.of(deleteIdList).filter(CollectionUtils::isNotEmpty).ifPresent(deleteIds -> taskCaseRecordService.removeByIds(deleteIds));
         // 10.新增记录
-        Optional.of(addList).filter(CollectionUtils::isNotEmpty).ifPresent(records -> taskCaseRecordService.saveBatch(records));
+        Optional.of(addList).filter(CollectionUtils::isNotEmpty)
+            .ifPresent(records -> {
+                taskCaseRecordService.saveBatch(records);
+                Integer rId = recordId;
+                // 设置测试记录ID
+                if (null == rId) {
+                    rId = -1;
+                }
+                for (TjTaskCaseRecord record : records) {
+                    record.setRecordId(rId);
+                }
+                taskCaseRecordService.updateBatchById(records);
+
+            });
         // 11.测试用例准备
         Optional.of(resetList).filter(CollectionUtils::isNotEmpty).ifPresent(resets -> taskCaseMapper.prepare(resets));
         // 12.前端结果集
@@ -699,8 +715,10 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         caseTrajectoryParam.setCaseTrajectorySSVoList(caseSSInfos);
 
         Map<String, Object> context = new HashMap<>();
-        context.put("user", user);
-        context.put("taskChainNumber", taskChainNumber);
+        context.put(Constants.MasterContext.USERNAME, user);
+        context.put(Constants.MasterContext.TASK_CHAIN_NUMBER, taskChainNumber);
+        // 添加recordId
+        setRecordId(taskId, taskCaseInfos.get(0).getCaseId(), context);
         caseTrajectoryParam.setContext(context);
         // 更新kafka收集器
         String key = ChannelBuilder.buildTaskDataChannel(user, taskId);
@@ -728,6 +746,26 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         mainTrajectoryMap.put("1", trajectoryDetailBos);
         caseRealTestVo.setMainTrajectories(mainTrajectoryMap);
         return caseRealTestVo;
+    }
+
+    private void setRecordId(Integer taskId, Integer taskCaseId,
+        Map<String, Object> context) {
+        QueryWrapper<TjTaskCaseRecord> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq(ColumnName.TASK_ID, taskId);
+        queryWrapper.eq(ColumnName.CASE_ID_COLUMN, taskCaseId);
+        queryWrapper.orderByDesc(ColumnName.CREATED_DATE_COLUMN);
+        Page<TjTaskCaseRecord> recordPage = new Page<>(0, 1);
+        Page<TjTaskCaseRecord> page = taskCaseRecordService.page(recordPage,
+            queryWrapper);
+        List<TjTaskCaseRecord> records = page.getRecords();
+        if (CollectionUtils.isNotEmpty(records)) {
+            context.put(Constants.MasterContext.RECORD_ID,
+                records.get(0).getRecordId());
+        } else {
+            if (log.isErrorEnabled()) {
+                log.error("taskId[{}] caseId[{}] missing!", taskId, taskCaseId);
+            }
+        }
     }
 
     @Override
@@ -768,10 +806,13 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         List<TaskCaseConfigBo> filterConfigs = taskCaseInfoBo.getDataConfigs().stream()
                 .filter(distinctByKey(TjTaskDataConfig::getDeviceId)).collect(Collectors.toList());
         TaskCaseConfigBo mainConfig = first.get();
-        TessParam tessParam = buildTessServerParam(1, (String) context.get("user"), taskId, null);
+        TessParam tessParam = buildTessServerParam(1, (String) context.get(
+            Constants.MasterContext.USERNAME), taskId, null);
         if (!restService.sendRuleUrl(
-                new CaseRuleControl(System.currentTimeMillis(), taskId, caseId, action > 0 ? action : 0,
-                        generateDeviceConnRules(filterConfigs, tessParam.getCommandChannel(), tessParam.getDataChannel()),
+            new CaseRuleControl(System.currentTimeMillis(), taskId, caseId,
+                action > 0 ? action : 0, generateDeviceConnRules(filterConfigs,
+                tessParam.getCommandChannel(), tessParam.getDataChannel(),
+                context.get(Constants.MasterContext.RECORD_ID)),
                         mainConfig.getCommandChannel(), taskEnd))) {
             throw new BusinessException("主控响应异常");
         }
@@ -846,7 +887,8 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
     }
 
     @Override
-    public void playback(Integer taskId, Integer caseId, Integer action) throws BusinessException, IOException {
+    public void playback(Integer taskId, Integer caseId, Integer recordId,
+        Integer action) throws BusinessException, IOException {
         String key = ChannelBuilder.buildTaskPreviewChannel(SecurityUtils.getUsername(), taskId, caseId);
         switch (action) {
             case PlaybackAction.START:
@@ -857,14 +899,14 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 List<TaskCaseInfoBo> taskCaseInfos = taskCaseMapper.selectTaskCaseByCondition(param);
                 List<List<ClientSimulationTrajectoryDto>> trajectories = new ArrayList<>();
                 for (TaskCaseInfoBo taskCaseInfoBo : taskCaseInfos) {
-                    Optional<TjTaskCaseRecord> optional = CollectionUtils.emptyIfNull(taskCaseInfoBo.getRecords()).stream()
-                            .filter(r -> TestingStatusEnum.PASS.getCode().equals(r.getStatus()))
-                            .findFirst();
-                    if (!optional.isPresent()) {
+                    TjTaskCaseRecord tjTaskCaseRecord = getTjTaskCaseRecord(
+                        recordId, taskCaseInfoBo);
+                    if (null == tjTaskCaseRecord) {
                         continue;
                     }
-                    TjTaskCaseRecord tjTaskCaseRecord = optional.get();
-                    trajectories.addAll(routeService.readRealTrajectoryFromRouteFile2(tjTaskCaseRecord.getRouteFile()));
+                    trajectories.addAll(
+                        routeService.readRealTrajectoryFromRouteFile2(
+                            tjTaskCaseRecord.getRouteFile()));
                 }
                 // 2.数据校验
                 if (CollectionUtils.isEmpty(trajectories)) {
@@ -887,6 +929,25 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             default:
                 break;
         }
+    }
+
+    private TjTaskCaseRecord getTjTaskCaseRecord(Integer recordId,
+        TaskCaseInfoBo taskCaseInfoBo) {
+        QueryWrapper<TjTaskCaseRecord> tjTaskCaseRecordQueryWrapper = new QueryWrapper<>();
+        tjTaskCaseRecordQueryWrapper.eq(ColumnName.TASK_ID, taskCaseInfoBo.getTaskId());
+        tjTaskCaseRecordQueryWrapper.eq(ColumnName.CASE_ID_COLUMN, taskCaseInfoBo.getCaseId());
+        tjTaskCaseRecordQueryWrapper.eq("status", TestingStatusEnum.PASS.getCode());
+        if(null != recordId){
+            tjTaskCaseRecordQueryWrapper.eq("record_id", recordId);
+        }else {
+            tjTaskCaseRecordQueryWrapper.orderByDesc("start_time");
+        }
+        List<TjTaskCaseRecord> list = taskCaseRecordService.list(
+            tjTaskCaseRecordQueryWrapper);
+        if(CollectionUtils.isNotEmpty(list)){
+            return list.get(0);
+        }
+        return null;
     }
 
     @Override
@@ -1256,7 +1317,9 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         }
     }
 
-    private List<DeviceConnRule> generateDeviceConnRules(List<TaskCaseConfigBo> configs, String commandChannel, String dataChannel) {
+    private List<DeviceConnRule> generateDeviceConnRules(
+        List<TaskCaseConfigBo> configs, String commandChannel,
+        String dataChannel, Object recordId) {
         List<DeviceConnRule> rules = new ArrayList<>();
         for (int i = 0; i < configs.size(); i++) {
             TaskCaseConfigBo sourceDevice = configs.get(i);
@@ -1270,30 +1333,48 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 TaskCaseConfigBo targetDevice = configs.get(j);
 
                 DeviceConnRule rule = new DeviceConnRule();
-
                 rule.setSource(createConnInfo(sourceDevice, commandChannel, dataChannel, sourceParams));
 
-                if (PartRole.MV_SIMULATION.equals(
-                    sourceDevice.getSupportRoles()) && PartRole.AV.equals(
-                    targetDevice.getSupportRoles())) {
-                    // tessng额外上传主车相邻的背景车数据通道
-                    targetParams.put("nearbyDataChannel",
-                        targetDevice.getDataChannel() + "_nearby");
-                }
+                extendParams(recordId, sourceDevice, sourceParams, targetDevice,
+                    targetParams);
+
                 rule.setTarget(
                     createConnInfo(targetDevice, commandChannel, dataChannel,
                         targetParams));
                 // 主车接收tessng过滤后数据通道
-                if (PartRole.AV.equals(sourceDevice.getSupportRoles())
-                    && Constants.PartRole.MV_SIMULATION.equals(
-                    targetDevice.getSupportRoles())) {
-                    rule.getTarget()
-                        .setChannel(sourceDevice.getDataChannel() + "_nearby");
-                }
+                avDevcieDataChannelChange(sourceDevice, targetDevice, rule);
                 rules.add(rule);
             }
         }
         return rules;
+    }
+
+    private static void avDevcieDataChannelChange(TaskCaseConfigBo sourceDevice,
+        TaskCaseConfigBo targetDevice, DeviceConnRule rule) {
+        if (PartRole.AV.equals(sourceDevice.getSupportRoles())
+            && PartRole.MV_SIMULATION.equals(
+            targetDevice.getSupportRoles())) {
+            rule.getTarget().setChannel(sourceDevice.getDataChannel()
+                + Constants.TessngInteraction.NEARBY_DATA_CHANNEL_SUFFIX);
+        }
+    }
+
+    private static void extendParams(Object recordId,
+        TaskCaseConfigBo sourceDevice, Map<String, Object> sourceParams,
+        TaskCaseConfigBo targetDevice, Map<String, Object> targetParams) {
+        if(PartRole.MV_SIMULATION.equals(sourceDevice.getSupportRoles())){
+            sourceParams.put(Constants.TessngInteraction.RECORD_ID, recordId);
+        }
+
+        if (PartRole.MV_SIMULATION.equals(
+            sourceDevice.getSupportRoles()) && PartRole.AV.equals(
+            targetDevice.getSupportRoles())) {
+            // tessng额外上传主车相邻的背景车数据通道
+            targetParams.put(
+                Constants.TessngInteraction.NEARBY_DATA_CHANNEL,
+                targetDevice.getDataChannel()
+                    + Constants.TessngInteraction.NEARBY_DATA_CHANNEL_SUFFIX);
+        }
     }
 
     private static DeviceConnInfo createConnInfo(TaskCaseConfigBo config, String commandChannel, String dataChannel,
@@ -1420,6 +1501,25 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         jsonObject.put("caseId", caseId);
         jsonObject.put("status", status);
         kafkaProducer.sendMessage("tj_task_tw_status", jsonObject.toJSONString());
+    }
+
+    private Integer getRecordId(List<TaskCaseInfoBo> taskCaseInfos) {
+        TaskCaseInfoBo taskCaseInfoBo = listLastElement(taskCaseInfos);
+        List<TjTaskCaseRecord> records = taskCaseInfoBo.getRecords();
+        if (CollectionUtils.isNotEmpty(records)) {
+            return records.get(0).getId();
+        }
+        return null;
+    }
+
+    private <T> T listLastElement(List<T> list) {
+        if (CollectionUtils.isNotEmpty(list)) {
+            return list.get(list.size() - 1);
+        }
+        if (log.isWarnEnabled()) {
+            log.warn("the parameter of listLastElement is empty!");
+        }
+        return null;
     }
 }
 

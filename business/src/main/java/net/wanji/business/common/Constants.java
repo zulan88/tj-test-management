@@ -345,6 +345,7 @@ public interface Constants {
         public static final String DEVICE_TYPE_COLUMN = "device_type";
         public static final String CREATED_DATE_COLUMN = "created_date";
         public static final String CREATE_TIME_COLUMN = "create_time";
+        public static final String START_TIME_COLUMN = "start_time";
         public static final String SORT_COLUMN = "sort";
         public static final String TASK_ID = "task_id";
     }
@@ -527,6 +528,29 @@ public interface Constants {
          * 自动化测试
          */
         public static final String AUTO = "2";
+    }
+
+    class MasterContext{
+        public static String RECORD_ID = "recordId";
+        public static String USERNAME = "user";
+        public static String TASK_CHAIN_NUMBER = "taskChainNumber";
+    }
+
+    class TessngInteraction{
+        public static String RECORD_ID = "recordId";
+        /**
+         * 车辆评价信息
+         */
+        public static String EVALUATION_INFOS = "evaluationInfos";
+        /**
+         * 需要tessng过滤附近背景车的设备信息
+         */
+        public static String NEARBY_DATA_CHANNEL = "nearbyDataChannel";
+        /**
+         * 设备接收过滤背景车辆信息频道后缀
+         */
+        public static String NEARBY_DATA_CHANNEL_SUFFIX = "_nearby";
+
     }
 
 

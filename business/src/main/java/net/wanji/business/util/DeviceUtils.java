@@ -95,8 +95,8 @@ public class DeviceUtils {
     if (Constants.PartRole.AV.equals(deviceDetail.getSupportRoles())
         && Constants.PartRole.MV_SIMULATION.equals(
         targetDevice.getSupportRoles())) {
-      rule.getTarget()
-          .setChannel(deviceDetail.getDataChannel() + "_nearby");
+      rule.getTarget().setChannel(deviceDetail.getDataChannel()
+          + Constants.TessngInteraction.NEARBY_DATA_CHANNEL_SUFFIX);
     }
   }
 
@@ -107,19 +107,20 @@ public class DeviceUtils {
     // 发送数据设备参数
     if (Constants.PartRole.MV_SIMULATION.equals(
         deviceDetail.getSupportRoles())) {
-      sourceParams.put("recordId", recordId);
+      sourceParams.put(Constants.TessngInteraction.RECORD_ID, recordId);
     }
 
     // 接收数据设备参数
     if (null != tessngEvaluateAVs
         && tessngEvaluateAVs.get(targetDevice.getDeviceId()) != null) {
-      targetParams.put("evaluationInfos",
+      targetParams.put(Constants.TessngInteraction.EVALUATION_INFOS,
           tessngEvaluateAVs.get(targetDevice.getDeviceId()));
       // tessng额外上传主车相邻的背景车数据通道
       if (Constants.PartRole.MV_SIMULATION.equals(
           deviceDetail.getSupportRoles())) {
-        targetParams.put("nearbyDataChannel",
-            targetDevice.getDataChannel() + "_nearby");
+        targetParams.put(Constants.TessngInteraction.NEARBY_DATA_CHANNEL,
+            targetDevice.getDataChannel()
+                + Constants.TessngInteraction.NEARBY_DATA_CHANNEL_SUFFIX);
       }
     }
   }

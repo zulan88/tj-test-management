@@ -339,9 +339,13 @@ public class TaskController extends BaseController {
         }else {
             if (platformSSDto.getTaskId() == 0) {
                 if (platformSSDto.getState() == 1) {
-                    testingService.start(platformSSDto.getCaseId(), platformSSDto.getState(), (String) platformSSDto.getContext().get("user"));
+                    testingService.start(platformSSDto.getCaseId(),
+                        platformSSDto.getState(),
+                        (String) platformSSDto.getContext().get("user"));
                 } else {
-                    testingService.end(platformSSDto.getCaseId(), platformSSDto.getState(), (String) platformSSDto.getContext().get("user"));
+                    testingService.end(platformSSDto.getCaseId(),
+                        platformSSDto.getState(),
+                        (String) platformSSDto.getContext().get("user"));
                 }
             } else {
                 taskCaseService.caseStartEnd(platformSSDto.getTaskId(),
@@ -446,16 +450,32 @@ public class TaskController extends BaseController {
     @ApiOperationSort(27)
     @ApiOperation(value = "27.回放")
     @GetMapping("/playback")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "taskId", value = "任务ID", required = true, dataType = "Integer", paramType = "query", example = "1"),
-            @ApiImplicitParam(name = "caseId", value = "任务用例ID", dataType = "Integer", paramType = "query", example = "1"),
-            @ApiImplicitParam(name = "action", value = "1：开始；2：暂停；3：继续；4：结束", required = true, dataType = "Integer", paramType = "query", example = "1")
+    @ApiImplicitParams({ @ApiImplicitParam(name = "taskId",
+        value = "任务ID",
+        required = true,
+        dataType = "Integer",
+        paramType = "query",
+        example = "1"), @ApiImplicitParam(name = "caseId",
+        value = "任务用例ID",
+        dataType = "Integer",
+        paramType = "query",
+        example = "1"), @ApiImplicitParam(name = "recordId",
+        value = "测试记录ID",
+        dataType = "Integer",
+        paramType = "query",
+        example = "1"), @ApiImplicitParam(name = "action",
+        value = "1：开始；2：暂停；3：继续；4：结束",
+        required = true,
+        dataType = "Integer",
+        paramType = "query",
+        example = "1")
     })
     public AjaxResult playback(@RequestParam("taskId") Integer taskId,
-                               @RequestParam(value = "caseId", required = false) Integer caseId,
-                               @RequestParam("action") Integer action) {
+        @RequestParam(value = "caseId", required = false) Integer caseId,
+        @RequestParam(value = "recordId", required = false) Integer recordId,
+        @RequestParam("action") Integer action) {
         try {
-            taskCaseService.playback(taskId, caseId, action);
+            taskCaseService.playback(taskId, caseId, recordId, action);
         } catch (Exception e) {
             log.error("回放失败:{}", e);
             return AjaxResult.error("回放失败:" + e.getMessage());
