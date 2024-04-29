@@ -177,7 +177,7 @@ public class MyWebSocketHandle extends TextWebSocketHandler {
         DeviceDetailVo detailVo = deviceDetailVos.get(0);
         if (clientType == ChannelBuilder.REAL){
             restService.stopTessNg(detailVo.getIp(), detailVo.getServiceAddress(), key,1);
-            restService.stopTessNg(detailVo.getIp(), detailVo.getServiceAddress(), key,0);
+//            restService.stopTessNg(detailVo.getIp(), detailVo.getServiceAddress(), key,0);
         } else if (clientType == ChannelBuilder.SIMULATION || clientType == ChannelBuilder.TASK){
             restService.stopTessNg(detailVo.getIp(), detailVo.getServiceAddress(), key,1);
         } else if (clientType == ChannelBuilder.INFINITE_SIMULATION){
