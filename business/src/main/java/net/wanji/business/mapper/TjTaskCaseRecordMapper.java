@@ -22,5 +22,6 @@ public interface TjTaskCaseRecordMapper extends BaseMapper<TjTaskCaseRecord> {
     List<Map<String, Object>> recordPartInfo(Integer recordId);
 
     List<Map<String, Object>> selectTaskRecordInfo(
-        @Param("taskId") Integer taskId);
+        @Param("taskId") Integer taskId,
+        @Param("selectedRecordId") Integer selectedRecordId);
 }

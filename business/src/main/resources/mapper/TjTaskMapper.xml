@@ -93,6 +93,7 @@
         <result property="status" column="status" jdbcType="VARCHAR"/>
         <result property="continuous" column="continuous" jdbcType="TINYINT"/>
         <result property="routeFile" column="route_file" jdbcType="VARCHAR"/>
+        <result property="selectedRecordId" column="selected_record_id" jdbcType="INTEGER"/>
         <collection property="taskCaseVos" ofType="net.wanji.business.domain.vo.TaskCaseVo" select="selectTaskCaseInfo"
                     column="id"/>
         <collection property="taskCaseConfigs" ofType="net.wanji.business.entity.TjTaskDataConfig" select="selectTaskCaseConfigs"
@@ -148,7 +149,8 @@
         tt.measurand_id,
         tt.op_status,
         tt.is_inner,
-        tt.remark
+        tt.remark,
+        tt.selected_record_id
         FROM tj_task tt
         LEFT JOIN (
             SELECT

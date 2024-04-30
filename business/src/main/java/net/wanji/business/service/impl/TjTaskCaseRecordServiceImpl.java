@@ -24,7 +24,7 @@ public class TjTaskCaseRecordServiceImpl
   TjTaskCaseRecordMapper tjTaskCaseRecordMapper;
 
   @Override
-  public List<Map<String, Object>> selectTaskRecordInfo(Integer taskId) {
-    return tjTaskCaseRecordMapper.selectTaskRecordInfo(taskId);
+  public List<Map<String, Object>> selectTaskRecordInfo(Integer taskId, Integer selectedRecordId) {
+    return tjTaskCaseRecordMapper.selectTaskRecordInfo(taskId, selectedRecordId);
   }
 }

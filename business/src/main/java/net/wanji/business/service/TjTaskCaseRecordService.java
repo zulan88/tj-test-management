@@ -13,5 +13,5 @@ import java.util.Map;
 */
 public interface TjTaskCaseRecordService extends IService<TjTaskCaseRecord> {
 
-  List<Map<String, Object>> selectTaskRecordInfo(Integer taskId);
+  List<Map<String, Object>> selectTaskRecordInfo(Integer taskId, Integer selectedId);
 }

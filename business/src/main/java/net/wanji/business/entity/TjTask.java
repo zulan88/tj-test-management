@@ -193,4 +193,9 @@ public class TjTask implements Serializable {
 
     @TableField("last_status")
     private String lastStatus;
+    /**
+     * 选中测试记录ID
+     */
+    @TableField("selected_record_id")
+    private Integer selectedRecordId;
 }

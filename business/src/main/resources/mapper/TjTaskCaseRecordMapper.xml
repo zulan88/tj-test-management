@@ -24,7 +24,8 @@
         select
             t.record_id as record,
             min( t.start_time ) as taskStartTime,
-            timestampdiff( second, min(t.start_time), max(t.end_time) ) as taskRunningTime
+            timestampdiff( second, min(t.start_time), max(t.end_time) ) as taskRunningTime,
+            if(t.record_id = #{selectedRecordId}, true, false) as isSelected
         from
             tj_task_case_record t
         where

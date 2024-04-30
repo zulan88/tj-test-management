@@ -268,11 +268,20 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 taskCaseVo.setRoleConfigSort(roleConfigSort.toString());
             }
 
-            taskVo.setHistoryRecords(
-                taskCaseRecordService.selectTaskRecordInfo(taskVo.getId()));
+            taskVo.setHistoryRecords( getTaskRecords(taskVo));
         }
 
         return pageList;
+    }
+
+    private List<Map<String, Object>> getTaskRecords(TaskListVo taskVo) {
+        List<Map<String, Object>> records = taskCaseRecordService.selectTaskRecordInfo(
+            taskVo.getId(), taskVo.getSelectedRecordId());
+        for (Map<String, Object> record : records) {
+            record.put("isSelected", 1 == Integer.valueOf(
+                String.valueOf(record.get("isSelected"))));
+        }
+        return records;
     }
 
     @Override

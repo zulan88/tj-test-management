@@ -2,6 +2,7 @@ package net.wanji.web.controller.business;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import io.swagger.annotations.Api;
@@ -22,9 +23,11 @@ import net.wanji.business.domain.dto.TaskDto;
 import net.wanji.business.domain.dto.device.TaskSaveDto;
 import net.wanji.business.domain.vo.PlatformSSDto;
 import net.wanji.business.domain.vo.TaskListVo;
+import net.wanji.business.domain.vo.task.infinity.SelectRecordIdVo;
 import net.wanji.business.entity.TjTask;
 import net.wanji.business.entity.TjTaskCase;
 import net.wanji.business.entity.TjTaskCaseRecord;
+import net.wanji.business.entity.infity.TjInfinityTask;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.*;
 import net.wanji.business.service.impl.TjInfinityTaskServiceImpl;
@@ -566,6 +569,16 @@ public class TaskController extends BaseController {
         String topic = "tj_playback_tw_"+substring;
         taskCaseService.playbackTW(taskId,caseId,topic);
         return AjaxResult.success(topic);
+    }
+
+    @ApiOperation("设置回放测试记录ID")
+    @PostMapping("/selectedRecordId")
+    public AjaxResult selectedRecordId(
+        @RequestBody SelectRecordIdVo selectRecordIdVo) {
+        UpdateWrapper<TjTask> uw = new UpdateWrapper<>();
+        uw.eq("id", selectRecordIdVo.getTaskId());
+        uw.set("selected_record_id", selectRecordIdVo.getRecordId());
+        return AjaxResult.success(tjTaskService.update(uw));
     }
 
     private void taskCaseCache(PlatformSSDto platformSSDto) {

@@ -71,7 +71,7 @@
         tt.case_name,
         tt.status,
         tt.main_plan_file,
-        tt.selected_record_id
+        tt.selected_record_id as selectedRecordId
         FROM tj_infinity_task tt
         <where>
             <if test="taskCode != null and taskCode != ''">
