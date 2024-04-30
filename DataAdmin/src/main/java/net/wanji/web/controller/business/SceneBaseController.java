@@ -165,6 +165,23 @@ public class SceneBaseController extends BaseController {
     public AjaxResult saveSceneDetail(@Validated(value = {InsertGroup.class, UpdateGroup.class})
                                           @RequestBody TjFragmentedSceneDetailDto sceneDetailDto)
             throws BusinessException {
+        if (sceneDetailDto.getSimuType() != null && sceneDetailDto.getSimuType() == 0){
+            List<ParticipantTrajectoryBo> participantTrajectoryBos = sceneDetailDto.getTrajectoryJson()
+                    .getParticipantTrajectories().stream().peek(trajectory -> {
+                        for(TrajectoryDetailBo trajectoryBo : trajectory.getTrajectory()){
+                            trajectoryBo.setSpeed(0d);
+                        }
+                    }).collect(Collectors.toList());
+            sceneDetailDto.getTrajectoryJson().setParticipantTrajectories(participantTrajectoryBos);
+        }else {
+            List<ParticipantTrajectoryBo> participantTrajectoryBos = sceneDetailDto.getTrajectoryJson()
+                    .getParticipantTrajectories().stream().peek(trajectory -> {
+                        for(TrajectoryDetailBo trajectoryBo : trajectory.getTrajectory()){
+                            trajectoryBo.setTime("0");
+                        }
+                    }).collect(Collectors.toList());
+            sceneDetailDto.getTrajectoryJson().setParticipantTrajectories(participantTrajectoryBos);
+        }
         return tjFragmentedSceneDetailService.saveSceneDetail(sceneDetailDto)
                 ? AjaxResult.success(sceneDetailDto.getId())
                 : AjaxResult.error("失败");
@@ -175,6 +192,23 @@ public class SceneBaseController extends BaseController {
     public AjaxResult saveSceneTrajectory(@Validated(value = OtherGroup.class)
                                               @RequestBody TjFragmentedSceneDetailDto sceneDetailDto)
             throws BusinessException {
+        if (sceneDetailDto.getSimuType() != null && sceneDetailDto.getSimuType() == 0){
+            List<ParticipantTrajectoryBo> participantTrajectoryBos = sceneDetailDto.getTrajectoryJson()
+                    .getParticipantTrajectories().stream().peek(trajectory -> {
+                        for(TrajectoryDetailBo trajectoryBo : trajectory.getTrajectory()){
+                            trajectoryBo.setSpeed(0d);
+                        }
+                    }).collect(Collectors.toList());
+            sceneDetailDto.getTrajectoryJson().setParticipantTrajectories(participantTrajectoryBos);
+        }else {
+            List<ParticipantTrajectoryBo> participantTrajectoryBos = sceneDetailDto.getTrajectoryJson()
+                    .getParticipantTrajectories().stream().peek(trajectory -> {
+                        for(TrajectoryDetailBo trajectoryBo : trajectory.getTrajectory()){
+                            trajectoryBo.setTime("0");
+                        }
+                    }).collect(Collectors.toList());
+            sceneDetailDto.getTrajectoryJson().setParticipantTrajectories(participantTrajectoryBos);
+        }
         return tjFragmentedSceneDetailService.saveSceneDetail(sceneDetailDto)
                 ? AjaxResult.success(sceneDetailDto.getId())
                 : AjaxResult.error("失败");
@@ -202,6 +236,23 @@ public class SceneBaseController extends BaseController {
     public AjaxResult saveGeneralScene(@Validated(value = Constants.BatchGroup.class)
                                           @RequestBody TjFragmentedSceneDetailDto sceneDetailDto)
             throws BusinessException {
+        if (sceneDetailDto.getSimuType() != null && sceneDetailDto.getSimuType() == 0){
+            List<ParticipantTrajectoryBo> participantTrajectoryBos = sceneDetailDto.getTrajectoryJson()
+                    .getParticipantTrajectories().stream().peek(trajectory -> {
+                        for(TrajectoryDetailBo trajectoryBo : trajectory.getTrajectory()){
+                            trajectoryBo.setSpeed(0d);
+                        }
+                    }).collect(Collectors.toList());
+            sceneDetailDto.getTrajectoryJson().setParticipantTrajectories(participantTrajectoryBos);
+        }else {
+            List<ParticipantTrajectoryBo> participantTrajectoryBos = sceneDetailDto.getTrajectoryJson()
+                    .getParticipantTrajectories().stream().peek(trajectory -> {
+                        for(TrajectoryDetailBo trajectoryBo : trajectory.getTrajectory()){
+                            trajectoryBo.setTime("0");
+                        }
+                    }).collect(Collectors.toList());
+            sceneDetailDto.getTrajectoryJson().setParticipantTrajectories(participantTrajectoryBos);
+        }
         return tjFragmentedSceneDetailService.saveGeneralScene(sceneDetailDto)
                 ? AjaxResult.success(sceneDetailDto.getId())
                 : AjaxResult.error("失败");

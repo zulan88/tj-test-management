@@ -70,7 +70,6 @@ public class InfiniteTaskController {
         Map<String, Object> result = new HashMap<>();
         Map<String, Long> countMap = tjInfinityTaskService.selectCount(taskDto);
         result.put("statistics", countMap);
-
         PageHelper.startPage(taskDto.getPageNum(), taskDto.getPageSize());
         TableDataInfo tableDataInfo = new TableDataInfo();
         tableDataInfo.setCode(HttpStatus.SUCCESS);
