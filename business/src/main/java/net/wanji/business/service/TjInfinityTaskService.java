@@ -94,4 +94,11 @@ public interface TjInfinityTaskService extends IService<TjInfinityTask> {
      * @throws BusinessException
      */
     boolean startStop(PlatformSSDto platformSSDto) throws BusinessException;
+
+    /**
+     * 删除
+     * @param id 任务id
+     * @return
+     */
+    boolean delete(Integer id);
 }

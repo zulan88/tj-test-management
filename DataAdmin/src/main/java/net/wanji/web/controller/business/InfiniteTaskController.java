@@ -178,6 +178,12 @@ public class InfiniteTaskController {
         }
     }
 
+    @ApiOperation("删除")
+    @GetMapping("/delete")
+    public AjaxResult delete(Integer id) {
+        return AjaxResult.success(tjInfinityTaskService.delete(id));
+    }
+
     @ApiOperation("设置回放测试记录ID")
     @PostMapping("/selectedRecordId")
     public AjaxResult selectedRecordId(

@@ -70,7 +70,9 @@ public class DataFileServiceImpl extends ServiceImpl<DataFileMapper, DataFile>
 
   @Override
   public void playback(String playbackId, Integer fileId, Long startTimestamp,
-      Long endTimestamp, Map<String, List<? extends ExtendedDataWrapper>> extendedDataWrappers) throws Exception {
+      Long endTimestamp,
+      Map<String, List<? extends ExtendedDataWrapper>> extendedDataWrappers)
+      throws Exception {
     this.playback(playbackId, fileId, startTimestamp, endTimestamp, 100, null,
         null, extendedDataWrappers);
   }
@@ -131,6 +133,22 @@ public class DataFileServiceImpl extends ServiceImpl<DataFileMapper, DataFile>
   public boolean playbackPause(Boolean state, String playbackId) {
     ThreadUtils.sentPauseAndResume(state, taskThreadMap.get(playbackId));
     return true;
+  }
+
+  @Override
+  public boolean delete(Integer id) {
+    boolean result = false;
+    DataFile dataFile = this.getById(id);
+    if (null != dataFile) {
+      File file = new File(path, dataFile.getFileName());
+      if (file.exists()) {
+        result = file.delete();
+        if (result) {
+          result = this.removeById(id);
+        }
+      }
+    }
+    return result;
   }
 
   private long getStartOffset(Long tentativeStartOffset, List<Long> offsets,

@@ -80,4 +80,11 @@ public interface DataFileService extends IService<DataFile> {
    * @return
    */
   boolean playbackPause(Boolean state, String playbackId);
+
+  /**
+   * 删除 文件及记录
+   * @param id
+   * @return
+   */
+  boolean delete(Integer id);
 }

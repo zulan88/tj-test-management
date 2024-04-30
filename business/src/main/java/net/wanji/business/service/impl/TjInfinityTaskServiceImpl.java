@@ -33,6 +33,7 @@ import net.wanji.business.entity.TjDeviceDetail;
 import net.wanji.business.entity.TjInfinityTaskDataConfig;
 import net.wanji.business.entity.infity.TjInfinityTask;
 import net.wanji.business.entity.infity.TjInfinityTaskRecord;
+import net.wanji.business.entity.infity.TjShardingChangeRecord;
 import net.wanji.business.evaluation.EvalContext;
 import net.wanji.business.evaluation.EvaluationRedisData;
 import net.wanji.business.exception.BusinessException;
@@ -55,6 +56,7 @@ import net.wanji.common.utils.StringUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
 import javax.annotation.Resource;
@@ -386,6 +388,32 @@ public class TjInfinityTaskServiceImpl
     this.updateById(tjInfinityTask);
 
     websocketEndMsg(caseId, taskEnd, tjInfinityTask);
+    return true;
+  }
+
+  @Override
+  @Transactional(rollbackFor = Exception.class)
+  public boolean delete(Integer id) {
+    // 历史记录
+    QueryWrapper<TjInfinityTaskRecord> recordQueryWrapper = new QueryWrapper<>();
+    recordQueryWrapper.eq("case_id", id);
+    List<TjInfinityTaskRecord> records = tjInfinityTaskRecordService.list(
+        recordQueryWrapper);
+    for (TjInfinityTaskRecord record : records) {
+      tjInfinityTaskRecordService.removeById(record.getId());
+      dataFileService.delete(record.getDataFileId());
+    }
+    // 分片进出记录
+    QueryWrapper<TjShardingChangeRecord> shardingQueryWrapper = new QueryWrapper<>();
+    shardingQueryWrapper.eq("case_id", id);
+    tjShardingChangeRecordService.remove(shardingQueryWrapper);
+    // 任务配置
+    QueryWrapper<TjInfinityTaskDataConfig> configQueryWrapper = new QueryWrapper<>();
+    configQueryWrapper.eq("task_id", id);
+    tjInfinityTaskDataConfigService.remove(configQueryWrapper);
+    // 任务信息
+    this.removeById(id);
+    // 报告
     return true;
   }
 
