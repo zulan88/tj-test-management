@@ -20,7 +20,6 @@
         LEFT JOIN tj_device_detail dd ON dd.device_id = dc.device_id
         WHERE dc.type = 'av'
         ) a ON a.task_id = tt.id
-        ORDER BY tt.plan_date DESC
         <where>
             <if test="taskCode != null and taskCode != ''">
                 AND tt.order_number LIKE CONCAT('%', #{taskCode}, '%')
@@ -56,7 +55,7 @@
                 AND tt.created_by = #{createdBy}
             </if>
         </where>
-
+        ORDER BY tt.plan_date DESC
     </select>
 
     <select id="getPageList" resultType="java.util.Map">
