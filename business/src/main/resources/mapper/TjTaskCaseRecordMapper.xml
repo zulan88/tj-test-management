@@ -19,4 +19,19 @@
         route_file,status,start_time,
         end_time
     </sql>
+
+    <select id="selectTaskRecordInfo" resultType="java.util.Map">
+        select
+            t.record_id as record,
+            min( t.start_time ) as taskStartTime,
+            timestampdiff( second, min(t.start_time), max(t.end_time) ) as taskRunningTime
+        from
+            tj_task_case_record t
+        where
+            t.task_id = #{taskId}
+          /*and t.`status` = 2*/
+        group by
+            t.record_id
+        order by t.start_time desc
+    </select>
 </mapper>

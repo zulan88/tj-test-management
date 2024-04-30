@@ -14,10 +14,13 @@ import com.alibaba.excel.write.style.HorizontalCellStyleStrategy;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.google.common.collect.Maps;
+import lombok.RequiredArgsConstructor;
+import net.wanji.business.common.Constants;
 import net.wanji.business.common.Constants.ChannelBuilder;
 import net.wanji.business.common.Constants.ContentTemplate;
 import net.wanji.business.common.Constants.PartRole;
@@ -27,10 +30,7 @@ import net.wanji.business.common.Constants.TaskCaseStatusEnum;
 import net.wanji.business.common.Constants.TaskProcessNode;
 import net.wanji.business.common.Constants.TaskStatusEnum;
 import net.wanji.business.common.Constants.TestType;
-import net.wanji.business.domain.bo.SaveCustomIndexWeightBo;
-import net.wanji.business.domain.bo.SaveCustomScenarioWeightBo;
-import net.wanji.business.domain.bo.SceneTrajectoryBo;
-import net.wanji.business.domain.bo.TaskBo;
+import net.wanji.business.domain.bo.*;
 import net.wanji.business.domain.dto.CaseQueryDto;
 import net.wanji.business.domain.dto.RoutingPlanDto;
 import net.wanji.business.domain.dto.TaskDto;
@@ -46,11 +46,7 @@ import net.wanji.business.domain.vo.TaskCaseVo;
 import net.wanji.business.domain.vo.TaskListVo;
 import net.wanji.business.domain.vo.TaskReportVo;
 import net.wanji.business.domain.vo.TaskTargetVehicleVo;
-import net.wanji.business.entity.TjCase;
-import net.wanji.business.entity.TjDeviceDetail;
-import net.wanji.business.entity.TjTask;
-import net.wanji.business.entity.TjTaskCase;
-import net.wanji.business.entity.TjTaskDataConfig;
+import net.wanji.business.entity.*;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.mapper.TjCaseMapper;
 import net.wanji.business.mapper.TjDeviceDetailMapper;
@@ -58,12 +54,7 @@ import net.wanji.business.mapper.TjTaskCaseMapper;
 import net.wanji.business.mapper.TjTaskDataConfigMapper;
 import net.wanji.business.mapper.TjTaskMapper;
 import net.wanji.business.schedule.SceneLabelMap;
-import net.wanji.business.service.RestService;
-import net.wanji.business.service.RouteService;
-import net.wanji.business.service.TjCaseService;
-import net.wanji.business.service.TjTaskCaseService;
-import net.wanji.business.service.TjTaskDataConfigService;
-import net.wanji.business.service.TjTaskService;
+import net.wanji.business.service.*;
 import net.wanji.business.trajectory.RoutingPlanConsumer;
 import net.wanji.business.util.CustomMergeStrategy;
 import net.wanji.common.common.TrajectoryValueDto;
@@ -95,6 +86,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
@@ -120,56 +112,33 @@ import java.util.stream.IntStream;
  * @createDate 2023-08-31 17:39:16
  */
 @Service
+@RequiredArgsConstructor
 public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         implements TjTaskService {
-
     private static final Logger log = LoggerFactory.getLogger("business");
 
-    @Autowired
-    private ISysDictTypeService dictTypeService;
+    private final ISysDictTypeService dictTypeService;
+    private final ISysDictDataService dictDataService;
+    private final TjCaseService tjCaseService;
+    private final TjTaskDataConfigService tjTaskDataConfigService;
+    private final TjTaskCaseService tjTaskCaseService;
+    private final RouteService routeService;
+    private final RestService restService;
+    private final SceneLabelMap sceneLabelMap;
+    private final RoutingPlanConsumer routingPlanConsumer;
+    private final RedisCache redisCache;
+    private final TjTaskCaseRecordService taskCaseRecordService;
 
-    @Autowired
-    private ISysDictDataService dictDataService;
-
-    @Autowired
-    private TjCaseService tjCaseService;
-
-    @Autowired
-    private TjTaskDataConfigService tjTaskDataConfigService;
-
-    @Autowired
-    private TjTaskCaseService tjTaskCaseService;
-
-    @Autowired
-    private RouteService routeService;
-
-    @Autowired
-    private RestService restService;
-
-    @Autowired
+    @Resource
     private TjCaseMapper caseMapper;
-
-    @Autowired
+    @Resource
     private TjTaskMapper tjTaskMapper;
-
-    @Autowired
+    @Resource
     private TjTaskCaseMapper tjTaskCaseMapper;
-
-    @Autowired
+    @Resource
     private TjTaskDataConfigMapper tjTaskDataConfigMapper;
-
-
-    @Autowired
+    @Resource
     private TjDeviceDetailMapper deviceDetailMapper;
-
-    @Autowired
-    private SceneLabelMap sceneLabelMap;
-
-    @Autowired
-    private RoutingPlanConsumer routingPlanConsumer;
-
-    @Autowired
-    private RedisCache redisCache;
 
     private static final SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss");
 
@@ -298,6 +267,9 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 }
                 taskCaseVo.setRoleConfigSort(roleConfigSort.toString());
             }
+
+            taskVo.setHistoryRecords(
+                taskCaseRecordService.selectTaskRecordInfo(taskVo.getId()));
         }
 
         return pageList;

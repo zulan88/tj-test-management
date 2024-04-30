@@ -2,6 +2,7 @@ package net.wanji.business.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import net.wanji.business.entity.TjTaskCaseRecord;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
@@ -20,4 +21,6 @@ public interface TjTaskCaseRecordMapper extends BaseMapper<TjTaskCaseRecord> {
                     + "LEFT JOIN tj_task_data_config C ON R.TASK_ID = C.TASK_ID WHERE R.ID = #{recordId}")
     List<Map<String, Object>> recordPartInfo(Integer recordId);
 
+    List<Map<String, Object>> selectTaskRecordInfo(
+        @Param("taskId") Integer taskId);
 }

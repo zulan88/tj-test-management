@@ -5,9 +5,11 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import net.wanji.business.entity.TjTask;
+import net.wanji.business.entity.TjTaskCaseRecord;
 import net.wanji.business.entity.TjTaskDataConfig;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author: guowenhao
@@ -42,8 +44,14 @@ public class TaskListVo extends TjTask {
     @ApiModelProperty(value = "唯一标识", required = true, dataType = "String", example = "CHXResult", position = 10)
     private String sign;
 
-    @ApiModelProperty(value = "测试用例列表", required = true, dataType = "List<TaskCaseVo>", position = 14)
+    @ApiModelProperty(value = "测试用例列表", required = true, dataType = "List<TaskCaseVo>", position = 11)
     private List<TaskCaseVo> taskCaseVos;
+
+    @ApiModelProperty(value = "历史记录",
+        required = true,
+        dataType = "List<TjTaskCaseRecord>",
+        position = 12)
+    private List<Map<String, Object>> historyRecords;
 
     /**
      * 任务用例配置
