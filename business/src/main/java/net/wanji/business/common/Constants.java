@@ -553,6 +553,10 @@ public interface Constants {
 
     }
 
+    class UserInfo {
+        public static String ADMIN_NAME = "admin";
+    }
+
 
     /**
      * 试验记录状态

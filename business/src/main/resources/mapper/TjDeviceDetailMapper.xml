@@ -26,6 +26,9 @@
             <if test="attribute2 != null and attribute2 != ''">
                 AND d.attribute2 = #{attribute2}
             </if>
+            <if test="createdBy != null and createdBy != ''">
+                AND d.created_by = #{createdBy}
+            </if>
             <if test="deviceIds != null and deviceIds.size()>0">
                 AND d.device_id IN
                 <foreach collection="deviceIds" item="deviceId" open="(" separator="," close=")">

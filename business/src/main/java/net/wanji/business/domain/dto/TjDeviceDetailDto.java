@@ -59,4 +59,6 @@ public class TjDeviceDetailDto {
 
     private Integer isInner;
 
+    private String createdBy;
+
 }

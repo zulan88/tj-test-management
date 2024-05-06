@@ -354,7 +354,10 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
         deviceDetailDto.setSupportRoles(PartRole.AV);
         deviceDetailDto.setIsInner(0);
-        deviceDetailDto.setAttribute2(SecurityUtils.getUsername());
+        String username = SecurityUtils.getUsername();
+        if(!Constants.UserInfo.ADMIN_NAME.equals(username)){
+            deviceDetailDto.setCreatedBy(username);
+        }
         List<DeviceDetailVo> avDevices = deviceDetailMapper.selectByCondition(deviceDetailDto);
         TjTask task = new TjTask();
         if (ObjectUtil.isNotEmpty(taskSaveDto.getId())) {

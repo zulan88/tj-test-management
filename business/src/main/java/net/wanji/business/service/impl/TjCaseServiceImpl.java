@@ -1048,9 +1048,14 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
         if (ObjectUtils.isEmpty(tjCase)) {
             throw new BusinessException("未查询到对应的测试用例");
         }
-        List<DeviceDetailVo> deviceDetails = deviceDetailService.list(new LambdaQueryWrapper<TjDeviceDetail>()
-                .eq(TjDeviceDetail::getIsInner, 0).eq(TjDeviceDetail::getCreatedBy,
-                SecurityUtils.getUsername())).stream().map(device -> {
+        LambdaQueryWrapper<TjDeviceDetail> deviceListQW = new LambdaQueryWrapper<TjDeviceDetail>().eq(
+            TjDeviceDetail::getIsInner, 0);
+        String username = SecurityUtils.getUsername();
+        if (!Constants.UserInfo.ADMIN_NAME.equals(username)) {
+            deviceListQW.eq(TjDeviceDetail::getCreatedBy,
+                SecurityUtils.getUsername());
+        }
+        List<DeviceDetailVo> deviceDetails = deviceDetailService.list(deviceListQW).stream().map(device -> {
             DeviceDetailVo detailVo = new DeviceDetailVo();
             BeanUtils.copyBeanProp(detailVo, device);
             return detailVo;
