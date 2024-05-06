@@ -47,6 +47,7 @@ import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.bean.BeanUtils;
+import net.wanji.common.utils.spring.SpringUtils;
 import net.wanji.system.service.ISysDictDataService;
 import net.wanji.system.service.ISysDictTypeService;
 import org.apache.commons.collections4.CollectionUtils;
@@ -1048,7 +1049,8 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
             throw new BusinessException("未查询到对应的测试用例");
         }
         List<DeviceDetailVo> deviceDetails = deviceDetailService.list(new LambdaQueryWrapper<TjDeviceDetail>()
-                .eq(TjDeviceDetail::getIsInner, 0)).stream().map(device -> {
+                .eq(TjDeviceDetail::getIsInner, 0).eq(TjDeviceDetail::getCreatedBy,
+                SecurityUtils.getUsername())).stream().map(device -> {
             DeviceDetailVo detailVo = new DeviceDetailVo();
             BeanUtils.copyBeanProp(detailVo, device);
             return detailVo;
