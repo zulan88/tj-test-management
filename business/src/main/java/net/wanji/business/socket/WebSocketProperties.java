@@ -36,7 +36,9 @@ public class WebSocketProperties {
     }
     public void closeSession() {
         try {
-            this.session.close();
+            if (this.session.isOpen()) {
+                this.session.close();
+            }
         } catch (IOException e) {
             log.error("closeSession失败：{}", e);
         }

@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @Auther: guanyuduo
@@ -22,7 +23,7 @@ public class PlaybackSchedule {
 
     private static final Logger log = LoggerFactory.getLogger("business");
 
-    static Map<String, PlaybackDomain> futureMap = new HashMap<>(16);
+    static Map<String, PlaybackDomain> futureMap = new ConcurrentHashMap<>(16);
 
 
     public static void startSendingData(String key, List<List<TrajectoryValueDto>> data) throws BusinessException, IOException {

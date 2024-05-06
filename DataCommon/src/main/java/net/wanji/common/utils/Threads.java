@@ -73,6 +73,10 @@ public class Threads
             try
             {
                 Future<?> future = (Future<?>) r;
+                if (future.isCancelled())
+                {
+                    return;
+                }
                 if (future.isDone())
                 {
                     future.get();
