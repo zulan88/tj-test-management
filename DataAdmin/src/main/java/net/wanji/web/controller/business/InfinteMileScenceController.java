@@ -4,7 +4,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import net.wanji.business.domain.*;
-import net.wanji.business.entity.TjScenelib;
 import net.wanji.business.entity.infity.TjInfinityTask;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.ITjAtlasVenueService;
@@ -20,6 +19,7 @@ import net.wanji.common.core.controller.BaseController;
 import net.wanji.common.core.domain.AjaxResult;
 import net.wanji.common.core.page.TableDataInfo;
 import net.wanji.common.core.redis.RedisCache;
+import net.wanji.common.exception.ServiceException;
 import net.wanji.common.utils.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -83,7 +83,7 @@ public class InfinteMileScenceController extends BaseController {
     }
 
     @PostMapping("/save")
-    public AjaxResult save(@RequestBody InfinteMileScenceExo infinteMileScence) throws BusinessException {
+    public AjaxResult save(@RequestBody InfinteMileScenceExo infinteMileScence) throws BusinessException, ServiceException {
         Integer id = infinteMileScenceService.saveInfinteMileScence(infinteMileScence);
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("id", id);

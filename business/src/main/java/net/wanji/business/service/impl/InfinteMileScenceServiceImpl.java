@@ -17,6 +17,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import net.wanji.business.service.RestService;
 import net.wanji.business.trajectory.RedisTrajectory2Consumer;
 import net.wanji.common.core.redis.RedisCache;
+import net.wanji.common.exception.ServiceException;
 import net.wanji.common.utils.CounterUtil;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
@@ -72,14 +73,14 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
     }
 
     @Override
-    public Integer saveInfinteMileScence(InfinteMileScenceExo infinteMileScence) throws BusinessException {
+    public Integer saveInfinteMileScence(InfinteMileScenceExo infinteMileScence) throws BusinessException, ServiceException {
         if (infinteMileScence.getStatus()!= null && infinteMileScence.getStatus().equals(1)){
             checkInfiniteSimulation(infinteMileScence);
         }
         if (infinteMileScence.getId() != null){
             InfinteMileScence res = baseMapper.selectById(infinteMileScence.getId());
             if (res.getStatus() != null && res.getStatus().equals(1)){
-                throw new BusinessException("场景已提交，无法修改");
+                throw new ServiceException("场景已提交，无法修改", 303);
             }
         }
         Gson gson = new Gson();

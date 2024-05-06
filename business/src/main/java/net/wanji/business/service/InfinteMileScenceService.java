@@ -6,6 +6,7 @@ import net.wanji.business.domain.TrafficFlow;
 import net.wanji.business.entity.InfinteMileScence;
 import com.baomidou.mybatisplus.extension.service.IService;
 import net.wanji.business.exception.BusinessException;
+import net.wanji.common.exception.ServiceException;
 
 import java.util.List;
 
@@ -23,7 +24,7 @@ public interface InfinteMileScenceService extends IService<InfinteMileScence> {
 
     String buildSceneNumber();
 
-    Integer saveInfinteMileScence(InfinteMileScenceExo infinteMileScence) throws BusinessException;
+    Integer saveInfinteMileScence(InfinteMileScenceExo infinteMileScence) throws BusinessException, ServiceException;
 
     void debugging(InfinteMileScenceExo infinteMileScence) throws BusinessException;
 
