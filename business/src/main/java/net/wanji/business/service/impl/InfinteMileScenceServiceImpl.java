@@ -122,6 +122,7 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
         }
         if (null == infinteMileScence.getId()){
             infinteMileScence.setCreateDate(LocalDateTime.now());
+            infinteMileScence.setCreatedBy(SecurityUtils.getUsername());
             this.save(infinteMileScence);
         }else{
             if(flag) {
