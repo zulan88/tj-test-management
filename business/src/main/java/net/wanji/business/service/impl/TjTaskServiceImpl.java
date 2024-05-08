@@ -453,9 +453,8 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         if (ObjectUtil.isEmpty(tjTask)) {
             throw new BusinessException("任务查询失败");
         }
-        TjTaskDataConfig taskAvConfig = tjTaskDataConfigService.getOne(new LambdaQueryWrapper<TjTaskDataConfig>()
-                .eq(TjTaskDataConfig::getTaskId, taskSaveDto.getId())
-                .eq(TjTaskDataConfig::getType, PartRole.AV));
+        // 处理bug因创建任务中止导致多条主车信息
+        TjTaskDataConfig taskAvConfig = getTaskAvConfig(taskSaveDto.getId());
         if (ObjectUtil.isEmpty(taskAvConfig)) {
             throw new BusinessException("请配置被测设备");
         }
@@ -486,6 +485,25 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         result.put("plan", !"域控制器".equals(avDetail.getDeviceType()));
 //        result.put("plan", true);
         return result;
+    }
+
+    private TjTaskDataConfig getTaskAvConfig(Integer id) {
+        List<TjTaskDataConfig> tjTaskDataConfigList = tjTaskDataConfigService.list(
+            new LambdaQueryWrapper<TjTaskDataConfig>().eq(
+                    TjTaskDataConfig::getTaskId, id)
+                .eq(TjTaskDataConfig::getType, PartRole.AV)
+                .orderByDesc(TjTaskDataConfig::getId));
+        int size = tjTaskDataConfigList.size();
+        if (size > 0) {
+            if (size > 1) {
+                for (int i = 1; i < size; i++) {
+                    tjTaskDataConfigService.removeById(
+                        tjTaskDataConfigList.get(i));
+                }
+            }
+            return tjTaskDataConfigList.get(0);
+        }
+        return null;
     }
 
     /**
