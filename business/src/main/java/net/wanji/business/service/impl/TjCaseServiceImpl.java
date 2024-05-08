@@ -863,7 +863,7 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
         List<CasePartConfigVo> configs = casePartConfigService.getConfigInfoByCaseId(caseId);
         for (CasePartConfigVo config : configs) {
             if (!selectMap.containsKey(config.getId())) {
-                if (PartRole.MV_SIMULATION.equals(config.getParticipantRole())) {
+                if (PartRole.MV_SIMULATION.equals(config.getParticipantRole())|| PartRole.SP.equals(config.getParticipantRole())) {
                     config.setDeviceId(svId);
                     casePartConfigMapper.updateDevice(config);
                 }
@@ -1069,7 +1069,7 @@ public class TjCaseServiceImpl extends ServiceImpl<TjCaseMapper, TjCase> impleme
         }
         // 将配置按照业务类型分组（SV仿真车无需进行配置，保存时默认使用tessng）
         Map<String, List<CasePartConfigVo>> configByRoleMap = configs.stream()
-                .filter(c -> !PartRole.MV_SIMULATION.equals(c.getParticipantRole()))
+                .filter(c -> !(PartRole.MV_SIMULATION.equals(c.getParticipantRole()) || PartRole.SP.equals(c.getParticipantRole())))
                 .collect(Collectors.groupingBy(CasePartConfigVo::getParticipantRole));
         List<TjCasePartRoleVo> roleVos = new ArrayList<>();
         for (Map.Entry<String, List<CasePartConfigVo>> configEntry : configByRoleMap.entrySet()) {

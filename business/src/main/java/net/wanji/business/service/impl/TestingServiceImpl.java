@@ -155,9 +155,9 @@ public class TestingServiceImpl implements TestingService {
         // 3.设备过滤
         List<CaseConfigBo> distCaseConfigs = DeviceUtils.deWeightConfigsByDeviceId(allCaseConfigs);
         List<CaseConfigBo> filteredTaskCaseConfigs = distCaseConfigs.stream()
-                .filter(t -> !PartRole.MV_SIMULATION.equals(t.getParticipantRole())).collect(Collectors.toList());
+                .filter(t -> !(PartRole.MV_SIMULATION.equals(t.getParticipantRole()) || PartRole.SP.equals(t.getParticipantRole()))).collect(Collectors.toList());
         CaseConfigBo simulationConfig = distCaseConfigs.stream()
-                .filter(t -> PartRole.MV_SIMULATION.equals(t.getParticipantRole()))
+                .filter(t -> (PartRole.MV_SIMULATION.equals(t.getParticipantRole()) || PartRole.SP.equals(t.getParticipantRole())))
                 .findFirst()
                 .orElse(null);
         if (!running && hand && isDevicesIdle(filteredTaskCaseConfigs)) {
@@ -190,7 +190,7 @@ public class TestingServiceImpl implements TestingService {
      * @return
      */
     private String getReadyStatusChannelByRole(CaseConfigBo caseConfigBo) {
-        return PartRole.MV_SIMULATION.equals(caseConfigBo.getSupportRoles())
+        return (PartRole.MV_SIMULATION.equals(caseConfigBo.getSupportRoles()) || PartRole.SP.equals(caseConfigBo.getSupportRoles()))
                 ? ChannelBuilder.buildTestingStatusChannel(SecurityUtils.getUsername(), caseConfigBo.getCaseId())
                 : ChannelBuilder.DEFAULT_STATUS_CHANNEL;
     }
@@ -263,7 +263,7 @@ public class TestingServiceImpl implements TestingService {
         trajectoryMap.put("AV", routeService.mainTrajectory(caseInfoBo.getRouteFile(),"1"));
         caseConfigs.forEach(
                 caseConfig -> {
-                    if (!PartRole.MV_SIMULATION.equals(caseConfig.getSupportRoles()) && !PartRole.AV.equals(caseConfig.getSupportRoles())) {
+                    if (!PartRole.MV_SIMULATION.equals(caseConfig.getSupportRoles()) && !PartRole.AV.equals(caseConfig.getSupportRoles()) || !PartRole.SP.equals(caseConfig.getSupportRoles())) {
                         try {
                             trajectoryMap.put(caseConfig.getBusinessId(), routeService.mainTrajectory(caseInfoBo.getRouteFile(),caseConfig.getBusinessId()));
                         } catch (BusinessException e) {
@@ -837,7 +837,7 @@ public class TestingServiceImpl implements TestingService {
         }
         caseConfigs = DeviceUtils.deWeightConfigsByDeviceId(caseConfigs);
         List<CaseConfigBo> filteredTaskCaseConfigs = caseConfigs.stream()
-                .filter(t -> !PartRole.MV_SIMULATION.equals(t.getParticipantRole())).collect(Collectors.toList());
+                .filter(t -> !(PartRole.MV_SIMULATION.equals(t.getParticipantRole()) || PartRole.SP.equals(t.getParticipantRole()))).collect(Collectors.toList());
         for (CaseConfigBo taskCaseConfigBo : filteredTaskCaseConfigs) {
             redisLock.releaseLock("task_" + taskCaseConfigBo.getDataChannel(), SecurityUtils.getUsername());
         }
@@ -961,8 +961,8 @@ public class TestingServiceImpl implements TestingService {
                     caseConfigBo.getCommandChannel(), null));
             if (PartRole.AV.equals(caseConfigBo.getParticipantRole())) {
                 stateParam.setParams(new ParamsDto("1", trajectoryMap.get("AV")));
-            }else if (PartRole.MV_SIMULATION.equals(
-                caseConfigBo.getParticipantRole())) {
+            }else if (PartRole.MV_SIMULATION.equals(caseConfigBo.getParticipantRole())
+                    ||PartRole.SP.equals(caseConfigBo.getParticipantRole())) {
                 stateParam.setParams(
                     buildTessStateParam(caseInfoBo, caseBusinessIdAndRoleMap,
                         1,id));
