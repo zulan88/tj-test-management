@@ -5,9 +5,11 @@ import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import net.wanji.business.domain.*;
 import net.wanji.business.entity.infity.TjInfinityTask;
+import net.wanji.business.entity.infity.TjInfinityTaskRecord;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.service.ITjAtlasVenueService;
 import net.wanji.business.service.InfinteMileScenceService;
+import net.wanji.business.service.TjInfinityTaskRecordService;
 import net.wanji.business.service.TjInfinityTaskService;
 import net.wanji.business.service.record.DataCopyService;
 import net.wanji.business.service.record.DataFileService;
@@ -49,6 +51,9 @@ public class InfinteMileScenceController extends BaseController {
 
     @Autowired
     private TjInfinityTaskService tjInfinityTaskService;
+
+    @Autowired
+    private TjInfinityTaskRecordService tjInfinityTaskRecordService;
 
     @Autowired
     private DataFileService dataFileService;
@@ -145,12 +150,13 @@ public class InfinteMileScenceController extends BaseController {
         return AjaxResult.success(infinteMileScenceService.getSiteSlices(scenceId));
     }
 
-    @GetMapping("/testToOpenX")
-    public AjaxResult testPlaybackByTime(Integer fileId, Long startTime,
-                                         Long endTime, Integer caseId, Integer shardingId) throws Exception {
-        TjInfinityTask tjInfinityTask = tjInfinityTaskService.getById(caseId);
+    @GetMapping("/sliceToOpenX")
+    public AjaxResult testPlaybackByTime(Integer recordId, Long startTime,
+                                         Long endTime, Integer shardingId) throws Exception {
+        TjInfinityTaskRecord tjInfinityTaskRecord = tjInfinityTaskRecordService.getById(recordId);
+        TjInfinityTask tjInfinityTask = tjInfinityTaskService.getById(tjInfinityTaskRecord.getCaseId());
         Integer scenceId = tjInfinityTask.getCaseId();
-        dataFileService.playback(fileId, startTime, endTime, scenceId, shardingId,
+        dataFileService.playback(tjInfinityTaskRecord.getDataFileId(), startTime, endTime, scenceId, shardingId,
                 new DataCopyService() {
 
                     Map<String, List<ClientSimulationTrajectoryDto>> map = new HashMap<>();

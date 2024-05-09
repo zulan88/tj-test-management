@@ -116,6 +116,9 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
             // 添加
             List<String> labelList = CollectionUtils.emptyIfNull(sysDictData).stream().map(SysDictData::getDictLabel)
                     .collect(Collectors.toList());
+            if (!SecurityUtils.getUsername().equals("admin")){
+                treeTypeDto.setDictLabel(treeTypeDto.getDictLabel() + "(" + SecurityUtils.getUserId() + ")");
+            }
             if (labelList.contains(treeTypeDto.getDictLabel())) {
                 throw new BusinessException("名称重复");
             }
