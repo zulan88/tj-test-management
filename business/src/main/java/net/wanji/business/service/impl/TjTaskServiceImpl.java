@@ -1106,6 +1106,8 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 taskCaseRecordService.removeById(tjTaskCaseRecord);
             }
         }
+        this.removeById(taskId);
+
         return true;
     }
 }
