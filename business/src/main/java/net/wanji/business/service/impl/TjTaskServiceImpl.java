@@ -67,6 +67,8 @@ import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
 import net.wanji.common.utils.bean.BeanUtils;
+import net.wanji.common.utils.file.FileUploadUtils;
+import net.wanji.common.utils.file.FileUtils;
 import net.wanji.system.service.ISysDictDataService;
 import net.wanji.system.service.ISysDictTypeService;
 import org.apache.commons.collections4.CollectionUtils;
@@ -1068,6 +1070,43 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
     @Override
     public TjTask selectOneById(Integer id) {
         return tjTaskMapper.selectById(id);
+    }
+
+    @Override
+    public boolean taskDelete(Integer taskId) {
+        // 配置
+        tjTaskDataConfigService.remove(
+            new LambdaQueryWrapper<TjTaskDataConfig>().eq(
+                TjTaskDataConfig::getTaskId, taskId));
+        // 测试用例
+        tjTaskCaseService.remove(
+            new LambdaQueryWrapper<TjTaskCase>().eq(TjTaskCase::getTaskId,
+                taskId));
+        // 标签
+        tjTaskMapper.deleteCustomScenarioWeightByTaskId(String.valueOf(taskId));
+
+        // 历史记录
+        List<TjTaskCaseRecord> tjTaskCaseRecords = taskCaseRecordService.list(
+            new LambdaQueryWrapper<TjTaskCaseRecord>().eq(
+                TjTaskCaseRecord::getTaskId, taskId));
+        // 记录文件
+        if (CollectionUtils.isNotEmpty(tjTaskCaseRecords)) {
+            for (TjTaskCaseRecord tjTaskCaseRecord : tjTaskCaseRecords) {
+                String routeFile = tjTaskCaseRecord.getRouteFile();
+                if (StringUtils.isNotEmpty(routeFile)) {
+                    FileUtils.deleteFile(
+                        FileUploadUtils.getAbsolutePathFileName(routeFile));
+                }
+                String evaluatePath = tjTaskCaseRecord.getEvaluatePath();
+                if (StringUtils.isNotEmpty(evaluatePath)) {
+                    FileUtils.deleteFile(
+                        FileUploadUtils.getAbsolutePathFileName(evaluatePath));
+                }
+
+                taskCaseRecordService.removeById(tjTaskCaseRecord);
+            }
+        }
+        return true;
     }
 }
 

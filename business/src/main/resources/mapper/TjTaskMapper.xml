@@ -17,6 +17,13 @@
             #{weightsType}
         );
     </insert>
+    <delete id="deleteCustomScenarioWeightByTaskId">
+        DELETE
+        FROM
+            tj_task_custom_scenario_weights
+        WHERE
+            task_id = #{taskId}
+    </delete>
 
     <select id="selectCountByStatus" resultType="java.util.Map">
         select
