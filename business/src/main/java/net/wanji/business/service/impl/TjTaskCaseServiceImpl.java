@@ -217,9 +217,9 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 .findFirst()
                 .orElseThrow(() -> new BusinessException("未配置被测设备"));
         TaskCaseConfigBo simulationConfig = distTaskCaseConfigs.stream()
-                .filter(t -> PartRole.MV_SIMULATION.equals(t.getType()))
+                .filter(t -> PartRole.MV_SIMULATION.equals(t.getType()) || PartRole.SP.equals(t.getType()))
                 .findFirst()
-                .orElseThrow(() -> new BusinessException("未配置仿真设备"));
+                .orElseGet(null);
         List<TaskCaseConfigBo> filteredTaskCaseConfigs = distTaskCaseConfigs.stream()
                 .filter(t -> !PartRole.MV_SIMULATION.equals(t.getType())).collect(Collectors.toList());
         if (hand) {
@@ -237,9 +237,10 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             if (PartRole.AV.equals(taskCaseConfigBo.getType())) {
                 // av车需要主车全部轨迹
                 stateParam.setParams(new ParamsDto("1", mainTrajectoryMap.get("main")));
-            }
-            if (PartRole.MV_SIMULATION.equals(taskCaseConfigBo.getType())) {
+            } else if (PartRole.MV_SIMULATION.equals(taskCaseConfigBo.getType()) || PartRole.SP.equals(taskCaseConfigBo.getType())) {
                 stateParam.setParams(buildTessStateParam(param.getTaskId(), taskCaseInfoMap, caseBusinessIdAndRoleMap, caseMainSize));
+            }else {
+                stateParam.setParams(new ParamsDto(taskCaseConfigBo.getParticipatorId(), mainTrajectoryMap.get(taskCaseConfigBo.getParticipatorId())));
             }
             Integer readyStatus = hand
                     ? deviceDetailService.handDeviceReadyState(taskCaseConfigBo.getDeviceId(),
@@ -274,12 +275,14 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         // 先停止
         stop(param.getTaskId(), param.getId(), user);
         // 4.唤醒仿真服务
-        int res = restService.startServer(simulationConfig.getIp(), Integer.valueOf(simulationConfig.getServiceAddress()),
-                buildTessServerParam(1, tjTask.getCreatedBy(), param.getTaskId(), mapList));
-        if (res == 0) {
-            throw new BusinessException("唤醒仿真服务失败");
-        }else if (res == 2) {
-            throw new BusinessException("仿真程序忙，请稍后再试");
+        if (simulationConfig != null) {
+            int res = restService.startServer(simulationConfig.getIp(), Integer.valueOf(simulationConfig.getServiceAddress()),
+                    buildTessServerParam(1, tjTask.getCreatedBy(), param.getTaskId(), mapList));
+            if (res == 0) {
+                throw new BusinessException("唤醒仿真服务失败");
+            }else if (res == 2) {
+                throw new BusinessException("仿真程序忙，请稍后再试");
+            }
         }
         for (TaskCaseConfigBo taskCaseConfigBo : filteredTaskCaseConfigs) {
             if (!redisLock.tryLock("task_" + taskCaseConfigBo.getDataChannel(), user)) {
@@ -304,13 +307,13 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
     }
 
     private String getCommandChannelByRoleTW(TaskCaseConfigBo taskCaseConfigBo, String userName) {
-        return PartRole.MV_SIMULATION.equals(taskCaseConfigBo.getSupportRoles())
+        return PartRole.MV_SIMULATION.equals(taskCaseConfigBo.getSupportRoles()) || PartRole.SP.equals(taskCaseConfigBo.getSupportRoles())
                 ? ChannelBuilder.buildTaskControlChannel(userName, taskCaseConfigBo.getTaskId())
                 : taskCaseConfigBo.getCommandChannel();
     }
 
     private String getReadyStatusChannelByTypeTW(TaskCaseConfigBo taskCaseConfigBo, String userName) {
-        return PartRole.MV_SIMULATION.equals(taskCaseConfigBo.getSupportRoles())
+        return PartRole.MV_SIMULATION.equals(taskCaseConfigBo.getSupportRoles()) || PartRole.SP.equals(taskCaseConfigBo.getSupportRoles())
                 ? ChannelBuilder.buildTaskStatusChannel(userName, taskCaseConfigBo.getTaskId())
                 : ChannelBuilder.DEFAULT_STATUS_CHANNEL;
     }
@@ -446,6 +449,19 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             } catch (IOException e) {
                 log.error("用例轨迹文件读取失败：{}", e.getMessage());
             }
+            // 8、其余设备轨迹
+            taskCaseConfigs = taskCaseInfoBo.getDataConfigs();
+            taskCaseConfigs.forEach(
+                    taskCaseConfigBo -> {
+                        if (!PartRole.MV_SIMULATION.equals(taskCaseConfigBo.getSupportRoles()) && !PartRole.AV.equals(taskCaseConfigBo.getSupportRoles()) || !PartRole.SP.equals(taskCaseConfigBo.getSupportRoles())) {
+                            try {
+                                mainTrajectoryMap.put(taskCaseConfigBo.getParticipatorId(), routeService.mainTrajectory(taskCaseInfoBo.getRouteFile(),taskCaseConfigBo.getParticipatorId()));
+                            } catch (BusinessException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    }
+            );
         }
 
         mainTrajectories = mainTrajectories.stream()
@@ -1244,10 +1260,6 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 startMap, mainTrajectoryMap, taskCaseInfoMap);
         // 3.重复设备过滤
         List<TaskCaseConfigBo> distTaskCaseConfigs = filterConfigs(allTaskCaseConfigs);
-        TaskCaseConfigBo simulationConfig = distTaskCaseConfigs.stream()
-                .filter(t -> PartRole.MV_SIMULATION.equals(t.getType()))
-                .findFirst()
-                .orElseThrow(() -> new BusinessException("未找到仿真设备"));
         // 5.状态查询
         for (TaskCaseConfigBo taskCaseConfigBo : distTaskCaseConfigs) {
             // 查询设备状态
@@ -1258,10 +1270,12 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
             if (PartRole.AV.equals(taskCaseConfigBo.getType())) {
                 // av车需要主车全部轨迹
                 stateParam.setParams(new ParamsDto("1", mainTrajectoryMap.get("main")));
-            }
-            if (PartRole.MV_SIMULATION.equals(taskCaseConfigBo.getType())) {
+            } else if (PartRole.MV_SIMULATION.equals(taskCaseConfigBo.getType()) || PartRole.SP.equals(taskCaseConfigBo.getType())) {
                 stateParam.setParams(buildTessStateParam(param.getTaskId(), taskCaseInfoMap, caseBusinessIdAndRoleMap, caseMainSize));
+            }else {
+                stateParam.setParams(new ParamsDto(taskCaseConfigBo.getParticipatorId(), mainTrajectoryMap.get(taskCaseConfigBo.getParticipatorId())));
             }
+
             Integer readyStatus = deviceDetailService.selectDeviceReadyState(taskCaseConfigBo.getDeviceId(),
                     getReadyStatusChannelByTypeTW(taskCaseConfigBo, userName), stateParam, false);
             taskCaseConfigBo.setPositionStatus(readyStatus);

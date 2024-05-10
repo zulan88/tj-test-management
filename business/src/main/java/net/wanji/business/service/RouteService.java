@@ -432,18 +432,6 @@ public class RouteService {
                 : data;
     }
 
-    /**
-     * 读取仿真验证轨迹原始文件
-     *
-     * @param fileName
-     * @param participantId
-     * @return
-     * @throws IOException
-     */
-    public List<SimulationTrajectoryDto> readOriTrajectoryFromRouteFile(String fileName, String participantId) throws IOException {
-        List<SimulationTrajectoryDto> data = readOriRouteFile(fileName);
-        return readOriTrajectoryFromData(data, participantId);
-    }
 
     public List<SimulationTrajectoryDto> readOriRouteFile(String fileName) throws IOException {
         String routeFile = FileUploadUtils.getAbsolutePathFileName(fileName);

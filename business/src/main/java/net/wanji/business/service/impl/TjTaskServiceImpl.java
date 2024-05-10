@@ -105,6 +105,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -130,6 +131,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
     private final RoutingPlanConsumer routingPlanConsumer;
     private final RedisCache redisCache;
     private final TjTaskCaseRecordService taskCaseRecordService;
+    private final TjCasePartConfigService tjCasePartConfigService;
 
     @Resource
     private TjCaseMapper caseMapper;
@@ -702,17 +704,20 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         // 添加新的任务配置
         List<TjTaskDataConfig> dataConfigList = new ArrayList<>();
         for (TjCase tjCase : cases) {
+            List<TjCasePartConfig> casePartConfigs = tjCasePartConfigService.list(new LambdaQueryWrapper<TjCasePartConfig>()
+                    .eq(TjCasePartConfig::getCaseId, tjCase.getId()));
+            Map<String, TjCasePartConfig> casePartConfigMap = casePartConfigs.stream().collect(Collectors.toMap(TjCasePartConfig::getBusinessId, Function.identity()));
             SceneTrajectoryBo sceneTrajectoryBo = JSONObject.parseObject(tjCase.getDetailInfo(), SceneTrajectoryBo.class);
             // 当前所有从车都使用TESSNG
             List<TjTaskDataConfig> slaveConfigs = sceneTrajectoryBo.getParticipantTrajectories().stream()
-                    .filter(t -> PartType.SLAVE.equals(t.getType())).map(t -> {
+                    .filter(t -> !PartType.MAIN.equals(t.getType())).map(t -> {
                         TjTaskDataConfig config = new TjTaskDataConfig();
                         config.setTaskId(in.getId());
                         config.setCaseId(tjCase.getId());
-                        config.setType(PartRole.MV_SIMULATION);
+                        config.setType(casePartConfigMap.get(t.getId()).getParticipantRole());
                         config.setParticipatorId(t.getId());
                         config.setParticipatorName(t.getName());
-                        config.setDeviceId(simulationDevices.get(0).getDeviceId());
+                        config.setDeviceId(casePartConfigMap.get(t.getId()).getDeviceId());
                         return config;
                     }).collect(Collectors.toList());
             dataConfigList.addAll(slaveConfigs);
