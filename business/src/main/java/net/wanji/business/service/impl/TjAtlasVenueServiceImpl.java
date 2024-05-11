@@ -46,6 +46,7 @@ public class TjAtlasVenueServiceImpl extends ServiceImpl<TjAtlasVenueMapper, TjA
             tjAtlasVenue.setFieldImgPath(tjAtlasVenueDto.getFieldImgPath());
             tjAtlasVenue.setUpdatedBy(SecurityUtils.getUsername());
             tjAtlasVenue.setUpdatedDate(LocalDateTime.now());
+            tjAtlasVenue.setAttribute1(tjAtlasVenueDto.getAttribute1());
             return this.updateById(tjAtlasVenue);
         }
     }
