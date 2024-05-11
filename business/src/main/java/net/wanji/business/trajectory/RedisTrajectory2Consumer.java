@@ -181,8 +181,8 @@ public class RedisTrajectory2Consumer {
                         if (!channelListener.started) {
                             break;
                         }
-                        SimulationTrajectoryDto simulationTrajectory = objectMapper.readValue(String.valueOf(simulationMessage.getValue()),
-                                SimulationTrajectoryDto.class);
+                        String optimize = String.valueOf(simulationMessage.getValue()).replace("NaN", "0");
+                        SimulationTrajectoryDto simulationTrajectory = objectMapper.readValue(optimize, SimulationTrajectoryDto.class);
                         if (CollectionUtils.isNotEmpty(simulationTrajectory.getValue())) {
                             // 实际轨迹消息
                             List<TrajectoryValueDto> data = simulationTrajectory.getValue();
@@ -290,8 +290,8 @@ public class RedisTrajectory2Consumer {
                         }
                         // 获取时间
 //                        long start = System.currentTimeMillis();
-                        SimulationTrajectoryDto simulationTrajectory = objectMapper.readValue(String.valueOf(simulationMessage.getValue()),
-                                SimulationTrajectoryDto.class);
+                        String optimize = String.valueOf(simulationMessage.getValue()).replace("NaN", "0");
+                        SimulationTrajectoryDto simulationTrajectory = objectMapper.readValue(optimize, SimulationTrajectoryDto.class);
                         if (CollectionUtils.isNotEmpty(simulationTrajectory.getValue())) {
                             // 实际轨迹消息
                             List<TrajectoryValueDto> data = simulationTrajectory.getValue();
