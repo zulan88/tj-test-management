@@ -33,7 +33,7 @@ public class TjFragmentedSceneDetailDto {
     private String number;
 
     @ApiModelProperty(value = "片段式场景节点id")
-    @NotNull(message = "请确认所属场景", groups = {QueryGroup.class, InsertGroup.class, UpdateGroup.class})
+//    @NotNull(message = "请确认所属场景", groups = {QueryGroup.class, InsertGroup.class, UpdateGroup.class})
     private Integer fragmentedSceneId;
 
     @ApiModelProperty(value = "道路渠化.车道类型（道路走向）（已过期）")

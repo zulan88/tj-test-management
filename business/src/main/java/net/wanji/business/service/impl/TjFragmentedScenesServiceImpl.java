@@ -74,7 +74,7 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
 
     @Override
     public Map<String, Object> init() {
-        List<SysDictData> sceneTreeType = dictTypeService.selectDictDataByType(SysType.SCENE_TREE_TYPE);
+//        List<SysDictData> sceneTreeType = dictTypeService.selectDictDataByType(SysType.SCENE_TREE_TYPE);
         List<SysDictData> sceneType = dictTypeService.selectDictDataByType(SysType.SCENE_TYPE);
         List<SysDictData> sceneComplexity = dictTypeService.selectDictDataByType(SysType.SCENE_COMPLEXITY);
         List<SysDictData> trafficFlowStatus = dictTypeService.selectDictDataByType(SysType.TRAFFIC_FLOW_STATUS);
@@ -82,8 +82,8 @@ public class TjFragmentedScenesServiceImpl extends ServiceImpl<TjFragmentedScene
         List<SysDictData> weather = dictTypeService.selectDictDataByType(SysType.WEATHER);
         List<SysDictData> roadCondition = dictTypeService.selectDictDataByType(SysType.ROAD_CONDITION);
         Map<String, Object> result = new HashMap<>(8);
-        result.put(SysType.SCENE_TREE_TYPE, CollectionUtils.emptyIfNull(sceneTreeType).stream()
-                .map(SimpleSelect::new).collect(Collectors.toList()));
+//        result.put(SysType.SCENE_TREE_TYPE, CollectionUtils.emptyIfNull(sceneTreeType).stream()
+//                .map(SimpleSelect::new).collect(Collectors.toList()));
         result.put(SysType.SCENE_TYPE, CollectionUtils.emptyIfNull(sceneType).stream()
                 .map(SimpleSelect::new).collect(Collectors.toList()));
         result.put(SysType.SCENE_COMPLEXITY, CollectionUtils.emptyIfNull(sceneComplexity).stream()
