@@ -26,22 +26,11 @@ import net.wanji.business.common.Constants.YN;
 import net.wanji.business.component.DeviceStateToRedis;
 import net.wanji.business.domain.Label;
 import net.wanji.business.domain.RealWebsocketMessage;
-import net.wanji.business.domain.bo.CaseInfoBo;
-import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
-import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
-import net.wanji.business.domain.bo.SceneTrajectoryBo;
-import net.wanji.business.domain.bo.TaskCaseConfigBo;
-import net.wanji.business.domain.bo.TaskCaseInfoBo;
-import net.wanji.business.domain.bo.TrajectoryDetailBo;
+import net.wanji.business.domain.bo.*;
 import net.wanji.business.domain.dto.TjDeviceDetailDto;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.ParamsDto;
-import net.wanji.business.domain.param.CaseRuleControl;
-import net.wanji.business.domain.param.CaseSSInfo;
-import net.wanji.business.domain.param.CaseTrajectoryParam;
-import net.wanji.business.domain.param.DeviceConnInfo;
-import net.wanji.business.domain.param.DeviceConnRule;
-import net.wanji.business.domain.param.TessParam;
+import net.wanji.business.domain.param.*;
 import net.wanji.business.domain.vo.*;
 import net.wanji.business.entity.TjCase;
 import net.wanji.business.entity.TjDeviceDetail;
@@ -217,13 +206,18 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 .findFirst()
                 .orElseThrow(() -> new BusinessException("未配置被测设备"));
         TaskCaseConfigBo simulationConfig = distTaskCaseConfigs.stream()
-                .filter(t -> PartRole.MV_SIMULATION.equals(t.getType()) || PartRole.SP.equals(t.getType()))
+                .filter(t -> (PartRole.MV_SIMULATION.equals(t.getType()) || PartRole.SP.equals(t.getType())))
                 .findFirst()
                 .orElseGet(null);
+        TaskCaseConfigBo trackingConfig = distTaskCaseConfigs.stream()
+                .filter(t -> t.getType().equals(PartRole.SV_TRACKING))
+                .findFirst()
+                .orElse(null);
+        List<DeviceConnInfo> deviceConnInfos = distTaskCaseConfigs.stream().filter(t -> t.getType().equals(PartRole.SV_TRACKING)).map(t -> new DeviceConnInfo(t.getDeviceId().toString(),t.getCommandChannel(),t.getDataChannel())).collect(Collectors.toList());
         List<TaskCaseConfigBo> filteredTaskCaseConfigs = distTaskCaseConfigs.stream()
-                .filter(t -> !PartRole.MV_SIMULATION.equals(t.getType())).collect(Collectors.toList());
+                .filter(t -> !(PartRole.MV_SIMULATION.equals(t.getType()) || PartRole.SP.equals(t.getType()))).collect(Collectors.toList());
         if (hand) {
-            handServer(param, tjTask, simulationConfig, filteredTaskCaseConfigs, user, tjTask.isContinuous(), taskCaseIds);
+            handServer(param, tjTask, simulationConfig, filteredTaskCaseConfigs, user, taskCaseIds, deviceConnInfos, trackingConfig);
         }
         // 5.状态查询
         for (TaskCaseConfigBo taskCaseConfigBo : distTaskCaseConfigs) {
@@ -262,7 +256,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
 
     private void handServer(TjTaskCase param, TjTask tjTask, TaskCaseConfigBo simulationConfig,
                             List<TaskCaseConfigBo> filteredTaskCaseConfigs, String user,
-                            boolean deviceValid, List<Integer> caseIds) throws BusinessException {
+                            List<Integer> caseIds, List<DeviceConnInfo> deviceConnInfos, TaskCaseConfigBo trackingConfig) throws BusinessException {
         List<String> mapList = new ArrayList<>();
         for (Integer caseId : caseIds){
             TjCase caseInfo = caseService.getById(caseId);
@@ -282,6 +276,16 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
                 throw new BusinessException("唤醒仿真服务失败");
             }else if (res == 2) {
                 throw new BusinessException("仿真程序忙，请稍后再试");
+            }
+        }
+        if (trackingConfig != null){
+            TjCase caseInfo = caseService.getById(param.getCaseId());
+            TessTrackParam tessTrackParam = new TessTrackParam(param.getCaseId(), caseInfo.getMapId(), deviceConnInfos.size(), deviceConnInfos);
+            int res = restService.startSvServer(trackingConfig.getIp(), Integer.valueOf(trackingConfig.getServiceAddress()),tessTrackParam);
+            if (0==res) {
+                throw new BusinessException("唤起云控车仿真服务失败");
+            }else if(2==res){
+                throw new BusinessException("云控车仿真服务忙，请稍后再试");
             }
         }
         for (TaskCaseConfigBo taskCaseConfigBo : filteredTaskCaseConfigs) {

@@ -263,7 +263,7 @@ public class RedisTrajectory2Consumer {
         infinteMileScenceExo.getInElements().stream().filter(p -> Integer.valueOf(0).equals(p.getType())).findFirst().ifPresent(p -> {
             mainId.put(p.getId().toString(),true);
         });
-        Map<String, Integer> mainCounting = mainId.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, p -> 30));
+        Map<String, Integer> mainCounting = mainId.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, p -> 34));
         AtomicInteger count = new AtomicInteger(60);
         return (message, pattern) -> {
             try {
@@ -276,7 +276,6 @@ public class RedisTrajectory2Consumer {
                 String duration = DateUtils.secondsToDuration(
                         (int) Math.ceil((double) (getDataSize(channel)) / 10));
                 ChannelListener<SimulationTrajectoryDto> channelListener = this.runningChannel.get(channel);
-                count.getAndDecrement();
                 switch (simulationMessage.getType()) {
                     // 开始消息
                     case RedisMessageType.START:
@@ -285,7 +284,11 @@ public class RedisTrajectory2Consumer {
                         break;
                     // 轨迹消息
                     case RedisMessageType.TRAJECTORY:
+                        count.getAndDecrement();
                         if (!channelListener.started) {
+                            break;
+                        }
+                        if (count.intValue()>=55){
                             break;
                         }
                         // 获取时间
@@ -409,7 +412,7 @@ public class RedisTrajectory2Consumer {
 
 
     /**
-     * 接收数据
+     * 接收数据(包含插帧)
      *
      * @param key
      * @param data

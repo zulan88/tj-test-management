@@ -458,6 +458,10 @@ public interface Constants {
          */
         public static final String MV_TRACKING = "mvTracking";
         /**
+         * SV-云控寻迹车
+         */
+        public static final String SV_TRACKING = "svTracking";
+        /**
          * SV-仿真车
          */
         public static final String MV_SIMULATION = "mvSimulation";

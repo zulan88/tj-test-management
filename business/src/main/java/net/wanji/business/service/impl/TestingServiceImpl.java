@@ -27,12 +27,7 @@ import net.wanji.business.domain.bo.TrajectoryDetailBo;
 import net.wanji.business.domain.dto.TjDeviceDetailDto;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.ParamsDto;
-import net.wanji.business.domain.param.CaseRuleControl;
-import net.wanji.business.domain.param.CaseSSInfo;
-import net.wanji.business.domain.param.CaseTrajectoryParam;
-import net.wanji.business.domain.param.DeviceConnInfo;
-import net.wanji.business.domain.param.DeviceConnRule;
-import net.wanji.business.domain.param.TessParam;
+import net.wanji.business.domain.param.*;
 import net.wanji.business.domain.vo.*;
 import net.wanji.business.entity.*;
 import net.wanji.business.exception.BusinessException;
@@ -160,9 +155,14 @@ public class TestingServiceImpl implements TestingService {
                 .filter(t -> (PartRole.MV_SIMULATION.equals(t.getParticipantRole()) || PartRole.SP.equals(t.getParticipantRole())))
                 .findFirst()
                 .orElse(null);
+        CaseConfigBo trackingConfig = distCaseConfigs.stream()
+                .filter(t -> t.getParticipantRole().equals(PartRole.SV_TRACKING))
+                .findFirst()
+                .orElse(null);
+        List<DeviceConnInfo> deviceConnInfos = distCaseConfigs.stream().filter(t -> t.getParticipantRole().equals(PartRole.SV_TRACKING)).map(t -> new DeviceConnInfo(t.getDeviceId().toString(),t.getCommandChannel(),t.getDataChannel())).collect(Collectors.toList());
         if (!running && hand && isDevicesIdle(filteredTaskCaseConfigs)) {
             caseReset(caseId, caseInfoBo, simulationConfig,
-                filteredTaskCaseConfigs);
+                filteredTaskCaseConfigs, deviceConnInfos, trackingConfig);
         }
         List<String> id = new ArrayList<>();
         filteredTaskCaseConfigs.forEach(t -> id.add(t.getBusinessId()));
@@ -896,7 +896,7 @@ public class TestingServiceImpl implements TestingService {
 
     private void caseReset(Integer caseId, CaseInfoBo caseInfoBo,
         CaseConfigBo simulationConfig,
-        List<CaseConfigBo> filteredTaskCaseConfigs) throws BusinessException {
+        List<CaseConfigBo> filteredTaskCaseConfigs, List<DeviceConnInfo> deviceConnInfos, CaseConfigBo trackingConfig) throws BusinessException {
         // 先停止
         stop(caseId);
         List<String> mapList = new ArrayList<>();
@@ -916,7 +916,15 @@ public class TestingServiceImpl implements TestingService {
                 throw new BusinessException("仿真程序忙，请稍后再试");
             }
         }
-
+        if (trackingConfig != null){
+            TessTrackParam tessTrackParam = new TessTrackParam(caseId, caseInfoBo.getMapId(), deviceConnInfos.size(), deviceConnInfos);
+            int res = restService.startSvServer(trackingConfig.getIp(), Integer.valueOf(trackingConfig.getServiceAddress()),tessTrackParam);
+            if (0==res) {
+                throw new BusinessException("唤起云控车仿真服务失败");
+            }else if(2==res){
+                throw new BusinessException("云控车仿真服务忙，请稍后再试");
+            }
+        }
         if (!redisLock.tryLock("case_" + caseId, SecurityUtils.getUsername())) {
             throw new BusinessException("当前用例正在测试中，请稍后再试");
         }

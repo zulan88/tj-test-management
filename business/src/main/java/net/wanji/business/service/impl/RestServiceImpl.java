@@ -13,6 +13,7 @@ import net.wanji.business.domain.dto.device.TaskSaveDto;
 import net.wanji.business.domain.param.CaseRuleControl;
 import net.wanji.business.domain.param.CaseTrajectoryParam;
 import net.wanji.business.domain.param.TessParam;
+import net.wanji.business.domain.param.TessTrackParam;
 import net.wanji.business.domain.vo.IndexCustomWeightVo;
 import net.wanji.business.domain.vo.IndexWeightDetailsVo;
 import net.wanji.business.domain.vo.SceneIndexSchemeVo;
@@ -111,6 +112,9 @@ public class RestServiceImpl implements RestService {
     @Value("${tess.infiniteSite}")
     private String infiniteSite;
 
+    @Value("${tess.svTrackUrl:abc}")
+    private String svTrackurl;
+
     @Resource
     private SendTessNgRequestService sendTessNgRequestService;
 
@@ -146,6 +150,36 @@ public class RestServiceImpl implements RestService {
             }
         } catch (Exception e) {
             sendTessNgRequestService.saveTessNgRequest("失败", resultUrl, tessParam);
+            log.error("远程服务调用失败:{}", e);
+        }
+        return 0;
+    }
+
+    @Override
+    public int startSvServer(String ip, Integer port, TessTrackParam tessTrackParam) {
+        String resultUrl = ip + ":" + port + svTrackurl;
+        log.info("============================== tessServerUrl：{}", resultUrl);
+        try {
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.setContentType(MediaType.APPLICATION_JSON_UTF8);
+            HttpEntity<TessTrackParam> resultHttpEntity = new HttpEntity<>(tessTrackParam, httpHeaders);
+            log.info("============================== tessServerUrl：{}", JSONObject.toJSONString(tessTrackParam));
+            ResponseEntity<String> response =
+                    restTemplate.exchange(resultUrl, HttpMethod.POST, resultHttpEntity, String.class);
+            if (response.getStatusCodeValue() == 200) {
+                JSONObject result = JSONObject.parseObject(response.getBody(), JSONObject.class);
+                log.info("============================== tess server start result:{}", JSONObject.toJSONString(result));
+                if (Objects.isNull(result) || !"success".equals(result.get("status"))) {
+                    String msg = result.get("msg").toString();
+                    log.error("远程服务调用失败:{}", msg);
+                    if (msg.contains("service is overloaded")) {
+                        return 2;
+                    }
+                    return 0;
+                }
+                return 1;
+            }
+        } catch (Exception e) {
             log.error("远程服务调用失败:{}", e);
         }
         return 0;

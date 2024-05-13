@@ -35,4 +35,10 @@ public class DeviceConnInfo {
         this.role = role;
         this.params = params;
     }
+
+    public DeviceConnInfo(String id, String controlChannel, String datachannel) {
+        this.id = id;
+        this.controlChannel = controlChannel;
+        this.channel = datachannel;
+    }
 }

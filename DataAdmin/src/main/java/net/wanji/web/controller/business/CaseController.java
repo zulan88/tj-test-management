@@ -263,6 +263,7 @@ public class CaseController extends BaseController {
             roleList.add(new RoleVo("MV-虚拟驾驶车", Constants.PartRole.MV_VIRTUAL));
             roleList.add(new RoleVo("SV-仿真车", Constants.PartRole.MV_SIMULATION));
             roleList.add(new RoleVo("MV-云控寻迹车", Constants.PartRole.MV_TRACKING));
+            roleList.add(new RoleVo("SV-云控寻迹车", Constants.PartRole.SV_TRACKING));
         } else if (type.equals(Constants.PartType.PEDESTRIAN)) {
             roleList.add(new RoleVo("SP-行人", Constants.PartRole.SP));
             roleList.add(new RoleVo("CAVE-行人", Constants.PartRole.CAVE));
@@ -274,6 +275,7 @@ public class CaseController extends BaseController {
             roleList.add(new RoleVo("SP-行人", Constants.PartRole.SP));
             roleList.add(new RoleVo("CAVE-行人", Constants.PartRole.CAVE));
             roleList.add(new RoleVo("MV-云控寻迹车", Constants.PartRole.MV_TRACKING));
+            roleList.add(new RoleVo("SV-云控寻迹车", Constants.PartRole.SV_TRACKING));
         }
         return AjaxResult.success(roleList);
     }
