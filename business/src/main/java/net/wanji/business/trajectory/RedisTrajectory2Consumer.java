@@ -431,7 +431,26 @@ public class RedisTrajectory2Consumer {
             boolean flag = false;
             int index = 0;
             for (TrajectoryValueDto frame : data.getValue()) {
-                if (Math.abs(frame.getCourseAngle()-lastData.getValue().get(index).getCourseAngle())> 2){
+                double difference = Math.abs(frame.getCourseAngle()-lastData.getValue().get(index).getCourseAngle());
+                if (difference > 5){
+                    double longdiff = Math.abs(frame.getLongitude()-lastData.getValue().get(index).getLongitude());
+                    double latdiff = Math.abs(frame.getLatitude()-lastData.getValue().get(index).getLatitude());
+                    TrajectoryValueDto newFrame1 = new TrajectoryValueDto();
+                    TrajectoryValueDto newFrame2 = new TrajectoryValueDto();
+                    BeanUtils.copyProperties(frame, newFrame1);
+                    BeanUtils.copyProperties(frame, newFrame2);
+                    newFrame1.setCourseAngle(Math.min(frame.getCourseAngle(), lastData.getValue().get(index).getCourseAngle())+(difference * 1/3));
+                    newFrame1.setLatitude(Math.min(frame.getLatitude(), lastData.getValue().get(index).getLatitude())+(latdiff * 1/3));
+                    newFrame1.setLongitude(Math.min(frame.getLongitude(), lastData.getValue().get(index).getLongitude())+(longdiff * 1/3));
+                    newFrame1.setFrameId(-1);
+                    sup.getValue().add(newFrame1);
+                    newFrame2.setCourseAngle(Math.max(frame.getCourseAngle(), lastData.getValue().get(index).getCourseAngle())-(difference * 1/3));
+                    newFrame2.setLatitude(Math.max(frame.getLatitude(), lastData.getValue().get(index).getLatitude())-(latdiff * 1/3));
+                    newFrame2.setLongitude(Math.max(frame.getLongitude(), lastData.getValue().get(index).getLongitude())-(longdiff * 1/3));
+                    newFrame2.setFrameId(-1);
+                    sup.getValue().add(newFrame2);
+                    flag = true;
+                } else if (difference > 2){
                     TrajectoryValueDto newFrame = new TrajectoryValueDto();
                     BeanUtils.copyProperties(frame, newFrame);
                     newFrame.setCourseAngle(Math.round(100*(frame.getCourseAngle()+lastData.getValue().get(index).getCourseAngle())/2) / 100.0);
