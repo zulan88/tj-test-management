@@ -112,14 +112,10 @@ public class TjFragmentedSceneDetailServiceImpl
         queryWrapper.eq(ColumnName.SCENE_DETAIL_ID_COLUMN, id);
         TjFragmentedSceneDetail detail = this.getOne(queryWrapper);
         FragmentedScenesDetailVo detailVo = new FragmentedScenesDetailVo();
-        if (null != detail && detail.getFragmentedSceneId() != null) {
-            TjFragmentedScenes scenes = scenesMapper.selectById(detail.getFragmentedSceneId());
-            if (ObjectUtils.isEmpty(scenes)) {
-                throw new BusinessException("场景不存在");
-            }
-            if (YN.N_INT == scenes.getIsFolder() && !ObjectUtils.isEmpty(detail)) {
+        if (null != detail) {
+            if (!ObjectUtils.isEmpty(detail)) {
                 BeanUtils.copyBeanProp(detailVo, detail);
-                detailVo.setTypeName(dictDataService.selectDictLabel(SysType.SCENE_TREE_TYPE, scenes.getType()));
+                detailVo.setTypeName("集群目标物测试场景");
                 if(type != null){
                     detailVo.setSimuType(type);
                 }
@@ -609,17 +605,17 @@ public class TjFragmentedSceneDetailServiceImpl
             case PlaybackAction.START:
                 validDebugParam(sceneDebugDto);
                 sceneDebugDto.getTrajectoryJson().buildId();
-                TjFragmentedScenes scenes = scenesService.getById(sceneDebugDto.getFragmentedSceneId());
-                if (ObjectUtils.isEmpty(scenes)) {
-                    throw new BusinessException("场景节点不存在");
-                }
+//                TjFragmentedScenes scenes = scenesService.getById(sceneDebugDto.getFragmentedSceneId());
+//                if (ObjectUtils.isEmpty(scenes)) {
+//                    throw new BusinessException("场景节点不存在");
+//                }
                 TjDeviceDetailDto deviceDetailDto = new TjDeviceDetailDto();
                 deviceDetailDto.setSupportRoles(PartRole.MV_SIMULATION);
                 List<DeviceDetailVo> deviceDetailVos = deviceDetailMapper.selectByCondition(deviceDetailDto);
                 if (CollectionUtils.isEmpty(deviceDetailVos)) {
                     throw new BusinessException("当前无可用仿真程序");
                 }
-                sceneDebugDto.getTrajectoryJson().setSceneDesc(scenes.getName());
+                sceneDebugDto.getTrajectoryJson().setSceneDesc("集群目标物测试场景");
 
                 TestStartParam testStartParam = buildStartParam(sceneDebugDto);
                 sceneDebugDto.getTrajectoryJson().setSceneForm(StringUtils.format(ContentTemplate.SCENE_FORM_TEMPLATE,

@@ -20,7 +20,7 @@ public class SceneDebugDto {
     /**
      * 场景id
      */
-    @NotNull(message = "请确认所属节点", groups = {OtherGroup.class})
+//    @NotNull(message = "请确认所属节点", groups = {OtherGroup.class})
     private Integer fragmentedSceneId;
     /**
      * 场景编号
