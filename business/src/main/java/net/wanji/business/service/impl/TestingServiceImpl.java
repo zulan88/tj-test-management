@@ -897,6 +897,14 @@ public class TestingServiceImpl implements TestingService {
     private void caseReset(Integer caseId, CaseInfoBo caseInfoBo,
         CaseConfigBo simulationConfig,
         List<CaseConfigBo> filteredTaskCaseConfigs, List<DeviceConnInfo> deviceConnInfos, CaseConfigBo trackingConfig) throws BusinessException {
+        if (!redisLock.tryLock("case_" + caseId, SecurityUtils.getUsername())) {
+            throw new BusinessException("当前用例正在测试中，请稍后再试");
+        }
+        for (CaseConfigBo taskCaseConfigBo : filteredTaskCaseConfigs) {
+            if (!redisLock.tryLock("task_" + taskCaseConfigBo.getDataChannel(), SecurityUtils.getUsername())) {
+                throw new BusinessException(taskCaseConfigBo.getDeviceName() + "设备正在使用中，请稍后再试");
+            }
+        }
         // 先停止
         stop(caseId);
         List<String> mapList = new ArrayList<>();
@@ -923,14 +931,6 @@ public class TestingServiceImpl implements TestingService {
                 throw new BusinessException("唤起云控车仿真服务失败");
             }else if(2==res){
                 throw new BusinessException("云控车仿真服务忙，请稍后再试");
-            }
-        }
-        if (!redisLock.tryLock("case_" + caseId, SecurityUtils.getUsername())) {
-            throw new BusinessException("当前用例正在测试中，请稍后再试");
-        }
-        for (CaseConfigBo taskCaseConfigBo : filteredTaskCaseConfigs) {
-            if (!redisLock.tryLock("task_" + taskCaseConfigBo.getDataChannel(), SecurityUtils.getUsername())) {
-                throw new BusinessException(taskCaseConfigBo.getDeviceName() + "设备正在使用中，请稍后再试");
             }
         }
     }
