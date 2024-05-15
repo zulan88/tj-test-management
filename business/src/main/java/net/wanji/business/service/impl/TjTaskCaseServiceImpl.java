@@ -956,7 +956,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         QueryWrapper<TjTaskCaseRecord> tjTaskCaseRecordQueryWrapper = new QueryWrapper<>();
         tjTaskCaseRecordQueryWrapper.eq(ColumnName.TASK_ID, taskCaseInfoBo.getTaskId());
         tjTaskCaseRecordQueryWrapper.eq(ColumnName.CASE_ID_COLUMN, taskCaseInfoBo.getCaseId());
-        tjTaskCaseRecordQueryWrapper.eq("status", TestingStatusEnum.PASS.getCode());
+//        tjTaskCaseRecordQueryWrapper.eq("status", TestingStatusEnum.PASS.getCode());
         if(null != recordId){
             tjTaskCaseRecordQueryWrapper.eq("record_id", recordId);
         }else {

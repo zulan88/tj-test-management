@@ -112,7 +112,7 @@ public class RestServiceImpl implements RestService {
     @Value("${tess.infiniteSite}")
     private String infiniteSite;
 
-    @Value("${tess.svTrackUrl:abc}")
+    @Value("${tess.svTrackUrl}")
     private String svTrackurl;
 
     @Resource
