@@ -98,7 +98,7 @@ public class RedisTrajectory2Consumer {
         ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1,
                 new DefaultThreadFactory("RedisTrajectory2Consumer-removeListeners"));
         scheduledExecutorService.scheduleAtFixedRate(
-                this::removeListeners, 0, 20, TimeUnit.SECONDS);
+                this::removeListeners, 0, 60, TimeUnit.SECONDS);
     }
 
     /**
@@ -260,7 +260,7 @@ public class RedisTrajectory2Consumer {
         String methodLog = StringUtils.format("{}仿真验证 - ", infinteMileScenceExo.getViewId());
         Long nowtime = System.currentTimeMillis();
         Map<String, Boolean> mainId = new HashMap<>();
-        infinteMileScenceExo.getInElements().stream().filter(p -> Integer.valueOf(0).equals(p.getType())).findFirst().ifPresent(p -> {
+        infinteMileScenceExo.getInElements().forEach(p -> {
             mainId.put(p.getId().toString(),true);
         });
         Map<String, Integer> mainCounting = mainId.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, p -> 34));

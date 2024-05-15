@@ -159,7 +159,7 @@ public class InfinteMileScenceServiceImpl extends ServiceImpl<InfinteMileScenceM
         }
         BeanUtils.copyBeanProp(infinteMileScence, scenes);
         infinteMileScence.getInElements().forEach(element -> {
-            if (element.getType().equals(0)){
+            if (element.getType().equals(0) && element.getId()>10000){
                 element.setId(1L);
             }
         });
