@@ -18,13 +18,7 @@ import net.wanji.business.common.Constants.TestingStatusEnum;
 import net.wanji.business.common.Constants.YN;
 import net.wanji.business.domain.Label;
 import net.wanji.business.domain.RealWebsocketMessage;
-import net.wanji.business.domain.bo.CaseConfigBo;
-import net.wanji.business.domain.bo.CaseInfoBo;
-import net.wanji.business.domain.bo.CaseTrajectoryDetailBo;
-import net.wanji.business.domain.bo.ParticipantTrajectoryBo;
-import net.wanji.business.domain.bo.SceneTrajectoryBo;
-import net.wanji.business.domain.bo.TrajectoryDetailBo;
-import net.wanji.business.domain.dto.TjDeviceDetailDto;
+import net.wanji.business.domain.bo.*;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.ParamsDto;
 import net.wanji.business.domain.param.*;
@@ -33,7 +27,6 @@ import net.wanji.business.entity.*;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.listener.KafkaCollector;
 import net.wanji.business.mapper.TjCaseRealRecordMapper;
-import net.wanji.business.mapper.TjDeviceDetailMapper;
 import net.wanji.business.schedule.RealPlaybackSchedule;
 import net.wanji.business.schedule.SceneLabelMap;
 import net.wanji.business.service.ILabelsService;
@@ -51,6 +44,7 @@ import net.wanji.business.util.RedisLock;
 import net.wanji.business.util.TessngUtils;
 import net.wanji.common.common.ClientSimulationTrajectoryDto;
 import net.wanji.common.common.SimulationTrajectoryDto;
+import net.wanji.common.core.redis.RedisCache;
 import net.wanji.common.utils.DateUtils;
 import net.wanji.common.utils.SecurityUtils;
 import net.wanji.common.utils.StringUtils;
@@ -72,13 +66,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -126,6 +118,9 @@ public class TestingServiceImpl implements TestingService {
 
     @Autowired
     private RedisLock redisLock;
+
+    @Autowired
+    private RedisCache redisCache;
 
     @Override
     public RealVehicleVerificationPageVo getStatus(Integer caseId, boolean hand) throws BusinessException {
@@ -706,6 +701,18 @@ public class TestingServiceImpl implements TestingService {
     }
 
     @Override
+    public void stopSvTrack(Integer caseId, TessTrackParam tessTrackParam) throws BusinessException {
+        CaseInfoBo caseInfoBo = caseService.getCaseDetail(caseId);
+        List<CaseConfigBo> configs = caseInfoBo.getCaseConfigs();
+        for (CaseConfigBo config : configs) {
+            if (config.getParticipantRole().equals(PartRole.SV_TRACKING)){
+                int res = restService.takeSvServer(config.getIp(), Integer.valueOf(config.getServiceAddress()),tessTrackParam, 0);
+            }
+        }
+
+    }
+
+    @Override
     public void manualTermination(Integer caseId, Integer testModel) throws BusinessException {
         if (!restService.sendManualTermination(0, caseId, testModel)) {
             throw new BusinessException("任务终止失败");
@@ -926,12 +933,13 @@ public class TestingServiceImpl implements TestingService {
         }
         if (trackingConfig != null){
             TessTrackParam tessTrackParam = new TessTrackParam(caseId, caseInfoBo.getMapId(), deviceConnInfos.size(), deviceConnInfos);
-            int res = restService.startSvServer(trackingConfig.getIp(), Integer.valueOf(trackingConfig.getServiceAddress()),tessTrackParam);
+            int res = restService.takeSvServer(trackingConfig.getIp(), Integer.valueOf(trackingConfig.getServiceAddress()),tessTrackParam, 1);
             if (0==res) {
                 throw new BusinessException("唤起云控车仿真服务失败");
             }else if(2==res){
                 throw new BusinessException("云控车仿真服务忙，请稍后再试");
             }
+            redisCache.setCacheObject("svtrack_"+caseId+"_"+SecurityUtils.getUsername(),tessTrackParam,60, TimeUnit.SECONDS);
         }
     }
 

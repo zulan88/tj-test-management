@@ -1,6 +1,7 @@
 package net.wanji.business.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import net.wanji.business.domain.param.TessTrackParam;
 import net.wanji.business.domain.vo.CaseRealTestVo;
 import net.wanji.business.domain.vo.CaseTreeVo;
 import net.wanji.business.domain.vo.CommunicationDelayVo;
@@ -129,6 +130,8 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
      * @throws BusinessException
      */
     void manualTermination(Integer taskId, Integer taskCaseId, Integer testModel) throws BusinessException;
+
+    void stopSvTrack(Integer caseId, TessTrackParam tessTrackParam);
 
     List<CaseTreeVo> selectTree(String type, Integer taskId);
 

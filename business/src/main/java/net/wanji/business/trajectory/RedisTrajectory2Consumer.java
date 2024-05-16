@@ -421,6 +421,9 @@ public class RedisTrajectory2Consumer {
         if (!this.runningChannel.containsKey(key)) {
             return;
         }
+        if (data == null || data.getValue() == null || data.getValue().size() == 0) {
+            return;
+        }
         ChannelListener<SimulationTrajectoryDto> channelListener = this.runningChannel.get(key);
         if (lastTrajectory.containsKey(key)){
             SimulationTrajectoryDto lastData = lastTrajectory.get(key);
@@ -472,6 +475,9 @@ public class RedisTrajectory2Consumer {
 
     public void receiveDataOld(String key, SimulationTrajectoryDto data) {
         if (!this.runningChannel.containsKey(key)) {
+            return;
+        }
+        if (data == null || data.getValue() == null || data.getValue().size() == 0) {
             return;
         }
         ChannelListener<SimulationTrajectoryDto> channelListener = this.runningChannel.get(key);

@@ -6,7 +6,6 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import io.swagger.models.auth.In;
 import lombok.extern.slf4j.Slf4j;
 import net.wanji.business.common.Constants;
 import net.wanji.business.common.Constants.ChannelBuilder;
@@ -27,7 +26,6 @@ import net.wanji.business.component.DeviceStateToRedis;
 import net.wanji.business.domain.Label;
 import net.wanji.business.domain.RealWebsocketMessage;
 import net.wanji.business.domain.bo.*;
-import net.wanji.business.domain.dto.TjDeviceDetailDto;
 import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.ParamsDto;
 import net.wanji.business.domain.param.*;
@@ -39,7 +37,6 @@ import net.wanji.business.entity.TjTaskCase;
 import net.wanji.business.entity.TjTaskCaseRecord;
 import net.wanji.business.entity.TjTaskDataConfig;
 import net.wanji.business.entity.infity.TjInfinityTask;
-import net.wanji.business.entity.infity.TjInfinityTaskRecord;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.listener.KafkaCollector;
 import net.wanji.business.mapper.*;
@@ -281,7 +278,7 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         if (trackingConfig != null){
             TjCase caseInfo = caseService.getById(param.getCaseId());
             TessTrackParam tessTrackParam = new TessTrackParam(param.getCaseId(), caseInfo.getMapId(), deviceConnInfos.size(), deviceConnInfos);
-            int res = restService.startSvServer(trackingConfig.getIp(), Integer.valueOf(trackingConfig.getServiceAddress()),tessTrackParam);
+            int res = restService.takeSvServer(trackingConfig.getIp(), Integer.valueOf(trackingConfig.getServiceAddress()),tessTrackParam, 1);
             if (0==res) {
                 throw new BusinessException("唤起云控车仿真服务失败");
             }else if(2==res){
@@ -1178,6 +1175,11 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         jsonObject.put("caseId", caseId);
         jsonObject.put("status", "break");
         kafkaProducer.sendMessage("tj_task_tw_status", jsonObject.toJSONString());
+    }
+
+    @Override
+    public void stopSvTrack(Integer caseId, TessTrackParam tessTrackParam) {
+
     }
 
     @Override

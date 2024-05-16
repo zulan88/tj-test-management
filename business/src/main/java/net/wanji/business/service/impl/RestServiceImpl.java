@@ -115,6 +115,8 @@ public class RestServiceImpl implements RestService {
     @Value("${tess.svTrackUrl}")
     private String svTrackurl;
 
+
+
     @Resource
     private SendTessNgRequestService sendTessNgRequestService;
 
@@ -156,8 +158,13 @@ public class RestServiceImpl implements RestService {
     }
 
     @Override
-    public int startSvServer(String ip, Integer port, TessTrackParam tessTrackParam) {
-        String resultUrl = ip + ":" + port + svTrackurl;
+    public int takeSvServer(String ip, Integer port, TessTrackParam tessTrackParam, int type) {
+        String resultUrl = ip + ":" + port;
+        if(type == 1){
+            resultUrl = resultUrl + svTrackurl;
+        }else {
+            resultUrl = resultUrl + "/ykc/stopCtrl";
+        }
         log.info("============================== tessServerUrl：{}", resultUrl);
         try {
             HttpHeaders httpHeaders = new HttpHeaders();
@@ -169,12 +176,9 @@ public class RestServiceImpl implements RestService {
             if (response.getStatusCodeValue() == 200) {
                 JSONObject result = JSONObject.parseObject(response.getBody(), JSONObject.class);
                 log.info("============================== tess server start result:{}", JSONObject.toJSONString(result));
-                if (Objects.isNull(result) || !"success".equals(result.get("status"))) {
+                if (Objects.isNull(result) || !result.get("code").equals(200)) {
                     String msg = result.get("msg").toString();
                     log.error("远程服务调用失败:{}", msg);
-                    if (msg.contains("service is overloaded")) {
-                        return 2;
-                    }
                     return 0;
                 }
                 return 1;

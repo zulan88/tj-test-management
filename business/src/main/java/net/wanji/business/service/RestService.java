@@ -43,7 +43,7 @@ public interface RestService {
     /**
      * 启动SV云控车服务
      */
-    int startSvServer(String ip, Integer port, TessTrackParam tessTrackParam);
+    int takeSvServer(String ip, Integer port, TessTrackParam tessTrackParam, int type);
 
 
     /**

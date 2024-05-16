@@ -1,5 +1,6 @@
 package net.wanji.business.service;
 
+import net.wanji.business.domain.param.TessTrackParam;
 import net.wanji.business.domain.vo.CaseTestPrepareVo;
 import net.wanji.business.domain.vo.CaseTestStartVo;
 import net.wanji.business.domain.vo.CommunicationDelayVo;
@@ -81,6 +82,8 @@ public interface TestingService {
      * @return
      */
     CommunicationDelayVo communicationDelayVo(Integer recordId);
+
+    void stopSvTrack(Integer caseId, TessTrackParam tessTrackParam) throws BusinessException;
 
 
     /**

@@ -21,6 +21,7 @@ import net.wanji.business.domain.bo.TaskBo;
 import net.wanji.business.domain.dto.RoutingPlanDto;
 import net.wanji.business.domain.dto.TaskDto;
 import net.wanji.business.domain.dto.device.TaskSaveDto;
+import net.wanji.business.domain.param.TessTrackParam;
 import net.wanji.business.domain.vo.PlatformSSDto;
 import net.wanji.business.domain.vo.TaskListVo;
 import net.wanji.business.domain.vo.task.infinity.SelectRecordIdVo;
@@ -283,7 +284,7 @@ public class TaskController extends BaseController {
     public AjaxResult resetStatus(@RequestBody TjTaskCase param) throws BusinessException {
         if(param.getTaskId() != null) {
             TjTask task = tjTaskService.getById(param.getTaskId());
-            if(StringUtils.isEmpty(task.getLastStatus()) || !task.getLastStatus().equals("prepping")) {
+            if(StringUtils.isEmpty(task.getLastStatus()) || !task.getStatus().equals("prepping")) {
                 task.setLastStatus(task.getStatus());
             }
             task.setStatus("prepping");
@@ -544,6 +545,12 @@ public class TaskController extends BaseController {
             taskCaseService.manualTermination(taskId, 0, testModel);
         } else {
             testingService.manualTermination(caseId, testModel);
+            if (testModel == 0){
+                TessTrackParam tessTrackParam = redisCache.getCacheObject("svtrack_"+caseId+"_"+SecurityUtils.getUsername());
+                if (tessTrackParam != null){
+                    testingService.stopSvTrack(caseId,tessTrackParam);
+                }
+            }
         }
         return AjaxResult.success();
     }
