@@ -93,4 +93,9 @@ public class TjAtlasVenue implements Serializable {
      * 修改日期
      */
     private LocalDateTime updatedDate;
+
+    /**
+     * 场地类型  0-分段式场景，1-无限里程
+     */
+    private Integer sceneType;
 }

@@ -71,6 +71,9 @@ public class TjAtlasVenueServiceImpl extends ServiceImpl<TjAtlasVenueMapper, TjA
         queryWrapper.eq(ObjectUtils.isNotEmpty(tjAtlasVenue.getIsField()),
                 TjAtlasVenue::getIsField,tjAtlasVenue.getIsField());
 
+        queryWrapper.eq(ObjectUtils.isNotEmpty(tjAtlasVenue.getSceneType()),
+                TjAtlasVenue::getSceneType,tjAtlasVenue.getSceneType());
+
         queryWrapper.like(ObjectUtils.isNotEmpty(tjAtlasVenue.getName()),
                 TjAtlasVenue::getName,tjAtlasVenue.getName());
 

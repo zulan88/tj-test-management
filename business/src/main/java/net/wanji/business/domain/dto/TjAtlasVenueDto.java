@@ -39,6 +39,9 @@ public class TjAtlasVenueDto {
     @NotNull(message = "请选择是否支持实地测试", groups = {InsertGroup.class})
     private Integer isField;
 
+    @NotNull(message = "请选择场景类型", groups = {InsertGroup.class})
+    private Integer sceneType;
+
     /**
      * geoJson文件地址
      */
