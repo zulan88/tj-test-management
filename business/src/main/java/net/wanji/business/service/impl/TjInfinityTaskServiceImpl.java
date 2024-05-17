@@ -1,5 +1,6 @@
 package net.wanji.business.service.impl;
 
+import cn.hutool.core.util.NumberUtil;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -104,6 +105,8 @@ public class TjInfinityTaskServiceImpl
 
   @Override
   public Map<String, Long> selectCount(TaskDto taskDto) {
+    Long aLong = tjInfinityMapper.selectCount(null);
+    taskDto.setPageSize(aLong.intValue());
     List<Map<String, String>> statusMaps = tjInfinityMapper.selectCountByStatus(
         taskDto);
     Map<String, Long> statusCountMap = CollectionUtils.emptyIfNull(statusMaps)

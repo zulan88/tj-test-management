@@ -6,7 +6,10 @@
 
     <select id="selectCountByStatus" resultType="java.util.Map">
         select
-        tt.`status`
+        CASE
+        WHEN tt.plan_date &lt;= CURRENT_DATE AND tt.status = 'waiting' THEN 'past_due'
+        ELSE tt.`status`
+        END as status
         from tj_infinity_task tt
         LEFT JOIN (
         SELECT
