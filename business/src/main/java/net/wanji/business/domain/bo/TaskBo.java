@@ -75,4 +75,16 @@ public class TaskBo {
     private Integer apprecordId;
 
     private Integer measurandId;
+
+    /**
+     * 是否连续性测试 0否 1是
+     */
+    private Integer isContinuity;
+
+    public Integer getIsContinuity() {
+        if (isContinuity == null) {
+            isContinuity = 0;
+        }
+        return isContinuity;
+    }
 }

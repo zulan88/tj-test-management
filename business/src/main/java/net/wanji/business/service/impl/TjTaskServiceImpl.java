@@ -96,15 +96,8 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -485,9 +478,17 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         Map<String, Object> result = new HashMap<>();
         result.put("taskId", taskSaveDto.getId());
         result.put("planRoute", mainTrajectories);
-        result.put("cases", getCaseContinuousInfo(taskSaveDto.getId()));
-        result.put("plan", !"域控制器".equals(avDetail.getDeviceType()));
-//        result.put("plan", true);
+        List<CaseContinuousVo> caseContinuousVos = getCaseContinuousInfo(taskSaveDto.getId());
+        result.put("cases", caseContinuousVos);
+        Set<Integer> count = new HashSet<>();
+        for (CaseContinuousVo caseContinuousVo : CollectionUtils.emptyIfNull(caseContinuousVos)) {
+            count.add(caseContinuousVo.getMapId());
+        }
+        if (count.size() == 1) {
+            result.put("plan", true);
+        }else{
+            result.put("plan", false);
+        }
         return result;
     }
 
@@ -754,7 +755,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
             if (ObjectUtils.isEmpty(avDetail)) {
                 throw new BusinessException(StringUtils.format("被测设备查询失败:{}", taskAvConfig.getDeviceId()));
             }
-            if (!"域控制器".equals(avDetail.getDeviceType())) {
+            if (in.getIsContinuity().equals(1)) {
                 if (StringUtils.isEmpty(in.getRouteFile())) {
                     throw new BusinessException("请进行路径规划");
                 }
@@ -784,7 +785,7 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
                 tjTaskCaseMapper.updateByCondition(taskCase);
             }
             // 修改连续式场景任务完整轨迹信息
-            if (!"域控制器".equals(avDetail.getDeviceType())) {
+            if (in.getIsContinuity().equals(1)) {
                 tjTask.setMainPlanFile(in.getRouteFile());
             }
         }
@@ -822,16 +823,22 @@ public class TjTaskServiceImpl extends ServiceImpl<TjTaskMapper, TjTask>
         TjTaskDataConfig avConfig = configs.stream().filter(t -> t.getType().equals(PartRole.AV))
                 .findFirst()
                 .orElseThrow(() -> new BusinessException("请配置被测设备"));
-        TjDeviceDetail avDetail = deviceDetailMapper.selectById(avConfig.getDeviceId());
-        if ("域控制器".equals(Optional.of(avDetail)
-                .orElseThrow(() -> new BusinessException(StringUtils.format("被测设备查询失败:{}", avConfig.getDeviceId())))
-                .getDeviceType())) {
-            throw new BusinessException("域控制器无需进行路径规划（连续性配置）");
-        }
+//        TjDeviceDetail avDetail = deviceDetailMapper.selectById(avConfig.getDeviceId());
+//        if ("域控制器".equals(Optional.of(avDetail)
+//                .orElseThrow(() -> new BusinessException(StringUtils.format("被测设备查询失败:{}", avConfig.getDeviceId())))
+//                .getDeviceType())) {
+//            throw new BusinessException("域控制器无需进行路径规划（连续性配置）");
+//        }
         TjTaskDataConfig svConfig = configs.stream().filter(t -> t.getType().equals(PartRole.MV_SIMULATION))
                 .findFirst()
-                .orElseThrow(() -> new BusinessException("请配置仿真设备"));
-        TjDeviceDetail svDeviceDetail = deviceDetailMapper.selectById(svConfig.getDeviceId());
+                .orElse(null);
+        TjDeviceDetail svDeviceDetail = null;
+        if(svConfig != null){
+            svDeviceDetail = deviceDetailMapper.selectById(svConfig.getDeviceId());
+        }else {
+            svDeviceDetail = deviceDetailMapper.selectOne(new LambdaQueryWrapper<TjDeviceDetail>()
+                    .eq(TjDeviceDetail::getSupportRoles, "mvSimulation"));
+        }
         String channel = ChannelBuilder.buildRoutingPlanChannel(SecurityUtils.getUsername(), task.getId());
         Map<String, Object> params = buildRoutingPlanParam(task.getId(), routingPlanDto.getCases());
         routingPlanConsumer.subscribeAndSend(channel, task.getId(), task.getTaskCode());

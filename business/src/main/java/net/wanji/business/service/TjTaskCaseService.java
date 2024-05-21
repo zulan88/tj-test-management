@@ -8,6 +8,7 @@ import net.wanji.business.domain.vo.CommunicationDelayVo;
 import net.wanji.business.domain.vo.RealTestResultVo;
 import net.wanji.business.domain.vo.TaskCaseVerificationPageVo;
 import net.wanji.business.domain.vo.TaskReportVo;
+import net.wanji.business.entity.TjScenelib;
 import net.wanji.business.entity.TjTaskCase;
 import net.wanji.business.exception.BusinessException;
 
@@ -142,5 +143,7 @@ public interface TjTaskCaseService extends IService<TjTaskCase> {
     TaskCaseVerificationPageVo getStatustw(TjTaskCase param) throws BusinessException;
 
     void twStop(Integer taskId, Integer caseId, String status);
+
+    TjScenelib tasktolib(Integer taskId, Integer caseId);
 
 }

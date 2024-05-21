@@ -42,7 +42,9 @@
         a.detail_info,
         a.route_file,
         b.case_number,
-        b.tree_id
+        b.tree_id,
+        b.map_id,
+        b.map_file
         from tj_task_case a
         left join tj_case b on a.case_id = b.id
         <where>
@@ -67,6 +69,9 @@
         <result property="caseNumber" column="case_number"/>
         <result property="sceneName" column="scene_name"/>
         <result property="allStageLabel" column="all_stage_label"/>
+        <result property="zipPath" column="zip_path"/>
+        <result property="xodrPath" column="xodr_path"/>
+        <result property="xoscPath" column="xosc_path"/>
         <collection property="records" ofType="net.wanji.business.entity.TjTaskCaseRecord"
                     select="selectTaskCaseRecordInfo" column="{taskId= task_id,caseId= case_id}"/>
         <collection property="dataConfigs" ofType="net.wanji.business.domain.bo.TaskCaseConfigBo"
@@ -115,6 +120,9 @@
             ttc.`status`,
             ttc.`detail_info`,
             ttc.`route_file`,
+            ttc.zip_path,
+            ttc.xodr_path,
+            ttc.xosc_path,
             a.case_number,
             a.scene_name,
             a.all_stage_label

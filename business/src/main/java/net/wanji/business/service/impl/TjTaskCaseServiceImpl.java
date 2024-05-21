@@ -30,12 +30,7 @@ import net.wanji.business.domain.dto.device.DeviceReadyStateParam;
 import net.wanji.business.domain.dto.device.ParamsDto;
 import net.wanji.business.domain.param.*;
 import net.wanji.business.domain.vo.*;
-import net.wanji.business.entity.TjCase;
-import net.wanji.business.entity.TjDeviceDetail;
-import net.wanji.business.entity.TjTask;
-import net.wanji.business.entity.TjTaskCase;
-import net.wanji.business.entity.TjTaskCaseRecord;
-import net.wanji.business.entity.TjTaskDataConfig;
+import net.wanji.business.entity.*;
 import net.wanji.business.entity.infity.TjInfinityTask;
 import net.wanji.business.exception.BusinessException;
 import net.wanji.business.listener.KafkaCollector;
@@ -1521,6 +1516,23 @@ public class TjTaskCaseServiceImpl extends ServiceImpl<TjTaskCaseMapper, TjTaskC
         jsonObject.put("caseId", caseId);
         jsonObject.put("status", status);
         kafkaProducer.sendMessage("tj_task_tw_status", jsonObject.toJSONString());
+    }
+
+    @Override
+    public TjScenelib tasktolib(Integer taskId, Integer caseId) {
+        TjTaskCase param = new TjTaskCase();
+        param.setTaskId(taskId);
+        param.setCaseId(caseId);
+        List<TaskCaseInfoBo> taskCaseInfos = taskCaseMapper.selectTaskCaseByCondition(param);
+        if (CollectionUtils.isNotEmpty(taskCaseInfos)) {
+            TjScenelib tjScenelib = new TjScenelib();
+            TaskCaseInfoBo taskCaseInfoBo = taskCaseInfos.get(0);
+            tjScenelib.setXodrPath(taskCaseInfoBo.getXodrPath());
+            tjScenelib.setXoscPath(taskCaseInfoBo.getXoscPath());
+            tjScenelib.setZipPath(taskCaseInfoBo.getZipPath());
+            return tjScenelib;
+        }
+        return null;
     }
 
     private Integer getRecordId(List<TaskCaseInfoBo> taskCaseInfos) {

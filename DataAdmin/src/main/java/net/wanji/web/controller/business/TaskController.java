@@ -603,4 +603,9 @@ public class TaskController extends BaseController {
             taskCaseService.twStop(platformSSDto.getTaskId(), platformSSDto.getCaseId(),"finish");
         }
     }
+
+    @GetMapping("/tasktolib")
+    public AjaxResult tasktolib(@RequestParam("taskId") Integer taskId, @RequestParam("caseId") Integer caseId) {
+        return AjaxResult.success(taskCaseService.tasktolib(taskId, caseId));
+    }
 }

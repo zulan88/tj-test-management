@@ -38,4 +38,6 @@ public class CaseContinuousVo {
     private Object endPoint;
     @ApiModelProperty("连接线")
     private Object connectInfo;
+    private String mapFile;
+    private Integer mapId;
 }
