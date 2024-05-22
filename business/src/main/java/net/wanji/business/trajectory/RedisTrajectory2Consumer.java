@@ -159,6 +159,7 @@ public class RedisTrajectory2Consumer {
         sceneDebugDto.getTrajectoryJson().getParticipantTrajectories().stream().filter(p -> PartType.MAIN.equals(p.getType())).findFirst().ifPresent(p -> {
             mainId.add(p.getId());
         });
+        final boolean[] isOne = {true};
         return (message, pattern) -> {
             try {
                 // 解析消息
@@ -194,7 +195,11 @@ public class RedisTrajectory2Consumer {
                                     value.setTimestamp(value.getTimestamp() + nowtime);
                                 }
                             }
-                            receiveDataOld(channel, simulationTrajectory);
+                            if (isOne[0]) {
+                                isOne[0] = false;
+                            }else {
+                                receiveDataOld(channel, simulationTrajectory);
+                            }
                             // send ws
                             WebsocketMessage msg = new WebsocketMessage(
                                     RedisMessageType.TRAJECTORY,
